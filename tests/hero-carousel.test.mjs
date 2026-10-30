@@ -7,11 +7,11 @@ const source = (await readFile(new URL('../public/hero-carousel.js', import.meta
   .replace(/^import .*;\r?\n/gm, '').replace('export function initHeroCarousel', 'function initHeroCarousel');
 
 function heroPage({ reduced = false, intersection = true } = {}) {
-  const calls = [], timers = new Map(), mutations = [], intersections = [];
-  let timerId = 0, selected = 0, modal = false, factories = 0;
+  const calls = [], timers = new Map(), mutations = [], intersections = [], animations = [];
+  let timerId = 0, selected = 0, modal = false, factories = 0, now = 0;
   const document = { body: { dataset: { view: 'lobby' } }, hidden: false, activeElement: null };
   class Node {
-    constructor() { this.dataset = {}; this.attributes = new Map(); this.listeners = new Map(); this.children = []; this.hidden = false; this.disabled = false; this.textContent = ''; }
+    constructor() { this.dataset = {}; this.style = {}; this.attributes = new Map(); this.listeners = new Map(); this.children = []; this.hidden = false; this.disabled = false; this.textContent = ''; }
     append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
     replaceChildren() { this.children = []; }
     setAttribute(name, value) { this.attributes.set(name, value); }
@@ -39,6 +39,20 @@ function heroPage({ reduced = false, intersection = true } = {}) {
     }
     scrollIntoView(options) { calls.push({ action: 'scroll-results', options }); }
     focus(options) { document.activeElement = this; calls.push({ action: 'focus-results', options }); }
+    animate(keyframes, options) {
+      let currentTime = 0, startedAt = now, playState = 'running';
+      const animation = {
+        target: this, keyframes, options,
+        get currentTime() { return playState === 'running' ? Math.min(options.duration, currentTime + now - startedAt) : currentTime; },
+        set currentTime(value) { currentTime = value; startedAt = now; },
+        get playState() { return playState; },
+        play() { startedAt = now; playState = 'running'; },
+        pause() { currentTime = this.currentTime; playState = 'paused'; },
+        cancel() { currentTime = null; playState = 'idle'; },
+      };
+      animations.push(animation);
+      return animation;
+    }
   }
   const ids = ['hero-carousel', 'hero-viewport', 'hero-track', 'hero-dots',
     'hero-status', 'hero-controls', 'catalog-categories', 'catalog-shelves'];
@@ -83,7 +97,8 @@ function heroPage({ reduced = false, intersection = true } = {}) {
   const motion = new Node(); motion.matches = reduced;
   const window = new Node();
   window.matchMedia = query => { assert.equal(query, '(prefers-reduced-motion: reduce)'); return motion; };
-  window.setTimeout = (callback, duration) => { const id = ++timerId; timers.set(id, { callback, duration }); return id; };
+  window.performance = { now: () => now };
+  window.setTimeout = (callback, duration) => { const id = ++timerId; timers.set(id, { callback, duration, due: now + duration }); return id; };
   window.clearTimeout = id => timers.delete(id);
   class Observer {
     constructor(callback) { this.callback = callback; this.targets = []; }
@@ -101,10 +116,11 @@ function heroPage({ reduced = false, intersection = true } = {}) {
     EmblaCarousel(viewport, options) { factories++; assert.equal(viewport, nodes['hero-viewport']); calls.push({ action: 'init', options }); return api; } };
   vm.runInNewContext(`${source}\ninitHeroCarousel();`, context);
   return {
-    nodes, slides, calls, timers, api, document, firstShelf, categoryButtons, motion, window, mutations, intersections, context,
+    nodes, slides, calls, timers, api, document, firstShelf, categoryButtons, motion, window, mutations, intersections, animations, context,
     get factories() { return factories; }, get provider() { return provider; }, get category() { return category; },
     visible(value = true) { intersections[0]?.callback([{ target: root, isIntersecting: value }]); },
-    fireTimer() { assert.equal(timers.size, 1); const [id, timer] = timers.entries().next().value; timers.delete(id); timer.callback(); },
+    elapse(duration) { now += duration; },
+    fireTimer() { assert.equal(timers.size, 1); const [id, timer] = timers.entries().next().value; now = Math.max(now, timer.due); timers.delete(id); timer.callback(); },
     select(index) { selected = index; emit('select'); }, emit,
     modal(value) { modal = value; mutations[0].callback(); },
     visibility(value) { document.hidden = value; documentEvents.emit('visibilitychange'); },
@@ -233,4 +249,101 @@ test('page suspension and carousel destruction clear timers; a restored page res
   assert.equal(page.nodes['hero-carousel'].dataset.ready, undefined);
   assert.equal(page.nodes['hero-controls'].hidden, true);
   page.window.emit('pageshow'); assert.equal(page.timers.size, 0);
+});
+
+test('white fill and rotation share one countdown, including pauses with overlapping reasons', () => {
+  const page = heroPage(); page.visible();
+  const root = page.nodes['hero-carousel'];
+  const fill = page.animations.at(-1);
+  assert.equal(fill.target.className, 'hero-carousel__dot-fill');
+  assert.equal(fill.options.duration, 6000);
+  assert.equal(fill.options.easing, 'linear');
+  assert.equal(fill.playState, 'running');
+  page.elapse(2000);
+  root.emit('pointerenter', { pointerType: 'mouse' });
+  assert.equal(fill.playState, 'paused');
+  assert.equal(fill.currentTime, 2000);
+  assert.equal(page.timers.size, 0);
+  page.elapse(3000);
+  root.emit('focusin'); root.emit('pointerleave');
+  assert.equal(fill.currentTime, 2000, 'elapsed wall time while paused must not fill the mark');
+  assert.equal(page.timers.size, 0, 'focus still prevents a mouse leave from resuming');
+  root.emit('focusout', { relatedTarget: null });
+  assert.equal(fill.playState, 'running');
+  assert.equal([...page.timers.values()][0].duration, 4000);
+  assert.equal(page.animations.at(-1), fill, 'resuming must preserve the existing fill');
+  page.elapse(500);
+  assert.equal(fill.currentTime, 2500);
+  page.fireTimer();
+  assert.equal(page.nodes['hero-dots'].children[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('repeated visibility, reinitialization, and body notifications do not restart the fill or deadline', () => {
+  const page = heroPage(); page.visible();
+  const fill = page.animations.at(-1), count = page.animations.length;
+  page.elapse(2000);
+  page.visible(); page.mutations[0].callback(); page.emit('reInit');
+  assert.equal(page.animations.length, count);
+  assert.equal(fill.currentTime, 2000);
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].due, 6000);
+  page.fireTimer();
+  assert.equal(page.nodes['hero-dots'].children[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('manual navigation, including selecting the current dot, starts a fresh synchronized countdown', () => {
+  const page = heroPage(); page.visible();
+  const firstFill = page.animations.at(-1);
+  page.elapse(1750);
+  page.nodes['hero-dots'].children[0].children[0].click();
+  const restartedFill = page.animations.at(-1);
+  assert.equal(firstFill.playState, 'idle');
+  assert.notEqual(restartedFill, firstFill);
+  assert.equal(restartedFill.currentTime, 0);
+  assert.equal([...page.timers.values()][0].duration, 6000);
+  page.elapse(700);
+  page.nodes['hero-dots'].children[2].children[0].click();
+  assert.equal(restartedFill.playState, 'idle');
+  assert.equal(page.animations.at(-1).currentTime, 0);
+  assert.equal(page.nodes['hero-dots'].children[2].getAttribute('aria-pressed'), 'true');
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].duration, 6000);
+});
+
+test('autoplay completion rolls over to exactly one new fill and timer', () => {
+  const page = heroPage(); page.visible();
+  const previous = page.animations.at(-1), count = page.animations.length;
+  page.fireTimer();
+  assert.equal(previous.playState, 'idle');
+  assert.equal(page.animations.length, count + 1);
+  assert.equal(page.animations.at(-1).currentTime, 0);
+  assert.equal(page.animations.at(-1).playState, 'running');
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].duration, 6000);
+  assert.equal(page.nodes['hero-status'].textContent, '', 'progress must not create live announcements');
+});
+
+test('reduced motion and destruction leave no running fill or rotation', () => {
+  const page = heroPage({ reduced: true }); page.visible();
+  assert.equal(page.animations.length, 0);
+  assert.equal(page.timers.size, 0);
+  page.motion.matches = false; page.motion.emit('change');
+  const fill = page.animations.at(-1);
+  assert.equal(fill.playState, 'running');
+  page.elapse(1500);
+  page.motion.matches = true; page.motion.emit('change');
+  assert.equal(fill.playState, 'idle');
+  assert.equal(page.timers.size, 0);
+  page.motion.matches = false; page.motion.emit('change');
+  const resumed = page.animations.at(-1);
+  assert.notEqual(resumed, fill);
+  page.emit('destroy');
+  assert.equal(resumed.playState, 'idle');
+  assert.equal(page.timers.size, 0);
+  const animationCount = page.animations.length;
+  page.window.emit('pageshow'); page.visible();
+  page.motion.matches = true; page.motion.emit('change');
+  page.motion.matches = false; page.motion.emit('change');
+  assert.equal(page.animations.length, animationCount, 'destroyed carousels must not create new animations');
+  assert.equal(page.animations.filter(animation => animation.playState === 'running').length, 0);
 });

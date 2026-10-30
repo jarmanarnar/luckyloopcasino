@@ -20,7 +20,13 @@ export function initHeroCarousel() {
     loop: true, align: 'start', slidesToScroll: 1, containScroll: false,
   });
   root.dataset.ready = 'true';
+  const rotationDuration = 6000;
   let timer = null;
+  let remaining = rotationDuration;
+  let startedAt = null;
+  let progressAnimation = null;
+  let progressIndex = -1;
+  let progressReduced = reducedMotion.matches;
   let hovered = false;
   let focused = root.contains(document.activeElement);
   let dragging = false;
@@ -44,15 +50,44 @@ export function initHeroCarousel() {
     const mark = document.createElement('span');
     mark.className = 'hero-carousel__dot-mark';
     mark.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('span');
+    fill.className = 'hero-carousel__dot-fill';
+    mark.append(fill);
     button.append(mark);
     dots.append(button);
     return button;
   });
 
   function stopTimer() {
-    if (timer === null) return;
-    window.clearTimeout(timer);
-    timer = null;
+    if (timer !== null) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    if (startedAt !== null) {
+      remaining = Math.max(0, remaining - (window.performance.now() - startedAt));
+      startedAt = null;
+    }
+    if (progressAnimation) {
+      progressAnimation.pause();
+      progressAnimation.currentTime = rotationDuration - remaining;
+    }
+  }
+
+  function resetProgress() {
+    stopTimer();
+    remaining = rotationDuration;
+    progressAnimation?.cancel();
+    progressAnimation = null;
+    progressIndex = carousel.selectedScrollSnap();
+    progressReduced = reducedMotion.matches;
+    if (!progressReduced) {
+      const fill = dotButtons[progressIndex].children[0].children[0];
+      progressAnimation = fill.animate([
+        { transform: 'scaleX(0)' }, { transform: 'scaleX(1)' },
+      ], { duration: rotationDuration, easing: 'linear', fill: 'forwards' });
+      progressAnimation.pause();
+      progressAnimation.currentTime = 0;
+    }
   }
 
   function canRotate() {
@@ -63,14 +98,23 @@ export function initHeroCarousel() {
   }
 
   function scheduleRotation() {
-    stopTimer();
-    if (!canRotate()) return;
+    if (destroyed) return;
+    if (progressIndex !== carousel.selectedScrollSnap() || progressReduced !== reducedMotion.matches) resetProgress();
+    if (!canRotate()) { stopTimer(); return; }
+    // Observers and overlapping pause reasons must not restart the countdown.
+    if (timer !== null) return;
+    startedAt = window.performance.now();
+    if (progressAnimation) {
+      progressAnimation.currentTime = rotationDuration - remaining;
+      progressAnimation.play();
+    }
     timer = window.setTimeout(() => {
+      remaining = 0;
+      startedAt = null;
       timer = null;
-      if (!canRotate()) return;
+      if (!canRotate()) { stopTimer(); return; }
       carousel.scrollNext();
-      scheduleRotation();
-    }, 6000);
+    }, remaining);
   }
 
   function updateSelection() {
@@ -84,7 +128,10 @@ export function initHeroCarousel() {
   }
 
   function move(action) {
+    stopTimer();
+    const previous = carousel.selectedScrollSnap();
     action(reducedMotion.matches);
+    if (carousel.selectedScrollSnap() === previous) resetProgress();
     announceSelection();
     scheduleRotation();
   }
@@ -162,6 +209,8 @@ export function initHeroCarousel() {
   carousel.on('destroy', () => {
     destroyed = true;
     stopTimer();
+    progressAnimation?.cancel();
+    progressAnimation = null;
     stateObserver.disconnect();
     visibilityObserver?.disconnect();
     delete root.dataset.ready;
