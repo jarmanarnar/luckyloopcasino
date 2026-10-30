@@ -1,7 +1,7 @@
 import { CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit } from './wallet-state.js';
 
-const STORAGE_KEY = 'luckyloop-casino-demo-wallet-v1';
-const LEGACY_STORAGE_KEY = 'atomic-design-demo-wallet-v1';
+const STORAGE_KEY = 'luckyloopcasino-demo-wallet-v1';
+const LEGACY_STORAGE_KEYS = ['luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
 let initialized = false;
 
 export function initWallet() {
@@ -23,8 +23,8 @@ export function initWallet() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved !== null) return JSON.parse(saved);
-      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacy === null) return null;
+      const legacy = LEGACY_STORAGE_KEYS.map(key => localStorage.getItem(key)).find(value => value !== null);
+      if (legacy === undefined) return null;
       const migrated = createWalletState(JSON.parse(legacy));
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated)); }
       catch { /* Keep migrated balances available when browser storage is read-only. */ }

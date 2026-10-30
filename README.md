@@ -10,7 +10,7 @@ Use Node.js 22 or newer. No dependencies, installation step, credentials or exte
 npm start
 ```
 
-Open [LuckyLoop Casino](http://127.0.0.1:4320/luckyloop-casino/). Only one local server starts. The previous `/atomic-design/` entry redirects here and preserves a game fragment such as `#game=niptuck000000000`.
+Open [LuckyLoop Casino](http://127.0.0.1:4320/luckyloopcasino/). Only one local server starts. The previous `/atomic-design/` and `/luckyloop-casino/` entries redirect here and preserve a game fragment such as `#game=niptuck000000000`.
 
 ```sh
 npm run check
@@ -43,7 +43,7 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | `server.mjs` | Local static server restricted to public app files |
 | `tests/` | Catalog exclusions, loader protocol and server-route checks |
 
-All app imports and assets are relative so `public/` can also be hosted as static files. The local server uses the branded `/luckyloop-casino/` path.
+All app imports and assets are relative so `public/` can also be hosted as static files. The local server uses the branded `/luckyloopcasino/` path.
 
 ## Updating the catalog
 

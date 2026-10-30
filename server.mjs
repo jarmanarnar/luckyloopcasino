@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const publicRoot = fileURLToPath(new URL('./public/', import.meta.url));
-const basePath = '/luckyloop-casino/';
+const basePath = '/luckyloopcasino/';
 const types = new Map(Object.entries({
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -30,13 +30,15 @@ export function createAppServer() {
     const redirect = destination => response.writeHead(308, {
       Location: destination + url.search, 'Cache-Control': 'no-store',
     }).end();
-    if (['/', '/index.html', '/luckyloop-casino', `${basePath}index.html`,
-      '/atomic-design', '/atomic-design/', '/atomic-design/index.html'].includes(pathname)) {
+    if (['/', '/index.html', '/luckyloopcasino', `${basePath}index.html`,
+      '/atomic-design', '/atomic-design/', '/atomic-design/index.html',
+      '/luckyloop-casino', '/luckyloop-casino/', '/luckyloop-casino/index.html'].includes(pathname)) {
       redirect(basePath);
       return;
     }
-    if (pathname.startsWith('/atomic-design/')) {
-      redirect(basePath + pathname.slice('/atomic-design/'.length));
+    const legacyPath = ['/atomic-design/', '/luckyloop-casino/'].find(prefix => pathname.startsWith(prefix));
+    if (legacyPath) {
+      redirect(basePath + pathname.slice(legacyPath.length));
       return;
     }
     if (!pathname.startsWith(basePath)) { response.writeHead(404).end('Not found'); return; }
