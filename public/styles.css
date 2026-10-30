@@ -30,6 +30,7 @@
       --promo-label-color: #aaaab3;
       --section-gap: calc(1rem + var(--fluid-step));
       --catalog-toolbar-height: 4rem;
+      --catalog-toolbar-padding: .625rem;
       --catalog-accent: #e8bf65;
       --catalog-active-background: #222226;
       --text-primary: #eeeef2;
@@ -174,7 +175,7 @@
     .catalog-toolbar {
       box-sizing: border-box;
       position: sticky;
-      top: var(--top-bar-height);
+      top: calc(var(--top-bar-height) - var(--catalog-toolbar-padding));
       z-index: 15;
       isolation: isolate;
       display: flex;
@@ -182,7 +183,7 @@
       gap: .5rem;
       height: var(--catalog-toolbar-height);
       margin-block-start: var(--section-gap);
-      padding-block: .625rem;
+      padding-block: var(--catalog-toolbar-padding);
     }
     .catalog-toolbar::before {
       content: '';
