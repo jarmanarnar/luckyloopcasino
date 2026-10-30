@@ -335,6 +335,9 @@
     .game-shelf__arrow svg { width: 18px; height: 18px; }
     .game-shelf__arrow:hover:not(:disabled) { background: #303036; color: #fff; }
     .game-shelf__arrow:disabled { opacity: .45; }
+    @media (max-width: 48rem), (hover: none) and (pointer: coarse) {
+      .game-shelf__navigation { display: none; }
+    }
     .shelf-see-all {
       min-height: var(--touch-target);
       padding: 0 2px;
