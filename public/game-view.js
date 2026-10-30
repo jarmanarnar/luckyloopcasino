@@ -208,7 +208,7 @@ export function initGameView() {
   window.addEventListener('hashchange', showFromHash);
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.key !== 'Escape' || currentGame === null) return;
-    if (document.querySelector('#wallet-dialog')?.open) return;
+    if (document.querySelector('dialog[open]')) return;
     event.preventDefault();
     window.location.hash = '';
   });

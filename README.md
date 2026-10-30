@@ -20,6 +20,7 @@ npm test
 ## Current behavior
 
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
+- Left hamburger drawer with BUY/REDEEM buttons and working category/provider navigation. BUY opens the demo wallet; REDEEM is a design placeholder until redemption is implemented. It supports Escape/backdrop dismissal, contained scrolling and native modal focus handling; the game back arrow replaces the hamburger during play.
 - Category navigation, a dedicated Providers view, and a provider-logo carousel after all game collections on the home view.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
