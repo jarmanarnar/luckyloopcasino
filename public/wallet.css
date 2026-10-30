@@ -45,7 +45,6 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  gap: 7px;
   min-width: 0;
   height: 40px;
   padding: 0 5px;
@@ -56,12 +55,14 @@
   cursor: pointer;
 }
 .wallet-balance-button:hover { background: #ffffff07; }
+.wallet-balance-copy { display: inline-flex; align-items: baseline; gap: 7px; min-width: 0; max-width: 100%; }
 #wallet-currency-label { flex: none; color: var(--text-primary); font-size: 14px; font-weight: 800; line-height: 1; }
 #wallet-balance-value { min-width: 0; overflow: hidden; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.025em; line-height: 1; white-space: nowrap; text-overflow: ellipsis; }
 #wallet-add {
+  box-sizing: border-box;
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border: 1px solid #ffffff35;
   border-radius: 50%;
   background: linear-gradient(145deg, var(--wallet-button-start), var(--wallet-button-end));
@@ -151,17 +152,18 @@
   .top-bar__inner { column-gap: 4px; width: calc(100% - max(12px, env(safe-area-inset-left, 0px)) - max(12px, env(safe-area-inset-right, 0px))); }
   .header-context .game-back { width: 36px; height: 36px; }
   .coin-wallet { width: clamp(128px, calc(100vw - 196px), 160px); height: 44px; padding: 2px; border-radius: 23px; }
-  .wallet-balance-button { height: 36px; gap: 5px; padding: 0 3px; }
+  .wallet-balance-button { height: 38px; padding: 0 3px; }
+  .wallet-balance-copy { gap: 5px; }
   #wallet-currency-label { font-size: 12px; }
   #wallet-balance-value { font-size: 15px; }
-  #wallet-add { width: 34px; height: 34px; }
+  #wallet-add { width: 38px; height: 38px; }
   #wallet-add svg { width: 18px; height: 18px; }
 }
 @media (max-width: 359px) {
-  .wallet-balance-button { gap: 3px; padding-inline: 1px; }
+  .wallet-balance-button { padding-inline: 1px; }
+  .wallet-balance-copy { gap: 3px; }
   #wallet-currency-label { font-size: 11px; }
   #wallet-balance-value { font-size: 13px; }
-  #wallet-add { width: 32px; height: 32px; }
   .wallet-dialog { padding: 20px; }
   .wallet-balance-row { padding: 12px; gap: 8px; }
   .wallet-balance-row .coin-art { width: 38px; height: 38px; }
