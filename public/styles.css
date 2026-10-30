@@ -5,8 +5,9 @@
       --top-bar-height: calc(94px + env(safe-area-inset-top, 0px));
       --top-bar-background: #000;
       --top-bar-divider: #232326;
-      --page-max-width: 1200px;
-      --page-gutter: 32px;
+      --page-max-width: 1360px;
+      --page-gutter: 36px;
+      --page-content-width: min(var(--page-max-width), calc(100% - max(var(--page-gutter), env(safe-area-inset-left, 0px)) - max(var(--page-gutter), env(safe-area-inset-right, 0px))));
       --hero-gap: 24px;
       --hero-background: #111114;
       --hero-radius: 24px;
@@ -62,7 +63,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      width: min(var(--page-max-width), calc(100% - 2 * var(--page-gutter)));
+      width: var(--page-content-width);
       height: 100%;
       margin: auto;
     }
@@ -116,7 +117,7 @@
     }
     .game-loading__reveal { margin-top: 20px; padding: 10px 16px; border: 1px solid #343438; border-radius: 8px; background: #161619; color: var(--text-primary); font: inherit; cursor: pointer; }
     .page-content {
-      width: min(var(--page-max-width), calc(100% - 2 * var(--page-gutter)));
+      width: var(--page-content-width);
       margin: var(--hero-gap) auto 0;
     }
     .hero {
@@ -451,7 +452,6 @@
     @media (max-width: 800px) { :root { --shelf-visible-cards: 4; } }
     @media (max-width: 640px) {
       :root {
-        --page-gutter: 16px;
         --hero-radius: 16px;
         --hero-aspect-ratio: 2 / 1;
         --promo-item-gap: 12px;
@@ -475,3 +475,4 @@
     }
     @media (max-width: 560px) { :root { --shelf-visible-cards: 3; } }
     @media (max-width: 420px) { :root { --shelf-visible-cards: 2; --shelf-peek: 32px; } }
+    @media (max-width: 639px) { :root { --page-gutter: 16px; } }

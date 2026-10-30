@@ -4,7 +4,6 @@
   --wallet-surface: #20212a;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   column-gap: 8px;
-  width: min(1360px, calc(100% - max(36px, env(safe-area-inset-left, 0px)) - max(36px, env(safe-area-inset-right, 0px))));
 }
 
 .header-context { display: flex; align-items: center; min-width: 0; justify-self: start; }
@@ -162,7 +161,6 @@
 
 @media (max-width: 639px) {
   :root { --top-bar-height: calc(var(--header-unit) * 52 + env(safe-area-inset-top, 0px)); }
-  .top-bar__inner { width: calc(100% - max(16px, env(safe-area-inset-left, 0px)) - max(16px, env(safe-area-inset-right, 0px))); }
   .header-context .game-back { width: calc(var(--header-unit) * 36); height: calc(var(--header-unit) * 36); }
   .coin-wallet {
     --wallet-height: calc(var(--header-unit) * 36);
