@@ -20,7 +20,7 @@ npm test
 ## Current behavior
 
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
-- Category navigation, a dedicated Providers view, and a provider-logo carousel before Our Picks on the home view.
+- Category navigation, a dedicated Providers view, and a provider-logo carousel after all game collections on the home view.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
 - Equal game-card sizes in carousels and grids. Game cover artwork is intentionally omitted.

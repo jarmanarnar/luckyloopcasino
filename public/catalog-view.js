@@ -224,13 +224,13 @@ export function initCatalogView() {
     if (showProviders) {
       fragment.append(providerShelf({ isGrid: true }));
     } else if (home) {
-      fragment.append(providerShelf());
       for (const id of ['picks', 'slots', 'tap', 'table', 'video-poker', 'spooky', 'megaways', 'jackpot', 'fruit', 'adventure']) {
         const category = categoryById.get(id);
         const games = getGamesForCategory(id);
         if (games.length) fragment.append(shelf({ id: `category-${id}`, title: category.title,
           games, categoryId: id }));
       }
+      fragment.append(providerShelf());
     } else {
       const category = categoryById.get(selectedCategory);
       const title = [selectedCategory !== 'all' ? category.title : '', studio?.name]

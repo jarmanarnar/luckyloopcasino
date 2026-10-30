@@ -11,12 +11,13 @@ export function initWallet() {
   const balanceButton = document.querySelector('#wallet-balance-button');
   const balanceValue = document.querySelector('#wallet-balance-value');
   const currencyLabel = document.querySelector('#wallet-currency-label');
-  const activeCoin = document.querySelector('#wallet-active-coin');
+  const coinSwitch = document.querySelector('#coin-type-switch');
+  const switchCoin = document.querySelector('#currency-coin');
   const addButton = document.querySelector('#wallet-add');
   const creditButton = document.querySelector('#wallet-add-credit');
   const status = document.querySelector('#wallet-status');
   const totals = { GC: document.querySelector('#wallet-gc-total'), SC: document.querySelector('#wallet-sc-total') };
-  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, activeCoin, addButton, creditButton, status,
+  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, creditButton, status,
     ...Object.values(totals)].every(Boolean)) return;
   initialized = true;
 
@@ -41,7 +42,9 @@ export function initWallet() {
     wallet.dataset.currency = code;
     dialog.dataset.currency = code;
     currencyLabel.textContent = code;
-    activeCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
+    switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
+    coinSwitch.setAttribute('aria-checked', String(code === 'SC'));
+    coinSwitch.title = `Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`;
     balanceValue.textContent = formatBalance(code, state.balances[code]);
     balanceButton.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
     addButton.setAttribute('aria-label', `Add demo ${CURRENCIES[code].name}`);
@@ -69,14 +72,16 @@ export function initWallet() {
     if (focusCredit) creditButton.focus({ preventScroll: true });
   }
 
-  selectors.forEach(button => button.addEventListener('click', () => {
-    state = selectCurrency(state, button.dataset.walletCurrency);
+  function changeCurrency(code) {
+    state = selectCurrency(state, code);
     status.textContent = '';
     render();
     save();
     wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
       detail: { currency: state.currency, demo: true } }));
-  }));
+  }
+  selectors.forEach(button => button.addEventListener('click', () => changeCurrency(button.dataset.walletCurrency)));
+  coinSwitch.addEventListener('click', () => changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
   balanceButton.addEventListener('click', () => openWallet());
   addButton.addEventListener('click', () => openWallet(true));
   creditButton.addEventListener('click', () => {

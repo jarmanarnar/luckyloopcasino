@@ -19,13 +19,10 @@
         </button>
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group">
-        <button id="wallet-balance-button" class="wallet-balance-button" type="button" aria-label="Open demo wallet" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><img id="wallet-active-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="32" height="32" alt="" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></button>
+        <button id="wallet-balance-button" class="wallet-balance-button" type="button" aria-label="Open demo wallet" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></button>
         <button id="wallet-add" class="icon-button" type="button" aria-label="Add demo coins" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
-      <div id="coin-type-switch" class="wallet-switch" role="group" aria-label="Coin type">
-        <button id="currency-gc" class="wallet-currency" type="button" data-wallet-currency="GC" aria-label="Gold Coins" aria-pressed="true"><img class="coin-art" src="assets/coins/gold-coin.svg" width="32" height="32" alt="" aria-hidden="true"></button>
-        <button id="currency-sc" class="wallet-currency" type="button" data-wallet-currency="SC" aria-label="Sweep Coins" aria-pressed="false"><img class="coin-art" src="assets/coins/sweeps-coin.svg" width="32" height="32" alt="" aria-hidden="true"></button>
-      </div>
+      <button id="coin-type-switch" class="wallet-switch" type="button" role="switch" aria-label="Use Sweeps Coins" aria-checked="false"><img id="currency-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="36" height="36" alt="" aria-hidden="true"></button>
     </div>
   </header>
   <main class="page-content" id="lobby-view">
