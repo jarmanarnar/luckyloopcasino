@@ -29,8 +29,8 @@ export function initCatalogToolbar() {
     if (!active) return;
     const viewport = nav.getBoundingClientRect();
     const bounds = active.getBoundingClientRect();
-    const leftInset = !previous.hidden && !previous.disabled ? 44 : 8;
-    const rightInset = !next.hidden && !next.disabled ? 44 : 8;
+    const leftInset = !previous.hidden && !previous.disabled ? previous.getBoundingClientRect().width + 8 : 8;
+    const rightInset = !next.hidden && !next.disabled ? next.getBoundingClientRect().width + 8 : 8;
     let left = nav.scrollLeft;
     if (bounds.left < viewport.left + leftInset) left += bounds.left - viewport.left - leftInset;
     else if (bounds.right > viewport.right - rightInset) left += bounds.right - viewport.right + rightInset;

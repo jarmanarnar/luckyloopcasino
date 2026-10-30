@@ -39,6 +39,7 @@ export function initWallet() {
   let state = createWalletState(readSaved());
   const selectors = [...document.querySelectorAll('[data-wallet-currency]')];
   const header = wallet.parentElement;
+  const topBar = document.querySelector('.top-bar');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const valueMeasure = document.createElement('span');
   valueMeasure.className = 'wallet-value-measure';
@@ -49,21 +50,66 @@ export function initWallet() {
   let formatAmount = String;
   let renderedCurrency = null;
   let animation = null;
+  let layoutFrame = null;
+  let fontsChanged = false;
+
+  function readLayout() {
+    const outer = getComputedStyle(wallet);
+    const copy = getComputedStyle(balanceCopy);
+    const grid = getComputedStyle(header);
+    const px = value => parseFloat(value) || 0;
+    const headerWidth = header.getBoundingClientRect().width;
+    const addWidth = addButton.getBoundingClientRect().width;
+    const switchWidth = coinSwitch.getBoundingClientRect().width;
+    const dimensions = [headerWidth, addWidth, switchWidth, grid.columnGap,
+      outer.paddingLeft, outer.paddingRight, outer.borderLeftWidth, outer.borderRightWidth,
+      outer.columnGap, copy.paddingLeft, copy.paddingRight, copy.columnGap];
+    for (const node of [currencyLabel, balanceValue]) {
+      const text = getComputedStyle(node);
+      dimensions.push(text.fontFamily, text.fontSize, text.fontWeight, text.fontStyle,
+        text.fontStretch, text.fontVariantNumeric, text.letterSpacing);
+    }
+    const chrome = px(outer.paddingLeft) + px(outer.paddingRight) + px(outer.borderLeftWidth)
+      + px(outer.borderRightWidth) + px(outer.columnGap) + addWidth
+      + px(copy.paddingLeft) + px(copy.paddingRight) + px(copy.columnGap);
+    const previousText = valueMeasure.textContent;
+    const measure = text => {
+      valueMeasure.textContent = text;
+      return valueMeasure.getBoundingClientRect().width;
+    };
+    const labelSpacing = px(getComputedStyle(currencyLabel).letterSpacing);
+    const valueSpacing = px(getComputedStyle(balanceValue).letterSpacing);
+    const labelWidth = Math.ceil(Math.max(currencyLabel.getBoundingClientRect().width,
+      ...Object.keys(CURRENCIES).map(code => measure(code) + code.length * (labelSpacing - valueSpacing))));
+    const widestBalance = Math.max(...Object.keys(CURRENCIES)
+      .map(code => measure(formatBalance(code, state.balances[code]))));
+    valueMeasure.textContent = previousText;
+    const centeredSpace = Math.max(0, headerWidth - 2 * (switchWidth + px(grid.columnGap)));
+    const reflow = Math.ceil(chrome + labelWidth + widestBalance) + 2 > centeredSpace;
+    if (header.dataset.walletReflow !== String(reflow)) header.dataset.walletReflow = String(reflow);
+    return {
+      signature: [...dimensions, reflow].join('|'),
+      chrome,
+      available: reflow ? headerWidth : centeredSpace,
+    };
+  }
+
+  function syncHeaderOffset() {
+    if (!topBar) return;
+    const rootStyle = document.documentElement.style;
+    if (header.dataset.walletReflow === 'true') {
+      const height = `${topBar.getBoundingClientRect().height}px`;
+      if (rootStyle.getPropertyValue('--top-bar-height') !== height) rootStyle.setProperty('--top-bar-height', height);
+    } else if (rootStyle.getPropertyValue('--top-bar-height')) rootStyle.removeProperty('--top-bar-height');
+  }
+
+  function applyLayout(next) {
+    layout = next;
+    wallet.style.maxWidth = `${layout.available}px`;
+  }
 
   function measureWallet(text) {
-    if (!layout) {
-      const outer = getComputedStyle(wallet);
-      const copy = getComputedStyle(balanceCopy);
-      const grid = getComputedStyle(header);
-      const px = value => parseFloat(value) || 0;
-      layout = {
-        chrome: px(outer.paddingLeft) + px(outer.paddingRight) + px(outer.borderLeftWidth)
-          + px(outer.borderRightWidth) + px(outer.columnGap) + addButton.offsetWidth
-          + px(copy.paddingLeft) + px(copy.paddingRight) + px(copy.columnGap),
-        available: Math.max(0, header.clientWidth - 2 * (coinSwitch.offsetWidth + px(grid.columnGap))),
-      };
-      wallet.style.maxWidth = `${layout.available}px`;
-    }
+    if (!layout) applyLayout(readLayout());
     valueMeasure.textContent = text;
     const naturalWidth = Math.ceil(layout.chrome + currencyLabel.getBoundingClientRect().width
       + valueMeasure.getBoundingClientRect().width);
@@ -76,6 +122,7 @@ export function initWallet() {
     wallet.style.minWidth = `${minimumWidth}px`;
     const width = Math.min(requestedWidth ?? textWidth, layout.available);
     if (wallet.style.width !== `${width}px`) wallet.style.width = `${width}px`;
+    syncHeaderOffset();
   }
 
   const counter = createWalletCounter({
@@ -106,6 +153,21 @@ export function initWallet() {
     counter.immediate(targetAmount, formatAmount);
   }
 
+  function scheduleLayout(force = false) {
+    fontsChanged ||= force;
+    if (layoutFrame !== null) return;
+    layoutFrame = requestAnimationFrame(() => {
+      layoutFrame = null;
+      const next = readLayout();
+      const changed = fontsChanged || next.signature !== layout?.signature;
+      fontsChanged = false;
+      syncHeaderOffset();
+      if (!changed) return;
+      applyLayout(next);
+      finishBalance();
+    });
+  }
+
   function updateBalance(amount, formatter, animate, currencyChanged) {
     counter.cancel();
     targetAmount = amount;
@@ -129,6 +191,7 @@ export function initWallet() {
     wallet.dataset.currency = code;
     dialog.dataset.currency = code;
     currencyLabel.textContent = code;
+    applyLayout(readLayout());
     switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
     addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
     coinSwitch.setAttribute('aria-checked', String(code === 'SC'));
@@ -197,10 +260,7 @@ export function initWallet() {
     state = createWalletState(readSaved());
     render();
   });
-  window.addEventListener('resize', () => {
-    layout = null;
-    finishBalance();
-  });
+  window.addEventListener('resize', () => scheduleLayout(), { passive: true });
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) finishBalance();
   });
@@ -208,4 +268,10 @@ export function initWallet() {
     if (document.hidden) finishBalance();
   });
   render({ animate: false });
+  const layoutObserver = new ResizeObserver(() => scheduleLayout());
+  for (const node of [header, addButton, coinSwitch, topBar].filter(Boolean)) layoutObserver.observe(node);
+  if (document.fonts) {
+    document.fonts.ready.then(() => scheduleLayout(true));
+    document.fonts.addEventListener('loadingdone', () => scheduleLayout(true));
+  }
 }

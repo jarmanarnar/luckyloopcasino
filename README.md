@@ -51,6 +51,16 @@ The public site is hosted at [LuckyLoop Casino](https://jarmanarnar.github.io/lu
 
 Demo wallet state is saved per browser and origin. A phone or the hosted address starts with its own demo balance; it does not share balances with localhost.
 
+## Responsive sizing
+
+The shared `--fluid-step` in `public/styles.css` grows continuously from 0 to 8 CSS pixels between 320px and 1280px at the default text size. Header controls, gutters, spacing, type, promo shortcuts and provider tiles derive their sizes from it. These sizes use `rem` bounds so user text preferences remain meaningful. Avoid adding device-width overrides for individual atoms.
+
+Game cards keep an 8:11 aspect ratio and one width token shared by carousels and category grids. Their width changes from 132px to 170px; grids reflow the number of columns instead of resizing each card at a breakpoint. The hero uses a bounded continuous height, capped against the small viewport height for wide, short windows, rather than a sudden aspect-ratio switch. All lobby sections and the header share one content width and safe-area inset.
+
+Wallet text stays the same size throughout a balance animation. Layout measurements are invalidated by relevant width/font changes, while height-only mobile browser changes preserve the running counter. Crowded headers reflow their content rather than shrinking the amount. Header offsets follow its real height when reflow is necessary. Navigation controls have at least a 44px target at the default text size; the wallet plus expands its hit area without enlarging the artwork.
+
+The layout follows [content-based responsive design](https://web.dev/articles/responsive-web-design-basics), [bounded fluid CSS sizing](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/clamp), and [W3C target-size guidance](https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html). These sources inform the behavior; the numerical proportions are this project's design choices.
+
 ## Updating the catalog
 
 `public/catalog.js` is the active reviewed catalog. Keep `removed-games.js` when importing new data or curating picks; the archived source list includes games the owner removed. Update provider counts when changing the active catalog. Keep real provider IDs and launch URLs unchanged when renaming the platform.
