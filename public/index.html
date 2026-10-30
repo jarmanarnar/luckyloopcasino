@@ -19,12 +19,12 @@
         </button>
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group">
-        <button id="wallet-balance-button" class="wallet-balance-button" type="button" aria-label="Open demo wallet" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></button>
+        <button id="wallet-balance-button" class="wallet-balance-button" type="button" aria-label="Open demo wallet" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><img id="wallet-active-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="32" height="32" alt="" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></button>
         <button id="wallet-add" class="icon-button" type="button" aria-label="Add demo coins" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>
       <div id="coin-type-switch" class="wallet-switch" role="group" aria-label="Coin type">
-        <button id="currency-gc" class="wallet-currency" type="button" data-wallet-currency="GC" aria-label="Gold Coins" aria-pressed="true"><span class="coin-badge coin-badge--gc" aria-hidden="true">G</span></button>
-        <button id="currency-sc" class="wallet-currency" type="button" data-wallet-currency="SC" aria-label="Sweep Coins" aria-pressed="false"><span class="coin-badge coin-badge--sc" aria-hidden="true">S</span></button>
+        <button id="currency-gc" class="wallet-currency" type="button" data-wallet-currency="GC" aria-label="Gold Coins" aria-pressed="true"><img class="coin-art" src="assets/coins/gold-coin.svg" width="32" height="32" alt="" aria-hidden="true"></button>
+        <button id="currency-sc" class="wallet-currency" type="button" data-wallet-currency="SC" aria-label="Sweep Coins" aria-pressed="false"><img class="coin-art" src="assets/coins/sweeps-coin.svg" width="32" height="32" alt="" aria-hidden="true"></button>
       </div>
     </div>
   </header>
@@ -81,14 +81,14 @@
   <dialog id="wallet-dialog" class="wallet-dialog" aria-labelledby="wallet-dialog-title" lang="en" dir="ltr">
     <form method="dialog">
       <header class="wallet-dialog__header">
-        <h2 id="wallet-dialog-title">Demo wallet</h2>
+        <div class="wallet-dialog__heading"><span class="wallet-dialog__brand">LuckyLoop Casino</span><h2 id="wallet-dialog-title">Demo wallet</h2></div>
         <button id="wallet-close" class="icon-button" value="close" aria-label="Close wallet" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       </header>
     </form>
     <p class="wallet-dialog__note">Demo balances for this prototype. Game demos use their own balance.</p>
     <div id="wallet-balances" class="wallet-balances">
-      <button class="wallet-balance-row" type="button" data-wallet-currency="GC" aria-pressed="true"><span class="coin-badge coin-badge--gc" aria-hidden="true">G</span><span class="wallet-balance-row__name">Gold Coins<span>GC</span></span><strong id="wallet-gc-total">125,000</strong></button>
-      <button class="wallet-balance-row" type="button" data-wallet-currency="SC" aria-pressed="false"><span class="coin-badge coin-badge--sc" aria-hidden="true">S</span><span class="wallet-balance-row__name">Sweeps Coins<span>SC</span></span><strong id="wallet-sc-total">15.00</strong></button>
+      <button class="wallet-balance-row" type="button" data-wallet-currency="GC" aria-pressed="true"><img class="coin-art" src="assets/coins/gold-coin.svg" width="44" height="44" alt="" aria-hidden="true"><span class="wallet-balance-row__name">Gold Coins<span>GC</span></span><strong id="wallet-gc-total">125,000</strong></button>
+      <button class="wallet-balance-row" type="button" data-wallet-currency="SC" aria-pressed="false"><img class="coin-art" src="assets/coins/sweeps-coin.svg" width="44" height="44" alt="" aria-hidden="true"><span class="wallet-balance-row__name">Sweeps Coins<span>SC</span></span><strong id="wallet-sc-total">15.00</strong></button>
     </div>
     <button id="wallet-add-credit" type="button" class="wallet-credit">Add 1,000 GC</button>
     <p id="wallet-status" role="status" aria-live="polite" class="wallet-status"></p>

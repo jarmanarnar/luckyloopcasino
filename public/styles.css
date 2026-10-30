@@ -2,7 +2,7 @@
     :root {
       color-scheme: dark;
       background: #000;
-      --top-bar-height: 72px;
+      --top-bar-height: calc(72px + env(safe-area-inset-top, 0px));
       --top-bar-background: #0d0d0f;
       --top-bar-divider: #232326;
       --page-max-width: 1200px;
@@ -33,9 +33,9 @@
       --game-card-background: #1c1c22;
       --game-card-radius: 9px;
     }
-    html, body { margin: 0; min-height: 100%; background: #000; scrollbar-width: none; }
+    html, body { margin: 0; min-height: 100%; background: #000; scrollbar-width: none; overscroll-behavior-y: none; }
     html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-    body { min-height: 100dvh; font-family: Arial, sans-serif; }
+    body { box-sizing: border-box; min-height: 100dvh; padding-top: var(--top-bar-height); font-family: Arial, sans-serif; }
     body:has(#coin-wallet[data-currency="SC"]) {
       --catalog-accent: #8bdfb3;
       --catalog-active-background: #172b21;
@@ -52,11 +52,14 @@
       box-sizing: border-box;
       width: 100%;
       height: var(--top-bar-height);
+      padding-top: env(safe-area-inset-top, 0px);
       background: var(--top-bar-background);
       border-bottom: 1px solid var(--top-bar-divider);
-      position: sticky;
+      position: fixed;
       top: 0;
+      inset-inline: 0;
       z-index: 20;
+      touch-action: pinch-zoom;
     }
     .top-bar__inner {
       display: grid;
@@ -77,15 +80,14 @@
     body[data-view="game"] {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
       height: 100vh;
       height: 100dvh;
       min-height: 0;
       overflow: hidden;
     }
-    body[data-view="game"] > .top-bar { grid-row: 1; position: relative; top: auto; }
     .game-view {
-      grid-row: 2;
+      grid-row: 1;
       position: relative;
       width: 100%;
       min-width: 0;
@@ -462,7 +464,6 @@
         --game-card-gap: 12px;
         --catalog-toolbar-height: 64px;
       }
-      .top-bar { padding-top: env(safe-area-inset-top, 0px); }
       .catalog-category { padding-inline: 13px; }
       .game-shelf__header { gap: 10px; }
       .game-shelf__actions { gap: 8px; }

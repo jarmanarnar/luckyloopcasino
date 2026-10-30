@@ -11,11 +11,12 @@ export function initWallet() {
   const balanceButton = document.querySelector('#wallet-balance-button');
   const balanceValue = document.querySelector('#wallet-balance-value');
   const currencyLabel = document.querySelector('#wallet-currency-label');
+  const activeCoin = document.querySelector('#wallet-active-coin');
   const addButton = document.querySelector('#wallet-add');
   const creditButton = document.querySelector('#wallet-add-credit');
   const status = document.querySelector('#wallet-status');
   const totals = { GC: document.querySelector('#wallet-gc-total'), SC: document.querySelector('#wallet-sc-total') };
-  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, addButton, creditButton, status,
+  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, activeCoin, addButton, creditButton, status,
     ...Object.values(totals)].every(Boolean)) return;
   initialized = true;
 
@@ -40,6 +41,7 @@ export function initWallet() {
     wallet.dataset.currency = code;
     dialog.dataset.currency = code;
     currencyLabel.textContent = code;
+    activeCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
     balanceValue.textContent = formatBalance(code, state.balances[code]);
     balanceButton.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
     addButton.setAttribute('aria-label', `Add demo ${CURRENCIES[code].name}`);

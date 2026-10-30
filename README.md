@@ -19,7 +19,7 @@ npm test
 
 ## Current behavior
 
-- Sticky wallet header with separate GC and SC demo balances and an independent coin switch.
+- Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Category navigation, a dedicated Providers view, and a provider-logo carousel before Our Picks on the home view.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
