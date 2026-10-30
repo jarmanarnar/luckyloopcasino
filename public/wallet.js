@@ -72,7 +72,10 @@ export function initWallet() {
   }
 
   function fitWallet(requestedWidth) {
-    const width = Math.min(requestedWidth ?? measureWallet(balanceValue.textContent), layout.available);
+    const textWidth = measureWallet(balanceValue.textContent);
+    const minimumWidth = Math.min(textWidth, layout.available);
+    wallet.style.minWidth = `${minimumWidth}px`;
+    const width = Math.min(requestedWidth ?? textWidth, layout.available);
     if (wallet.style.width !== `${width}px`) wallet.style.width = `${width}px`;
   }
 
@@ -80,6 +83,7 @@ export function initWallet() {
     duration: 720,
     onFrame(formatted, value) {
       if (animation && value !== targetAmount) {
+        wallet.dataset.widthMotion = 'true';
         const frame = resolveWalletFrame({
           ...animation,
           formatted,
@@ -88,7 +92,7 @@ export function initWallet() {
         });
         balanceValue.textContent = frame.text;
         animation.previousWidth = frame.width;
-        fitWallet(frame.width);
+        fitWallet(animation.toWidth > animation.fromWidth ? animation.toWidth : frame.width);
       } else {
         animation = null;
         balanceValue.textContent = formatted;
@@ -99,6 +103,7 @@ export function initWallet() {
 
   function finishBalance() {
     animation = null;
+    wallet.dataset.widthMotion = 'false';
     counter.immediate(targetAmount, formatAmount);
   }
 

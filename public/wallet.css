@@ -43,6 +43,7 @@
   box-shadow: none;
   color: var(--text-primary);
 }
+.coin-wallet[data-width-motion="true"] { transition: width 220ms cubic-bezier(.22, 1, .36, 1); }
 .wallet-balance-button {
   box-sizing: border-box;
   position: relative;
@@ -188,6 +189,7 @@
   :root { --top-bar-height: calc(64px + env(safe-area-inset-top, 0px)); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .coin-wallet[data-width-motion="true"] { transition: none; }
   .wallet-switch .coin-art { transition: none; }
   #wallet-add:active { transform: none; }
 }
