@@ -75,11 +75,6 @@
       min-height: var(--header-control-size);
       margin: auto;
     }
-    .top-bar__inner[data-wallet-reflow="true"] { grid-template-columns: minmax(0, 1fr) auto; row-gap: var(--header-gap); }
-    .top-bar__inner[data-wallet-reflow="true"] .header-context { grid-column: 1; grid-row: 1; }
-    .top-bar__inner[data-wallet-reflow="true"] .wallet-switch { grid-column: 2; grid-row: 1; }
-    .top-bar__inner[data-wallet-reflow="true"] .coin-wallet { grid-column: 1 / -1; grid-row: 2; height: auto; min-height: var(--header-control-size); flex-wrap: wrap; justify-content: center; row-gap: .25rem; }
-    .top-bar__inner[data-wallet-reflow="true"] .wallet-balance-copy { flex: 1 0 100%; max-width: 100%; }
     .icon-button.game-back {
       justify-self: start;
       width: auto;

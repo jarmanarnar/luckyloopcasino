@@ -39,7 +39,7 @@ export function initWallet() {
   let state = createWalletState(readSaved());
   const selectors = [...document.querySelectorAll('[data-wallet-currency]')];
   const header = wallet.parentElement;
-  const topBar = document.querySelector('.top-bar');
+  const leadingControl = document.querySelector('.header-context');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const valueMeasure = document.createElement('span');
   valueMeasure.className = 'wallet-value-measure';
@@ -61,7 +61,9 @@ export function initWallet() {
     const headerWidth = header.getBoundingClientRect().width;
     const addWidth = addButton.getBoundingClientRect().width;
     const switchWidth = coinSwitch.getBoundingClientRect().width;
-    const dimensions = [headerWidth, addWidth, switchWidth, grid.columnGap,
+    const leadingWidth = leadingControl?.getBoundingClientRect().width || 0;
+    const gap = px(grid.columnGap);
+    const dimensions = [headerWidth, addWidth, switchWidth, leadingWidth, grid.columnGap,
       outer.paddingLeft, outer.paddingRight, outer.borderLeftWidth, outer.borderRightWidth,
       outer.columnGap, copy.paddingLeft, copy.paddingRight, copy.columnGap];
     for (const node of [currencyLabel, balanceValue]) {
@@ -72,40 +74,21 @@ export function initWallet() {
     const chrome = px(outer.paddingLeft) + px(outer.paddingRight) + px(outer.borderLeftWidth)
       + px(outer.borderRightWidth) + px(outer.columnGap) + addWidth
       + px(copy.paddingLeft) + px(copy.paddingRight) + px(copy.columnGap);
-    const previousText = valueMeasure.textContent;
-    const measure = text => {
-      valueMeasure.textContent = text;
-      return valueMeasure.getBoundingClientRect().width;
-    };
-    const labelSpacing = px(getComputedStyle(currencyLabel).letterSpacing);
-    const valueSpacing = px(getComputedStyle(balanceValue).letterSpacing);
-    const labelWidth = Math.ceil(Math.max(currencyLabel.getBoundingClientRect().width,
-      ...Object.keys(CURRENCIES).map(code => measure(code) + code.length * (labelSpacing - valueSpacing))));
-    const widestBalance = Math.max(...Object.keys(CURRENCIES)
-      .map(code => measure(formatBalance(code, state.balances[code]))));
-    valueMeasure.textContent = previousText;
-    const centeredSpace = Math.max(0, headerWidth - 2 * (switchWidth + px(grid.columnGap)));
-    const reflow = Math.ceil(chrome + labelWidth + widestBalance) + 2 > centeredSpace;
-    if (header.dataset.walletReflow !== String(reflow)) header.dataset.walletReflow = String(reflow);
     return {
-      signature: [...dimensions, reflow].join('|'),
+      signature: dimensions.join('|'),
       chrome,
-      available: reflow ? headerWidth : centeredSpace,
+      available: Math.max(0, headerWidth - leadingWidth - switchWidth - 2 * gap),
+      headerHalf: headerWidth / 2,
+      leadingLimit: leadingWidth + gap,
+      trailingLimit: headerWidth - switchWidth - gap,
     };
-  }
-
-  function syncHeaderOffset() {
-    if (!topBar) return;
-    const rootStyle = document.documentElement.style;
-    if (header.dataset.walletReflow === 'true') {
-      const height = `${topBar.getBoundingClientRect().height}px`;
-      if (rootStyle.getPropertyValue('--top-bar-height') !== height) rootStyle.setProperty('--top-bar-height', height);
-    } else if (rootStyle.getPropertyValue('--top-bar-height')) rootStyle.removeProperty('--top-bar-height');
   }
 
   function applyLayout(next) {
     layout = next;
     wallet.style.maxWidth = `${layout.available}px`;
+    // Percentages follow the wallet's animated width, keeping its edges clear of both controls.
+    wallet.style.transform = `translateX(clamp(calc(${layout.leadingLimit}px - ${layout.headerHalf}px + 50%), 0px, calc(${layout.trailingLimit}px - ${layout.headerHalf}px - 50%)))`;
   }
 
   function measureWallet(text) {
@@ -122,7 +105,6 @@ export function initWallet() {
     wallet.style.minWidth = `${minimumWidth}px`;
     const width = Math.min(requestedWidth ?? textWidth, layout.available);
     if (wallet.style.width !== `${width}px`) wallet.style.width = `${width}px`;
-    syncHeaderOffset();
   }
 
   const counter = createWalletCounter({
@@ -161,7 +143,6 @@ export function initWallet() {
       const next = readLayout();
       const changed = fontsChanged || next.signature !== layout?.signature;
       fontsChanged = false;
-      syncHeaderOffset();
       if (!changed) return;
       applyLayout(next);
       finishBalance();
@@ -269,7 +250,7 @@ export function initWallet() {
   });
   render({ animate: false });
   const layoutObserver = new ResizeObserver(() => scheduleLayout());
-  for (const node of [header, addButton, coinSwitch, topBar].filter(Boolean)) layoutObserver.observe(node);
+  for (const node of [header, addButton, coinSwitch, leadingControl].filter(Boolean)) layoutObserver.observe(node);
   if (document.fonts) {
     document.fonts.ready.then(() => scheduleLayout(true));
     document.fonts.addEventListener('loadingdone', () => scheduleLayout(true));

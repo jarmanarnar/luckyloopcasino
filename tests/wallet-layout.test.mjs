@@ -10,10 +10,11 @@ const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 
 async function walletPage({ font = 16, width = 320, saved } = {}) {
   const events = {}, frames = [], observers = [], calls = [];
   const rootProperties = new Map();
+  const rootWrites = [];
   const rootStyle = {
-    setProperty: (key, value) => rootProperties.set(key, value),
+    setProperty: (key, value) => { rootWrites.push({ key, value }); rootProperties.set(key, value); },
     getPropertyValue: key => rootProperties.get(key) || '',
-    removeProperty: key => rootProperties.delete(key),
+    removeProperty: key => { rootWrites.push({ key }); rootProperties.delete(key); },
   };
   const node = () => ({
     textContent: '', style: {}, dataset: {}, attributes: {}, events: {}, width: 0, height: 0,
@@ -22,7 +23,7 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
     setAttribute(key, value) { this.attributes[key] = value; },
     getBoundingClientRect() { return { width: this.width, height: this.height }; },
   });
-  const selectors = ['.top-bar', '#coin-wallet', '#wallet-dialog', '#coin-wallet > .wallet-balance-copy',
+  const selectors = ['.top-bar', '.header-context', '#coin-wallet', '#wallet-dialog', '#coin-wallet > .wallet-balance-copy',
     '#wallet-balance-value', '#wallet-currency-label', '#coin-type-switch', '#currency-coin',
     '#wallet-add', '#wallet-add-art', '#wallet-add-credit', '#wallet-status', '#wallet-gc-total', '#wallet-sc-total'];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, node()]));
@@ -83,43 +84,75 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
   vm.runInNewContext(`${source}\ninitWallet();`, context);
   await Promise.resolve();
   flush();
-  return { nodes, header, events, calls, topBar, observers, rootStyle, flush };
+  return { nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, flush };
 }
 
 test('height-only viewport changes keep the balance counter running', async () => {
   const page = await walletPage();
-  assert.equal(page.header.dataset.walletReflow, 'false');
+  assert.equal(page.header.dataset.walletReflow, undefined);
   page.nodes['#coin-type-switch'].events.click();
   const before = page.calls.length;
   page.topBar.height += 5;
   page.events.resize(); page.flush();
   assert.equal(page.calls.length, before);
   assert.equal(page.rootStyle.getPropertyValue('--top-bar-height'), '');
+  assert.deepEqual(page.rootWrites, []);
   assert.ok(!page.observers[0].nodes.includes(page.nodes['#coin-wallet']));
+  assert.ok(!page.observers[0].nodes.includes(page.topBar));
 });
 
-test('large saved balances use full width without switching layout on currency changes', async () => {
-  const page = await walletPage({ saved: { currency: 'SC', balances: { GC: 999999999, SC: 1500 } } });
-  assert.equal(page.header.dataset.walletReflow, 'true');
-  assert.equal(parseFloat(page.nodes['#coin-wallet'].style.maxWidth), page.header.width);
+for (const width of [318, 320, 323, 360, 390]) {
+  test(`actual GC and SC balances keep a single header layout at ${width}px`, async () => {
+    for (const currency of ['GC', 'SC']) {
+      const balances = { GC: 130000, SC: 8500 };
+      const page = await walletPage({ width, saved: { currency, balances } });
+      assert.equal(page.nodes['#wallet-balance-value'].textContent, formatBalance(currency, balances[currency]));
+      assert.equal(page.header.dataset.walletReflow, undefined);
+      const available = page.header.width - page.nodes['#coin-type-switch'].width - 8;
+      assert.equal(parseFloat(page.nodes['#coin-wallet'].style.maxWidth), available);
+      const transform = page.nodes['#coin-wallet'].style.transform;
+      assert.match(transform, /^translateX\(clamp\(/);
+      page.nodes['#coin-type-switch'].events.click();
+      assert.equal(page.nodes['#coin-wallet'].style.transform, transform);
+      assert.equal(parseFloat(page.nodes['#coin-wallet'].style.maxWidth), available);
+      assert.equal(page.header.dataset.walletReflow, undefined);
+      assert.deepEqual(page.rootWrites, []);
+    }
+  });
+}
+
+test('maximum balances use the actual collision lane without changing header rows or height', async () => {
+  const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 999999999, SC: 999999999 } } });
+  const wallet = page.nodes['#coin-wallet'];
+  const available = page.header.width - page.nodes['#coin-type-switch'].width - 8;
+  assert.equal(parseFloat(wallet.style.maxWidth), available);
+  assert.ok(parseFloat(wallet.style.width) <= available);
+  assert.equal(page.header.dataset.walletReflow, undefined);
   page.nodes['#coin-type-switch'].events.click();
-  assert.equal(page.header.dataset.walletReflow, 'true');
-  page.header.width = 1200;
-  page.events.resize(); page.flush();
-  assert.equal(page.header.dataset.walletReflow, 'false');
-  assert.equal(page.rootStyle.getPropertyValue('--top-bar-height'), '');
+  assert.equal(parseFloat(wallet.style.maxWidth), available);
+  assert.equal(page.header.dataset.walletReflow, undefined);
+  assert.deepEqual(page.rootWrites, []);
 });
 
-test('enlarged text reflows and physical height changes only update the sticky offset', async () => {
-  const page = await walletPage({ font: 32 });
-  assert.equal(page.header.dataset.walletReflow, 'true');
-  assert.ok(parseFloat(page.nodes['#coin-wallet'].style.maxWidth) > 0);
-  page.nodes['#coin-type-switch'].events.click();
-  const before = page.calls.length;
-  page.topBar.height = 256;
+test('showing the game back button updates collision bounds without changing header rows', async () => {
+  const page = await walletPage();
+  const leading = page.nodes['.header-context'];
+  assert.ok(page.observers[0].nodes.includes(leading));
+  const initial = parseFloat(page.nodes['#coin-wallet'].style.maxWidth);
+  const previousTransform = page.nodes['#coin-wallet'].style.transform;
+  leading.width = 44;
   page.observers[0].callback(); page.flush();
-  assert.equal(page.rootStyle.getPropertyValue('--top-bar-height'), '256px');
-  assert.equal(page.calls.length, before);
+  assert.equal(parseFloat(page.nodes['#coin-wallet'].style.maxWidth), initial - 44);
+  assert.notEqual(page.nodes['#coin-wallet'].style.transform, previousTransform);
+  assert.equal(page.header.dataset.walletReflow, undefined);
+  assert.deepEqual(page.rootWrites, []);
+});
+
+test('enlarged text keeps positive collision space and never requests a stacked header', async () => {
+  const page = await walletPage({ font: 32 });
+  assert.equal(page.header.dataset.walletReflow, undefined);
+  assert.ok(parseFloat(page.nodes['#coin-wallet'].style.maxWidth) > 0);
+  assert.deepEqual(page.rootWrites, []);
 });
 
 test('font loading remeasures balances even if CSS font declarations stay the same', async () => {
