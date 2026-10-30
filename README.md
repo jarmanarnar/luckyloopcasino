@@ -47,7 +47,7 @@ All app imports and assets are relative so `public/` can also be hosted as stati
 
 ## Hosting
 
-`vercel.json` publishes only `public/` as a static site at the domain root. No installation, build process, server function or environment variables are needed. The branded local path and previous prototype paths redirect to the hosted root, preserving game fragments. Keep the local server for development only.
+The public site is hosted at [LuckyLoop Casino](https://jarmanarnar.github.io/luckyloopcasino/). `.github/workflows/pages.yml` checks the source and runs the existing tests before publishing only `public/` to GitHub Pages on each push to `main`. It can also be run manually from GitHub Actions. No installation, build process, server function or environment variables are needed. Keep the local server for development only; its legacy-path redirects apply locally.
 
 Demo wallet state is saved per browser and origin. A phone or the hosted address starts with its own demo balance; it does not share balances with localhost.
 
