@@ -1,4 +1,5 @@
 import { CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit } from './wallet-state.js';
+import { createWalletCounter } from './wallet-counter.js';
 
 const STORAGE_KEY = 'luckyloopcasino-demo-wallet-v1';
 const LEGACY_STORAGE_KEYS = ['luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
@@ -37,8 +38,87 @@ export function initWallet() {
   }
   let state = createWalletState(readSaved());
   const selectors = [...document.querySelectorAll('[data-wallet-currency]')];
+  const header = wallet.parentElement;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const valueMeasure = document.createElement('span');
+  valueMeasure.className = 'wallet-value-measure';
+  valueMeasure.setAttribute('aria-hidden', 'true');
+  balanceButton.append(valueMeasure);
+  let layout;
+  let transition = null;
+  let targetAmount = 0;
+  let formatAmount = String;
+  let renderedCurrency = null;
 
-  function render() {
+  function measureWallet(text) {
+    if (!layout) {
+      const outer = getComputedStyle(wallet);
+      const button = getComputedStyle(balanceButton);
+      const copy = getComputedStyle(balanceValue.parentElement);
+      const grid = getComputedStyle(header);
+      const px = value => parseFloat(value) || 0;
+      layout = {
+        chrome: px(outer.paddingLeft) + px(outer.paddingRight) + px(outer.borderLeftWidth)
+          + px(outer.borderRightWidth) + px(outer.columnGap) + addButton.offsetWidth
+          + px(button.paddingLeft) + px(button.paddingRight) + px(copy.columnGap),
+        available: Math.max(0, header.clientWidth - 2 * (coinSwitch.offsetWidth + px(grid.columnGap))),
+      };
+      wallet.style.maxWidth = `${layout.available}px`;
+    }
+    valueMeasure.textContent = text;
+    const naturalWidth = Math.ceil(layout.chrome + currencyLabel.getBoundingClientRect().width
+      + valueMeasure.getBoundingClientRect().width);
+    return Math.min(naturalWidth, layout.available);
+  }
+
+  function fitWallet(requestedWidth) {
+    const naturalWidth = measureWallet(balanceValue.textContent);
+    const width = Math.min(requestedWidth ?? naturalWidth, layout.available);
+    if (wallet.style.width !== `${width}px`) wallet.style.width = `${width}px`;
+    const textRoom = wallet.getBoundingClientRect().width - layout.chrome - currencyLabel.getBoundingClientRect().width;
+    const textWidth = valueMeasure.getBoundingClientRect().width;
+    const scale = Math.min(1, Math.max(0, textRoom) / Math.max(1, textWidth));
+    // A narrow screen still shows the whole amount, including intermediate count values.
+    balanceValue.style.fontSize = scale < .999 ? `calc(var(--wallet-value-size) * ${scale})` : '';
+  }
+
+  const counter = createWalletCounter({
+    duration: 720,
+    onFrame(text, value) {
+      if (balanceValue.textContent !== text) balanceValue.textContent = text;
+      if (transition) {
+        const progress = value === targetAmount ? 1
+          : Math.max(0, Math.min(1, (value - transition.fromAmount) / (targetAmount - transition.fromAmount)));
+        fitWallet(transition.fromWidth + (transition.toWidth - transition.fromWidth) * progress);
+        if (progress === 1) transition = null;
+      } else fitWallet();
+    },
+  });
+
+  function finishBalance() {
+    transition = null;
+    counter.immediate(targetAmount, formatAmount);
+  }
+
+  function updateBalance(amount, formatter, animate, currencyChanged) {
+    counter.cancel();
+    targetAmount = amount;
+    formatAmount = formatter;
+    if (!animate || reducedMotion.matches || document.hidden || counter.value === amount) {
+      finishBalance();
+      return;
+    }
+    transition = {
+      fromAmount: counter.value,
+      fromWidth: wallet.getBoundingClientRect().width,
+      toWidth: measureWallet(formatter(amount)),
+    };
+    const countFormatter = value => currencyChanged && state.currency === 'SC' && value !== amount
+      ? formatBalance('GC', value) : formatter(value);
+    counter.animateTo(amount, countFormatter);
+  }
+
+  function render({ animate = true } = {}) {
     const code = state.currency;
     wallet.dataset.currency = code;
     dialog.dataset.currency = code;
@@ -47,7 +127,11 @@ export function initWallet() {
     addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
     coinSwitch.setAttribute('aria-checked', String(code === 'SC'));
     coinSwitch.title = `Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`;
-    balanceValue.textContent = formatBalance(code, state.balances[code]);
+    const precision = 10 ** CURRENCIES[code].decimals;
+    const formatter = value => formatBalance(code, value * precision);
+    const amount = state.balances[code] / precision;
+    updateBalance(amount, formatter, animate, renderedCurrency !== null && renderedCurrency !== code);
+    renderedCurrency = code;
     balanceButton.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
     addButton.setAttribute('aria-label', `Add demo ${CURRENCIES[code].name}`);
     creditButton.textContent = `Add ${formatBalance(code, CURRENCIES[code].credit)} ${code}`;
@@ -110,5 +194,20 @@ export function initWallet() {
     state = createWalletState(readSaved());
     render();
   });
-  render();
+  window.addEventListener('resize', () => {
+    layout = null;
+    if (transition) {
+      transition.toWidth = measureWallet(formatAmount(targetAmount));
+      transition.fromWidth = Math.min(transition.fromWidth, layout.available);
+      const progress = Math.max(0, Math.min(1, (counter.value - transition.fromAmount) / (targetAmount - transition.fromAmount)));
+      fitWallet(transition.fromWidth + (transition.toWidth - transition.fromWidth) * progress);
+    } else fitWallet();
+  });
+  reducedMotion.addEventListener('change', () => {
+    if (reducedMotion.matches) finishBalance();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) finishBalance();
+  });
+  render({ animate: false });
 }

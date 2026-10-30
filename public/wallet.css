@@ -34,7 +34,7 @@
   align-items: center;
   justify-self: center;
   gap: 2px;
-  width: 280px;
+  width: max-content;
   height: var(--wallet-height);
   padding: 3px;
   min-width: 0;
@@ -46,6 +46,7 @@
 }
 .wallet-balance-button {
   box-sizing: border-box;
+  position: relative;
   display: flex;
   flex: 1;
   align-items: center;
@@ -58,11 +59,13 @@
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
+  overflow: hidden;
 }
 .wallet-balance-button:hover { background: #ffffff07; }
 .wallet-balance-copy { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; max-width: 100%; }
 #wallet-currency-label { flex: none; color: var(--text-primary); font-size: var(--wallet-code-size); font-weight: 800; line-height: 1; }
-#wallet-balance-value { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: 1; white-space: nowrap; text-overflow: ellipsis; }
+#wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: 1; white-space: nowrap; text-overflow: ellipsis; }
+.wallet-value-measure { position: absolute; top: 0; left: 0; width: max-content; visibility: hidden; pointer-events: none; }
 #wallet-add {
   box-sizing: border-box;
   flex: none;
@@ -156,7 +159,7 @@
 .wallet-dialog :focus-visible, .coin-wallet :focus-visible, .wallet-switch:focus-visible { outline: 2px solid #eeeef2; outline-offset: 3px; }
 
 @media (max-width: 1024px) {
-  .coin-wallet { width: 240px; --wallet-height: 52px; --wallet-plus-size: 44px; --wallet-value-size: 22px; --wallet-code-size: 18px; }
+  .coin-wallet { --wallet-height: 52px; --wallet-plus-size: 44px; --wallet-value-size: 22px; --wallet-code-size: 18px; }
   .wallet-switch { --switch-width: 88px; --switch-coin-size: 44px; }
 }
 @media (max-width: 640px), (max-width: 1024px) and (max-height: 500px) {
@@ -164,7 +167,7 @@
   .header-context .game-back { width: 36px; height: 36px; }
 }
 @media (max-width: 640px) {
-  .coin-wallet { width: clamp(148px, calc(100vw - 192px), 198px); --wallet-value-size: clamp(17px, 5vw, 20px); --wallet-code-size: clamp(12px, 4vw, 16px); }
+  .coin-wallet { --wallet-value-size: clamp(17px, 5vw, 20px); --wallet-code-size: clamp(12px, 4vw, 16px); }
   .wallet-balance-button { padding: 0 3px; }
   .wallet-balance-copy { gap: 5px; }
   .wallet-switch { --switch-width: 80px; }
