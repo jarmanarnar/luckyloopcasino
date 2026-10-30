@@ -3,7 +3,7 @@
       color-scheme: dark;
       background: #000;
       --top-bar-height: calc(72px + env(safe-area-inset-top, 0px));
-      --top-bar-background: #0d0d0f;
+      --top-bar-background: #000;
       --top-bar-divider: #232326;
       --page-max-width: 1200px;
       --page-gutter: 32px;
