@@ -9,7 +9,7 @@ export function initWallet() {
   if (initialized) return;
   const wallet = document.querySelector('#coin-wallet');
   const dialog = document.querySelector('#wallet-dialog');
-  const balanceButton = document.querySelector('#wallet-balance-button');
+  const balanceCopy = document.querySelector('#coin-wallet > .wallet-balance-copy');
   const balanceValue = document.querySelector('#wallet-balance-value');
   const currencyLabel = document.querySelector('#wallet-currency-label');
   const coinSwitch = document.querySelector('#coin-type-switch');
@@ -19,7 +19,7 @@ export function initWallet() {
   const creditButton = document.querySelector('#wallet-add-credit');
   const status = document.querySelector('#wallet-status');
   const totals = { GC: document.querySelector('#wallet-gc-total'), SC: document.querySelector('#wallet-sc-total') };
-  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt, creditButton, status,
+  if (![wallet, dialog, balanceCopy, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt, creditButton, status,
     ...Object.values(totals)].every(Boolean)) return;
   initialized = true;
 
@@ -43,7 +43,7 @@ export function initWallet() {
   const valueMeasure = document.createElement('span');
   valueMeasure.className = 'wallet-value-measure';
   valueMeasure.setAttribute('aria-hidden', 'true');
-  balanceButton.append(valueMeasure);
+  balanceCopy.append(valueMeasure);
   let layout;
   let targetAmount = 0;
   let formatAmount = String;
@@ -53,14 +53,13 @@ export function initWallet() {
   function measureWallet(text) {
     if (!layout) {
       const outer = getComputedStyle(wallet);
-      const button = getComputedStyle(balanceButton);
-      const copy = getComputedStyle(balanceValue.parentElement);
+      const copy = getComputedStyle(balanceCopy);
       const grid = getComputedStyle(header);
       const px = value => parseFloat(value) || 0;
       layout = {
         chrome: px(outer.paddingLeft) + px(outer.paddingRight) + px(outer.borderLeftWidth)
           + px(outer.borderRightWidth) + px(outer.columnGap) + addButton.offsetWidth
-          + px(button.paddingLeft) + px(button.paddingRight) + px(copy.columnGap),
+          + px(copy.paddingLeft) + px(copy.paddingRight) + px(copy.columnGap),
         available: Math.max(0, header.clientWidth - 2 * (coinSwitch.offsetWidth + px(grid.columnGap))),
       };
       wallet.style.maxWidth = `${layout.available}px`;
@@ -139,7 +138,7 @@ export function initWallet() {
     const amount = state.balances[code] / precision;
     updateBalance(amount, formatter, animate, renderedCurrency !== null && renderedCurrency !== code);
     renderedCurrency = code;
-    balanceButton.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
+    wallet.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
     addButton.setAttribute('aria-label', `Add demo ${CURRENCIES[code].name}`);
     creditButton.textContent = `Add ${formatBalance(code, CURRENCIES[code].credit)} ${code}`;
     for (const [currency, total] of Object.entries(totals)) {
@@ -157,12 +156,11 @@ export function initWallet() {
     catch { /* Session interactions remain available when browser storage is disabled. */ }
   }
 
-  function openWallet(focusCredit = false) {
+  function openWallet() {
     status.textContent = '';
-    balanceButton.setAttribute('aria-expanded', 'true');
     addButton.setAttribute('aria-expanded', 'true');
     if (!dialog.open) dialog.showModal();
-    if (focusCredit) creditButton.focus({ preventScroll: true });
+    creditButton.focus({ preventScroll: true });
   }
 
   function changeCurrency(code) {
@@ -175,8 +173,7 @@ export function initWallet() {
   }
   selectors.forEach(button => button.addEventListener('click', () => changeCurrency(button.dataset.walletCurrency)));
   coinSwitch.addEventListener('click', () => changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
-  balanceButton.addEventListener('click', () => openWallet());
-  addButton.addEventListener('click', () => openWallet(true));
+  addButton.addEventListener('click', () => openWallet());
   creditButton.addEventListener('click', () => {
     const previous = state.balances[state.currency];
     state = addDemoCredit(state);
@@ -187,7 +184,6 @@ export function initWallet() {
       : `Added ${formatBalance(code, state.balances[code] - previous)} ${code}. Balance: ${formatBalance(code, state.balances[code])} ${code}.`;
   });
   dialog.addEventListener('close', () => {
-    balanceButton.setAttribute('aria-expanded', 'false');
     addButton.setAttribute('aria-expanded', 'false');
   });
   dialog.addEventListener('click', event => {

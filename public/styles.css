@@ -2,7 +2,7 @@
     :root {
       color-scheme: dark;
       background: #000;
-      --top-bar-height: calc(72px + env(safe-area-inset-top, 0px));
+      --top-bar-height: calc(94px + env(safe-area-inset-top, 0px));
       --top-bar-background: #000;
       --top-bar-divider: #232326;
       --page-max-width: 1200px;
@@ -451,7 +451,6 @@
     @media (max-width: 800px) { :root { --shelf-visible-cards: 4; } }
     @media (max-width: 640px) {
       :root {
-        --top-bar-height: calc(64px + env(safe-area-inset-top, 0px));
         --page-gutter: 16px;
         --hero-radius: 16px;
         --hero-aspect-ratio: 2 / 1;
