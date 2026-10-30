@@ -45,6 +45,12 @@ The wallet is local demo state and is independent of provider balances. Game eng
 
 All app imports and assets are relative so `public/` can also be hosted as static files. The local server uses the branded `/luckyloopcasino/` path.
 
+## Hosting
+
+`vercel.json` publishes only `public/` as a static site at the domain root. No installation, build process, server function or environment variables are needed. The branded local path and previous prototype paths redirect to the hosted root, preserving game fragments. Keep the local server for development only.
+
+Demo wallet state is saved per browser and origin. A phone or the hosted address starts with its own demo balance; it does not share balances with localhost.
+
 ## Updating the catalog
 
 `public/catalog.js` is the active reviewed catalog. Keep `removed-games.js` when importing new data or curating picks; the archived source list includes games the owner removed. Update provider counts when changing the active catalog. Keep real provider IDs and launch URLs unchanged when renaming the platform.
