@@ -5,6 +5,7 @@
       /* One bounded scale drives component sizes; viewport changes never reset it. */
       --fluid-step: clamp(0rem, calc(.833333vw - .166667rem), .5rem);
       --header-control-size: calc(3rem + var(--fluid-step));
+      --header-side-control-width: calc(4rem + 2.25 * var(--fluid-step));
       --header-padding: calc(.75rem + .75 * var(--fluid-step));
       --header-gap: calc(.25rem + .5 * var(--fluid-step));
       --top-bar-height: calc(var(--header-control-size) + 2 * var(--header-padding) + env(safe-area-inset-top, 0px));
@@ -74,14 +75,6 @@
       width: var(--page-content-width);
       min-height: var(--header-control-size);
       margin: auto;
-    }
-    .icon-button.game-back {
-      justify-self: start;
-      width: auto;
-      padding-inline: 8px;
-      gap: 8px;
-      border-radius: 8px;
-      font-size: 14px;
     }
     body[data-view="game"] {
       display: grid;

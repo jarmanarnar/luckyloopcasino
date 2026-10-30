@@ -5,7 +5,24 @@
 }
 
 .header-context { display: flex; align-items: center; min-width: 0; justify-self: start; }
-.header-context .game-back { flex: none; width: var(--touch-target); height: var(--touch-target); padding: 0; border: 1px solid #292a30; background: #16171c; }
+.header-context > .icon-button {
+  box-sizing: border-box;
+  flex: none;
+  width: var(--header-side-control-width);
+  height: var(--header-control-size);
+  padding: 0;
+  border: 1px solid var(--wallet-surface);
+  border-radius: 999px;
+  background: var(--wallet-surface);
+  box-shadow: none;
+  color: var(--catalog-accent);
+}
+.header-context > .icon-button svg {
+  width: calc(1.5rem + .5 * var(--fluid-step));
+  height: calc(1.5rem + .5 * var(--fluid-step));
+}
+.header-context > .icon-button:hover,
+.header-context > .icon-button[aria-expanded="true"] { background: var(--wallet-surface); filter: brightness(1.08); }
 
 .coin-wallet, .wallet-dialog {
   --wallet-accent: #f0c66c;
@@ -84,7 +101,7 @@
 #wallet-add-art { display: block; width: var(--wallet-art-size); height: var(--wallet-art-size); object-fit: contain; pointer-events: none; user-select: none; }
 
 .wallet-switch {
-  --switch-width: calc(4rem + 2.25 * var(--fluid-step));
+  --switch-width: var(--header-side-control-width);
   --switch-height: var(--header-control-size);
   --switch-coin-size: calc(2.25rem + var(--fluid-step));
   --switch-coin-inset: calc((var(--switch-height) - var(--switch-coin-size) - 2px) / 2);
