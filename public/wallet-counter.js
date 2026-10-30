@@ -1,3 +1,17 @@
+export function resolveWalletFrame({
+  formatted, integer, deferDecimals, fromWidth, toWidth, previousWidth, measure,
+}) {
+  const shrinking = toWidth < fromWidth;
+  const natural = measure(formatted);
+  const defer = deferDecimals && shrinking && natural > fromWidth;
+  const text = defer ? integer : formatted;
+  const desired = defer ? fromWidth : natural;
+  const width = shrinking
+    ? Math.max(toWidth, Math.min(previousWidth, desired))
+    : Math.min(toWidth, Math.max(previousWidth, desired));
+  return { text, width };
+}
+
 // Values are display coins; the caller supplies GC/SC formatting per transition.
 export function createWalletCounter({
   onFrame,

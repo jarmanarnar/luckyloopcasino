@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWalletCounter } from '../public/wallet-counter.js';
+import { createWalletCounter, resolveWalletFrame } from '../public/wallet-counter.js';
 
 function harness(options = {}) {
   let time = 0;
@@ -119,4 +119,67 @@ test('zero duration publishes the final value without scheduling a frame', () =>
   run.counter.animateTo(42.75, value => value.toFixed(2));
   assert.deepEqual(run.output.at(-1), { text: '42.75', value: 42.75 });
   assert.equal(run.pending, 0);
+});
+
+function resolveTrace({ fromWidth, toWidth, deferDecimals = true, frames }) {
+  let previousWidth = fromWidth;
+  return frames.map(([formatted, integer]) => {
+    const result = resolveWalletFrame({
+      formatted, integer, deferDecimals, fromWidth, toWidth, previousWidth,
+      measure: text => text.length,
+    });
+    previousWidth = result.width;
+    return result;
+  });
+}
+
+test('shrinking currency entry shows decimals as soon as the full formatted text fits', () => {
+  const output = resolveTrace({
+    fromWidth: 7, toWidth: 5,
+    frames: [
+      ['130,000.00', '130,000'], ['50,000.00', '50,000'],
+      ['8,500.00', '8,500'], ['850.00', '850'], ['185.00', '185'], ['85.00', '85'],
+    ],
+  });
+  assert.deepEqual(output, [
+    { text: '130,000', width: 7 }, { text: '50,000', width: 7 },
+    { text: '8,500', width: 7 }, { text: '850.00', width: 6 },
+    { text: '185.00', width: 6 }, { text: '85.00', width: 5 },
+  ]);
+});
+
+test('a fractional SC target keeps decimals before crossing below one', () => {
+  const output = resolveTrace({
+    fromWidth: 7, toWidth: 4,
+    frames: [['1,000.85', '1,001'], ['99.85', '100'], ['1.85', '2'], ['0.99', '1'], ['0.85', '1']],
+  });
+  assert.equal(output[1].text, '99.85');
+  assert.equal(output[2].text, '1.85');
+  assert.equal(output[3].text, '0.99');
+  assert.deepEqual(output.at(-1), { text: '0.85', width: 4 });
+  assert.ok(output.every(frame => frame.text !== '0'));
+});
+
+test('growing from zero shows fractional formatting immediately instead of deferring it', () => {
+  const output = resolveTrace({
+    fromWidth: 1, toWidth: 5,
+    frames: [['0.00', '0'], ['0.85', '1'], ['5.27', '5'], ['15.27', '15']],
+  });
+  assert.deepEqual(output.map(frame => frame.text), ['0.00', '0.85', '5.27', '15.27']);
+  assert.deepEqual(output.map(frame => frame.width), [4, 4, 4, 5]);
+});
+
+test('frame widths never reverse or overshoot their endpoints', () => {
+  for (const [fromWidth, toWidth] of [[7, 4], [1, 5]]) {
+    const output = resolveTrace({
+      fromWidth, toWidth, deferDecimals: false,
+      frames: [['123456789', ''], ['1', ''], ['12345678', ''], ['12', ''], ['1234567', '']],
+    });
+    let previous = fromWidth;
+    for (const { width } of output) {
+      assert.ok(width >= Math.min(fromWidth, toWidth) && width <= Math.max(fromWidth, toWidth));
+      assert.ok(toWidth < fromWidth ? width <= previous : width >= previous);
+      previous = width;
+    }
+  }
 });

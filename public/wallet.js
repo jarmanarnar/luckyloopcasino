@@ -1,5 +1,5 @@
 import { CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit } from './wallet-state.js';
-import { createWalletCounter } from './wallet-counter.js';
+import { createWalletCounter, resolveWalletFrame } from './wallet-counter.js';
 
 const STORAGE_KEY = 'luckyloopcasino-demo-wallet-v1';
 const LEGACY_STORAGE_KEYS = ['luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
@@ -48,6 +48,7 @@ export function initWallet() {
   let targetAmount = 0;
   let formatAmount = String;
   let renderedCurrency = null;
+  let animation = null;
 
   function measureWallet(text) {
     if (!layout) {
@@ -67,23 +68,37 @@ export function initWallet() {
     valueMeasure.textContent = text;
     const naturalWidth = Math.ceil(layout.chrome + currencyLabel.getBoundingClientRect().width
       + valueMeasure.getBoundingClientRect().width);
-    return Math.min(naturalWidth, layout.available);
+    return naturalWidth;
   }
 
-  function fitWallet() {
-    const width = measureWallet(balanceValue.textContent);
+  function fitWallet(requestedWidth) {
+    const width = Math.min(requestedWidth ?? measureWallet(balanceValue.textContent), layout.available);
     if (wallet.style.width !== `${width}px`) wallet.style.width = `${width}px`;
   }
 
   const counter = createWalletCounter({
     duration: 720,
-    onFrame(text) {
-      if (balanceValue.textContent !== text) balanceValue.textContent = text;
-      fitWallet();
+    onFrame(formatted, value) {
+      if (animation && value !== targetAmount) {
+        const frame = resolveWalletFrame({
+          ...animation,
+          formatted,
+          integer: formatBalance('GC', value),
+          measure: measureWallet,
+        });
+        balanceValue.textContent = frame.text;
+        animation.previousWidth = frame.width;
+        fitWallet(frame.width);
+      } else {
+        animation = null;
+        balanceValue.textContent = formatted;
+        fitWallet();
+      }
     },
   });
 
   function finishBalance() {
+    animation = null;
     counter.immediate(targetAmount, formatAmount);
   }
 
@@ -95,9 +110,14 @@ export function initWallet() {
       finishBalance();
       return;
     }
-    const countFormatter = value => currencyChanged && state.currency === 'SC' && value !== amount
-      ? formatBalance('GC', value) : formatter(value);
-    counter.animateTo(amount, countFormatter);
+    const fromWidth = wallet.getBoundingClientRect().width;
+    animation = {
+      deferDecimals: currencyChanged && state.currency === 'SC',
+      fromWidth,
+      toWidth: Math.min(measureWallet(formatter(amount)), layout.available),
+      previousWidth: fromWidth,
+    };
+    counter.animateTo(amount, formatter);
   }
 
   function render({ animate = true } = {}) {
@@ -178,7 +198,7 @@ export function initWallet() {
   });
   window.addEventListener('resize', () => {
     layout = null;
-    fitWallet();
+    finishBalance();
   });
   reducedMotion.addEventListener('change', () => {
     if (reducedMotion.matches) finishBalance();
