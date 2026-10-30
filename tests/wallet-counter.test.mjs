@@ -73,8 +73,11 @@ test('uses transition formatting and preserves the exact fractional final value'
   const run = harness();
   run.counter.immediate(125000);
   run.counter.animateTo(15.27, value => value.toFixed(2));
-  assert.equal(run.output.at(-1).text, '125000.00');
+  assert.equal(run.output.length, 1);
+  assert.deepEqual(run.output.at(-1), { text: '125000', value: 125000 });
   run.frame(249);
+  assert.equal(run.output.length, 2);
+  assert.match(run.output.at(-1).text, /^\d+\.\d{2}$/);
   assert.ok(run.counter.value > 15.27 && run.counter.value < 125000);
   run.frame(500);
   assert.deepEqual(run.output.at(-1), { text: '15.27', value: 15.27 });

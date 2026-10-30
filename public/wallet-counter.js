@@ -41,8 +41,6 @@ export function createWalletCounter({
     const from = value;
     const started = now();
     const run = revision;
-    emit();
-    if (run !== revision) return;
 
     function tick() {
       if (run !== revision) return;
