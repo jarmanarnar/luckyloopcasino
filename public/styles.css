@@ -212,6 +212,7 @@
     }
     .catalog-category[aria-pressed="true"] .game-shelf__icon { color: var(--catalog-accent); }
     .catalog-shelves {
+      container: game-catalog / inline-size;
       box-sizing: border-box;
       min-width: 0;
       min-height: max(0px, calc(100dvh - var(--top-bar-height) - var(--catalog-toolbar-height) - 32px));
@@ -319,6 +320,21 @@
       grid-template-columns: repeat(auto-fill, var(--game-card-width));
       overflow: visible;
       scroll-snap-type: none;
+    }
+    @supports (width: 1cqi) {
+      /* Fit whole columns to the actual content lane, shared by grids and rails. */
+      .game-track {
+        --game-columns: 1;
+        --game-card-width: calc((100cqi - (var(--game-columns) - 1) * var(--game-card-gap)) / var(--game-columns));
+      }
+      .game-track.is-grid { grid-template-columns: repeat(var(--game-columns), minmax(0, 1fr)); }
+      @container game-catalog (min-width: 18rem) { .game-track { --game-columns: 2; } }
+      @container game-catalog (min-width: 28rem) { .game-track { --game-columns: 3; } }
+      @container game-catalog (min-width: 38rem) { .game-track { --game-columns: 4; } }
+      @container game-catalog (min-width: 48rem) { .game-track { --game-columns: 5; } }
+      @container game-catalog (min-width: 60rem) { .game-track { --game-columns: 6; } }
+      @container game-catalog (min-width: 72rem) { .game-track { --game-columns: 7; } }
+      @container game-catalog (min-width: 84rem) { .game-track { --game-columns: 8; } }
     }
     .game-card {
       flex: 0 0 var(--game-card-width);
