@@ -14,10 +14,11 @@ export function initWallet() {
   const coinSwitch = document.querySelector('#coin-type-switch');
   const switchCoin = document.querySelector('#currency-coin');
   const addButton = document.querySelector('#wallet-add');
+  const addArt = document.querySelector('#wallet-add-art');
   const creditButton = document.querySelector('#wallet-add-credit');
   const status = document.querySelector('#wallet-status');
   const totals = { GC: document.querySelector('#wallet-gc-total'), SC: document.querySelector('#wallet-sc-total') };
-  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, creditButton, status,
+  if (![wallet, dialog, balanceButton, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt, creditButton, status,
     ...Object.values(totals)].every(Boolean)) return;
   initialized = true;
 
@@ -43,6 +44,7 @@ export function initWallet() {
     dialog.dataset.currency = code;
     currencyLabel.textContent = code;
     switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
+    addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
     coinSwitch.setAttribute('aria-checked', String(code === 'SC'));
     coinSwitch.title = `Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`;
     balanceValue.textContent = formatBalance(code, state.balances[code]);
