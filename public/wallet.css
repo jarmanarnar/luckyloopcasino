@@ -53,7 +53,7 @@
   justify-content: center;
   min-width: 0;
   height: var(--wallet-plus-size);
-  padding: 0 12px;
+  padding: 0 12px 0 28px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -61,7 +61,6 @@
   cursor: pointer;
   overflow: hidden;
 }
-.wallet-balance-button:hover { background: #ffffff07; }
 .wallet-balance-copy { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; max-width: 100%; }
 #wallet-currency-label { flex: none; color: var(--text-primary); font-size: var(--wallet-value-size); font-weight: 800; line-height: 1; }
 #wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: 1; white-space: nowrap; text-overflow: ellipsis; }
@@ -168,9 +167,12 @@
 }
 @media (max-width: 640px) {
   .coin-wallet { --wallet-value-size: clamp(17px, 5vw, 20px); }
-  .wallet-balance-button { padding: 0 3px; }
+  .wallet-balance-button { padding: 0 3px 0 11px; }
   .wallet-balance-copy { gap: 5px; }
   .wallet-switch { --switch-width: 80px; }
+}
+@media (min-width: 360px) and (max-width: 374px) {
+  .wallet-balance-button { padding-left: 3px; }
 }
 @media (max-width: 359px) {
   .coin-wallet { --wallet-height: 48px; --wallet-plus-size: 40px; --wallet-value-size: 17px; }
