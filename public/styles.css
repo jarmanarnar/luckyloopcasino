@@ -336,7 +336,7 @@
     .game-shelf__arrow:hover:not(:disabled) { background: #303036; color: #fff; }
     .game-shelf__arrow:disabled { opacity: .45; }
     @media (max-width: 48rem), (hover: none) and (pointer: coarse) {
-      .game-shelf__navigation { display: none; }
+      .game-shelf__navigation, .catalog-category-arrow { display: none; }
     }
     .shelf-see-all {
       min-height: var(--touch-target);
