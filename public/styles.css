@@ -22,8 +22,7 @@
       --section-gap: 24px;
       --catalog-toolbar-height: 64px;
       --catalog-accent: #e8bf65;
-      --catalog-active-background: #2b2417;
-      --catalog-active-border: #66502a;
+      --catalog-active-background: #222226;
       --text-primary: #eeeef2;
       --text-secondary: #9b9ba5;
       --control-hover: #1b1b20;
@@ -38,8 +37,6 @@
     body { box-sizing: border-box; min-height: 100dvh; padding-top: var(--top-bar-height); font-family: Arial, sans-serif; }
     body:has(#coin-wallet[data-currency="SC"]) {
       --catalog-accent: #8bdfb3;
-      --catalog-active-background: #172b21;
-      --catalog-active-border: #37654d;
     }
     button, input, select { font: inherit; }
     button:focus-visible, input:focus-visible, select:focus-visible,
@@ -251,13 +248,14 @@
     }
     .catalog-categories::-webkit-scrollbar { display: none; }
     .catalog-category {
+      box-sizing: border-box;
       display: inline-flex;
       align-items: center;
       gap: 8px;
       flex: none;
       height: 40px;
       padding: 0 15px;
-      border: 1px solid transparent;
+      border: 0;
       border-radius: 10px;
       background: transparent;
       color: #a5a5af;
@@ -269,10 +267,10 @@
     .catalog-category:hover { background: #1b1b20; color: #fff; }
     .catalog-category .game-shelf__icon { width: 16px; height: 16px; color: currentColor; }
     .catalog-category[aria-pressed="true"] {
-      border-color: var(--catalog-active-border);
       background: var(--catalog-active-background);
-      color: var(--catalog-accent);
+      color: var(--text-primary);
     }
+    .catalog-category[aria-pressed="true"] .game-shelf__icon { color: var(--catalog-accent); }
     .catalog-shelves {
       box-sizing: border-box;
       min-width: 0;

@@ -59,14 +59,11 @@ function arrowButton(direction, title, trackId, noun = 'games') {
   button.setAttribute('aria-controls', trackId);
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '1.8');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('fill', 'currentColor');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', direction === 'previous' ? 'm14 6-6 6 6 6' : 'm10 6 6 6-6 6');
+  path.setAttribute('d', 'M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z');
+  if (direction !== 'previous') path.setAttribute('transform', 'translate(24 0) scale(-1 1)');
   svg.append(path);
   button.append(svg);
   return button;
