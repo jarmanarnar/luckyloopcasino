@@ -31,18 +31,9 @@ const TAP_IDS = new Set([
   'mysteryfruittapa',
 ]);
 
-// Official rules/descriptions identify these specific card and roulette games:
-// https://beta.netent.com/games/blackjack
-// https://netent.com/games/american-roulette/
-// https://netent.com/games/casino-hold-em-poker
-// https://netent.com/games/roulette-advanced
-// https://netent.com/games/baccarat-professional-series-1
-// https://netent.com/games/roulette-touch
+// Previously reviewed table games are permanently excluded. Keep this format
+// available for future approved titles, separate from the default slot category.
 const TABLE_IDS = new Set([
-  'ameriroulette3ne',
-  'casinoholdemne00',
-  'roulette2advne00',
-  'roulettesne00000',
 ]);
 
 // Explicitly described as single-player video poker, not a reel slot:

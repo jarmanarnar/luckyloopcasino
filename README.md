@@ -24,7 +24,7 @@ npm test
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
 - Equal game-card sizes in carousels and grids. Game cover artwork is intentionally omitted.
-- A reviewed 795-game catalog across six providers; Our Picks contains 15 candidates, with Nip Tuck first. Responsive suitability is being reviewed by the project owner.
+- A reviewed 791-game catalog across six providers; Our Picks contains 15 candidates, with Nip Tuck first. Responsive suitability is being reviewed by the project owner.
 - Removed games stay excluded from collections and direct game links, including original vendor-code aliases.
 - One game iframe mounts below the header and is disposed when leaving the game. Provider readiness signals control the loading transition.
 

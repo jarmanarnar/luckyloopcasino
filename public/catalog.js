@@ -6,7 +6,7 @@ export const PROVIDERS = [
   {
     "id": "netent",
     "name": "NetEnt",
-    "count": 213
+    "count": 209
   },
   {
     "id": "red-tiger",
@@ -2368,13 +2368,6 @@ export const GAMES = [
     "providerName": "Nolimit City"
   },
   {
-    "id": "ameriroulette3ne",
-    "title": "American Roulette",
-    "url": "https://playin.com/embed/v1/demo/ameriroulette3ne",
-    "providerId": "netent",
-    "providerName": "NetEnt"
-  },
-  {
     "id": "sakuramasks00000",
     "title": "Sakura Masks",
     "url": "https://playin.com/embed/v1/demo/sakuramasks00000",
@@ -3488,13 +3481,6 @@ export const GAMES = [
     "providerName": "Nolimit City"
   },
   {
-    "id": "casinoholdemne00",
-    "title": "Casino Hold'em Poker",
-    "url": "https://playin.com/embed/v1/demo/casinoholdemne00",
-    "providerId": "netent",
-    "providerName": "NetEnt"
-  },
-  {
     "id": "mysteryreelsdelu",
     "title": "Mystery Reels Deluxe",
     "url": "https://playin.com/embed/v1/demo/mysteryreelsdelu",
@@ -3878,13 +3864,6 @@ export const GAMES = [
     "url": "https://playin.com/embed/v1/demo/1942skywarrior00",
     "providerId": "red-tiger",
     "providerName": "Red Tiger"
-  },
-  {
-    "id": "roulette2advne00",
-    "title": "Roulette Advanced",
-    "url": "https://playin.com/embed/v1/demo/roulette2advne00",
-    "providerId": "netent",
-    "providerName": "NetEnt"
   },
   {
     "id": "hustling00000000",
@@ -4361,13 +4340,6 @@ export const GAMES = [
     "url": "https://playin.com/embed/v1/demo/regalbeasts00000",
     "providerId": "red-tiger",
     "providerName": "Red Tiger"
-  },
-  {
-    "id": "roulettesne00000",
-    "title": "Roulette Touch",
-    "url": "https://playin.com/embed/v1/demo/roulettesne00000",
-    "providerId": "netent",
-    "providerName": "NetEnt"
   },
   {
     "id": "cashultimate0000",

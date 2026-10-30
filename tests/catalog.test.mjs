@@ -18,6 +18,7 @@ const removedGames = [
   'divinemegaways00', 'divinefortur96f1', 'godsoffortune000',
   'discodanny000000', 'deadwestr96f1000', 'deadalive3r96f10',
   'deadoralive2fb00', 'deadoralive00000',
+  'ameriroulette3ne', 'casinoholdemne00', 'roulette2advne00', 'roulettesne00000',
 ];
 const vendorAliases = {
   gonzo: 'eldorado00000000',
@@ -33,11 +34,11 @@ function vendorCode(game) {
   return new URL(game.url).pathname.split('/').filter(Boolean).at(-1).toLowerCase();
 }
 
-test('reviewed catalog retains 795 unique active games across six providers', () => {
-  assert.equal(GAMES.length, 795);
+test('reviewed catalog retains 791 unique active games across six providers', () => {
+  assert.equal(GAMES.length, 791);
   assert.equal(new Set(GAMES.map(game => game.id)).size, GAMES.length);
   const expectedCounts = {
-    netent: 213,
+    netent: 209,
     'red-tiger': 355,
     'nolimit-city': 137,
     'big-time-gaming': 79,
@@ -62,8 +63,8 @@ test('Our Picks retains 15 unique active choices with Nip Tuck first', () => {
   assert.ok(picks.every(game => GAMES.includes(game)));
 });
 
-test('all 28 removed games and vendor aliases stay out of every collection and launch catalog', () => {
-  assert.equal(removedGames.length, 28);
+test('all 32 removed games and vendor aliases stay out of every collection and launch catalog', () => {
+  assert.equal(removedGames.length, 32);
   const lists = [['launch catalog', GAMES], ...CATEGORIES.map(category => [category.id, getGamesForCategory(category.id)])];
   for (const [name, games] of lists) {
     for (const game of games) {
