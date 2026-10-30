@@ -8,11 +8,11 @@
 .header-context > .icon-button {
   box-sizing: border-box;
   flex: none;
-  width: var(--header-side-control-width);
+  width: var(--header-control-size);
   height: var(--header-control-size);
   padding: 0;
   border: 1px solid var(--wallet-surface);
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--wallet-surface);
   box-shadow: none;
   color: var(--catalog-accent);
