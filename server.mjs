@@ -10,6 +10,7 @@ const types = new Map(Object.entries({
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
 }));
 
 export function createAppServer() {

@@ -3,9 +3,11 @@ import { initCatalogView } from './catalog-view.js';
 import { initWallet } from './wallet.js';
 import { initCatalogToolbar } from './catalog-toolbar.js';
 import { initSiteMenu } from './site-menu.js';
+import { initHeroCarousel } from './hero-carousel.js';
 
 initCatalogView();
 initCatalogToolbar();
 initWallet();
 initGameView();
 initSiteMenu();
+initHeroCarousel();

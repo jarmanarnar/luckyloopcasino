@@ -4,11 +4,16 @@
   "private": true,
   "type": "module",
   "description": "LuckyLoop Casino interface with a reviewed demo catalog and two demo coin balances.",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
     "check": "node scripts/check.mjs",
     "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "embla-carousel": "8.6.0"
   }
 }

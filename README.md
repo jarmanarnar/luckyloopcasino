@@ -4,7 +4,7 @@ The current casino interface built from reusable UI atoms. This repository conta
 
 ## Run locally
 
-Use Node.js 22 or newer. No dependencies, installation step, credentials or external backend are required to serve the interface.
+Use Node.js 22 or newer. Browser dependencies are bundled in `public/vendor/`; no installation step, credentials or external backend are required to serve the interface.
 
 ```sh
 npm start
@@ -19,6 +19,7 @@ npm test
 
 ## Current behavior
 
+- Responsive promotional carousel in place of the blank hero: one, two or three banners per view, original LuckyLoop artwork, circular touch/drag navigation, pagination and automatic rotation that pauses during interaction. Banner buttons open the matching game collection or Providers view.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Left hamburger drawer with BUY/REDEEM buttons and working category/provider navigation. BUY opens the demo wallet; REDEEM is a design placeholder until redemption is implemented. It supports Escape/backdrop dismissal, contained scrolling and native modal focus handling; the game back arrow replaces the hamburger during play.
 - Category navigation, a dedicated Providers view, and a provider-logo carousel after all game collections on the home view.
@@ -40,6 +41,8 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | `public/catalog.js`, `removed-games.js` | Reviewed games and permanent exclusions |
 | `public/game-view.js`, `game-ready.js`, `game-presentation.js` | Game routing, lifecycle and presentation |
 | `public/wallet.js`, `wallet-state.js` | Two-currency local demo wallet |
+| `public/hero-carousel.js`, `hero-carousel.css`, `assets/hero/` | Promotional banners, original artwork and carousel behavior |
+| `public/vendor/embla-carousel/` | Pinned Embla Carousel browser module and MIT license |
 | `public/assets/providers/` | Six genuine provider SVG marks and their provenance |
 | `server.mjs` | Local static server restricted to public app files |
 | `tests/` | Catalog exclusions, loader protocol and server-route checks |
@@ -54,9 +57,9 @@ Demo wallet state is saved per browser and origin. A phone or the hosted address
 
 ## Responsive sizing
 
-The shared `--fluid-step` in `public/styles.css` grows continuously from 0 to 8 CSS pixels between 320px and 1280px at the default text size. Header controls, gutters, spacing, type, promo shortcuts and provider tiles derive their sizes from it. These sizes use `rem` bounds so user text preferences remain meaningful. Avoid adding device-width overrides for individual atoms.
+The shared `--fluid-step` in `public/styles.css` grows continuously from 0 to 8 CSS pixels between 320px and 1280px at the default text size. Header controls, gutters, spacing, type, promotional banners and provider tiles derive their sizes from it. These sizes use `rem` bounds so user text preferences remain meaningful. Avoid adding device-width overrides for individual atoms.
 
-Game cards keep an 8:11 aspect ratio and one width token shared by carousels and category grids. Their width changes from 132px to 170px; grids reflow the number of columns instead of resizing each card at a breakpoint. The hero uses a bounded continuous height, capped against the small viewport height for wide, short windows, rather than a sudden aspect-ratio switch. All lobby sections and the header share one content width and safe-area inset.
+Game cards keep an 8:11 aspect ratio and one width token shared by carousels and category grids. Their width changes from 132px to 170px; grids reflow the number of columns instead of resizing each card at a breakpoint. Promotional banners keep a compact, continuously scaled height and show one, two or three cards as space allows. All lobby sections and the header share one content width and safe-area inset.
 
 Wallet text stays the same size throughout a balance animation. Layout measurements are invalidated by relevant width/font changes, while height-only mobile browser changes preserve the running counter. The header always stays in one row, with the plus beside the balance. The wallet stays centered while it fits and can move slightly within the free space between the back control and currency switch on narrow screens. Navigation controls have at least a 44px target at the default text size; the wallet plus expands its hit area without enlarging the artwork.
 

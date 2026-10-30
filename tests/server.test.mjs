@@ -41,9 +41,9 @@ test('legacy asset links point at the same current app', async () => {
   }
 });
 
-test('scripts, styles and genuine provider SVGs are served with correct types', async () => {
+test('scripts, styles, provider marks and promotional artwork have correct types', async () => {
   for (const [file, type] of [['app.js', 'text/javascript'], ['styles.css', 'text/css'],
-    ['assets/providers/netent.svg', 'image/svg+xml']]) {
+    ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp']]) {
     const response = await fetch(`${origin}/luckyloopcasino/${file}`);
     assert.equal(response.status, 200);
     assert.ok(response.headers.get('content-type').startsWith(type));
