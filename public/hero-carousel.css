@@ -50,8 +50,8 @@
 .hero-studios__coin { position: absolute; right: 1rem; bottom: -.75rem; width: 5rem; height: 5rem; transform: rotate(15deg); filter: drop-shadow(0 5px 8px #0006); }
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: var(--touch-target); margin-top: .75rem; }
 .hero-carousel__dots { display: flex; align-items: center; }
-.hero-carousel__dot { display: grid; place-items: center; width: 1.25rem; height: var(--touch-target); padding: 0; border: 0; border-radius: 999px; background: transparent; cursor: pointer; transition: width 180ms ease; }
-.hero-carousel__dot[aria-pressed="true"] { width: 2rem; }
+.hero-carousel__dot { display: grid; place-items: center; width: 1rem; height: var(--touch-target); padding: 0; border: 0; border-radius: 999px; background: transparent; cursor: pointer; transition: width 180ms ease; }
+.hero-carousel__dot[aria-pressed="true"] { width: 1.75rem; }
 .hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: #62636c; transition: width 180ms ease; }
 .hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: #fff; transform: scaleX(0); transform-origin: left center; }
 .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; }
