@@ -8,7 +8,6 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
-  const closeButton = document.querySelector('#menu-close');
   const navigation = document.querySelector('#menu-navigation');
   const buyButton = document.querySelector('#menu-buy');
   const categories = document.querySelector('#catalog-categories');
@@ -24,12 +23,15 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   const promotionButton = document.querySelector('#menu-promotion');
   const tooltip = document.querySelector('#menu-tooltip');
   const bottomTrigger = document.querySelector('#mobile-nav-menu');
-  if (![trigger, dialog, closeButton, navigation, buyButton, categories, wallet, addButton,
+  const bottomNav = document.querySelector('#mobile-nav');
+  if (![trigger, dialog, navigation, buyButton, categories, wallet, addButton,
     sidebar, sidebarHeader, sidebarContent, menuContent, shortcuts, mobileHeader].every(Boolean)) return;
   initialized = true;
 
   const triggerHome = trigger.parentElement;
   const triggerSibling = trigger.nextSibling;
+  const bottomNavHome = bottomNav?.parentElement;
+  const bottomNavSibling = bottomNav?.nextSibling;
   const desktopMedia = window.matchMedia('(min-width: 45rem)');
   let desktop = false;
   let expanded = false;
@@ -92,12 +94,19 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
     candidates.find(node => node?.getClientRects().length)?.focus({ preventScroll: true });
   }
 
+  function restoreBottomNav() {
+    if (bottomNavHome && bottomNav.parentElement === dialog) {
+      bottomNavHome.insertBefore(bottomNav, bottomNavSibling);
+    }
+  }
+
   function applyLayout() {
     hideTooltip();
     const restoreFocus = trigger === document.activeElement || (bottomTrigger && bottomTrigger === document.activeElement)
       || dialog.contains(document.activeElement)
       || sidebar.contains(document.activeElement);
     afterClose = null;
+    restoreBottomNav();
     if (dialog.open) {
       pendingClose = true;
       dialog.close();
@@ -137,9 +146,10 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
     menuOpener = returnFocusTo;
     syncMenu();
     afterClose = null;
+    if (bottomNav) dialog.append(bottomNav);
     dialog.showModal();
     trigger.setAttribute('aria-expanded', 'true');
-    closeButton.focus({ preventScroll: true });
+    buyButton.focus({ preventScroll: true });
     observeState();
   }
 
@@ -152,6 +162,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
     if (!dialog.open) return;
     afterClose = action;
     pendingClose = true;
+    restoreBottomNav();
     dialog.close();
   }
 
@@ -169,7 +180,6 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   }
 
   trigger.addEventListener('click', openMenu);
-  closeButton.addEventListener('click', () => closeMenu());
   buyButton.addEventListener('click', () => closeMenu(() => addButton.click()));
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch());
@@ -192,6 +202,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   });
   dialog.addEventListener('close', () => {
     pendingClose = false;
+    restoreBottomNav();
     if (desktop) {
       afterClose = null;
       return;
@@ -243,6 +254,6 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   window.addEventListener('hashchange', () => closeMenu());
   desktopMedia.addEventListener('change', applyLayout);
   applyLayout();
-  menuController = { openMenu };
+  menuController = { openMenu, closeMenu };
   return menuController;
 }

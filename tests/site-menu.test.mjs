@@ -84,11 +84,13 @@ function menuPage({ desktop = false } = {}) {
     showModal() { this.open = true; calls.push('menu:open'); }
     close() { this.open = false; calls.push('menu:close'); closeEvents.push(() => this.emit('close')); }
   }
-  const ids = ['menu-toggle', 'site-menu', 'menu-close', 'menu-navigation', 'menu-buy',
+  document.body = new Node();
+  document.body.dataset.view = 'lobby';
+  const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy',
     'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
     'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
-    'bottom-menu', 'mobile-nav-menu'];
+    'bottom-menu', 'mobile-nav', 'mobile-nav-menu'];
   const nodes = Object.fromEntries(ids.map(id => {
     const node = new Node();
     node.id = id;
@@ -100,10 +102,12 @@ function menuPage({ desktop = false } = {}) {
   const headerParent = new Node();
   headerParent.append(nodes['menu-toggle'], nodes['back-to-lobby']);
   nodes['site-menu'].append(nodes['menu-mobile-header'], nodes['menu-content']);
-  nodes['menu-mobile-header'].append(nodes['menu-close'], nodes['menu-shortcuts']);
+  nodes['menu-mobile-header'].append(nodes['menu-shortcuts']);
   nodes['menu-shortcuts'].append(nodes['menu-buy']);
   nodes['menu-content'].append(nodes['menu-search'], nodes['menu-promotion'], nodes['menu-navigation']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
+  nodes['mobile-nav'].append(nodes['mobile-nav-menu']);
+  document.body.append(headerParent, nodes['site-sidebar'], nodes['mobile-nav'], nodes['site-menu']);
   const breakpoint = new Node();
   breakpoint.matches = desktop;
   nodes['coin-wallet'].dataset.currency = 'GC';
@@ -179,13 +183,13 @@ function menuPage({ desktop = false } = {}) {
     item, flushClose, providerCalls, headerParent, resize };
 }
 
-test('menu opens once, focuses its close control, and only lists available collections', () => {
+test('menu opens once, focuses BUY, and only lists available collections', () => {
   const page = menuPage();
   page.context.initSiteMenu();
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, true);
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
-  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
   assert.equal(page.item('all').getAttribute('aria-current'), 'page');
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), category.id === 'all' || getGamesForCategory(category.id).length > 0);
@@ -210,7 +214,7 @@ test('a caller can open the drawer and receive focus again when it is dismissed'
   assert.equal(page.context.initSiteMenu(), page.api, 'reinitialization returns the same menu controller');
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   assert.equal(page.nodes['site-menu'].open, true);
-  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   page.nodes['site-menu'].emit('cancel');
   page.flushClose();
   assert.equal(page.document.activeElement, page.nodes['bottom-menu']);
@@ -220,7 +224,7 @@ test('a hidden drawer opener falls back to the visible header control', () => {
   const page = menuPage();
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   page.nodes['bottom-menu'].visible = false;
-  page.nodes['menu-close'].click();
+  page.api.closeMenu();
   page.flushClose();
   assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
 });
@@ -231,7 +235,7 @@ test('a hidden caller and header hamburger fall back to the visible bottom Menu 
   page.nodes['mobile-nav-menu'].visible = true;
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   page.nodes['bottom-menu'].visible = false;
-  page.nodes['menu-close'].click();
+  page.api.closeMenu();
   page.flushClose();
   assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
 });
@@ -255,7 +259,7 @@ test('resizing an open bottom-menu drawer to desktop keeps focus on the desktop 
   page.nodes['menu-toggle'].visible = false;
   page.nodes['mobile-nav-menu'].visible = true;
   page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
-  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   page.nodes['menu-toggle'].visible = true;
   page.nodes['mobile-nav-menu'].visible = false;
   page.resize(true);
@@ -295,7 +299,7 @@ test('inside clicks leave the drawer open while backdrop clicks dismiss it', () 
 test('a quick reopen waits until the previous native close event finishes', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
-  page.nodes['menu-close'].click();
+  page.api.closeMenu();
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.calls.filter(call => call === 'menu:open').length, 1);
@@ -375,7 +379,7 @@ test('drawer button accents track the selected currency only while open', () => 
   page.nodes['coin-wallet'].dataset.currency = 'SC';
   page.observers[0].callback();
   assert.equal(page.nodes['site-menu'].dataset.currency, 'SC');
-  page.nodes['menu-close'].click();
+  page.api.closeMenu();
   page.flushClose();
   page.nodes['coin-wallet'].dataset.currency = 'GC';
   page.observers[0].callback();
@@ -443,7 +447,9 @@ test('switching an open mobile drawer to desktop closes it and reparents one liv
   assert.equal(page.nodes['site-sidebar'].hidden, true);
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.nodes['mobile-nav'].parentElement, page.nodes['site-menu']);
   page.resize(true);
+  assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.nodes['site-sidebar'].hidden, false);
   assert.equal(page.nodes['menu-toggle'].parentElement, page.nodes['sidebar-header']);
@@ -466,13 +472,13 @@ test('switching an expanded desktop sidebar to mobile restores the header and st
   assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
   assert.deepEqual(page.headerParent.children, [page.nodes['menu-toggle'], page.nodes['back-to-lobby']]);
   assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['menu-mobile-header']);
-  assert.deepEqual(page.nodes['menu-mobile-header'].children, [page.nodes['menu-close'], page.nodes['menu-shortcuts']]);
+  assert.deepEqual(page.nodes['menu-mobile-header'].children, [page.nodes['menu-shortcuts']]);
   assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, true);
-  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
 });
 
@@ -545,4 +551,39 @@ test('collapsed tooltips are dismissed by scrolling and game navigation and supp
   assert.equal(tooltip.hidden, true);
   sidebar.emit('pointerover', { target: item });
   assert.equal(tooltip.hidden, true);
+});
+
+
+test('full-screen menu keeps the same bottom navigation interactive and restores it before deferred actions', () => {
+  const page = menuPage();
+  const nav = page.nodes['mobile-nav'];
+  const opener = page.nodes['mobile-nav-menu'];
+  opener.visible = true;
+  page.nodes['menu-toggle'].visible = false;
+  assert.equal(nav.parentElement, page.document.body);
+  assert.equal(nav.nextSibling, page.nodes['site-menu']);
+
+  page.api.openMenu({ returnFocusTo: opener });
+  assert.equal(nav.parentElement, page.nodes['site-menu']);
+  assert.equal(nav.children[0], opener, 'the live navigation is moved, preserving its controls and listeners');
+  assert.equal(page.nodes['site-menu'].children.at(-1), nav);
+
+  let actionRan = false;
+  page.api.closeMenu(() => {
+    assert.equal(page.nodes['site-menu'].open, false);
+    assert.equal(nav.parentElement, page.document.body);
+    actionRan = true;
+  });
+  assert.equal(nav.parentElement, page.document.body, 'restore before the native close event, so the bottom bar does not disappear');
+  assert.equal(nav.nextSibling, page.nodes['site-menu'], 'restore the original document position');
+  assert.equal(actionRan, false);
+  page.flushClose();
+  assert.equal(actionRan, true);
+
+  page.api.openMenu({ returnFocusTo: opener });
+  assert.equal(nav.parentElement, page.nodes['site-menu']);
+  page.api.closeMenu();
+  page.flushClose();
+  assert.equal(nav.parentElement, page.document.body);
+  assert.equal(page.document.activeElement, opener);
 });

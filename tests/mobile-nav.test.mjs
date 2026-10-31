@@ -7,7 +7,7 @@ const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.ur
   .replace('export function initMobileNav', 'function initMobileNav');
 
 function navPage({ desktop = false, missing = null } = {}) {
-  const calls = [], observations = [], observers = [];
+  const calls = [], observations = [], observers = [], closeActions = [];
   class Node {
     constructor() { this.dataset = {}; this.attributes = new Map(); this.listeners = new Map(); this.open = false; this.hidden = false; }
     setAttribute(name, value) { this.attributes.set(name, value); }
@@ -44,7 +44,7 @@ function navPage({ desktop = false, missing = null } = {}) {
   const document = {
     body,
     querySelector(selector) {
-      if (selector === 'dialog[open]') return dialogs.map(id => nodes[id]).find(node => node.open) || null;
+      if (selector === 'dialog[open]:not(#site-menu)') return dialogs.filter(id => id !== 'site-menu').map(id => nodes[id]).find(node => node.open) || null;
       const id = selector.slice(1);
       return id === missing ? null : nodes[id] || null;
     },
@@ -53,6 +53,11 @@ function navPage({ desktop = false, missing = null } = {}) {
   media.matches = desktop;
   const api = {
     openMenu(options) { calls.push({ action: 'menu', options }); nodes['site-menu'].open = true; },
+    closeMenu(action) {
+      calls.push({ action: 'menu:close' });
+      nodes['site-menu'].open = false;
+      if (action) closeActions.push(action);
+    },
     openSearch(options) { calls.push({ action: 'search', options }); nodes['site-search'].open = true; },
     openProviders(options) { calls.push({ action: 'providers', options }); nodes['catalog-categories'].dataset.activeMenu = 'providers'; },
   };
@@ -68,6 +73,7 @@ function navPage({ desktop = false, missing = null } = {}) {
   return { nodes, body, calls, media, observations, observers,
     initialize() { vm.runInNewContext('initMobileNav(api);', context); },
     flush() { for (const observer of observers) observer.callback(); },
+    flushClose() { while (closeActions.length) closeActions.shift()(); },
     button(action) { return nodes[`mobile-nav-${action}`]; },
   };
 }
@@ -113,13 +119,49 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.button('wallet').getAttribute('aria-expanded'), 'true');
 });
 
-test('desktop, game mode and every open dialog prevent hidden or overlapping actions', () => {
-  for (const mode of ['desktop', 'game', 'site-menu', 'site-search', 'wallet-dialog']) {
+test('the mobile Menu button closes the menu instead of trying to open it again', () => {
+  const page = navPage();
+  page.button('menu').click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  page.button('menu').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close']);
+  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+  assert.deepEqual(active(page), ['casino']);
+});
+
+test('menu destinations wait for the menu close handoff and update the active destination', () => {
+  const expected = { casino: 'all', providers: 'providers', search: 'search', wallet: 'wallet' };
+  for (const action of Object.keys(expected)) {
+    const page = navPage();
+    page.button('menu').click();
+    page.button(action).click();
+    assert.equal(page.nodes['site-menu'].open, false);
+    assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close'], action);
+    assert.equal(page.nodes['site-search'].open, false);
+    assert.equal(page.nodes['wallet-dialog'].open, false);
+    page.flushClose();
+    assert.equal(page.calls.at(-1).action, expected[action]);
+    assert.deepEqual(active(page), [action]);
+    if (action === 'search') assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('search'));
+    if (action === 'providers') assert.equal(page.calls.at(-1).options.focusResults, true);
+  }
+});
+
+test('desktop, game mode and other open dialogs prevent hidden or overlapping actions', () => {
+  for (const mode of ['desktop', 'game', 'site-search', 'wallet-dialog']) {
     const page = navPage({ desktop: mode === 'desktop' });
     if (mode === 'game') page.body.dataset.view = 'game';
     else if (page.nodes[mode]) page.nodes[mode].open = true;
     for (const action of ['menu', 'casino', 'search', 'providers', 'wallet']) page.button(action).click();
     assert.equal(page.calls.length, 0, mode);
+  }
+  for (const otherDialog of ['site-search', 'wallet-dialog']) {
+    const page = navPage();
+    page.nodes['site-menu'].open = true;
+    page.nodes[otherDialog].open = true;
+    for (const action of ['menu', 'casino', 'search', 'providers', 'wallet']) page.button(action).click();
+    assert.equal(page.calls.length, 0, `menu plus ${otherDialog}`);
   }
   const page = navPage({ desktop: true });
   page.media.matches = false;

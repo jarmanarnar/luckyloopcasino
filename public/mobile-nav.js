@@ -1,6 +1,6 @@
 let initialized = false;
 
-export function initMobileNav({ openMenu, openSearch, openProviders } = {}) {
+export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders } = {}) {
   if (initialized) return;
   const nav = document.querySelector('#mobile-nav');
   const categories = document.querySelector('#catalog-categories');
@@ -30,9 +30,7 @@ export function initMobileNav({ openMenu, openSearch, openProviders } = {}) {
     }
   }
 
-  function activate(action, button) {
-    if (desktopMedia.matches || document.body.dataset.view === 'game'
-      || document.querySelector('dialog[open]')) return;
+  function performAction(action, button) {
     switch (action) {
       case 'menu':
         openMenu?.({ returnFocusTo: button });
@@ -51,6 +49,19 @@ export function initMobileNav({ openMenu, openSearch, openProviders } = {}) {
         break;
     }
     sync();
+  }
+
+  function activate(action, button) {
+    if (desktopMedia.matches || document.body.dataset.view === 'game'
+      || document.querySelector('dialog[open]:not(#site-menu)')) return;
+    if (dialogs.menu.open) {
+      if (!closeMenu) return;
+      if (action === 'menu') closeMenu();
+      else closeMenu(() => performAction(action, button));
+      sync();
+      return;
+    }
+    performAction(action, button);
   }
 
   for (const [action, button] of buttons) button.addEventListener('click', () => activate(action, button));
