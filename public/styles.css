@@ -34,7 +34,8 @@
       --catalog-toolbar-height: 4rem;
       --catalog-toolbar-padding: .625rem;
       --catalog-accent: #e8bf65;
-      --catalog-active-background: #222226;
+      --surface-control: #20212a;
+      --catalog-active-background: var(--surface-control);
       --text-primary: #eeeef2;
       --text-secondary: #9b9ba5;
       --control-hover: #1b1b20;

@@ -1,5 +1,5 @@
 .top-bar__inner {
-  --wallet-surface: #20212a;
+  --wallet-surface: var(--surface-control);
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   column-gap: var(--header-gap);
 }
