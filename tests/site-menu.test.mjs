@@ -7,7 +7,7 @@ import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
-function menuPage() {
+function menuPage({ desktop = false } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   class Node {
@@ -19,9 +19,39 @@ function menuPage() {
       this.textContent = '';
       this.visible = true;
       this.open = false;
+      this.hidden = false;
     }
-    append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
-    replaceChildren() { this.children = []; }
+    get parentElement() { return this.parent || null; }
+    get nextSibling() {
+      return this.parent?.children[this.parent.children.indexOf(this) + 1] || null;
+    }
+    append(...children) { for (const child of children) this.appendChild(child); }
+    appendChild(child) {
+      child.parent?.removeChild(child);
+      child.parent = this;
+      this.children.push(child);
+      return child;
+    }
+    removeChild(child) {
+      const index = this.children.indexOf(child);
+      if (index >= 0) this.children.splice(index, 1);
+      child.parent = null;
+      return child;
+    }
+    insertBefore(child, before) {
+      if (child === before) return child;
+      if (!before) return this.appendChild(child);
+      child.parent?.removeChild(child);
+      const index = this.children.indexOf(before);
+      assert.ok(index >= 0, 'insertBefore reference belongs to this parent');
+      child.parent = this;
+      this.children.splice(index, 0, child);
+      return child;
+    }
+    replaceChildren(...children) {
+      for (const child of [...this.children]) this.removeChild(child);
+      this.append(...children);
+    }
     setAttribute(key, value) { this.attributes.set(key, value); }
     removeAttribute(key) { this.attributes.delete(key); }
     getAttribute(key) { return this.attributes.get(key) ?? null; }
@@ -53,8 +83,16 @@ function menuPage() {
     close() { this.open = false; calls.push('menu:close'); closeEvents.push(() => this.emit('close')); }
   }
   const ids = ['menu-toggle', 'site-menu', 'menu-close', 'menu-navigation', 'menu-buy',
-    'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit'];
+    'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit',
+    'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
+  const headerParent = new Node();
+  headerParent.append(nodes['menu-toggle'], nodes['back-to-lobby']);
+  nodes['site-menu'].append(nodes['menu-close'], nodes['menu-content']);
+  nodes['menu-content'].append(nodes['menu-buy'], nodes['menu-navigation']);
+  nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
+  const breakpoint = new Node();
+  breakpoint.matches = desktop;
   nodes['coin-wallet'].dataset.currency = 'GC';
   nodes['catalog-categories'].dataset.activeMenu = 'all';
   const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
@@ -97,7 +135,13 @@ function menuPage() {
   const context = {
     document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
     createShelfIcon: () => new Node(),
-    window: { addEventListener(type, callback) { windowEvents[type] = callback; } },
+    window: {
+      addEventListener(type, callback) { windowEvents[type] = callback; },
+      matchMedia(query) {
+        assert.match(query, /min-width:\s*64rem/);
+        return breakpoint;
+      },
+    },
     MutationObserver: class {
       constructor(callback) { this.callback = callback; this.targets = []; observers.push(this); }
       observe(node) { this.targets.push(node); }
@@ -107,7 +151,12 @@ function menuPage() {
   vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-navigation'].children.find(node => node.dataset.menuCategory === id);
-  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, item, flushClose, providerCalls };
+  const resize = matches => {
+    breakpoint.matches = matches;
+    breakpoint.emit('change', { matches });
+  };
+  return { nodes, document, calls, categoryButtons, observers, windowEvents, context,
+    item, flushClose, providerCalls, headerParent, resize };
 }
 
 test('menu opens once, focuses its close control, and only lists available collections', () => {
@@ -224,4 +273,78 @@ test('entering a game closes the menu and returns focus to the visible back cont
   assert.equal(page.document.activeElement, page.nodes['back-to-lobby']);
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, false);
+});
+
+test('desktop sidebar toggles without creating a modal or moving its shared content twice', () => {
+  const page = menuPage({ desktop: true });
+  assert.equal(page.nodes['site-sidebar'].hidden, false);
+  assert.equal(page.nodes['menu-toggle'].parentElement, page.nodes['sidebar-header']);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
+  assert.equal(page.nodes['site-menu'].open, false);
+
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.equal(page.nodes['site-sidebar'].dataset.expanded, 'true');
+  assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  assert.equal(page.nodes['site-sidebar'].dataset.expanded, 'false');
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.calls.includes('menu:open'), false);
+  assert.deepEqual(page.nodes['sidebar-header'].children, [page.nodes['menu-toggle']]);
+  assert.deepEqual(page.nodes['sidebar-content'].children, [page.nodes['menu-content']]);
+});
+
+test('desktop collection, Providers and BUY actions run immediately without a drawer close event', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['menu-toggle'].click();
+  page.item('popular').click();
+  assert.equal(page.calls.at(-1), 'category:popular');
+  assert.equal(page.document.activeElement, page.categoryButtons.get('popular'));
+  page.item('providers').click();
+  assert.equal(page.calls.at(-1), 'category:providers');
+  assert.equal(page.providerCalls.length, 1);
+  assert.equal(page.providerCalls[0].focusResults, true);
+  page.nodes['menu-buy'].click();
+  assert.equal(page.nodes['wallet-dialog'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['wallet-credit']);
+  assert.equal(page.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'wallet:open');
+});
+
+test('switching an open mobile drawer to desktop closes it and reparents one live navigation tree', () => {
+  const page = menuPage();
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  page.resize(true);
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.nodes['site-sidebar'].hidden, false);
+  assert.equal(page.nodes['menu-toggle'].parentElement, page.nodes['sidebar-header']);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  page.flushClose();
+  assert.ok(page.observers[0].targets.length > 0, 'desktop observation survives a queued native close event');
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.equal(page.nodes['site-menu'].open, false);
+});
+
+test('switching an expanded desktop sidebar to mobile restores the header and starts with a closed drawer', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['menu-toggle'].click();
+  page.resize(false);
+  page.flushClose();
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
 });

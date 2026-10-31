@@ -1,12 +1,52 @@
 body[data-view="game"] .menu-toggle { display: none; }
 html:has(#site-menu[open]) { overflow: hidden; }
 
+.site-sidebar {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 30;
+  inset: 0 auto 0 0;
+  display: none;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  height: 100dvh;
+  overflow: hidden;
+  border-right: 1px solid var(--sidebar-divider);
+  background: var(--sidebar-surface);
+  color: var(--text-primary);
+  transition: width var(--sidebar-duration) var(--sidebar-easing);
+}
+.site-sidebar__header {
+  display: grid;
+  flex: none;
+  grid-template-columns: var(--sidebar-rail-width);
+  align-items: center;
+  height: var(--top-bar-height);
+}
+.site-sidebar__header > .menu-toggle {
+  box-sizing: border-box;
+  justify-self: center;
+  width: var(--header-control-size);
+  height: var(--header-control-size);
+  border: 1px solid var(--catalog-active-background);
+  border-radius: 50%;
+  background: var(--catalog-active-background);
+  color: var(--text-primary);
+}
+.site-sidebar__header > .menu-toggle svg { width: var(--header-icon-size); height: var(--header-icon-size); }
+.site-sidebar__header > .menu-toggle:hover { background: var(--control-hover); }
+.site-sidebar__content { display: flex; flex: 1; min-width: 0; min-height: 0; }
+.site-sidebar .site-menu__scroll { box-sizing: border-box; width: 100%; padding: .75rem .75rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+.site-sidebar[data-expanded="false"] .site-menu__shortcuts { grid-template-columns: minmax(0, 1fr); }
+.site-sidebar[data-expanded="false"] .site-menu__shortcut { padding-inline: 0; }
+.site-sidebar[data-expanded="false"] .site-menu__item { justify-content: center; gap: 0; padding-inline: 0; }
+.site-sidebar[data-expanded="false"] .site-menu__item > span,
+.site-sidebar[data-expanded="false"] .site-menu__shortcut > span,
+.site-sidebar[data-expanded="false"] .site-menu__footer { display: none; }
+
 .site-menu {
-  --menu-surface: #20212a;
-  --menu-accent: var(--catalog-accent);
-  --menu-button-start: #ffe3a0;
-  --menu-button-end: #ce952d;
-  --menu-button-ink: #392809;
+  --menu-surface: var(--surface-card);
+  --menu-accent: var(--text-primary);
   box-sizing: border-box;
   position: fixed;
   inset: 0 auto 0 0;
@@ -18,8 +58,8 @@ html:has(#site-menu[open]) { overflow: hidden; }
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-radius: 0 1.25rem 1.25rem 0;
-  background: #111114;
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  background: var(--menu-surface);
   color: var(--text-primary);
   box-shadow: .5rem 0 3rem #0005;
   opacity: 0;
@@ -27,11 +67,6 @@ html:has(#site-menu[open]) { overflow: hidden; }
   pointer-events: none;
   transition: transform 240ms cubic-bezier(.22, 1, .36, 1), opacity 240ms ease,
     display 240ms allow-discrete, overlay 240ms allow-discrete;
-}
-.site-menu[data-currency="SC"] {
-  --menu-button-start: #a5f5cc;
-  --menu-button-end: #31b87f;
-  --menu-button-ink: #093a25;
 }
 .site-menu[open] { display: flex; flex-direction: column; opacity: 1; transform: translateX(0); pointer-events: auto; }
 .site-menu::backdrop {
@@ -49,8 +84,8 @@ html:has(#site-menu[open]) { overflow: hidden; }
   width: var(--touch-target);
   height: var(--touch-target);
   margin: calc(.75rem + env(safe-area-inset-top, 0px)) 1.5rem .75rem;
-  background: var(--menu-surface);
-  color: #b4b4bd;
+  background: var(--catalog-active-background);
+  color: var(--text-secondary);
 }
 .site-menu__scroll {
   display: flex;
@@ -64,25 +99,48 @@ html:has(#site-menu[open]) { overflow: hidden; }
 }
 .site-menu__scroll::-webkit-scrollbar { display: none; }
 .site-menu__shortcuts { display: grid; flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; margin: 0 0 1.25rem; }
-.site-menu__shortcut { display: flex; align-items: center; justify-content: center; gap: .5rem; min-width: 0; min-height: var(--touch-target); padding: .625rem .5rem; border: 0; border-radius: 999px; background: #28282f; color: var(--text-primary); font-size: .8125rem; font-weight: 750; cursor: pointer; }
+.site-menu__shortcut { display: flex; align-items: center; justify-content: center; gap: .5rem; min-width: 0; min-height: var(--touch-target); padding: .625rem .5rem; border: 1px solid var(--sidebar-divider); border-radius: var(--radius-card); background: var(--catalog-active-background); color: var(--text-primary); font-size: .8125rem; font-weight: 600; cursor: pointer; }
 .site-menu__shortcut svg { flex: none; width: 1rem; height: 1rem; }
-.site-menu__shortcut:enabled:hover { filter: brightness(1.12); }
-.site-menu__shortcut--buy { background: linear-gradient(145deg, var(--menu-button-start), var(--menu-button-end)); color: var(--menu-button-ink); }
-.site-menu__shortcut:disabled { color: var(--menu-accent); cursor: default; }
+.site-menu__shortcut:enabled:hover { background: var(--control-hover); }
+.site-menu__shortcut:disabled { color: var(--text-secondary); cursor: default; }
 .site-menu__navigation { display: grid; flex: none; gap: .25rem; }
-.site-menu__item { display: flex; align-items: center; gap: .875rem; width: 100%; min-height: 3rem; padding: .75rem; border: 0; border-radius: .625rem; background: transparent; color: #b4b4bd; text-align: left; font-size: .875rem; font-weight: 600; line-height: 1.3; cursor: pointer; }
-.site-menu__item .game-shelf__icon { width: 1.25rem; height: 1.25rem; color: #8e8e99; }
-.site-menu__item:hover { background: #1b1b20; color: var(--text-primary); }
-.site-menu__item[aria-current="page"] { background: var(--menu-surface); color: var(--text-primary); }
-.site-menu__item[aria-current="page"] .game-shelf__icon { color: var(--menu-accent); }
+.site-menu__item { display: flex; align-items: center; gap: .875rem; box-sizing: border-box; width: 100%; min-height: 3rem; padding: .75rem; border: 0; border-radius: var(--radius-card); background: transparent; color: var(--text-secondary); text-align: left; font-size: .875rem; font-weight: 600; line-height: 1.3; cursor: pointer; }
+.site-menu__item .game-shelf__icon { width: 1.25rem; height: 1.25rem; color: var(--text-secondary); }
+.site-menu__item:hover { background: var(--control-hover); color: var(--text-primary); }
+.site-menu__item[aria-current="page"] { background: var(--catalog-active-background); color: var(--text-primary); }
+.site-menu__item[aria-current="page"] .game-shelf__icon { color: var(--text-primary); }
 .site-menu__footer { margin-top: auto; padding-top: 1.5rem; }
-.site-menu__help { border-top: 1px solid #ffffff12; padding-top: .75rem; color: #aaaab5; }
+.site-menu__help { border-top: 1px solid var(--sidebar-divider); padding-top: .75rem; color: var(--text-secondary); }
 .site-menu__help summary { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: var(--touch-target); color: var(--text-primary); font-size: .875rem; cursor: pointer; list-style: none; }
 .site-menu__help summary::-webkit-details-marker { display: none; }
 .site-menu__help summary svg { width: 1rem; height: 1rem; transition: transform 180ms ease; }
 .site-menu__help[open] summary svg { transform: rotate(180deg); }
 .site-menu__help p { margin: .5rem 0 .875rem; font-size: .8125rem; line-height: 1.6; }
-.site-menu :focus-visible { outline: 2px solid var(--menu-accent); outline-offset: 3px; }
+.site-menu :focus-visible, .site-sidebar :focus-visible { outline: 2px solid var(--text-primary); outline-offset: -3px; }
+@media (min-width: 64rem) {
+  body[data-sidebar] {
+    --sidebar-width: var(--sidebar-rail-width);
+    padding-left: var(--sidebar-width);
+    transition: padding-left var(--sidebar-duration) var(--sidebar-easing);
+  }
+  body[data-sidebar="expanded"] { --sidebar-width: var(--sidebar-expanded-width); }
+  body[data-sidebar] .top-bar {
+    inset-inline: auto;
+    left: var(--sidebar-width);
+    right: 0;
+    width: auto;
+    transition: left var(--sidebar-duration) var(--sidebar-easing);
+  }
+  .site-sidebar { display: flex; }
+  body[data-view="game"] {
+    --sidebar-width: 0px;
+    padding-left: 0;
+    transition: none;
+  }
+  body[data-view="game"] .top-bar { left: 0; right: 0; transition: none; }
+  body[data-view="game"] .site-sidebar { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .site-menu, .site-menu::backdrop, .site-menu__help summary svg { transition: none; }
+  .site-menu, .site-menu::backdrop, .site-menu__help summary svg,
+  .site-sidebar, body[data-sidebar], body[data-sidebar] .top-bar { transition: none; }
 }

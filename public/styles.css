@@ -40,6 +40,13 @@
       --control-hover: #1b1b20;
       --surface-card: #1c1c22;
       --radius-card: calc(.5rem + .125 * var(--fluid-step));
+      --sidebar-rail-width: 4.5rem;
+      --sidebar-expanded-width: 14.5rem;
+      --sidebar-width: 0px;
+      --sidebar-surface: var(--surface-card);
+      --sidebar-divider: var(--top-bar-divider);
+      --sidebar-duration: 240ms;
+      --sidebar-easing: cubic-bezier(.22, 1, .36, 1);
       --game-card-width: calc(8.25rem + 4.75 * var(--fluid-step));
       --game-card-gap: calc(.625rem + .75 * var(--fluid-step));
       --game-card-background: var(--surface-card);
@@ -145,7 +152,7 @@
       position: absolute;
       z-index: -1;
       inset-block: 0;
-      inset-inline: calc((100% - 100vw) / 2);
+      inset-inline: calc((100% - 100vw + var(--sidebar-width)) / 2);
       border: 0;
       background: #000;
       box-shadow: none;

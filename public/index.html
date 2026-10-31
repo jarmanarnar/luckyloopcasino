@@ -12,7 +12,11 @@
   <link rel="stylesheet" href="site-menu.css">
   <link rel="stylesheet" href="hero-carousel.css">
 </head>
-<body>
+<body data-sidebar="collapsed">
+  <aside id="site-sidebar" class="site-sidebar" aria-label="Casino sidebar" lang="en" dir="ltr" hidden>
+    <div id="sidebar-header" class="site-sidebar__header"></div>
+    <div id="sidebar-content" class="site-sidebar__content"></div>
+  </aside>
   <header class="top-bar" aria-label="בר עליון">
     <div class="top-bar__inner" lang="en" dir="ltr">
       <div class="header-context">
@@ -75,10 +79,10 @@
   </main>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <button id="menu-close" class="icon-button site-menu__close" type="button" aria-label="Close menu" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z"/></svg></button>
-    <div class="site-menu__scroll">
+    <div id="menu-content" class="site-menu__scroll">
       <div class="site-menu__shortcuts">
-        <button id="menu-buy" class="site-menu__shortcut site-menu__shortcut--buy" type="button"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 3h13v3H5a1 1 0 0 0 0 2h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm13 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>BUY</button>
-        <button id="menu-redeem" class="site-menu__shortcut" type="button" disabled title="Redemptions are not available in this demo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3h18a1 1 0 0 1 1 1v4H2V4a1 1 0 0 1 1-1Zm-1 8h20v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9Zm3 3v3h5v-3H5Zm12-13h-3v5h3V1ZM7 1v5h3V1H7Z"/></svg>REDEEM</button>
+        <button id="menu-buy" class="site-menu__shortcut site-menu__shortcut--buy" type="button" aria-label="BUY" title="BUY"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 3h13v3H5a1 1 0 0 0 0 2h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm13 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg><span class="site-menu__shortcut-label">BUY</span></button>
+        <button id="menu-redeem" class="site-menu__shortcut" type="button" aria-label="REDEEM" disabled title="Redemptions are not available in this demo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3h18a1 1 0 0 1 1 1v4H2V4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9Zm3 3v3h5v-3H5Zm12-13h-3v5h3V1ZM7 1v5h3V1H7Z"/></svg><span class="site-menu__shortcut-label">REDEEM</span></button>
       </div>
       <nav id="menu-navigation" class="site-menu__navigation" aria-label="Casino navigation"></nav>
       <footer class="site-menu__footer">
