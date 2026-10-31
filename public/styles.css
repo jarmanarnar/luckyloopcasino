@@ -43,7 +43,7 @@
       --sidebar-rail-width: 4.5rem;
       --sidebar-expanded-width: 14.5rem;
       --sidebar-width: 0px;
-      --sidebar-surface: var(--surface-card);
+      --sidebar-surface: #000;
       --sidebar-divider: var(--top-bar-divider);
       --sidebar-duration: 240ms;
       --sidebar-easing: cubic-bezier(.22, 1, .36, 1);
