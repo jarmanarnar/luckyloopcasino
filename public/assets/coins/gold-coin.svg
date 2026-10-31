@@ -36,6 +36,4 @@
   <path d="M13.6 25.4C16.1 16.1 23.1 11.7 32 11.7C37.2 11.7 41.2 13.2 44.3 15.7C31.1 10.9 20.6 15 13.6 25.4Z" fill="#FFF7CF" opacity=".36"/>
   <path d="M40.4 23.2C38.4 21.2 35.7 20 32.6 20C26.4 20 21.4 25 21.4 31.2C21.4 37.4 26.4 42.4 32.6 42.4C36.2 42.4 39.4 40.8 41.4 38.2V31.7H32.9" transform="translate(0 1.6)" stroke="#85460B" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M40.4 23.2C38.4 21.2 35.7 20 32.6 20C26.4 20 21.4 25 21.4 31.2C21.4 37.4 26.4 42.4 32.6 42.4C36.2 42.4 39.4 40.8 41.4 38.2V31.7H32.9" stroke="url(#gold-letter)" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M26.5 48.5C28.6 45.8 30.2 45.8 32 48.1C33.8 50.4 35.4 50.4 37.5 47.7C35.4 45 33.8 45 32 47.3C30.2 49.6 28.6 49.6 26.5 48.5Z" stroke="#FFF0B0" stroke-width="1" stroke-linejoin="round" opacity=".65"/>
-  <path d="M11.3 13.3L12.5 10.2L13.6 13.3L16.7 14.4L13.6 15.5L12.5 18.6L11.3 15.5L8.2 14.4L11.3 13.3Z" fill="#FFF9DD" opacity=".9"/>
 </svg>
