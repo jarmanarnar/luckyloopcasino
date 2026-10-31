@@ -6,10 +6,11 @@ import vm from 'node:vm';
 const source = (await readFile(new URL('../public/hero-carousel.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initHeroCarousel', 'function initHeroCarousel');
 
-function heroPage({ reduced = false, intersection = true } = {}) {
+function heroPage({ reduced = false, intersection = true, starting = false } = {}) {
   const calls = [], timers = new Map(), mutations = [], intersections = [], animations = [], providerCalls = [];
   let timerId = 0, selected = 0, modal = false, factories = 0, now = 0;
   const document = { body: { dataset: { view: 'lobby' } }, hidden: false, activeElement: null };
+  if (starting) Object.assign(document.body.dataset, { appState: 'loading', appStarting: 'true' });
   class Node {
     constructor() { this.dataset = {}; this.style = {}; this.attributes = new Map(); this.listeners = new Map(); this.children = []; this.hidden = false; this.disabled = false; this.textContent = ''; }
     append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
@@ -145,6 +146,18 @@ function heroPage({ reduced = false, intersection = true } = {}) {
     preferenceMotion(value) { document.body.dataset.reduceMotion = String(value); documentEvents.emit('loop:preferences-change'); },
   };
 }
+
+test('banner autoplay waits until the loader and first revealed paint finish', () => {
+  const page = heroPage({ starting: true });
+  page.visible();
+  assert.equal(page.timers.size, 0);
+  assert.equal(page.animations.some(animation => animation.playState === 'running'), false);
+  page.document.body.dataset.appState = 'ready'; page.mutations[0].callback();
+  assert.equal(page.timers.size, 0, 'the first revealed paint remains still');
+  delete page.document.body.dataset.appStarting; page.mutations[0].callback();
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].duration, 6000);
+});
 
 test('initializes once, reveals controls, and labels the four promotions with one selected dot', () => {
   const page = heroPage();

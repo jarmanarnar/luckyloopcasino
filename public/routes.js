@@ -94,14 +94,32 @@ export function initRouter({ window: scope = window } = {}) {
   let frame = 0;
   const position = () => ({ x: scope.scrollX || 0, y: scope.scrollY || 0 });
   let entry = history.state?.loopRoute || { id: ++serial, index: 0, scroll: position() };
+  const scrollStorageKey = 'luckyloop-scroll-v1';
+  let initialScroll = { ...(entry.scroll || position()) };
+  try {
+    const saved = JSON.parse(scope.sessionStorage?.getItem(scrollStorageKey) || 'null');
+    if (saved?.url === currentUrl && saved.id === entry.id
+      && Number.isFinite(saved.scroll?.x) && Number.isFinite(saved.scroll?.y)) initialScroll = saved.scroll;
+  } catch { /* History remains the fallback when session storage is unavailable. */ }
   serial = Math.max(serial, entry.id);
   history.replaceState({ ...history.state, loopRoute: entry }, '',
     isLegacyAllGamesHash(location.hash) ? formatRoute(currentRoute) : location.href);
   currentUrl = location.href;
   history.scrollRestoration = 'manual';
 
-  function savePosition() { positions.set(entry.id, position()); }
+  function savePosition() {
+    const scroll = position();
+    positions.set(entry.id, scroll);
+    // Save while the page is active: browser reload can snapshot history state
+    // before pagehide. This small, tab-local record belongs to one history entry.
+    try { scope.sessionStorage?.setItem(scrollStorageKey, JSON.stringify({ url: location.href, id: entry.id, scroll })); }
+    catch { /* Native navigation and in-memory scroll still work. */ }
+  }
   scope.addEventListener('scroll', savePosition, { passive: true });
+  scope.addEventListener('pagehide', () => {
+    savePosition();
+    history.replaceState({ ...history.state, loopRoute: { ...entry, scroll: position() } }, '', location.href);
+  });
   function emit(previous, options) {
     scope.cancelAnimationFrame(frame);
     for (const listener of [...subscribers].sort((a, b) => a.priority - b.priority)) {
@@ -143,6 +161,9 @@ export function initRouter({ window: scope = window } = {}) {
   scope.addEventListener('hashchange', fromHistory);
   return {
     getRoute: () => currentRoute,
+    restoreInitialScroll() {
+      if (currentRoute.type !== 'game') scope.scrollTo({ left: initialScroll.x, top: initialScroll.y, behavior: 'instant' });
+    },
     navigate,
     subscribe(fn, { priority = 0 } = {}) {
       const listener = { fn, priority };

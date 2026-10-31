@@ -7,6 +7,7 @@
   <meta name="application-name" content="LuckyLoop Casino">
   <meta name="description" content="LuckyLoop Casino — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>LuckyLoop Casino</title>
+  <link rel="preload" href="assets/fonts/arimo-bold-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="wallet.css">
   <link rel="stylesheet" href="site-menu.css">
@@ -18,7 +19,14 @@
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
 </head>
-<body data-sidebar="collapsed">
+<body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true">
+  <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
+    <img src="assets/loop-wireframe-v1.png" width="1916" height="821" alt="LOOP">
+    <span class="app-loader__spinner" aria-hidden="true"></span>
+    <p id="app-load-status" class="visually-hidden">Loading LuckyLoop Casino…</p>
+    <button id="app-load-retry" class="app-loader__retry" type="button" hidden>Try again</button>
+    <noscript><p>Enable JavaScript to load the site.</p></noscript>
+  </div>
   <aside id="site-sidebar" class="site-sidebar" aria-label="Casino sidebar" lang="en" dir="ltr" hidden>
     <div id="sidebar-header" class="site-sidebar__header"></div>
     <div id="sidebar-content" class="site-sidebar__content"></div>
@@ -153,6 +161,6 @@
     <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>Back to Lobby</button>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
   </dialog>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="bootstrap.js"></script>
 </body>
 </html>

@@ -216,6 +216,13 @@ export function initWallet({ openStore } = {}) {
     document.fonts.addEventListener('loadingdone', () => scheduleLayout(true));
   }
   walletController = {
+    refreshLayout() {
+      cancelAnimationFrame(layoutFrame);
+      layoutFrame = null;
+      fontsChanged = false;
+      applyLayout(readLayout());
+      finishBalance();
+    },
     creditGold(amount) {
       if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 7000 || state.balances.GC + amount > 999999999) return false;
       state = { ...state, balances: { ...state.balances, GC: state.balances.GC + amount } };

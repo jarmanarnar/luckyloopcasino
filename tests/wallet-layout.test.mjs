@@ -75,13 +75,14 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
     localStorage: { getItem: () => saved ? JSON.stringify(saved) : null, setItem(key, value) { storageWrites.push({ key, value }); } },
     getComputedStyle: styleFor,
     requestAnimationFrame(callback) { frames.push(callback); return frames.length; },
+    cancelAnimationFrame(id) { if (id !== null) frames[id - 1] = null; },
     ResizeObserver: class {
       constructor(callback) { this.callback = callback; this.nodes = []; observers.push(this); }
       observe(element) { this.nodes.push(element); }
     },
     CustomEvent: class {},
   };
-  const flush = () => { while (frames.length) frames.shift()(); };
+  const flush = () => { while (frames.length) frames.shift()?.(); };
   const controller = vm.runInNewContext(`${source}\ninitWallet({ openStore });`, context);
   await Promise.resolve();
   flush();
@@ -225,4 +226,17 @@ test('font loading remeasures balances even if CSS font declarations stay the sa
   const before = page.calls.length;
   page.events.loadingdone(); page.flush();
   assert.equal(page.calls.length, before + 1);
+});
+
+test('startup explicitly finishes wallet layout before revealing the page', async () => {
+  const page = await walletPage();
+  const initial = parseFloat(page.nodes['#coin-wallet'].style.maxWidth);
+  page.nodes['.header-context'].width = 44;
+  page.observers[0].callback();
+  const before = page.calls.length;
+  page.controller.refreshLayout();
+  assert.equal(parseFloat(page.nodes['#coin-wallet'].style.maxWidth), initial - 44);
+  assert.equal(page.calls.length, before + 1);
+  page.flush();
+  assert.equal(page.calls.length, before + 1, 'a queued measurement must not change the wallet after reveal');
 });

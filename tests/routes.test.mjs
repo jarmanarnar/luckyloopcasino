@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { formatRoute, initRouter, parseRoute } from '../public/routes.js';
 
-function browser(hash = '') {
+function browser(hash = '', state = null, storage = new Map()) {
   const listeners = new Map(), frames = new Map();
   let frameId = 0, index = 0;
-  const entries = [{ url: new URL(`https://example.com/luckyloopcasino/${hash}`), state: null }];
+  const entries = [{ url: new URL(`https://example.com/luckyloopcasino/${hash}`), state }];
   const emit = name => { for (const fn of listeners.get(name) || []) fn(); };
   const scope = {
     scrollX: 0, scrollY: 0,
+    sessionStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     location: { get href() { return entries[index].url.href; }, get hash() { return entries[index].url.hash; } },
     history: {
       get state() { return entries[index].state; },
@@ -39,6 +40,51 @@ function browser(hash = '') {
     },
   };
 }
+
+test('reload restores the last page position after rendering without changing the route', () => {
+  const first = browser('#/popular');
+  initRouter({ window: first.scope });
+  first.scroll(420);
+  first.emit('pagehide');
+  const refreshed = browser(first.scope.location.hash, first.scope.history.state);
+  const router = initRouter({ window: refreshed.scope });
+  assert.equal(refreshed.scope.scrollY, 0, 'restoration waits until the page has rendered');
+  router.restoreInitialScroll();
+  assert.equal(refreshed.scope.scrollY, 420);
+  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'popular' });
+  assert.equal(refreshed.entries.length, 1, 'reload must not add a navigation');
+  router.navigate({ type: 'home' }); refreshed.flush();
+  assert.equal(refreshed.scope.scrollY, 0, 'normal page navigation still starts at the top');
+});
+
+test('initial game routes do not restore shell scrolling over the game viewport', () => {
+  const page = browser('#game=SanQuentin', { loopRoute: { id: 1, index: 0, scroll: { x: 0, y: 420 } } });
+  initRouter({ window: page.scope }).restoreInitialScroll();
+  assert.equal(page.scope.scrollY, 0);
+});
+
+test('reload uses the last active scroll even when history was snapshotted before pagehide', () => {
+  const storage = new Map();
+  const first = browser('#/popular', null, storage);
+  initRouter({ window: first.scope });
+  first.scroll(420);
+  const refreshed = browser(first.scope.location.hash, first.scope.history.state, storage);
+  initRouter({ window: refreshed.scope }).restoreInitialScroll();
+  assert.equal(refreshed.scope.scrollY, 420);
+  const otherEntry = browser('#/popular', { loopRoute: { id: 9, index: 1, scroll: { x: 0, y: 0 } } }, storage);
+  initRouter({ window: otherEntry.scope }).restoreInitialScroll();
+  assert.equal(otherEntry.scope.scrollY, 0, 'tab cache must not leak to a different history entry at the same URL');
+});
+
+test('blocked session storage falls back to history without breaking scroll or navigation', () => {
+  const storage = { get() { throw new Error('Blocked'); }, set() { throw new Error('Blocked'); } };
+  const page = browser('#/popular', { loopRoute: { id: 1, index: 0, scroll: { x: 0, y: 120 } } }, storage);
+  const router = initRouter({ window: page.scope });
+  router.restoreInitialScroll();
+  assert.equal(page.scope.scrollY, 120);
+  router.navigate({ type: 'home' }); page.flush();
+  assert.equal(page.scope.scrollY, 0);
+});
 
 test('category, provider and search links retain their page and filters after refresh', () => {
   const routes = [

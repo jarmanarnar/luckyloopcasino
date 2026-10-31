@@ -19,6 +19,7 @@ npm test
 
 ## Current behavior
 
+- A branded startup loader waits for the requested route, saved local state, font loading, every rendered page image and 200ms of measured layout stability. Initial transitions and banner rotation stay disabled through the first revealed paint. Missing assets or startup failures offer a retry instead of exposing an incomplete page on a timer. Refresh retains the desktop sidebar width and restores the page scroll after rendering; mobile drawers stay closed on reload.
 - Responsive promotional carousel containing four empty frames: one, two or three per view, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Frames use the same shared surface and radius tokens as the game cards. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the frames.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Game cards open a dedicated, refresh-safe introduction page with a wireframe portrait, linked provider, shared favorites, game format, known release date, collection links and related games. Information and Description tabs keep details separate from launch. Play demo starts the edge-to-edge game stage; browsing details does not load a provider or count as a game visit. Legacy direct demo links still work. Unavailable RTP, volatility and win statistics are omitted.
@@ -49,6 +50,7 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | Location | Purpose |
 | --- | --- |
 | `public/index.html`, `styles.css`, `wallet.css` | Page structure and styles |
+| `public/bootstrap.js`, `app-readiness.js`, `app.js` | Startup loading, asset/layout readiness and recoverable initialization |
 | `public/routes.js`, `catalog-view.js`, `catalog-page-model.js`, `catalog-pages.css` | Page routing, independent catalog pages, filtering and pagination |
 | `public/collections.js`, `game-types.js`, `provider-details.js` | Collections, verified release dates, game formats and provider summaries |
 | `public/catalog.js`, `removed-games.js` | Reviewed games and permanent exclusions |

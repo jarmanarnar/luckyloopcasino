@@ -20,7 +20,7 @@ test('canonical page serves LuckyLoop branding and local styles', async () => {
   assert.match(html, /<title>LuckyLoop Casino<\/title>/);
   assert.match(html, /href="styles.css"/);
   assert.match(html, /href="wallet.css"/);
-  assert.match(html, /src="app.js"/);
+  assert.match(html, /src="bootstrap.js"/);
   assert.doesNotMatch(html, /<style>/);
 });
 
@@ -42,7 +42,7 @@ test('legacy asset links point at the same current app', async () => {
 });
 
 test('scripts, styles, fonts, provider marks and promotional artwork have correct types', async () => {
-  for (const [file, type] of [['app.js', 'text/javascript'], ['styles.css', 'text/css'],
+  for (const [file, type] of [['bootstrap.js', 'text/javascript'], ['app.js', 'text/javascript'], ['styles.css', 'text/css'],
     ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp'],
     ['assets/fonts/arimo-bold-latin.woff2', 'font/woff2']]) {
     const response = await fetch(`${origin}/luckyloopcasino/${file}`);

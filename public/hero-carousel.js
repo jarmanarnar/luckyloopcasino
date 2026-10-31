@@ -93,6 +93,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
 
   function canRotate() {
     return !root.hidden && !destroyed && !suspended && !motionReduced()
+      && !['loading', 'error'].includes(document.body.dataset.appState) && !document.body.dataset.appStarting
       && !hovered && !focused && !dragging && visible && !document.hidden
       && document.body.dataset.view !== 'game' && !document.querySelector('dialog[open]')
       && carousel.scrollSnapList().length > 1;
@@ -190,7 +191,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
 
   const stateObserver = new MutationObserver(scheduleRotation);
   stateObserver.observe(document.body, {
-    subtree: true, attributes: true, attributeFilter: ['data-view', 'open'],
+    subtree: true, attributes: true, attributeFilter: ['data-view', 'open', 'data-app-state', 'data-app-starting'],
   });
   stateObserver.observe(root, { attributes: true, attributeFilter: ['hidden'] });
   const visibilityObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {

@@ -8,7 +8,7 @@ import { createMemberState, dailyStatus, claimDailyReward } from '../public/memb
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
-function menuPage({ desktop = false, routeFromGame = false } = {}) {
+function menuPage({ desktop = false, routeFromGame = false, storage = new Map() } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   let clock = new Date(2026, 9, 31, 12), memberState = createMemberState(), timerId = 0;
@@ -234,6 +234,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   };
   const context = {
     document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [clock])); } },
     setTimeout(callback, delay) { timers.set(++timerId, { callback, delay }); return timerId; },
     clearTimeout(id) { timers.delete(id); },
@@ -270,6 +271,29 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     },
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
+
+test('desktop sidebar retains its width across refresh and a mobile layout round trip', () => {
+  const storage = new Map();
+  const first = menuPage({ desktop: true, storage });
+  first.nodes['menu-toggle'].click();
+  const refreshed = menuPage({ desktop: true, storage });
+  assert.equal(refreshed.document.body.dataset.sidebar, 'expanded');
+  assert.equal(refreshed.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
+  refreshed.resize(false);
+  assert.equal(refreshed.nodes['site-menu'].open, false, 'desktop state must not open a mobile drawer');
+  refreshed.resize(true);
+  assert.equal(refreshed.document.body.dataset.sidebar, 'expanded');
+  refreshed.nodes['menu-toggle'].click();
+  assert.equal(menuPage({ desktop: true, storage }).document.body.dataset.sidebar, 'collapsed');
+});
+
+test('blocked browser storage does not prevent sidebar initialization or toggling', () => {
+  const storage = { get() { throw new Error('Blocked'); }, set() { throw new Error('Blocked'); } };
+  const page = menuPage({ desktop: true, storage });
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+});
 
 test('menu opens once, focuses BUY, and only lists available collections', () => {
   const page = menuPage();

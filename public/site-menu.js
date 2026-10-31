@@ -36,6 +36,8 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   const desktopMedia = window.matchMedia('(min-width: 45rem)');
   let desktop = false;
   let expanded = false;
+  const sidebarStorageKey = 'luckyloop-sidebar-expanded-v1';
+  try { expanded = localStorage.getItem(sidebarStorageKey) === 'true'; } catch { /* Keep the default when storage is unavailable. */ }
   let afterClose = null;
   let pendingClose = false;
   let tooltipTarget = null;
@@ -176,6 +178,7 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   function setExpanded(value) {
     hideTooltip();
     expanded = value;
+    try { localStorage.setItem(sidebarStorageKey, String(value)); } catch { /* The current layout still works without storage. */ }
     document.body.dataset.sidebar = value ? 'expanded' : 'collapsed';
     sidebar.dataset.expanded = String(value);
     trigger.setAttribute('aria-expanded', String(value));
@@ -223,7 +226,7 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
       sidebarContent.append(menuContent);
       trigger.removeAttribute('aria-haspopup');
       trigger.setAttribute('aria-controls', 'site-sidebar');
-      setExpanded(false);
+      setExpanded(expanded);
       observeState();
       syncMenu();
     } else {
