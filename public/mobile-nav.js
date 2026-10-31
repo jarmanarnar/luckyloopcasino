@@ -7,7 +7,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   const dialogs = {
     menu: document.querySelector('#site-menu'),
   };
-  const buttons = new Map(['menu', 'store', 'lobby', 'redeem', 'promotions']
+  const buttons = new Map(['menu', 'store', 'lobby', 'redeem', 'profile']
     .map(action => [action, document.querySelector(`#mobile-nav-${action}`)]));
   if (![nav, categories, ...Object.values(dialogs), ...buttons.values()].every(Boolean)) return;
   initialized = true;
@@ -17,7 +17,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
       : document.body.dataset.view === 'game' ? 'lobby'
-        : ['redeem', 'promotions'].includes(categories.dataset.activeMenu) ? categories.dataset.activeMenu
+        : ['redeem', 'profile'].includes(categories.dataset.activeMenu) ? categories.dataset.activeMenu
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
         : ['feature', 'search', 'providers'].includes(document.body.dataset.page)
           || ['search', 'providers'].includes(categories.dataset.activeMenu) ? 'menu' : 'lobby';
@@ -42,7 +42,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
         openStore?.();
         break;
       case 'redeem':
-      case 'promotions':
+      case 'profile':
         openFeature?.(action);
         break;
     }

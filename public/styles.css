@@ -34,7 +34,8 @@
       --catalog-control-size: 2.5rem;
       --catalog-toolbar-height: 3.5rem;
       --catalog-toolbar-padding: .5rem;
-      --catalog-accent: #e8bf65;
+      --gold-accent: #e8bf65;
+      --catalog-accent: var(--gold-accent);
       --surface-control: #20212a;
       --catalog-active-background: var(--surface-control);
       --text-primary: #eeeef2;

@@ -19,7 +19,7 @@ function memberPage(initialRoute, storage = new Map()) {
     addEventListener(type, listener) { this.listeners.set(type, listener); }
     focus() {}
   }
-  const ids = ['feature-view', 'feature-content', 'feature-title', 'feature-description',
+  const ids = ['feature-view', 'feature-content', 'feature-header', 'feature-title', 'feature-description',
     'feature-status', 'feature-back', 'catalog-categories'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
   const document = {
@@ -34,7 +34,8 @@ function memberPage(initialRoute, storage = new Map()) {
       route = next; navigations.push(next);
       subscribers.forEach(fn => fn(next, { source: 'navigate', ...meta }));
     },
-    subscribe(fn) { subscribers.push(fn); }, back() {},
+    subscribe(fn) { subscribers.push(fn); },
+    back() { throw new Error('The internal Back button must navigate to the lobby directly'); },
   };
   const context = {
     document, router, wallet: { setPreferences() {} }, FEATURE_PAGES, isFeaturePage,
@@ -49,6 +50,16 @@ function memberPage(initialRoute, storage = new Map()) {
   const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet });`, context);
   return { api, router, storage, nodes, navigations, context: () => pageContext };
 }
+
+test('visible member Back controls return to the lobby after visiting another internal page', () => {
+  for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader)) {
+    const page = memberPage({ type: 'feature', pageId: 'profile' });
+    page.router.navigate({ type: 'feature', pageId });
+    page.nodes['feature-back'].listeners.get('click')();
+    assert.equal(page.navigations.at(-1).type, 'home', pageId);
+    assert.equal(page.nodes['feature-view'].hidden, true);
+  }
+});
 
 test('shared favorites persist and notify across views while returned snapshots cannot mutate member state', () => {
   const page = memberPage({ type: 'game-details', gameId: 'alpha' });

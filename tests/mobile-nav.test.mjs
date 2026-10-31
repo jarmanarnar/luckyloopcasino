@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
-const actions = ['menu', 'store', 'lobby', 'redeem', 'promotions'];
+const actions = ['menu', 'store', 'lobby', 'redeem', 'profile'];
 
 function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
@@ -109,7 +109,7 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
 
-  for (const action of ['redeem', 'promotions']) {
+  for (const action of ['redeem', 'profile']) {
     page.button(action).click();
     assert.deepEqual(page.calls.at(-1), { action: 'feature', pageId: action });
     assert.deepEqual(active(page), [action]);
@@ -131,7 +131,7 @@ test('the mobile Menu button closes the menu instead of trying to open it again'
 });
 
 test('menu destinations wait for the menu close handoff and update the active destination', () => {
-  const expected = { lobby: 'home', store: 'store', redeem: 'feature', promotions: 'feature' };
+  const expected = { lobby: 'home', store: 'store', redeem: 'feature', profile: 'feature' };
   for (const action of Object.keys(expected)) {
     const page = navPage();
     page.button('menu').click();
@@ -164,8 +164,8 @@ test('desktop and other open dialogs prevent hidden or overlapping actions', () 
   const page = navPage({ desktop: true });
   page.media.matches = false;
   page.media.emit('change');
-  page.button('promotions').click();
-  assert.equal(page.calls.at(-1).pageId, 'promotions', 'mobile actions resume after the breakpoint changes');
+  page.button('profile').click();
+  assert.equal(page.calls.at(-1).pageId, 'profile', 'mobile actions resume after the breakpoint changes');
 });
 
 test('Menu preserves the current game while every page destination uses its router entry point', () => {
@@ -177,7 +177,7 @@ test('Menu preserves the current game while every page destination uses its rout
     assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'game');
   }
-  for (const [action, destination] of [['lobby', 'home'], ['store', 'store'], ['redeem', 'feature'], ['promotions', 'feature']]) {
+  for (const [action, destination] of [['lobby', 'home'], ['store', 'store'], ['redeem', 'feature'], ['profile', 'feature']]) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
@@ -189,10 +189,10 @@ test('Menu preserves the current game while every page destination uses its rout
 });
 
 test('an active game selects Lobby even when the previous page has its own bottom destination', () => {
-  for (const previous of ['providers', 'store', 'redeem', 'promotions']) {
+  for (const previous of ['providers', 'store', 'redeem', 'profile']) {
     const page = navPage();
     page.nodes['catalog-categories'].dataset.activeMenu = previous;
-    page.body.dataset.page = ['redeem', 'promotions'].includes(previous) ? 'feature' : previous;
+    page.body.dataset.page = ['redeem', 'profile'].includes(previous) ? 'feature' : previous;
     page.body.dataset.view = 'game';
     page.flush();
     assert.deepEqual(active(page), ['lobby']);
@@ -260,7 +260,7 @@ test('state follows navigation from other surfaces and distinguishes destination
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
 
-  for (const destination of ['redeem', 'promotions']) {
+  for (const destination of ['redeem', 'profile']) {
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
     page.body.dataset.page = 'feature';
     page.flush();

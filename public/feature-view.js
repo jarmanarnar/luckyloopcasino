@@ -15,10 +15,11 @@ function node(tag, className, text) {
 export function initFeatureView({ router, wallet } = {}) {
   const root = document.querySelector('#feature-view');
   const content = document.querySelector('#feature-content');
+  const header = document.querySelector('#feature-header');
+  const back = document.querySelector('#feature-back');
   const title = document.querySelector('#feature-title');
-  const description = document.querySelector('#feature-description');
   const notice = document.querySelector('#feature-status');
-  if (!router || !root || !content || !title) return;
+  if (!router || !root || !content || !title || !header || !back) return;
   let saved;
   try { saved = JSON.parse(localStorage.getItem(MEMBER_STORAGE_KEY)); } catch { /* Use an empty local account. */ }
   let state = createMemberState(saved);
@@ -103,27 +104,30 @@ export function initFeatureView({ router, wallet } = {}) {
     }
     if (!isFeature) return;
     const page = FEATURE_PAGES[currentPage];
+    header.className = page.showHeader ? 'feature-header' : 'feature-header visually-hidden';
+    back.hidden = !page.showHeader;
     document.body.dataset.page = 'feature';
     document.querySelector('#catalog-categories').dataset.activeMenu = currentPage;
-    title.textContent = page.title; description.textContent = page.description;
+    title.textContent = page.title;
     document.title = `${page.title} · LuckyLoop Casino`;
     notice.textContent = '';
     state.visited = [...new Set([...state.visited, currentPage])]; persist({ refresh: false });
     renderContent();
     if (meta.source === 'navigate' && meta.focus !== false) title.focus({ preventScroll: true });
   }
-  document.querySelector('#feature-back').addEventListener('click', () => router.back());
+  back.addEventListener('click', () => router.navigate({ type: 'home' }));
   router.subscribe(render);
   applyPreferences();
   render(router.getRoute());
   // Re-evaluate daily availability when a sleeping tab becomes active, without timers.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && ['daily-bonus', 'bonus-hub', 'free-money', 'missions', 'lounge'].includes(currentPage)) renderContent();
+    if (!document.hidden && ['daily-bonus', 'free-money'].includes(currentPage)) renderContent();
   });
   return {
     openFeature: pageId => { if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId }); },
     member: {
       getState: () => createMemberState(state),
+      getDailyStatus: now => dailyStatus(state, now),
       toggleFavorite: id => ctx.toggleFavorite(id),
       subscribe(listener) {
         memberListeners.add(listener);

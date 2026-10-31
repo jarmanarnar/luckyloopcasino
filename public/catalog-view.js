@@ -263,8 +263,7 @@ export function initCatalogView({ router } = {}) {
         behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     }
   });
-  document.querySelector('#catalog-page-back').addEventListener('click', () => router.back(
-    renderedRoute?.type === 'provider' ? { type: 'providers' } : { type: 'home' }));
+  document.querySelector('#catalog-page-back').addEventListener('click', openHome);
   more.addEventListener('click', () => {
     const key = JSON.stringify(renderedRoute);
     limits.set(key, (limits.get(key) || PAGE_SIZE) + PAGE_SIZE);

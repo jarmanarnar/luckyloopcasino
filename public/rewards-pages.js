@@ -90,43 +90,6 @@ function tools(ctx) {
   return { n, stack, grid, card, button, note, stats, progress, details };
 }
 
-function lounge(ctx, t) {
-  const state = ctx.state();
-  const daily = ctx.dailyStatus();
-  return t.stack(
-    t.card(`Welcome, ${state.profile?.displayName || 'Loop Player'}`, 'Your bonuses, membership and invitations in one place.', 'lounge',
-      t.stats([['Daily Bonus', daily.available ? 'Ready to collect' : 'Collected today'], ['Demo rank', getDemoRank(state).current.name]])),
-    t.grid(
-      t.card('VIP Club', 'Explore member benefits and the proposed VIP experience.', 'vip-club', ctx.link('vip-club', 'Explore VIP')),
-      t.card('Daily Bonus', `${amount(daily.amount)} GC for your next daily check-in.`, 'daily-bonus', ctx.link('daily-bonus', daily.available ? 'Collect bonus' : 'View streak')),
-      t.card('Invite Friends', 'Your invitation code and referral overview.', 'invite-friends', ctx.link('invite-friends', 'Invite friends')),
-      t.card('CoinBack', 'A place for rewards returned to your account.', 'coinback', ctx.link('coinback', 'View CoinBack')),
-    ),
-    t.grid(
-      t.card('Missions', 'Small goals to explore the local prototype.', 'missions', ctx.link('missions', 'View missions')),
-      t.card('Bonus Hub', 'Browse all available reward areas.', 'bonus-hub', ctx.link('bonus-hub', 'Open Bonus Hub')),
-    ),
-  );
-}
-
-function bonusHub(ctx, t) {
-  const state = ctx.state();
-  const claimed = (state.taskClaims || []).length;
-  return t.stack(
-    t.card('Your rewards, together', 'Collect your daily demo bonus, complete missions and explore upcoming benefits.', 'bonus-hub',
-      t.stats([['Daily claims', state.daily?.totalClaims || 0], ['Missions collected', `${claimed} / ${DEMO_TASKS.length}`]])),
-    t.grid(
-      t.card('Daily Bonus', 'A seven-day cycle of Gold Coins rewards.', 'daily-bonus', ctx.link('daily-bonus', 'Daily Bonus')),
-      t.card('Free Money', 'Demo rewards for getting to know the platform.', 'free-money', ctx.link('free-money', 'View tasks')),
-      t.card('Promotions', 'Discover the current promotion concepts.', 'promotions', ctx.link('promotions', 'Browse promotions')),
-      t.card('VIP Club', 'Preview exclusive member benefits.', 'vip-club', ctx.link('vip-club', 'Explore VIP')),
-      t.card('CoinBack', 'Your future CoinBack rewards will live here.', 'coinback', ctx.link('coinback', 'View CoinBack')),
-      t.card('Invite Friends', 'Keep your invitation tools in one place.', 'invite-friends', ctx.link('invite-friends', 'Invite friends')),
-    ),
-    t.details('How demo rewards work', 'Gold Coins collected here are saved only in this browser. They have no cash value and do not change the separate play balance inside provider demos.'),
-  );
-}
-
 function dailyBonus(ctx, t) {
   const daily = ctx.dailyStatus();
   const days = t.n('ol', 'feature-grid feature-grid--days');
@@ -163,8 +126,7 @@ function vipClub(ctx, t) {
     t.n('h2', 'feature-section-title', 'Member benefits'),
     t.grid(
       t.card('Personal service', 'A dedicated place for member support and requests.', 'support', ctx.link('support', 'Support center')),
-      t.card('Exclusive offers', 'A proposed home for member-only promotions.', 'promotions', ctx.link('promotions', 'Explore promotions')),
-      t.card('Birthday surprises', 'A reward concept to celebrate member milestones.', 'bonus-hub', t.note('Preview · not active')),
+      t.card('Birthday surprises', 'A reward concept to celebrate member milestones.', 'daily-bonus', t.note('Preview · not active')),
       t.card('CoinBack rewards', 'Track future CoinBack eligibility and rewards.', 'coinback', ctx.link('coinback', 'View CoinBack')),
     ),
     t.details('How will VIP membership work?', 'This page defines the proposed structure. Qualification, benefit amounts and availability have not been configured. Your demo rank currently reflects only the different games you have opened locally.'),
@@ -190,18 +152,17 @@ function rankSystem(ctx, t) {
       t.note(rank.next ? `Open ${Math.max(0, rank.next.games - rank.games)} more different games to reach ${rank.next.name}.` : 'You have explored all the current demo ranks.'),
       ctx.link('popular', 'Explore games')),
     list,
-    t.note('Demo progression only. No wagers, purchases or provider outcomes are tracked, and ranks do not unlock monetary benefits.'),
     ctx.link('vip-club', 'Explore VIP Club'),
   );
 }
 
-function missions(ctx, t, isFreeMoney = false) {
+function freeMoney(ctx, t) {
   const state = ctx.state();
   const claimed = new Set(state.taskClaims || []);
   const cards = DEMO_TASKS.map(task => {
     const complete = taskComplete(task.id, state);
     const collected = claimed.has(task.id);
-    return t.card(task.title, task.description, 'missions',
+    return t.card(task.title, task.description, 'tasks',
       t.n('strong', '', `${amount(task.amount)} GC`),
       t.n('p', 'feature-kicker', collected ? 'Collected' : complete ? 'Ready to collect' : 'In progress'),
       t.progress(complete ? 1 : 0, `${task.title} progress`),
@@ -212,8 +173,8 @@ function missions(ctx, t, isFreeMoney = false) {
         }) : ctx.link(task.target, task.action));
   });
   return t.stack(
-    t.card(isFreeMoney ? 'Small tasks. A little extra luck.' : 'Your next small goal', 'Explore the prototype and collect local demo Gold Coins along the way.', isFreeMoney ? 'free-money' : 'missions',
-      t.stats([['Missions', DEMO_TASKS.length], ['Collected', claimed.size]])),
+    t.card('Small tasks. A little extra luck.', 'Explore the prototype and collect local demo Gold Coins along the way.', 'free-money',
+      t.stats([['Tasks', DEMO_TASKS.length], ['Collected', claimed.size]])),
     t.grid(...cards),
     t.details('Reward conditions', 'Each mission reward can be collected once in this browser. These are local demo coins with no cash value; no social account, purchase or external message is required.'),
     ctx.link('history', 'View reward history'),
@@ -253,26 +214,9 @@ function coinback(ctx, t) {
       t.stats([['Available to collect', '0 GC'], ['Collected', '0 GC']]),
       t.note('Program preview · CoinBack rules and eligibility are not connected.')),
     t.card('No CoinBack rewards yet', 'When the program is configured, eligible rewards and their conditions will appear here.', null,
-      ctx.link('bonus-hub', 'Explore other rewards')),
+      ctx.link('free-money', 'Explore other rewards')),
     t.details('How CoinBack will work', 'This area will display the reward calculation, qualifying activity and collection window. No percentage or return is promised, and provider game outcomes are not available to this prototype.'),
     ctx.link('history', 'View history'),
-  );
-}
-
-function promotions(ctx, t) {
-  return t.stack(
-    t.note('Promotion concepts for the prototype. Active local demo rewards are marked below.'),
-    t.grid(
-      t.card('Daily check-in', 'Collect a growing Gold Coins reward for up to seven consecutive days.', 'daily-bonus',
-        t.n('span', 'feature-kicker', 'Local demo reward'), ctx.link('daily-bonus', 'View Daily Bonus')),
-      t.card('Explore and collect', 'Complete three introductory missions around the platform.', 'missions',
-        t.n('span', 'feature-kicker', 'Local demo reward'), ctx.link('missions', 'View missions')),
-      t.card('Member offers', 'A future home for personalized member promotions.', 'vip-club',
-        t.n('span', 'feature-kicker', 'Program preview'), ctx.link('vip-club', 'Explore VIP')),
-      t.card('Invite friends', 'Preview your invitation link and referral overview.', 'invite-friends',
-        t.n('span', 'feature-kicker', 'Program preview'), ctx.link('invite-friends', 'View invitations')),
-    ),
-    t.details('Promotion details', 'Every future promotion will show eligibility, reward amounts, expiry and conditions before it can be claimed. The current local prototype has no paid promotions or real prize fulfillment.'),
   );
 }
 
@@ -283,7 +227,6 @@ function partners(ctx, t) {
       t.card('Invite Friends', 'A personal invitation code for sharing with your friends.', 'invite-friends', ctx.link('invite-friends', 'Your invitation link')),
       t.card('Affiliate Program', 'A separate area for creators, publishers and partner collaborations.', 'affiliate-program', ctx.link('affiliate-program', 'Explore the program')),
     ),
-    t.note('Both programs are in preview. Tracking, eligibility and commercial terms have not been activated.'),
   );
 }
 
@@ -302,34 +245,17 @@ function affiliateProgram(ctx, t) {
   );
 }
 
-function cryptoEarn(ctx, t) {
-  return t.stack(
-    t.card('Crypto & Earn', 'A place to explore future reward tools, kept separate from casino play.', 'crypto-earn',
-      t.n('p', 'feature-kicker', 'Concept preview · not connected')),
-    t.grid(
-      t.card('Reward drops', 'A possible home for platform reward campaigns and their eligibility.', 'bonus-hub', ctx.link('bonus-hub', 'View current demo rewards')),
-      t.card('Partner rewards', 'Explore the proposed invitation and partner areas.', 'partners', ctx.link('partners', 'Explore partners')),
-    ),
-    t.details('What is available now?', 'No crypto wallet, mining service, swap, deposit or earning product is connected. This page reserves the place in the navigation while the product is being designed.'),
-  );
-}
-
 export function renderRewardsPage(pageId, ctx) {
   const t = tools(ctx);
   switch (pageId) {
-    case 'lounge': return lounge(ctx, t);
-    case 'bonus-hub': return bonusHub(ctx, t);
     case 'daily-bonus': return dailyBonus(ctx, t);
     case 'vip-club': return vipClub(ctx, t);
     case 'rank-system': return rankSystem(ctx, t);
-    case 'free-money': return missions(ctx, t, true);
-    case 'missions': return missions(ctx, t);
+    case 'free-money': return freeMoney(ctx, t);
     case 'invite-friends': return inviteFriends(ctx, t);
     case 'coinback': return coinback(ctx, t);
-    case 'promotions': return promotions(ctx, t);
     case 'partners': return partners(ctx, t);
     case 'affiliate-program': return affiliateProgram(ctx, t);
-    case 'crypto-earn': return cryptoEarn(ctx, t);
     default: return null;
   }
 }

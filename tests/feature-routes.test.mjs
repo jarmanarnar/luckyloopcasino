@@ -14,7 +14,7 @@ test('each member area has its own refresh-safe route without catalog filters le
 });
 
 test('unknown member URLs cannot turn into arbitrary pages and game links retain a member origin', () => {
-  for (const hash of ['#/not-a-member-page', '#/lounge/unknown', '#/profile/../../settings']) {
+  for (const hash of ['#/not-a-member-page', '#/bonus-hub', '#/missions', '#/promotions', '#/crypto-earn', '#/lounge', '#/lounge/unknown', '#/profile/../../settings']) {
     assert.deepEqual(parseRoute(hash), { type: 'home' });
   }
   const origin = formatRoute({ type: 'feature', pageId: 'history' });

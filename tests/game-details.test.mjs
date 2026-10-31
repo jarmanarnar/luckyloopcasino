@@ -112,11 +112,19 @@ test('Play demo explicitly launches the game and points Back to its pre-game pag
   assert.ok(page.byText('h1', 'Alpha'));
 });
 
-test('provider and collection links navigate to independent pages and Back preserves the originating page', () => {
+test('the pre-game Back button always opens the lobby regardless of the originating page', () => {
+  for (const from of ['#/popular', '#/providers/studio', '#/profile', undefined]) {
+    const page = detailsPage({ type: 'game-details', gameId: 'alpha', ...(from ? { from } : {}) });
+    const back = page.byText('button', 'Back');
+    assert.equal(back.getAttribute('aria-label'), 'Back to lobby');
+    back.emit('click');
+    assert.equal(page.route.type, 'home');
+    assert.equal(page.backs.length, 0, 'the page control must not traverse browsing history');
+  }
+});
+
+test('provider and collection links navigate to independent pages', () => {
   const page = detailsPage();
-  page.byText('button', 'Back').emit('click');
-  assert.equal(page.backs.at(-1).type, 'category');
-  assert.equal(page.backs.at(-1).categoryId, 'popular');
   const provider = page.byText('a', 'Studio');
   assert.equal(provider.href, '#/providers/studio');
   const modified = provider.emit('click', { ctrlKey: true });

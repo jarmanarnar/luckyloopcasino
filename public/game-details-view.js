@@ -1,7 +1,7 @@
 import { GAMES, PROVIDERS } from './catalog.js';
 import { CATEGORIES, LEGACY_CATEGORIES, getGameCategoryIds, getGameReleaseDate } from './collections.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
-import { formatRoute, parseRoute } from './routes.js';
+import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
 
 const games = new Map(GAMES.map(game => [game.id, game]));
@@ -207,9 +207,9 @@ export function initGameDetails({ router, member } = {}) {
 
     const back = node('button', 'game-details-back');
     back.type = 'button';
-    back.setAttribute('aria-label', 'Back to previous page');
+    back.setAttribute('aria-label', 'Back to lobby');
     back.append(arrowIcon(), node('span', '', 'Back'));
-    back.addEventListener('click', () => router.back(route.from ? parseRoute(route.from) : { type: 'home' }));
+    back.addEventListener('click', () => router.navigate({ type: 'home' }));
 
     const hero = node('section', 'game-details-hero');
     hero.setAttribute('aria-labelledby', 'game-details-title');

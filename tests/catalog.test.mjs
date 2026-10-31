@@ -78,13 +78,16 @@ test('all 33 removed games and vendor aliases stay out of every collection and l
 
 test('lobby categories stay focused while existing editorial choices remain available', () => {
   assert.deepEqual(CATEGORIES.map(category => category.id), ['popular', 'slots', 'new-releases']);
+  assert.equal(getGamesForCategory('popular').length, 37);
+  assert.equal(new Set(getGamesForCategory('popular').map(game => game.id)).size, 37);
   assert.ok(getGamesForCategory('spooky').length > 0);
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
 });
 
 test('new releases contain only active, dated games in descending release order', () => {
   const releases = getGamesForCategory('new-releases');
-  assert.equal(releases.length, 11);
+  assert.equal(releases.length, 100);
+  assert.equal(new Set(releases.map(game => game.id)).size, 100);
   assert.equal(releases[0].id, 'nunchucksr96f100');
   assert.equal(getGameReleaseDate(releases[0]), '2026-10-29');
   assert.equal(getGameReleaseDate('unknown'), '');

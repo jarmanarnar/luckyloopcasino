@@ -17,7 +17,6 @@
 
 .store-heading { min-width: 0; }
 .store-heading h1 { margin: 0; font-size: var(--shelf-title-size); line-height: 1.25; }
-.store-heading p { margin: .375rem 0 0; color: var(--text-secondary); font-size: .875rem; }
 .store-balance { color: var(--text-secondary); font-size: .8125rem; line-height: 1.5; }
 
 .store-packages {

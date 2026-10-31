@@ -32,6 +32,10 @@ test('Popular has its own identity and preserves editorial order before optional
   assert.equal(page.title, 'Popular');
   assert.equal(page.activeMenu, 'popular');
   assert.equal(page.sort, 'featured');
+  assert.equal(page.games.length, 37);
+  assert.equal(pageSlice(page.games).hasMore, true);
+  assert.equal(pageSlice(page.games, 70).visible.length, 37);
+  assert.equal(pageSlice(page.games, 70).hasMore, false);
   assert.deepEqual(ids(page).slice(0, 5), [
     'nunchucksr96f100', 'SanQuentin', 'monopolymneyv196',
     'niptuck000000000', 'bloodsuckerstapa',
@@ -146,11 +150,15 @@ test('New Releases contains actual catalog entries with release dates and defaul
   assert.equal(page.title, 'New Releases');
   assert.equal(page.sort, 'newest');
   assert.deepEqual(ids(page).slice(0, 3), ['nunchucksr96f100', 'monopolymneyv196', 'ouija00000000000']);
-  assert.ok(page.games.length > 0);
+  assert.equal(page.games.length, 100);
+  assert.equal(pageSlice(page.games, 70).visible.length, 70);
+  assert.equal(pageSlice(page.games, 70).hasMore, true);
+  assert.equal(pageSlice(page.games, 105).visible.length, 100);
+  assert.equal(pageSlice(page.games, 105).hasMore, false);
   const dates = page.games.map(getGameReleaseDate);
   assert.ok(dates.every(date => /^\d{4}-\d{2}-\d{2}$/.test(date)));
   assert.deepEqual(dates, [...dates].sort().reverse());
   assert.ok(page.games.every(game => GAMES.includes(game)));
-  assert.equal(page.games.some(game => game.id === 'niptuck000000000'), false,
-    'an undated editorial favorite must not become a new release');
+  assert.equal(page.games.some(game => game.id === 'gonzosqumegaways'), false,
+    'older games outside the latest 100 must not enter New Releases');
 });

@@ -3,13 +3,16 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
+import { createMemberState, dailyStatus, claimDailyReward } from '../public/member-state.js';
 
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
 function menuPage({ desktop = false, routeFromGame = false } = {}) {
-  const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [];
+  const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
+  let clock = new Date(2026, 9, 31, 12), memberState = createMemberState(), timerId = 0;
+  const memberListeners = [], timers = new Map();
   class Node {
     constructor(tagName = 'div') {
       this.tagName = tagName.toUpperCase();
@@ -107,12 +110,12 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy', 'menu-redeem',
     'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
-    'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
-    'bottom-menu', 'mobile-nav', 'mobile-nav-menu', 'mobile-nav-store', 'mobile-nav-lobby', 'mobile-nav-redeem', 'mobile-nav-promotions',
+    'menu-mobile-header', 'menu-search', 'menu-daily-bonus', 'menu-daily-amount', 'menu-daily-badge', 'menu-tooltip', 'site-search', 'site-search-input',
+    'bottom-menu', 'mobile-nav', 'mobile-nav-menu', 'mobile-nav-store', 'mobile-nav-lobby', 'mobile-nav-redeem', 'mobile-nav-profile',
     'lobby-view', 'game-view', 'store-view', 'feature-view', 'game-details-view'];
   const nodes = Object.fromEntries(ids.map(id => {
     const tagName = id === 'site-menu' || id === 'other-dialog' || id === 'site-search' ? 'dialog'
-      : id === 'menu-toggle' || id === 'menu-buy' || id === 'menu-redeem' || id === 'menu-search' || id === 'menu-promotion'
+      : id === 'menu-toggle' || id === 'menu-buy' || id === 'menu-redeem' || id === 'menu-search' || id === 'menu-daily-bonus'
         || id === 'bottom-menu' || id.startsWith('mobile-nav-') ? 'button'
         : id === 'site-logo' ? 'a' : id === 'site-search-input' ? 'input' : 'div';
     const node = new Node(tagName);
@@ -127,9 +130,10 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   nodes['site-menu'].append(nodes['menu-mobile-header'], nodes['menu-content']);
   nodes['menu-mobile-header'].append(nodes['menu-shortcuts']);
   nodes['menu-shortcuts'].append(nodes['menu-buy'], nodes['menu-redeem']);
-  nodes['menu-content'].append(nodes['menu-search'], nodes['menu-promotion'], nodes['menu-navigation']);
+  nodes['menu-content'].append(nodes['menu-search'], nodes['menu-daily-bonus'], nodes['menu-navigation']);
+  nodes['menu-daily-bonus'].append(nodes['menu-daily-amount'], nodes['menu-daily-badge']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
-  nodes['mobile-nav'].append(...['menu', 'store', 'lobby', 'redeem', 'promotions'].map(action => nodes[`mobile-nav-${action}`]));
+  nodes['mobile-nav'].append(...['menu', 'store', 'lobby', 'redeem', 'profile'].map(action => nodes[`mobile-nav-${action}`]));
   document.body.append(headerParent, nodes['site-sidebar'], nodes['lobby-view'], nodes['game-view'], nodes['store-view'],
     nodes['feature-view'], nodes['game-details-view'], nodes['mobile-nav'], nodes['site-menu']);
   const documentEvents = new Node();
@@ -171,6 +175,16 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     pageHeading.focus();
   }
   const catalog = {
+    member: {
+      getDailyStatus: now => dailyStatus(memberState, now),
+      subscribe(listener) { memberListeners.push(listener); },
+    },
+    openHowToPlay(options) {
+      assert.equal(nodes['site-menu'].open, false);
+      assert.equal(nodes['lobby-view'].inert, false, 'restore the page before opening another dialog');
+      calls.push('help:open');
+      helpCalls.push(options);
+    },
     openHome() {
       assert.equal(nodes['site-menu'].open, false);
       calls.push('home:open');
@@ -220,6 +234,9 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   };
   const context = {
     document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
+    Date: class extends Date { constructor(...args) { super(...(args.length ? args : [clock])); } },
+    setTimeout(callback, delay) { timers.set(++timerId, { callback, delay }); return timerId; },
+    clearTimeout(id) { timers.delete(id); },
     createShelfIcon: () => new Node(),
     window: {
       innerWidth: 1280, innerHeight: 900,
@@ -238,14 +255,19 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-content'].children.flatMap(group => group.children).find(node => node.dataset.menuCategory === id);
-  const feature = id => nodes['menu-content'].children.flatMap(group => group.children).find(node => node.dataset.menuFeature === id);
+  const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
   const resize = matches => {
     breakpoint.matches = matches;
     breakpoint.emit('change', { matches });
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
-    item, feature, flushClose, providerCalls, headerParent, resize, pageHeading,
+    item, feature, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
+    claimDaily() { memberState = claimDailyReward(memberState, clock).state; memberListeners.forEach(listener => listener()); },
+    tickMinutes(minutes) {
+      clock = new Date(clock.getTime() + minutes * 60_000);
+      const queued = [...timers.values()]; timers.clear(); queued.forEach(timer => timer.callback());
+    },
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
 
@@ -451,21 +473,51 @@ test('mobile search opens after the drawer closes while desktop search opens dir
   assert.equal(desktop.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
 });
 
-test('the sidebar promotion opens the dedicated Promotions page', () => {
+test('the Daily Bonus banner opens its page without a duplicate menu row', () => {
   const page = menuPage({ desktop: true });
-  page.nodes['menu-promotion'].click();
-  assert.equal(page.calls.at(-1), 'feature:promotions');
+  page.nodes['menu-daily-bonus'].click();
+  assert.equal(page.calls.at(-1), 'feature:daily-bonus');
   assert.equal(page.document.activeElement, page.pageHeading);
+  assert.equal(page.feature('daily-bonus'), undefined);
+  assert.equal(page.nodes['menu-daily-amount'].textContent, '1,000 GC');
+  assert.equal(page.nodes['menu-daily-badge'].textContent, 'Ready');
+  assert.equal(page.feature('promotions'), undefined);
+});
+
+test('the Daily Bonus banner follows claims, next reward amounts and the next local calendar day', () => {
+  const page = menuPage({ desktop: true });
+  page.claimDaily();
+  assert.equal(page.nodes['menu-daily-amount'].textContent, '2,000 GC');
+  assert.equal(page.nodes['menu-daily-badge'].textContent, '12h');
+  page.tickMinutes(11 * 60 + 30);
+  assert.equal(page.nodes['menu-daily-badge'].textContent, '30m');
+  page.tickMinutes(30);
+  assert.equal(page.nodes['menu-daily-amount'].textContent, '2,000 GC');
+  assert.equal(page.nodes['menu-daily-badge'].textContent, 'Ready');
+});
+
+test('the mobile daily banner waits for menu closure before opening Daily Bonus', () => {
+  const page = menuPage();
+  page.api.openMenu();
+  page.nodes['menu-daily-bonus'].click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.calls.includes('feature:daily-bonus'), false);
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'feature:daily-bonus');
 });
 
 test('member destinations are grouped separately and navigate after the mobile drawer closes', () => {
   const page = menuPage();
-  for (const id of ['lounge', 'bonus-hub', 'daily-bonus', 'vip-club', 'rank-system', 'free-money',
-    'invite-friends', 'missions', 'partners', 'affiliate-program', 'crypto-earn',
+  for (const id of ['vip-club', 'rank-system', 'free-money',
+    'invite-friends', 'partners', 'affiliate-program',
     'profile', 'history', 'favorites', 'notifications', 'support', 'blog', 'settings']) {
     assert.ok(page.feature(id), `${id} has a dedicated sidebar entry`);
     assert.equal(page.feature(id).dataset.tooltip, page.feature(id).getAttribute('aria-label'));
   }
+  assert.equal(page.feature('crypto-earn'), undefined, 'removed page must not remain in navigation');
+  assert.equal(page.feature('lounge'), undefined, 'removed Lounge must not remain in navigation');
+  assert.equal(page.feature('missions'), undefined, 'removed Missions must not remain in navigation');
+  assert.equal(page.feature('bonus-hub'), undefined, 'removed Bonus Hub must not remain in navigation');
   page.nodes['menu-toggle'].click();
   page.feature('vip-club').click();
   assert.equal(page.nodes['site-menu'].open, false);
@@ -484,6 +536,85 @@ test('REDEEM opens a separate preview destination instead of performing a transa
   page.nodes['menu-redeem'].click();
   assert.equal(page.calls.at(-1), 'feature:redeem');
   assert.equal(page.calls.includes('store:open'), false);
+});
+
+test('Partners unfolds in place with only Referral and Affiliate, and keeps hidden children out of focus', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['menu-toggle'].click();
+  const partners = page.feature('partners');
+  const list = partners.nextSibling;
+  assert.equal(partners.getAttribute('aria-expanded'), 'false');
+  assert.equal(partners.getAttribute('aria-controls'), list.id);
+  assert.equal(list.hidden, true);
+  assert.equal(page.feature('invite-friends').getClientRects().length, 0);
+  assert.deepEqual(list.children.map(item => item.getAttribute('aria-label')), ['Referral', 'Affiliate']);
+  partners.click();
+  assert.equal(list.hidden, false);
+  assert.equal(partners.getAttribute('aria-expanded'), 'true');
+  assert.equal(page.calls.some(call => call.startsWith('feature:')), false);
+  page.feature('invite-friends').focus();
+  partners.click();
+  assert.equal(list.hidden, true);
+  assert.equal(page.document.activeElement, partners);
+});
+
+test('Partners expands from the desktop icon rail and its children close when the rail collapses', () => {
+  const page = menuPage({ desktop: true });
+  const partners = page.feature('partners');
+  partners.click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.equal(partners.nextSibling.hidden, false);
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  assert.equal(partners.getAttribute('aria-expanded'), 'false');
+  assert.equal(partners.nextSibling.hidden, true);
+});
+
+test('mobile Partners stays in the menu until a child is chosen and reveals the selected destination on return', () => {
+  const page = menuPage();
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  const partners = page.feature('partners');
+  partners.click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  page.feature('invite-friends').click();
+  assert.equal(page.calls.includes('feature:invite-friends'), false);
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'feature:invite-friends');
+  page.api.openMenu();
+  assert.equal(partners.getAttribute('aria-expanded'), 'true');
+  assert.equal(page.feature('invite-friends').getAttribute('aria-current'), 'page');
+  partners.click();
+  page.observers[0].callback();
+  assert.equal(partners.nextSibling.hidden, true, 'unrelated state updates must not undo a manual collapse');
+  partners.click();
+  page.feature('affiliate-program').click();
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'feature:affiliate-program');
+});
+
+test('How to Play appears immediately below Settings and opens help without changing pages', () => {
+  const page = menuPage({ desktop: true });
+  const help = page.feature('how-to-play');
+  assert.equal(page.feature('settings').nextSibling, help);
+  assert.equal(help.getAttribute('aria-haspopup'), 'dialog');
+  assert.equal(help.getAttribute('aria-controls'), 'how-to-play-dialog');
+  help.click();
+  assert.equal(page.calls.at(-1), 'help:open');
+  assert.equal(page.helpCalls[0].returnFocusTo, help);
+  assert.equal(page.calls.some(call => call.startsWith('feature:')), false);
+  assert.equal(page.document.body.dataset.view, 'lobby');
+});
+
+test('mobile How to Play waits for menu close and restores focus to its persistent opener', () => {
+  const page = menuPage();
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  page.feature('how-to-play').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.helpCalls.length, 0, 'wait for the native menu close event');
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'help:open');
+  assert.equal(page.helpCalls[0].returnFocusTo, page.nodes['mobile-nav-menu']);
 });
 
 test('drawer button accents track the selected currency only while open', () => {
@@ -782,8 +913,8 @@ test('mobile menu makes only the background inert and restores each prior state 
   assert.equal(page.nodes['mobile-nav'].inert, false);
   page.nodes['site-logo'].focus();
   assert.equal(page.document.activeElement, page.nodes['menu-buy'], 'the background cannot acquire focus');
-  page.nodes['mobile-nav-promotions'].focus();
-  assert.equal(page.document.activeElement, page.nodes['mobile-nav-promotions'], 'the fixed navigation remains interactive');
+  page.nodes['mobile-nav-profile'].focus();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-profile'], 'the fixed navigation remains interactive');
 
   let actionRan = false;
   page.api.closeMenu(() => {
@@ -805,11 +936,11 @@ test('mobile focus cycles through the menu and the permanent bottom bar and docu
   page.api.openMenu({ returnFocusTo: opener });
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.keydown('Tab', { shiftKey: true }).defaultPrevented, true);
-  assert.equal(page.document.activeElement, page.nodes['mobile-nav-promotions']);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-profile']);
   assert.equal(page.keydown('Tab').defaultPrevented, true);
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
 
-  page.nodes['mobile-nav-promotions'].disabled = true;
+  page.nodes['mobile-nav-profile'].disabled = true;
   page.nodes['mobile-nav-redeem'].visible = false;
   page.keydown('Tab', { shiftKey: true });
   assert.equal(page.document.activeElement, page.nodes['mobile-nav-lobby'], 'skip hidden and disabled controls');

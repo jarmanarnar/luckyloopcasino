@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openCategory, openProviders, openSearch, openStore, openFeature } = {}) {
+export function initSiteMenu({ openCategory, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -20,7 +20,9 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   const shortcuts = document.querySelector('#menu-shortcuts');
   const mobileHeader = document.querySelector('#menu-mobile-header');
   const searchButton = document.querySelector('#menu-search');
-  const promotionButton = document.querySelector('#menu-promotion');
+  const dailyButton = document.querySelector('#menu-daily-bonus');
+  const dailyAmount = document.querySelector('#menu-daily-amount');
+  const dailyBadge = document.querySelector('#menu-daily-badge');
   const tooltip = document.querySelector('#menu-tooltip');
   const bottomTrigger = document.querySelector('#mobile-nav-menu');
   const bottomNav = document.querySelector('#mobile-nav');
@@ -40,6 +42,8 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   let menuOpener = trigger;
   const items = new Map();
   const featureItems = new Map();
+  const disclosures = new Map();
+  let selectedFeature = null;
   navigation.replaceChildren();
   const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
@@ -60,18 +64,17 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
 
   // Separate destinations keep rewards and account tools out of the casino catalog.
   const featureGroups = [
-    { label: 'Lounge and rewards', items: [['lounge', 'Lounge'], ['bonus-hub', 'Bonus Hub'], ['daily-bonus', 'Daily Bonus']] },
     { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
-    { label: 'Ways to earn', items: [['free-money', 'Free Money'], ['invite-friends', 'Invite Friends'], ['missions', 'Missions']] },
-    { label: 'Partners', items: [['partners', 'Partners'], ['affiliate-program', 'Affiliate Program'], ['crypto-earn', 'Crypto & Earn']] },
+    { label: 'Free Money', items: [['free-money', 'Free Money']] },
+    { label: 'Partners', disclosure: 'partners', items: [['partners', 'Partners'], ['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
     { label: 'My account', items: [['profile', 'My Profile'], ['history', 'History'], ['favorites', 'Favorites'], ['notifications', 'Notifications']] },
-    { label: 'Help and preferences', items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings']] },
+    { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
   ];
-  const footer = document.querySelector('.site-menu__footer');
   for (const group of featureGroups) {
     const section = document.createElement('nav');
-    section.className = 'site-menu__navigation site-menu__feature-group';
+    section.className = `site-menu__navigation site-menu__feature-group${group.plain ? ' site-menu__navigation--plain' : ''}`;
     section.setAttribute('aria-label', group.label);
+    let list = section;
     for (const [id, title] of group.items) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -79,27 +82,61 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
       button.dataset.menuFeature = id;
       button.dataset.tooltip = title;
       button.setAttribute('aria-label', title);
+      if (id === 'how-to-play') {
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.setAttribute('aria-controls', 'how-to-play-dialog');
+      }
       const label = document.createElement('span');
       label.className = 'site-menu__label';
       label.textContent = title;
       button.append(createShelfIcon(id), label);
-      section.append(button);
+      list.append(button);
       featureItems.set(id, button);
+      if (id === group.disclosure) {
+        const chevron = createShelfIcon('chevron-down');
+        chevron.setAttribute('class', 'site-menu__chevron');
+        button.append(chevron);
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', `menu-${id}-items`);
+        list = document.createElement('div');
+        list.id = `menu-${id}-items`;
+        list.className = 'site-menu__subitems';
+        list.hidden = true;
+        section.append(list);
+        disclosures.set(id, { button, list });
+      }
     }
-    menuContent.insertBefore(section, footer);
+    menuContent.append(section);
   }
   if (redeemButton) redeemButton.disabled = false;
-  if (promotionButton) {
-    promotionButton.setAttribute('aria-label', 'Promotions');
-    promotionButton.dataset.tooltip = 'Promotions';
-    const copy = document.createElement('span');
-    copy.className = 'site-menu__promotion-copy';
-    const label = document.createElement('strong');
-    label.textContent = 'Promotions';
-    const subtitle = document.createElement('small');
-    subtitle.textContent = 'Explore rewards and events';
-    copy.append(label, subtitle);
-    promotionButton.replaceChildren(createShelfIcon('promotions'), copy);
+  let dailyTimer;
+  function syncDailyBonus() {
+    if (!dailyButton || !dailyAmount || !dailyBadge || !member?.getDailyStatus) return;
+    clearTimeout(dailyTimer);
+    const now = new Date();
+    const daily = member.getDailyStatus(now);
+    const next = daily.available ? daily : member.getDailyStatus(new Date(daily.nextAt));
+    const remaining = Math.max(0, new Date(daily.nextAt).getTime() - now.getTime());
+    const badge = daily.available ? 'Ready' : remaining > 3_600_000
+      ? `${Math.ceil(remaining / 3_600_000)}h` : `${Math.max(1, Math.ceil(remaining / 60_000))}m`;
+    const amount = `${new Intl.NumberFormat('en-US').format(next.amount)} GC`;
+    dailyAmount.textContent = amount;
+    dailyBadge.textContent = badge;
+    dailyButton.dataset.available = String(daily.available);
+    dailyButton.setAttribute('aria-label', `Daily Bonus, ${amount}, ${daily.available ? 'ready to collect' : `available in ${badge}`}`);
+    dailyButton.dataset.tooltip = `Daily Bonus · ${amount} · ${badge}`;
+    if (!document.hidden) dailyTimer = setTimeout(syncDailyBonus,
+      daily.available ? Math.max(1, remaining) : Math.min(60_000, remaining || 60_000));
+  }
+  member?.subscribe(syncDailyBonus);
+  document.addEventListener('visibilitychange', syncDailyBonus);
+  syncDailyBonus();
+
+  function setDisclosure(id, open) {
+    const { button, list } = disclosures.get(id);
+    if (!open && list.contains(document.activeElement)) button.focus({ preventScroll: true });
+    list.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
   }
 
   function syncMenu() {
@@ -113,9 +150,15 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
       if (id === selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     }
-    if (promotionButton) {
-      if (selected === 'promotions') promotionButton.setAttribute('aria-current', 'page');
-      else promotionButton.removeAttribute('aria-current');
+    for (const [id, { button, list }] of disclosures) {
+      const activeChild = list.contains(featureItems.get(selected));
+      button.dataset.childActive = String(activeChild);
+      if (selected !== selectedFeature && activeChild && (!desktop || expanded)) setDisclosure(id, true);
+    }
+    selectedFeature = selected;
+    if (dailyButton) {
+      if (selected === 'daily-bonus') dailyButton.setAttribute('aria-current', 'page');
+      else dailyButton.removeAttribute('aria-current');
     }
     const code = wallet.dataset.currency === 'SC' ? 'SC' : 'GC';
     dialog.dataset.currency = code;
@@ -137,6 +180,10 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
     sidebar.dataset.expanded = String(value);
     trigger.setAttribute('aria-expanded', String(value));
     trigger.setAttribute('aria-label', value ? 'Collapse sidebar' : 'Expand sidebar');
+    for (const [id, { list }] of disclosures) {
+      if (!value) setDisclosure(id, false);
+      else if (list.contains(featureItems.get(categories.dataset.activeMenu))) setDisclosure(id, true);
+    }
   }
 
   function restoreMenuFocus(preferred = null) {
@@ -201,6 +248,7 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
       return;
     }
     menuOpener = returnFocusTo;
+    syncDailyBonus();
     syncMenu();
     afterClose = null;
     // The mobile bar remains in the shell. A non-modal dialog lets that same
@@ -236,12 +284,21 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));
   });
-  promotionButton?.addEventListener('click', () => closeMenu(() => openFeature?.('promotions')));
+  dailyButton?.addEventListener('click', () => closeMenu(() => openFeature?.('daily-bonus')));
   menuContent.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const item = event.target.closest('[data-menu-feature]');
     if (item && menuContent.contains(item) && featureItems.has(item.dataset.menuFeature)) {
-      closeMenu(() => openFeature?.(item.dataset.menuFeature));
+      if (disclosures.has(item.dataset.menuFeature)) {
+        hideTooltip();
+        if (desktop && !expanded) {
+          setExpanded(true);
+          setDisclosure(item.dataset.menuFeature, true);
+        } else setDisclosure(item.dataset.menuFeature, disclosures.get(item.dataset.menuFeature).list.hidden);
+      } else if (item.dataset.menuFeature === 'how-to-play') {
+        const returnFocusTo = desktop ? item : menuOpener;
+        closeMenu(() => openHowToPlay?.({ returnFocusTo }));
+      } else closeMenu(() => openFeature?.(item.dataset.menuFeature));
     }
   });
   navigation.addEventListener('click', event => {

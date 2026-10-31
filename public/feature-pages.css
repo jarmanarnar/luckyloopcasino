@@ -1,9 +1,8 @@
 /* Member areas reuse the wireframe's existing palette and component dimensions. */
 .feature-view { box-sizing: border-box; min-width: 0; color: var(--text-primary); padding-bottom: 2rem; }
-.feature-header { display: flex; align-items: flex-start; gap: .75rem; margin: .5rem 0 1.5rem; }
+.feature-header { display: flex; align-items: center; gap: .75rem; margin: .5rem 0 1.5rem; }
 .feature-header > div { min-width: 0; }
-.feature-header h1 { margin: .125rem 0 .375rem; font-size: var(--shelf-title-size); line-height: 1.35; }
-.feature-header p { margin: 0; }
+.feature-header h1 { margin: 0; font-size: var(--shelf-title-size); line-height: 1.25; }
 .feature-back.icon-button { flex: none; width: var(--touch-target); height: var(--touch-target); background: var(--surface-control); border-radius: var(--radius-card); }
 .feature-back svg { width: 1.125rem; height: 1.125rem; }
 .feature-stack { display: flex; flex-direction: column; align-items: stretch; gap: 1rem; min-width: 0; }

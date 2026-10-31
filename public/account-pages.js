@@ -36,7 +36,7 @@ function empty(ctx, title, text, link) {
 function profile(ctx) {
   const state = ctx.state();
   const root = ctx.node('div', 'feature-grid');
-  const overview = card(ctx, state.profile.displayName, 'Your profile is saved in this browser.');
+  const overview = card(ctx, state.profile.displayName);
   const avatar = ctx.node('span', 'feature-avatar', state.profile.avatar || 'L');
   avatar.setAttribute('aria-hidden', 'true');
   overview.prepend(avatar);
@@ -104,7 +104,7 @@ function activity(ctx) {
     if (!entries.length) {
       panel.append(empty(ctx, selected === 'transaction' ? 'No transactions' : 'No activity yet',
         selected === 'transaction' ? 'Package previews do not create purchases or redemptions.' : 'Games opened and demo rewards collected in this browser will appear here.',
-        ctx.link('lounge', 'Explore the Lounge')));
+        ctx.link('daily-bonus', 'Daily Bonus')));
       return;
     }
     const list = ctx.node('ul', 'feature-list');
@@ -137,15 +137,14 @@ function activity(ctx) {
     filter.dataset.type = type;
     filters.append(filter);
   }
-  root.append(ctx.node('p', 'feature-muted', 'Local activity only. Game rounds and provider balances are managed inside each game.'), filters, panel);
+  root.append(filters, panel);
   render();
   return root;
 }
 
 function settings(ctx) {
   const form = ctx.node('form', 'feature-card feature-stack');
-  form.append(ctx.node('h2', 'feature-section-title', 'Display preferences'),
-    ctx.node('p', 'feature-muted', 'These preferences apply to this browser.'));
+  form.append(ctx.node('h2', 'feature-section-title', 'Display preferences'));
   const state = ctx.state().settings;
   const reduced = ctx.node('input');
   reduced.type = 'checkbox'; reduced.name = 'reducedMotion'; reduced.checked = state.reducedMotion;
@@ -172,7 +171,7 @@ function settings(ctx) {
 
 const FAQs = [
   ['Why does the game show a different balance?', 'Each provider demo has its own play balance. The GC and SC amounts in our top bar are local interface balances and are not connected to the game.'],
-  ['Where is my daily reward?', 'Open Lounge, then Daily Bonus. Collected demo rewards are recorded in Activity history.'],
+  ['Where is my daily reward?', 'Open Daily Bonus from the menu. Collected demo rewards are recorded in Activity history.'],
   ['How do I find a game?', 'Use Search or open Providers to browse a particular studio. Popular and Editor’s Favorites are curated collections.'],
   ['Can I buy or redeem coins here?', 'The Store currently previews packages. Purchases, payments and redemptions are not connected.'],
 ];
@@ -186,8 +185,7 @@ function support(ctx) {
     faq.append(details);
   }
   const form = ctx.node('form', 'feature-card feature-stack');
-  form.append(ctx.node('h2', 'feature-section-title', 'Live Support'),
-    ctx.node('p', 'feature-muted', 'Support preview. No agent or messaging service is connected; your message stays on this screen.'));
+  form.append(ctx.node('h2', 'feature-section-title', 'Live Support'));
   const topic = ctx.node('select', 'feature-input');
   for (const text of ['Games', 'Coins & rewards', 'Profile', 'Something else']) {
     const option = ctx.node('option', '', text); option.value = text; topic.append(option);
@@ -223,7 +221,7 @@ const ARTICLES = [
   ] },
   { title: 'Your local demo account', category: 'Getting started', summary: 'What is saved and how the prototype works.', paragraphs: [
     'Your display name, avatar, favorites, preferences and local activity belong to this browser. A different device starts with its own state.',
-    'Daily Bonus and Missions let you try the reward interface. VIP, Rank System and partner pages show the proposed structure of the platform.',
+    'Daily Bonus and Free Money let you try the reward interface. VIP, Rank System and partner pages show the proposed structure of the platform.',
     'External game demos run independently. This local prototype has no real account login, payment service or support agent.',
   ] },
 ];
@@ -245,7 +243,7 @@ function blog(ctx) {
 
 function notifications(ctx) {
   const entries = [...ctx.state().history].filter(entry => entry.type === 'reward').reverse();
-  if (!entries.length) return empty(ctx, 'You’re all caught up', 'Collected demo rewards will appear here.', ctx.link('bonus-hub', 'Open Bonus Hub'));
+  if (!entries.length) return empty(ctx, 'You’re all caught up', 'Collected demo rewards will appear here.', ctx.link('daily-bonus', 'Daily Bonus'));
   const list = ctx.node('ul', 'feature-list');
   for (const entry of entries) {
     const item = ctx.node('li', 'feature-card feature-stack');

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="store.css">
   <link rel="stylesheet" href="feature-pages.css">
   <link rel="stylesheet" href="game-details.css">
+  <link rel="stylesheet" href="how-to-play.css">
 </head>
 <body data-sidebar="collapsed">
   <aside id="site-sidebar" class="site-sidebar" aria-label="Casino sidebar" lang="en" dir="ltr" hidden>
@@ -68,7 +69,7 @@
       </div>
     </section>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
-      <button id="catalog-page-back" class="catalog-page-back icon-button" type="button" aria-label="Back to previous page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
+      <button id="catalog-page-back" class="catalog-page-back icon-button" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
       <h1 id="catalog-page-title" tabindex="-1"></h1>
     </header>
     <div id="catalog-page-controls" class="catalog-page-controls" lang="en" dir="ltr" hidden>
@@ -100,7 +101,7 @@
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-controls="store-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
     <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon mobile-nav__icon--loop" viewBox="542 216 782 373" fill="currentColor" aria-hidden="true" focusable="false"><defs><mask id="mobile-lobby-loop" maskUnits="userSpaceOnUse" x="542" y="216" width="782" height="373" style="mask-type:luminance"><image href="assets/loop-wireframe-v1.png" width="1916" height="821"/></mask></defs><rect x="542" y="216" width="782" height="373" mask="url(#mobile-lobby-loop)"/></svg><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-controls="feature-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
-    <button id="mobile-nav-promotions" class="mobile-nav__item" data-mobile-action="promotions" type="button" aria-controls="feature-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="m2 8 13-5v16L2 14V8Zm17-5 3-1v6l-3-1V3Zm0 8h4v3h-4v-3ZM5 16l3 1.2L10 22H6l-1-6Zm14 1 3 1v5l-3-2v-4Z"/></svg><span class="mobile-nav__label">Promotions</span></button>
+    <button id="mobile-nav-profile" class="mobile-nav__item" data-mobile-action="profile" type="button" aria-controls="feature-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm-6 12a6 6 0 0 1 12 0H6Z"/></svg><span class="mobile-nav__label">Profile</span></button>
   </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
@@ -111,24 +112,20 @@
     </div>
     <div id="menu-content" class="site-menu__scroll">
       <button id="menu-search" class="site-menu__search" type="button" aria-label="Search games" data-tooltip="Search" aria-controls="lobby-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="site-menu__label">Search</span></button>
-      <button id="menu-promotion" class="site-menu__promotion" type="button" aria-label="Explore Popular games" data-tooltip="Popular"><svg class="game-shelf__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10v3h4v3c0 3-1.8 5-4.8 5.5-.7 1.3-1.8 2.2-3.2 2.5v3h4v3H7v-3h4v-3c-1.4-.3-2.5-1.2-3.2-2.5C4.8 13 3 11 3 8V5h4V2ZM5 7v1c0 1.7.8 2.8 2.1 3.3L7 7H5Zm12 0-.1 4.3C18.2 10.8 19 9.7 19 8V7h-2Z"/></svg><span class="site-menu__promotion-copy"><strong>Popular</strong><small>Find your next favorite</small></span></button>
+      <button id="menu-daily-bonus" class="site-menu__daily" type="button" aria-label="Daily Bonus" data-tooltip="Daily Bonus" aria-controls="feature-view">
+        <span class="site-menu__daily-art" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M8 24h32v18H8z" fill="currentColor" opacity=".3"/><path d="M5 17h38v10H5z" fill="currentColor"/><path d="M21 17h6v25h-6z" fill="currentColor"/><path d="M24 17C9 17 9 5 16 6c5 0 8 11 8 11Zm0 0C39 17 39 5 32 6c-5 0-8 11-8 11Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg></span>
+        <span class="site-menu__daily-copy"><strong id="menu-daily-amount">1,000 GC</strong><span>Daily Bonus</span></span>
+        <span id="menu-daily-badge" class="site-menu__daily-badge">Ready</span>
+      </button>
       <nav id="menu-navigation" class="site-menu__navigation" aria-label="Casino navigation"></nav>
-      <footer class="site-menu__footer">
-        <details class="site-menu__help">
-          <summary><span>How to play</span><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.3 8.3a1 1 0 0 1 1.4 0L12 12.6l4.3-4.3a1 1 0 0 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 0-1.4Z"/></svg></summary>
-          <p>Choose a game from the lobby, or browse by provider. Use the coin switch to view your Gold Coins or Sweeps Coins balance.</p>
-          <p>Game demos have their own play balance.</p>
-        </details>
-      </footer>
     </div>
   </dialog>
   <div id="menu-tooltip" class="site-menu__tooltip" role="tooltip" hidden></div>
   <main id="store-view" class="page-content store-view" lang="en" dir="ltr" hidden>
     <header class="store-header">
-      <div class="store-heading"><h1 tabindex="-1">Store</h1><p>Gold Coins packages</p></div>
+      <div class="store-heading"><h1 tabindex="-1">Store</h1></div>
     </header>
     <ul id="store-packages" class="store-packages" aria-label="Gold Coins packages"></ul>
-    <p class="store-preview-note">Package preview only. Purchases are not available yet.</p>
     <dialog id="store-package-dialog" class="store-package-dialog" aria-labelledby="store-package-title" aria-describedby="store-package-note">
       <form method="dialog"><header><h2 id="store-package-title">Package details</h2><button class="store-package-close icon-button" type="submit" aria-label="Close package details"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></header></form>
       <div id="store-package-details"></div>
@@ -136,13 +133,26 @@
     </dialog>
   </main>
   <main id="feature-view" class="page-content feature-view" lang="en" dir="ltr" hidden>
-    <header class="feature-header">
-      <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to previous page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
-      <div><h1 id="feature-title" tabindex="-1"></h1><p id="feature-description" class="feature-muted"></p></div>
+    <header id="feature-header" class="feature-header">
+      <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
+      <div><h1 id="feature-title" tabindex="-1"></h1></div>
     </header>
     <div id="feature-content"></div>
     <p id="feature-status" class="feature-status" role="status" aria-live="polite" aria-atomic="true"></p>
   </main>
+  <dialog id="how-to-play-dialog" class="how-to-play-dialog" aria-labelledby="how-to-play-title" aria-describedby="how-to-play-description" lang="en" dir="ltr">
+    <button id="how-to-play-close" class="how-to-play-close icon-button" type="button" aria-label="Close How to Play" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m6.4 4.8 5.6 5.6 5.6-5.6 1.6 1.6-5.6 5.6 5.6 5.6-1.6 1.6-5.6-5.6-5.6 5.6-1.6-1.6 5.6-5.6-5.6-5.6Z"/></svg></button>
+    <h2 id="how-to-play-title">How to Play?</h2>
+    <p id="how-to-play-mode" class="how-to-play-mode"></p>
+    <div class="how-to-play-stage">
+      <button id="how-to-play-previous" class="how-to-play-arrow how-to-play-arrow--previous icon-button" type="button" aria-label="Previous explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 4-8 8 8 8"/></svg></button>
+      <div id="how-to-play-art" class="how-to-play-art" aria-hidden="true"></div>
+      <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button>
+    </div>
+    <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
+    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>Back to Lobby</button>
+    <p id="how-to-play-step" class="visually-hidden" role="status"></p>
+  </dialog>
   <script type="module" src="app.js"></script>
 </body>
 </html>
