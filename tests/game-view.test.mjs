@@ -262,12 +262,15 @@ test('invalid or removed links stay in the lobby and cannot create a frame', () 
 });
 
 
-test('routed game launch remembers its provider page and page navigation cleans the iframe before rendering', () => {
+test('catalog cards open details without a provider session and Play preserves the details origin', () => {
   const page = gamePage({ hash: '#/providers/red-tiger?q=luck&sort=az', routerMode: true });
   assert.equal(page.document.body.dataset.view, 'lobby');
   page.launch('alpha');
-  assert.equal(page.router.getRoute().type, 'game');
+  assert.equal(page.router.getRoute().type, 'game-details');
   assert.equal(page.router.getRoute().from, '#/providers/red-tiger?q=luck&sort=az');
+  assert.equal(page.frames.length, 0, 'viewing details must not allocate a provider session');
+  page.router.navigate({ type: 'game', gameId: 'alpha', from: formatRoute(page.router.getRoute()) });
+  assert.equal(parseRoute(page.router.getRoute().from).type, 'game-details');
   const frame = page.frames[0];
   let rendered = false;
   page.router.subscribe(route => {
@@ -285,6 +288,18 @@ test('routed game launch remembers its provider page and page navigation cleans 
   assert.equal(frame.isConnected, false);
   assert.equal(page.document.activeElement, page.nodes.results);
   assert.equal(page.timers.size, 0);
+});
+
+test('returning from play to details disposes the iframe and prevents stale readiness', () => {
+  const page = gamePage({ hash: '#game=alpha&from=%23%2Fgames%2Falpha', routerMode: true });
+  assert.equal(page.frames.length, 1);
+  page.escape();
+  assert.equal(page.router.getRoute().type, 'game-details');
+  assert.equal(page.router.getRoute().gameId, 'alpha');
+  assert.equal(page.nodes['game-frame-host'].children.length, 0);
+  assert.equal(page.readiness[0].stopped, true);
+  page.readiness[0].ready('stale-provider');
+  assert.equal(page.raf.size, 0);
 });
 
 test('Escape from a refreshed game returns to the originating category route without resetting home', () => {

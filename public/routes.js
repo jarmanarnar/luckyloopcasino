@@ -6,6 +6,18 @@ const sortIds = new Set(['featured', 'az', 'za', 'newest']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
 
+function detailsOrigin(value) {
+  if (typeof value !== 'string' || !/^#(?:\/|$)/.test(value)) return '';
+  const path = value.slice(1).split('?')[0];
+  const first = decode(path.replace(/^\//, '').split('/')[0]);
+  // A details page remembers its shell origin, never another details page.
+  // Check before parsing so nested/encoded game paths cannot recurse.
+  if (first === 'games') return '';
+  const route = parseRoute(value);
+  if (route.type === 'home' && value !== '#/' && value !== '#') return '';
+  return formatRoute(route);
+}
+
 export function parseRoute(hash = '') {
   const source = String(hash).replace(/^#/, '');
   if (!source || source === '/') return { type: 'home' };
@@ -20,6 +32,10 @@ export function parseRoute(hash = '') {
   const segments = path.replace(/^\//, '').replace(/\/$/, '').split('/').map(decode);
   const params = new URLSearchParams(search);
   let route;
+  if (segments[0] === 'games' && segments.length === 2 && validId(segments[1])) {
+    const from = detailsOrigin(params.get('from'));
+    return { type: 'game-details', gameId: segments[1], ...(from ? { from } : {}) };
+  }
   if (segments.length === 1 && segments[0] === 'all-games') route = { type: 'category', categoryId: 'all' };
   else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
   else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
@@ -43,6 +59,13 @@ export function formatRoute(route = { type: 'home' }) {
   if (route.type === 'home') return '#/';
   if (route.type === 'feature') return isFeaturePage(route.pageId) ? `#/${route.pageId}` : '#/';
   if (route.type === 'store') return '#/store';
+  if (route.type === 'game-details') {
+    if (!validId(route.gameId)) return '#/';
+    const from = detailsOrigin(route.from);
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    return `#/games/${encodeURIComponent(route.gameId)}${params.size ? `?${params}` : ''}`;
+  }
   if (route.type === 'game') {
     const params = new URLSearchParams({ game: route.gameId });
     if (route.from && !route.from.includes('game=')) params.set('from', route.from);

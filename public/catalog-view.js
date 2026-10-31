@@ -31,7 +31,7 @@ function gameCard(game, shelfId) {
   button.id = `game-${shelfId}-${game.id}`;
   button.dataset.game = game.id;
   button.dataset.provider = game.providerId;
-  button.setAttribute('aria-label', `Play ${game.title} demo by ${game.providerName}`);
+  button.setAttribute('aria-label', `View ${game.title} by ${game.providerName}`);
   const art = node('span', 'game-launch__art');
   art.append(node('span', '', game.title));
   button.append(art, node('span', 'game-provider-badge', game.providerName));
@@ -166,11 +166,12 @@ export function initCatalogView({ router } = {}) {
   function render(route, meta = {}) {
     window.clearTimeout(inputTimer);
     if (route.type === 'game') return;
-    if (route.type === 'store' || route.type === 'feature') {
+    if (['store', 'feature', 'game-details'].includes(route.type)) {
       root.hidden = true;
       hero.hidden = true;
       document.body.dataset.page = route.type;
-      categories.dataset.activeMenu = route.type === 'store' ? 'store' : route.pageId;
+      categories.dataset.activeMenu = route.type === 'store' ? 'store'
+        : route.type === 'game-details' ? '' : route.pageId;
       for (const button of categories.querySelectorAll('[data-category]')) button.setAttribute('aria-pressed', 'false');
       return;
     }

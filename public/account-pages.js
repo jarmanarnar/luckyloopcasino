@@ -118,7 +118,7 @@ function activity(ctx) {
       item.append(copy);
       if (entry.gameId && ctx.games.some(game => game.id === entry.gameId)) {
         const actions = ctx.node('div', 'feature-actions');
-        actions.append(button(ctx, 'Open game', () => ctx.openGame(entry.gameId)));
+        actions.append(button(ctx, 'View game', () => ctx.openGame(entry.gameId)));
         if (ctx.toggleFavorite) {
           const saved = ctx.state().favorites.includes(entry.gameId);
           const favorite = button(ctx, saved ? '♥ Saved' : '♡ Favorite', () => ctx.toggleFavorite(entry.gameId));
@@ -283,7 +283,7 @@ function favorites(ctx) {
     const item = ctx.node('li', 'feature-card feature-stack');
     item.append(ctx.node('span', 'feature-kicker', game.providerName), ctx.node('h2', 'feature-section-title', game.title));
     const actions = ctx.node('div', 'feature-actions');
-    actions.append(button(ctx, 'Open game', () => ctx.openGame(game.id)), button(ctx, 'Remove favorite', () => ctx.toggleFavorite?.(game.id)));
+    actions.append(button(ctx, 'View game', () => ctx.openGame(game.id)), button(ctx, 'Remove favorite', () => ctx.toggleFavorite?.(game.id)));
     item.append(actions);
     grid.append(item);
   }

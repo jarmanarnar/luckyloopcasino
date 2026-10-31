@@ -72,6 +72,52 @@ test('Lobby and the complete games catalog have separate refresh-safe addresses'
   assert.deepEqual(parseRoute('#/all-games?provider=netent&q=coin'), { ...all, query: 'coin', providerId: 'netent' });
 });
 
+test('game details have their own refresh-safe address and retain a valid shell origin', () => {
+  const origins = ['#/', '#/popular?provider=netent', '#/providers/netent?q=gold&sort=az',
+    '#/search?q=nip+%26+tuck&category=slots', '#/store', '#/history'];
+  for (const from of origins) {
+    const details = { type: 'game-details', gameId: 'niptuck000000000', from };
+    const hash = formatRoute(details);
+    assert.equal(hash, `#/games/niptuck000000000?${new URLSearchParams({ from })}`);
+    assert.deepEqual(parseRoute(hash), details);
+    assert.deepEqual(initRouter({ window: browser(hash).scope }).getRoute(), details);
+  }
+  assert.equal(formatRoute({ type: 'game-details', gameId: 'SanQuentin' }), '#/games/SanQuentin');
+  assert.deepEqual(parseRoute('#/games/%53anQuentin'), { type: 'game-details', gameId: 'SanQuentin' });
+  assert.deepEqual(parseRoute('#/games/SanQuentin?q=ignored&provider=netent'), { type: 'game-details', gameId: 'SanQuentin' });
+});
+
+test('game details reject invalid IDs and discard recursive or unknown origins', () => {
+  for (const hash of ['#/games', '#/games/', '#/games/../../x', '#/games/%E0%A4%A',
+    '#/games/%ZZ', '#/games/a%2Fb', '#/games/a%3Fb', '#/games/%20', '#/games/_invalid']) {
+    assert.deepEqual(parseRoute(hash), { type: 'home' }, hash);
+  }
+  for (const gameId of ['', null, '../x', 'a/b', 'bad id', '?game=valid']) {
+    assert.equal(formatRoute({ type: 'game-details', gameId }), '#/');
+  }
+  const details = { type: 'game-details', gameId: 'SanQuentin' };
+  for (const from of ['#game=niptuck000000000', '#/games/niptuck000000000',
+    '#/%67ames/niptuck000000000?from=%23%2Fpopular', '#/not-a-page',
+    '#/providers/%E0%A4%A', 'https://example.com/#/popular', '/popular', '#/popular/extra']) {
+    assert.equal(formatRoute({ ...details, from }), '#/games/SanQuentin', from);
+    assert.deepEqual(parseRoute(`#/games/SanQuentin?${new URLSearchParams({ from })}`), details, from);
+  }
+});
+
+test('active game URLs remain compatible and may return to their pre-game details page', () => {
+  const details = { type: 'game-details', gameId: 'niptuck000000000', from: '#/search?q=nip' };
+  const game = { type: 'game', gameId: details.gameId, from: formatRoute(details) };
+  assert.deepEqual(parseRoute(formatRoute(game)), game);
+  assert.deepEqual(parseRoute(parseRoute(formatRoute(game)).from), details);
+  assert.deepEqual(parseRoute('#game=SanQuentin&from=%23%2Fpopular'),
+    { type: 'game', gameId: 'SanQuentin', from: '#/popular' });
+  assert.equal(formatRoute({ type: 'game', gameId: 'SanQuentin' }), '#game=SanQuentin');
+  const page = browser(formatRoute(game));
+  const router = initRouter({ window: page.scope });
+  router.back(parseRoute(router.getRoute().from)); page.flush();
+  assert.deepEqual(router.getRoute(), details);
+});
+
 test('Store has an independent refresh-safe address and returns through browser history', () => {
   const page = browser('#/providers/netent');
   const router = initRouter({ window: page.scope });

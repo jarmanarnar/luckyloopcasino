@@ -9,6 +9,7 @@ import { initMobileNav } from './mobile-nav.js';
 import { initRouter } from './routes.js';
 import { initStoreView } from './store-view.js';
 import { initFeatureView } from './feature-view.js';
+import { initGameDetails } from './game-details-view.js';
 
 const router = initRouter();
 initGameView({ router });
@@ -17,6 +18,7 @@ initStoreView({ router });
 initCatalogToolbar();
 const wallet = initWallet(catalog);
 const features = initFeatureView({ router, wallet });
+initGameDetails({ router, member: features.member });
 const search = initSiteSearch(catalog);
 const menu = initSiteMenu({ ...catalog, ...search, ...features });
 initMobileNav({ ...catalog, ...search, ...features, ...menu });

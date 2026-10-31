@@ -23,6 +23,7 @@ export function initFeatureView({ router, wallet } = {}) {
   try { saved = JSON.parse(localStorage.getItem(MEMBER_STORAGE_KEY)); } catch { /* Use an empty local account. */ }
   let state = createMemberState(saved);
   let currentPage = null;
+  const memberListeners = new Set();
   const games = new Map(GAMES.map(game => [game.id, game]));
   // Previously removed game IDs must never reappear through local history or favorites.
   state.history = state.history.filter(entry => entry.type !== 'game' || games.has(entry.gameId));
@@ -38,6 +39,7 @@ export function initFeatureView({ router, wallet } = {}) {
   function persist({ refresh = true } = {}) {
     try { localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(state)); } catch { /* Session state still works. */ }
     if (refresh && currentPage) renderContent();
+    for (const listener of memberListeners) listener();
   }
   const notify = text => { notice.textContent = text; };
   function renderContent() {
@@ -84,7 +86,7 @@ export function initFeatureView({ router, wallet } = {}) {
       persist(); notify(exists ? 'Removed from favorites.' : 'Saved to favorites.');
     },
     openGame(id) {
-      if (games.has(id)) router.navigate({ type: 'game', gameId: id, from: formatRoute(router.getRoute()) });
+      if (games.has(id)) router.navigate({ type: 'game-details', gameId: id, from: formatRoute(router.getRoute()) });
     },
     async copy(text) {
       try { await navigator.clipboard.writeText(text); return true; }
@@ -118,5 +120,15 @@ export function initFeatureView({ router, wallet } = {}) {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && ['daily-bonus', 'bonus-hub', 'free-money', 'missions', 'lounge'].includes(currentPage)) renderContent();
   });
-  return { openFeature: pageId => { if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId }); } };
+  return {
+    openFeature: pageId => { if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId }); },
+    member: {
+      getState: () => createMemberState(state),
+      toggleFavorite: id => ctx.toggleFavorite(id),
+      subscribe(listener) {
+        memberListeners.add(listener);
+        return () => memberListeners.delete(listener);
+      },
+    },
+  };
 }

@@ -229,7 +229,7 @@ export function initGameView({ router } = {}) {
     if (router) {
       const route = router.getRoute();
       const from = route.type === 'game' ? route.from : formatRoute(route);
-      router.navigate({ type: 'game', gameId: key, from });
+      router.navigate({ type: 'game-details', gameId: key, from });
     } else window.location.hash = `game=${key}`;
   });
 

@@ -1,0 +1,91 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import vm from 'node:vm';
+import { FEATURE_PAGES, isFeaturePage } from '../public/feature-pages.js';
+import { createMemberState, MEMBER_STORAGE_KEY, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit } from '../public/member-state.js';
+import { formatRoute } from '../public/routes.js';
+
+const source = (await readFile(new URL('../public/feature-view.js', import.meta.url), 'utf8'))
+  .replace(/^import .*;\r?\n/gm, '').replace('export function initFeatureView', 'function initFeatureView');
+
+function memberPage(initialRoute, storage = new Map()) {
+  let route = initialRoute, pageContext;
+  const subscribers = [], navigations = [];
+  class Node {
+    constructor(tag = 'div') { this.tagName = tag; this.dataset = {}; this.children = []; this.listeners = new Map(); }
+    append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
+    addEventListener(type, listener) { this.listeners.set(type, listener); }
+    focus() {}
+  }
+  const ids = ['feature-view', 'feature-content', 'feature-title', 'feature-description',
+    'feature-status', 'feature-back', 'catalog-categories'];
+  const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
+  const document = {
+    body: new Node('body'), hidden: false,
+    querySelector: selector => nodes[selector.slice(1)] || null,
+    createElement(tag) { assert.notEqual(tag, 'iframe', 'member navigation cannot allocate a provider frame'); return new Node(tag); },
+    dispatchEvent() {}, addEventListener() {},
+  };
+  const router = {
+    getRoute: () => route,
+    navigate(next, meta = {}) {
+      route = next; navigations.push(next);
+      subscribers.forEach(fn => fn(next, { source: 'navigate', ...meta }));
+    },
+    subscribe(fn) { subscribers.push(fn); }, back() {},
+  };
+  const context = {
+    document, router, wallet: { setPreferences() {} }, FEATURE_PAGES, isFeaturePage,
+    createMemberState, MEMBER_STORAGE_KEY, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit,
+    createShelfIcon: () => new Node('svg'), formatRoute,
+    GAMES: [{ id: 'alpha', title: 'Alpha', providerId: 'studio', providerName: 'Studio' }],
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
+    CustomEvent: class { constructor(type) { this.type = type; } },
+    renderRewardsPage: () => null,
+    renderAccountPage(pageId, ctx) { pageContext = ctx; return new Node(); },
+  };
+  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet });`, context);
+  return { api, router, storage, nodes, navigations, context: () => pageContext };
+}
+
+test('shared favorites persist and notify across views while returned snapshots cannot mutate member state', () => {
+  const page = memberPage({ type: 'game-details', gameId: 'alpha' });
+  let changes = 0;
+  const unsubscribe = page.api.member.subscribe(() => changes++);
+  page.api.member.toggleFavorite('alpha');
+  assert.deepEqual([...page.api.member.getState().favorites], ['alpha']);
+  assert.deepEqual(JSON.parse(page.storage.get(MEMBER_STORAGE_KEY)).favorites, ['alpha']);
+  assert.equal(changes, 1);
+  const snapshot = page.api.member.getState();
+  snapshot.favorites.length = 0;
+  snapshot.profile.displayName = 'Unpersisted edit';
+  assert.deepEqual([...page.api.member.getState().favorites], ['alpha']);
+  assert.notEqual(page.api.member.getState().profile.displayName, snapshot.profile.displayName);
+  page.api.member.toggleFavorite('removed');
+  assert.equal(changes, 1, 'removed game IDs never enter saved favorites');
+  unsubscribe();
+  page.api.member.toggleFavorite('alpha');
+  assert.equal(changes, 1);
+  assert.deepEqual([...page.api.member.getState().favorites], []);
+});
+
+test('opening details from Favorites preserves its origin and only an explicit game launch records history', () => {
+  const page = memberPage({ type: 'feature', pageId: 'favorites' });
+  page.context().openGame('alpha');
+  assert.equal(page.navigations.at(-1).type, 'game-details');
+  assert.equal(page.navigations.at(-1).from, '#/favorites');
+  assert.equal(page.api.member.getState().history.length, 0);
+  assert.equal(page.api.member.getState().discoveredGameIds.length, 0);
+  page.router.navigate({ type: 'game', gameId: 'alpha', from: '#/games/alpha?from=%23%2Ffavorites' });
+  const state = page.api.member.getState();
+  assert.equal(state.history.filter(entry => entry.type === 'game').length, 1);
+  assert.equal(state.history[0].gameId, 'alpha');
+  assert.deepEqual([...state.discoveredGameIds], ['alpha']);
+  page.router.navigate({ type: 'game-details', gameId: 'alpha' });
+  assert.equal(page.api.member.getState().history.filter(entry => entry.type === 'game').length, 1);
+  const restored = memberPage({ type: 'game-details', gameId: 'alpha' }, page.storage);
+  assert.equal(restored.api.member.getState().history[0].gameId, 'alpha');
+  assert.equal(restored.nodes['feature-view'].hidden, true);
+});
