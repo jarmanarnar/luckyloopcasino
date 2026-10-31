@@ -18,8 +18,8 @@
   color: var(--catalog-accent);
 }
 .header-context > .icon-button svg {
-  width: calc(1.5rem + .5 * var(--fluid-step));
-  height: calc(1.5rem + .5 * var(--fluid-step));
+  width: var(--header-icon-size);
+  height: var(--header-icon-size);
 }
 .header-context > .icon-button:hover,
 .header-context > .icon-button[aria-expanded="true"] { background: var(--wallet-surface); filter: brightness(1.08); }
@@ -55,10 +55,10 @@
   gap: 0;
   width: max-content;
   height: var(--wallet-height);
-  padding: 3px calc(.25rem + .25 * var(--fluid-step)) 3px 0;
+  padding: 3px var(--wallet-inset-end) 3px 0;
   min-width: 0;
   border: 1px solid var(--wallet-surface);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: var(--wallet-surface);
   box-shadow: none;
   color: var(--text-primary);
@@ -72,13 +72,13 @@
   align-items: baseline;
   justify-content: center;
   min-width: 0;
-  gap: .25rem;
-  padding: 0 calc(.375rem + 1.25 * var(--fluid-step)) 0 calc(.5rem + 2 * var(--fluid-step));
+  gap: var(--wallet-copy-gap);
+  padding: 0 var(--wallet-copy-inset-end) 0 var(--wallet-copy-inset-start);
   color: var(--text-primary);
   overflow: hidden;
 }
-#wallet-currency-label { flex: none; color: var(--text-primary); font-size: var(--wallet-value-size); font-weight: 800; line-height: var(--wallet-line-height); }
-#wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: var(--wallet-line-height); white-space: nowrap; text-overflow: ellipsis; }
+#wallet-currency-label { flex: none; color: var(--text-primary); font-size: var(--wallet-value-size); font-weight: var(--header-font-weight); line-height: var(--wallet-line-height); }
+#wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: var(--header-font-weight); font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: var(--wallet-line-height); white-space: nowrap; text-overflow: ellipsis; }
 .wallet-value-measure { position: absolute; top: 0; left: 0; width: max-content; visibility: hidden; pointer-events: none; }
 #wallet-add {
   box-sizing: border-box;
@@ -114,7 +114,7 @@
   height: var(--switch-height);
   padding: 3px;
   border: 1px solid var(--wallet-surface);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: var(--wallet-surface);
   box-shadow: none;
   cursor: pointer;

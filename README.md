@@ -57,6 +57,8 @@ Demo wallet state is saved per browser and origin. A phone or the hosted address
 
 ## Responsive sizing
 
+The header uses self-hosted Arimo Bold, matching the editable [LuckyLoop header library in Figma](https://www.figma.com/design/HFNWKij5h9moTbn1QNOivI?node-id=6-312). Phase 1 contains the header atoms, GC/SC wallet and lobby/game header variants, plus [375×812 baseline frames](https://www.figma.com/design/HFNWKij5h9moTbn1QNOivI?node-id=7-538). The rest of the interface retains its current typography pending the next design stages. Original coin SVGs remain editable vector components in Figma; no flattened UI screenshots are used as components.
+
 The shared `--fluid-step` in `public/styles.css` grows continuously from 0 to 8 CSS pixels between 320px and 1280px at the default text size. Header controls, gutters, spacing, type, promotional banners and provider tiles derive their sizes from it. These sizes use `rem` bounds so user text preferences remain meaningful. Avoid adding device-width overrides for individual atoms.
 
 Game cards keep an 8:11 aspect ratio and one width token shared by carousels and category grids. [Container queries](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Container_queries) choose one to eight columns from the available catalog width, with two columns on standard portrait phones. The cards divide that width equally, including gaps, so full rows align with both page insets and cards stay the same size in grids and carousels. Browsers without container units retain the original fixed-width fallback. Promotional banners keep a compact, continuously scaled height and show one, two or three cards as space allows. All lobby sections and the header share one content width and safe-area inset.

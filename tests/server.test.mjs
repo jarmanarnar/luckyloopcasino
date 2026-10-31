@@ -41,13 +41,18 @@ test('legacy asset links point at the same current app', async () => {
   }
 });
 
-test('scripts, styles, provider marks and promotional artwork have correct types', async () => {
+test('scripts, styles, fonts, provider marks and promotional artwork have correct types', async () => {
   for (const [file, type] of [['app.js', 'text/javascript'], ['styles.css', 'text/css'],
-    ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp']]) {
+    ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp'],
+    ['assets/fonts/arimo-bold-latin.woff2', 'font/woff2']]) {
     const response = await fetch(`${origin}/luckyloopcasino/${file}`);
     assert.equal(response.status, 200);
     assert.ok(response.headers.get('content-type').startsWith(type));
     assert.equal(response.headers.get('cache-control'), 'no-store');
+    if (type === 'font/woff2') {
+      const bytes = Buffer.from(await response.arrayBuffer());
+      assert.equal(bytes.subarray(0, 4).toString(), 'wOF2');
+    }
   }
   const response = await fetch(`${origin}/luckyloopcasino/app.js`, { method: 'HEAD' });
   assert.equal(response.status, 200);
