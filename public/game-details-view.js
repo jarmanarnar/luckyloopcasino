@@ -223,7 +223,7 @@ export function initGameDetails({ router, member } = {}) {
     title.tabIndex = -1;
     copy.append(byline, title, favoriteControl(game));
     const launch = node('div', 'game-details-launch');
-    const play = node('button', 'game-details-play', 'Play demo');
+    const play = node('button', 'game-details-play', 'Play');
     play.type = 'button';
     play.addEventListener('click', () => router.navigate({ type: 'game', gameId: game.id, from: formatRoute(router.getRoute()) }));
     launch.append(play);

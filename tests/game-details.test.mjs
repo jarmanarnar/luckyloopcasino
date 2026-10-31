@@ -99,10 +99,10 @@ test('pre-game details show actual catalog fields without loading a game or inve
   assert.equal(page.descendants().find(node => node.tagName === 'time').dateTime, '2026-01-15');
 });
 
-test('Play demo explicitly launches the game and points Back to its pre-game page', () => {
+test('Play explicitly launches the game and points Back to its pre-game page', () => {
   const page = detailsPage();
   const detailsRoute = page.route;
-  page.byText('button', 'Play demo').emit('click');
+  page.byText('button', 'Play').emit('click');
   assert.equal(page.route.type, 'game');
   assert.equal(page.route.gameId, 'alpha');
   assert.equal(page.route.from, formatRoute(detailsRoute));
