@@ -257,7 +257,7 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
-  assert.equal(page.item('lobby').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('lobby'), undefined, 'Lobby must not appear in the menu');
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
   assert.equal(page.categoryButtons.has('all'), false);
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
@@ -265,29 +265,21 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.categoryButtons.has('providers'), false);
 });
 
-test('Lobby stays separate from categories and Search is the complete catalog entry', () => {
+test('sidebar keeps categories and Search without a Lobby destination', () => {
   const page = menuPage({ desktop: true });
-  const lobby = page.item('lobby'), popular = page.item('popular');
-  assert.notEqual(lobby.parentElement, popular.parentElement);
-  assert.equal(lobby.getAttribute('aria-label'), 'Lobby');
+  const popular = page.item('popular');
+  assert.equal(page.item('lobby'), undefined);
   assert.equal(page.item('all'), undefined);
   popular.click();
   assert.equal(page.calls.at(-1), 'category:popular');
   assert.equal(page.document.body.dataset.page, 'category');
   page.observers[0].callback();
   assert.equal(popular.getAttribute('aria-current'), 'page');
-  assert.equal(lobby.getAttribute('aria-current'), null);
   page.nodes['menu-search'].click();
   assert.equal(page.calls.at(-1), 'search:open');
   assert.equal(page.document.body.dataset.page, 'search');
   assert.equal(page.document.activeElement, page.nodes['site-search-input']);
   page.observers[0].callback();
-  assert.equal(popular.getAttribute('aria-current'), null);
-  assert.equal(lobby.getAttribute('aria-current'), null);
-  lobby.click();
-  assert.equal(page.calls.at(-1), 'home:open');
-  page.observers[0].callback();
-  assert.equal(lobby.getAttribute('aria-current'), 'page');
   assert.equal(popular.getAttribute('aria-current'), null);
 });
 
@@ -483,7 +475,7 @@ test('member destinations are grouped separately and navigate after the mobile d
   assert.equal(page.document.activeElement, page.pageHeading);
   page.nodes['menu-toggle'].click();
   assert.equal(page.feature('vip-club').getAttribute('aria-current'), 'page');
-  assert.equal(page.item('lobby').getAttribute('aria-current'), null);
+  assert.equal(page.item('lobby'), undefined);
 });
 
 test('REDEEM opens a separate preview destination instead of performing a transaction', () => {

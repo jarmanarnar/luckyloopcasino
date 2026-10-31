@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openHome, openCategory, openProviders, openSearch, openStore, openFeature } = {}) {
+export function initSiteMenu({ openCategory, openProviders, openSearch, openStore, openFeature } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -41,22 +41,6 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
   const items = new Map();
   const featureItems = new Map();
   navigation.replaceChildren();
-  const lobbyGroup = document.createElement('nav');
-  lobbyGroup.className = 'site-menu__navigation site-menu__lobby';
-  lobbyGroup.setAttribute('aria-label', 'Lobby navigation');
-  const lobbyButton = document.createElement('button');
-  lobbyButton.type = 'button';
-  lobbyButton.className = 'site-menu__item';
-  lobbyButton.dataset.menuCategory = 'lobby';
-  lobbyButton.dataset.tooltip = 'Lobby';
-  lobbyButton.setAttribute('aria-label', 'Lobby');
-  const lobbyLabel = document.createElement('span');
-  lobbyLabel.className = 'site-menu__label';
-  lobbyLabel.textContent = 'Lobby';
-  lobbyButton.append(createShelfIcon('lobby'), lobbyLabel);
-  lobbyGroup.append(lobbyButton);
-  menuContent.insertBefore(lobbyGroup, navigation);
-  items.set('lobby', lobbyButton);
   const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
     if (category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
@@ -243,12 +227,10 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
 
   function chooseCategory(id) {
     if (id === 'providers') closeMenu(() => openProviders?.());
-    else if (id === 'lobby') closeMenu(() => openHome?.());
     else closeMenu(() => openCategory?.(id));
   }
 
   trigger.addEventListener('click', openMenu);
-  lobbyButton.addEventListener('click', () => chooseCategory('lobby'));
   buyButton.addEventListener('click', () => closeMenu(() => openStore?.()));
   redeemButton?.addEventListener('click', () => closeMenu(() => openFeature?.('redeem')));
   searchButton?.addEventListener('click', () => {
