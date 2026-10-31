@@ -63,7 +63,7 @@ test('visible member Back controls return to the lobby after visiting another in
 
 test('selected page headers are hidden while Notifications keeps its title without a Back button', () => {
   const page = memberPage({ type: 'feature', pageId: 'settings' });
-  for (const pageId of ['invite-friends', 'affiliate-program', 'profile', 'history']) {
+  for (const pageId of ['invite-friends', 'affiliate-program', 'profile', 'history', 'redeem']) {
     page.router.navigate({ type: 'feature', pageId });
     assert.match(page.nodes['feature-header'].className, /visually-hidden/);
     assert.equal(page.nodes['feature-back'].hidden, true);

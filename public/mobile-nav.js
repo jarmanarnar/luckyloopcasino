@@ -16,7 +16,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
 
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
-      : document.body.dataset.view === 'game' ? 'lobby'
+      : document.body.dataset.view === 'game' || document.body.dataset.page === 'game-details' ? null
         : ['redeem', 'profile'].includes(categories.dataset.activeMenu) ? categories.dataset.activeMenu
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
         : ['feature', 'search', 'providers'].includes(document.body.dataset.page)

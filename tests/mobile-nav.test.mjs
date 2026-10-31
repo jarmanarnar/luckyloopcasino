@@ -188,15 +188,49 @@ test('Menu preserves the current game while every page destination uses its rout
   }
 });
 
-test('an active game selects Lobby even when the previous page has its own bottom destination', () => {
-  for (const previous of ['providers', 'store', 'redeem', 'profile']) {
+test('game details and active games clear every bottom destination even when the previous page has its own selection', () => {
+  for (const gamePage of ['game-details', 'game']) {
+    for (const previous of ['providers', 'store', 'redeem', 'profile']) {
+      const page = navPage();
+      page.nodes['catalog-categories'].dataset.activeMenu = previous;
+      page.body.dataset.page = ['redeem', 'profile'].includes(previous) ? 'feature' : previous;
+      page.flush();
+      assert.deepEqual(active(page), [previous === 'providers' ? 'menu' : previous]);
+
+      if (gamePage === 'game-details') page.body.dataset.page = 'game-details';
+      else page.body.dataset.view = 'game';
+      page.flush();
+      assert.deepEqual(active(page), [], `${gamePage} from ${previous}`);
+      for (const action of actions) {
+        assert.equal(page.button(action).getAttribute('aria-current'), null, `${action} cannot claim to be the game page`);
+      }
+    }
+  }
+});
+
+test('Menu opens over either game page and closing it restores no selection until Lobby is explicitly opened', () => {
+  for (const gamePage of ['game-details', 'game']) {
     const page = navPage();
-    page.nodes['catalog-categories'].dataset.activeMenu = previous;
-    page.body.dataset.page = ['redeem', 'profile'].includes(previous) ? 'feature' : previous;
-    page.body.dataset.view = 'game';
+    page.body.dataset.page = 'game-details';
+    page.body.dataset.view = gamePage === 'game' ? 'game' : 'lobby';
     page.flush();
+    assert.deepEqual(active(page), []);
+
+    page.button('menu').click();
+    assert.deepEqual(active(page), ['menu']);
+    assert.equal(page.button('menu').getAttribute('aria-expanded'), 'true');
+    assert.equal(page.button('lobby').getAttribute('aria-current'), null);
+    page.button('menu').click();
+    assert.deepEqual(active(page), []);
+    assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+    for (const action of actions) assert.equal(page.button(action).getAttribute('aria-current'), null);
+
+    page.button('lobby').click();
+    assert.equal(page.calls.at(-1).action, 'home');
     assert.deepEqual(active(page), ['lobby']);
     assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
+    assert.equal(page.body.dataset.page, 'home');
+    assert.equal(page.body.dataset.view, 'lobby');
   }
 });
 

@@ -14,7 +14,7 @@ export const FEATURE_PAGES = Object.freeze(Object.fromEntries([
   ['support', 'Live Support'],
   ['blog', 'Blog'],
   ['settings', 'Settings'],
-  ['redeem', 'Redeem'],
+  ['redeem', 'Redeem', false],
 ].map(([id, title, showHeader = true, showBack = showHeader]) => [id, Object.freeze({ id, title, showHeader, showBack })])));
 
 export const isFeaturePage = id => Object.hasOwn(FEATURE_PAGES, id);
