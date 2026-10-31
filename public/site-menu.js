@@ -3,7 +3,7 @@ import { createShelfIcon } from './shelf-icons.js';
 
 let initialized = false;
 
-export function initSiteMenu() {
+export function initSiteMenu({ openProviders } = {}) {
   if (initialized) return;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -35,7 +35,8 @@ export function initSiteMenu() {
   }
 
   function syncMenu() {
-    const selected = categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category || 'all';
+    const selected = categories.dataset.activeMenu
+      || categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category || 'all';
     for (const [id, button] of items) {
       if (id === selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
@@ -53,7 +54,7 @@ export function initSiteMenu() {
     dialog.showModal();
     trigger.setAttribute('aria-expanded', 'true');
     closeButton.focus({ preventScroll: true });
-    observer.observe(categories, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+    observer.observe(categories, { subtree: true, attributes: true, attributeFilter: ['aria-pressed', 'data-active-menu'] });
     observer.observe(wallet, { attributes: true, attributeFilter: ['data-currency'] });
   }
 
@@ -65,6 +66,10 @@ export function initSiteMenu() {
   }
 
   function chooseCategory(id) {
+    if (id === 'providers') {
+      if (openProviders) closeMenu(() => openProviders({ focusResults: true }));
+      return;
+    }
     const target = categories.querySelector(`[data-category="${id}"]`);
     if (!target) return;
     closeMenu(() => {

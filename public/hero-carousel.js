@@ -2,7 +2,7 @@ import EmblaCarousel from './vendor/embla-carousel/embla-carousel.esm.js';
 
 let initialized = false;
 
-export function initHeroCarousel() {
+export function initHeroCarousel({ openProviders } = {}) {
   if (initialized) return;
   const root = document.querySelector('#hero-carousel');
   const viewport = document.querySelector('#hero-viewport');
@@ -170,10 +170,11 @@ export function initHeroCarousel() {
     if (!['picks', 'providers', 'tap', 'slots'].includes(id)) return;
     const target = categories?.querySelector(`[data-category="${id}"]`);
     const all = categories?.querySelector('[data-category="all"]');
-    if (!target || !all) return;
+    if (!all || (id === 'providers' ? !openProviders : !target)) return;
     // Category buttons preserve provider filters; a banner starts a fresh collection.
     all.click();
-    target.click();
+    if (id === 'providers') openProviders();
+    else target.click();
     const shelves = document.querySelector('#catalog-shelves');
     shelves?.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     const firstShelf = shelves?.querySelector('.game-shelf');

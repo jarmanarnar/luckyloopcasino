@@ -5,9 +5,9 @@ import { initCatalogToolbar } from './catalog-toolbar.js';
 import { initSiteMenu } from './site-menu.js';
 import { initHeroCarousel } from './hero-carousel.js';
 
-initCatalogView();
+const catalog = initCatalogView();
 initCatalogToolbar();
 initWallet();
 initGameView();
-initSiteMenu();
-initHeroCarousel();
+initSiteMenu(catalog);
+initHeroCarousel(catalog);

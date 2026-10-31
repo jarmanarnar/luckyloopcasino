@@ -22,7 +22,7 @@ npm test
 - Responsive promotional carousel containing four empty frames: one, two or three per view, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Frames use the same shared surface and radius tokens as the game cards. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the frames.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Left hamburger drawer with BUY/REDEEM buttons and working category/provider navigation. BUY opens the demo wallet; REDEEM is a design placeholder until redemption is implemented. It supports Escape/backdrop dismissal, contained scrolling and native modal focus handling; the game back arrow replaces the hamburger during play.
-- Category navigation, a dedicated Providers view, and a provider-logo carousel after all game collections on the home view.
+- Popular is the first home game shelf and follows All Games in the category bar. It starts with 12 curated demo titles; it is not an analytics-based ranking. Providers remain available through the home provider carousel and hamburger menu, with no Providers item in the horizontal category bar.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
 - Equal game-card sizes in carousels and grids. Game cover artwork is intentionally omitted.

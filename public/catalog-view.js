@@ -4,6 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 
 let initialized = false;
+let catalogController = null;
 const batchSize = 48;
 const shelfSize = 12;
 const categoryById = new Map(CATEGORIES.map(category => [category.id, category]));
@@ -70,7 +71,7 @@ function arrowButton(direction, title, trackId, noun = 'games') {
 }
 
 export function initCatalogView() {
-  if (initialized) return;
+  if (initialized) return catalogController;
   const shelves = document.querySelector('#catalog-shelves');
   const categories = document.querySelector('#catalog-categories');
   const more = document.querySelector('#catalog-more');
@@ -86,8 +87,7 @@ export function initCatalogView() {
   const tracks = new Set();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  const menuItems = [CATEGORIES[0], { id: 'providers', title: 'Providers' }, ...CATEGORIES.slice(1)];
-  for (const category of menuItems) {
+  for (const category of CATEGORIES) {
     const button = element('button', 'catalog-category');
     button.append(createShelfIcon(category.id), element('span', '', category.title));
     button.type = 'button';
@@ -221,7 +221,7 @@ export function initCatalogView() {
     if (showProviders) {
       fragment.append(providerShelf({ isGrid: true }));
     } else if (home) {
-      for (const id of ['picks', 'slots', 'tap', 'table', 'spooky', 'megaways', 'jackpot', 'fruit', 'adventure']) {
+      for (const id of ['popular', 'picks', 'slots', 'tap', 'table', 'spooky', 'megaways', 'jackpot', 'fruit', 'adventure']) {
         const category = categoryById.get(id);
         const games = getGamesForCategory(id);
         if (games.length) fragment.append(shelf({ id: `category-${id}`, title: category.title,
@@ -232,7 +232,7 @@ export function initCatalogView() {
       const category = categoryById.get(selectedCategory);
       const title = [selectedCategory !== 'all' ? category.title : '', studio?.name]
         .filter(Boolean).join(' · ') || 'All Games';
-      const ordered = selectedCategory === 'picks' ? filtered : [...filtered].sort(alphabetic);
+      const ordered = ['popular', 'picks'].includes(selectedCategory) ? filtered : [...filtered].sort(alphabetic);
       fragment.append(shelf({ id: 'results', title, games: ordered,
         iconId: selectedCategory !== 'all' ? selectedCategory : 'providers', isGrid: true }));
       more.hidden = limit >= filtered.length;
@@ -241,6 +241,7 @@ export function initCatalogView() {
     shelves.replaceChildren(fragment);
     const activeMenu = showProviders || (selectedProvider && selectedCategory === 'all')
       ? 'providers' : selectedCategory;
+    categories.dataset.activeMenu = activeMenu;
     for (const button of categories.querySelectorAll('[data-category]')) {
       button.setAttribute('aria-pressed', String(button.dataset.category === activeMenu));
     }
@@ -276,7 +277,6 @@ export function initCatalogView() {
     const button = event.target.closest('[data-category]');
     if (!button) return;
     if (button.dataset.category === 'all') return resetCatalog();
-    if (button.dataset.category === 'providers') return openProviders();
     selectedCategory = button.dataset.category;
     showProviders = false;
     grid = true;
@@ -310,5 +310,7 @@ export function initCatalogView() {
   });
   more.addEventListener('click', () => { limit += batchSize; render(); });
   window.addEventListener('resize', () => tracks.forEach(updateArrows), { passive: true });
+  catalogController = { openProviders };
   render();
+  return catalogController;
 }

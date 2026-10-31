@@ -8,7 +8,7 @@ const source = (await readFile(new URL('../public/site-menu.js', import.meta.url
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
 function menuPage() {
-  const calls = [], closeEvents = [], observers = [], windowEvents = {};
+  const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   class Node {
     constructor() {
@@ -56,12 +56,14 @@ function menuPage() {
     'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
   nodes['coin-wallet'].dataset.currency = 'GC';
-  const categoryButtons = new Map([...CATEGORIES.map(category => category.id), 'providers'].map(id => {
+  nodes['catalog-categories'].dataset.activeMenu = 'all';
+  const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
     const button = new Node();
     button.dataset.category = id;
     button.setAttribute('aria-pressed', String(id === 'all'));
     button.addEventListener('click', () => {
       calls.push(`category:${id}`);
+      nodes['catalog-categories'].dataset.activeMenu = id;
       for (const [candidate, node] of categoryButtons) node.setAttribute('aria-pressed', String(candidate === id));
     });
     return [id, button];
@@ -83,8 +85,17 @@ function menuPage() {
     return nodes[selector.slice(1)] || null;
   };
   document.createElement = () => new Node();
+  const catalog = {
+    openProviders(options) {
+      assert.equal(nodes['site-menu'].open, false);
+      providerCalls.push(options);
+      calls.push('category:providers');
+      nodes['catalog-categories'].dataset.activeMenu = 'providers';
+      for (const button of categoryButtons.values()) button.setAttribute('aria-pressed', 'false');
+    },
+  };
   const context = {
-    document, Element: Node, CATEGORIES, getGamesForCategory,
+    document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
     createShelfIcon: () => new Node(),
     window: { addEventListener(type, callback) { windowEvents[type] = callback; } },
     MutationObserver: class {
@@ -93,10 +104,10 @@ function menuPage() {
       disconnect() { this.targets = []; }
     },
   };
-  vm.runInNewContext(`${source}\ninitSiteMenu();`, context);
+  vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-navigation'].children.find(node => node.dataset.menuCategory === id);
-  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, item, flushClose };
+  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, item, flushClose, providerCalls };
 }
 
 test('menu opens once, focuses its close control, and only lists available collections', () => {
@@ -110,6 +121,7 @@ test('menu opens once, focuses its close control, and only lists available colle
   assert.equal(page.item('all').getAttribute('aria-current'), 'page');
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), category.id === 'all' || getGamesForCategory(category.id).length > 0);
   assert.equal(page.nodes['menu-navigation'].children[1], page.item('providers'));
+  assert.equal(page.categoryButtons.has('providers'), false);
 });
 
 test('Escape closes the drawer, resets its trigger and restores focus', () => {
@@ -147,7 +159,7 @@ test('a quick reopen waits until the previous native close event finishes', () =
   assert.ok(page.observers[0].targets.length > 0);
 });
 
-test('collection and Providers actions reuse the toolbar after the drawer closes', () => {
+test('collections reuse the toolbar and Providers opens independently after the drawer closes', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
   page.item('picks').click();
@@ -158,11 +170,18 @@ test('collection and Providers actions reuse the toolbar after the drawer closes
   assert.equal(page.calls.at(-1), 'category:picks');
   page.nodes['menu-toggle'].click();
   assert.equal(page.item('picks').getAttribute('aria-current'), 'page');
+  assert.equal(page.categoryButtons.has('providers'), false);
   page.item('providers').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.providerCalls.length, 0, 'Providers waits for the native drawer close event');
   page.flushClose();
   assert.equal(page.calls.at(-1), 'category:providers');
+  assert.equal(page.providerCalls.length, 1);
+  assert.equal(page.providerCalls[0].focusResults, true);
+  assert.ok([...page.categoryButtons.values()].every(button => button.getAttribute('aria-pressed') === 'false'));
   page.nodes['menu-toggle'].click();
   assert.equal(page.item('providers').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('all').getAttribute('aria-current'), null);
 });
 
 test('BUY hands off to the existing wallet without overlapping modals or losing focus', () => {

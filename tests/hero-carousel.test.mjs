@@ -7,7 +7,7 @@ const source = (await readFile(new URL('../public/hero-carousel.js', import.meta
   .replace(/^import .*;\r?\n/gm, '').replace('export function initHeroCarousel', 'function initHeroCarousel');
 
 function heroPage({ reduced = false, intersection = true } = {}) {
-  const calls = [], timers = new Map(), mutations = [], intersections = [], animations = [];
+  const calls = [], timers = new Map(), mutations = [], intersections = [], animations = [], providerCalls = [];
   let timerId = 0, selected = 0, modal = false, factories = 0, now = 0;
   const document = { body: { dataset: { view: 'lobby' } }, hidden: false, activeElement: null };
   class Node {
@@ -74,12 +74,17 @@ function heroPage({ reduced = false, intersection = true } = {}) {
   const firstShelf = new Node();
   nodes['catalog-shelves'].querySelector = selector => { assert.equal(selector, '.game-shelf'); return firstShelf; };
   let provider = 'netent', category = 'all';
-  const categoryButtons = Object.fromEntries(['all', 'picks', 'providers', 'tap', 'slots'].map(id => {
+  nodes['catalog-categories'].dataset.activeMenu = 'all';
+  const categoryButtons = Object.fromEntries(['all', 'picks', 'tap', 'slots'].map(id => {
     const button = new Node();
+    button.dataset.category = id;
+    button.setAttribute('aria-pressed', String(id === 'all'));
     button.addEventListener('click', () => {
       calls.push({ action: 'category', id });
-      if (id === 'all' || id === 'providers') provider = '';
+      if (id === 'all') provider = '';
       category = id;
+      nodes['catalog-categories'].dataset.activeMenu = id;
+      for (const [candidate, node] of Object.entries(categoryButtons)) node.setAttribute('aria-pressed', String(candidate === id));
     });
     return [id, button];
   }));
@@ -112,11 +117,22 @@ function heroPage({ reduced = false, intersection = true } = {}) {
   document.addEventListener = documentEvents.addEventListener.bind(documentEvents);
   document.querySelector = selector => selector === 'dialog[open]' ? (modal ? new Node() : null) : nodes[selector.slice(1)] || null;
   document.createElement = () => new Node();
+  const catalog = {
+    openProviders(options) {
+      providerCalls.push(options);
+      calls.push({ action: 'category', id: 'providers' });
+      provider = '';
+      category = 'providers';
+      nodes['catalog-categories'].dataset.activeMenu = 'providers';
+      for (const button of Object.values(categoryButtons)) button.setAttribute('aria-pressed', 'false');
+    },
+  };
   const context = { document, window, Element: Node, MutationObserver, IntersectionObserver,
+    catalog,
     EmblaCarousel(viewport, options) { factories++; assert.equal(viewport, nodes['hero-viewport']); calls.push({ action: 'init', options }); return api; } };
-  vm.runInNewContext(`${source}\ninitHeroCarousel();`, context);
+  vm.runInNewContext(`${source}\ninitHeroCarousel(catalog);`, context);
   return {
-    nodes, slides, calls, timers, api, document, firstShelf, categoryButtons, motion, window, mutations, intersections, animations, context,
+    nodes, slides, calls, timers, api, document, firstShelf, categoryButtons, motion, window, mutations, intersections, animations, context, providerCalls,
     get factories() { return factories; }, get provider() { return provider; }, get category() { return category; },
     visible(value = true) { intersections[0]?.callback([{ target: root, isIntersecting: value }]); },
     elapse(duration) { now += duration; },
@@ -227,10 +243,17 @@ test('all banner CTAs clear the current provider before opening real collections
   for (let index = 0; index < 4; index++) {
     const page = heroPage({ reduced: index === 2 });
     const id = ['picks', 'providers', 'tap', 'slots'][index];
+    assert.equal(page.categoryButtons.providers, undefined);
     page.slides[index].children[0].click();
     assert.deepEqual(page.calls.filter(call => call.action === 'category').map(call => call.id), ['all', id]);
     assert.equal(page.provider, '');
     assert.equal(page.category, id);
+    assert.equal(page.nodes['catalog-categories'].dataset.activeMenu, id);
+    if (id === 'providers') {
+      assert.equal(page.providerCalls.length, 1);
+      assert.equal(page.providerCalls[0], undefined);
+      assert.ok(Object.values(page.categoryButtons).every(button => button.getAttribute('aria-pressed') === 'false'));
+    }
     const scroll = page.calls.find(call => call.action === 'scroll-results');
     assert.equal(scroll.options.behavior, index === 2 ? 'instant' : 'smooth');
     assert.equal(page.document.activeElement, page.firstShelf);

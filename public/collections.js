@@ -6,6 +6,7 @@ import { GAME_TYPES, getGameTypeId } from './game-types.js';
 // no popularity or release-date claims; a game can belong to several of them.
 export const CATEGORIES = [
   { id: 'all', title: 'All Games', description: 'Browse every game type.' },
+  { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
   { id: 'picks', title: 'Our Picks', description: 'A handpicked selection for you to try and review.' },
   ...GAME_TYPES,
   { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
@@ -14,6 +15,23 @@ export const CATEGORIES = [
   { id: 'adventure', title: 'Adventure', description: 'Explore temples, jungles, pirates and treasure.' },
   { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
 ];
+
+// Editorial starter selection for the prototype, not a usage-based ranking.
+const POPULAR_IDS = [
+  'nunchucksr96f100',
+  'dragonsluck00000',
+  'SanQuentin',
+  'monopolymneyv196',
+  'niptuck000000000',
+  'bloodsuckerstapa',
+  'gonzosqumegaways',
+  'bonanzatacardsv1',
+  'ouija00000000000',
+  'starbursttaparoo',
+  'SixFeetUnder',
+  'gopnik0000000000',
+];
+const popular = new Set(POPULAR_IDS);
 
 // Candidate picks for the user's own review, not a responsiveness whitelist.
 // Nip Tuck stays first as the previously confirmed choice.
@@ -49,6 +67,7 @@ const SPOOKY_IDS = new Set([
 // not on a claim that a public demo participates in a funded jackpot pool.
 const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
+  popular: game => popular.has(game.id),
   picks: game => picks.has(game.id),
   megaways: game => /\bmegaways\b/i.test(game.title),
   jackpot: game => /\bjackpots?\b/i.test(game.title),
@@ -58,9 +77,10 @@ const rules = {
 };
 
 const gamesById = new Map(GAMES.map(game => [game.id, game]));
+const orderedCollections = new Map([['popular', POPULAR_IDS], ['picks', PICK_IDS]]);
 const collections = new Map(CATEGORIES.map(category => [category.id,
   category.id === 'all' ? GAMES
-    : category.id === 'picks' ? PICK_IDS.map(id => gamesById.get(id)).filter(Boolean)
+    : orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)
       : GAMES.filter(rules[category.id]),
 ]));
 
