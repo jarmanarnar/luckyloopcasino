@@ -4,7 +4,6 @@
 export const GAME_TYPES = [
   { id: 'slots', title: 'Slots' },
   { id: 'tap', title: 'Tap Games' },
-  { id: 'table', title: 'Table Games' },
 ];
 
 // BTG describes Tapcards as tap-and-reveal, scratch-card-style instant games:
@@ -30,13 +29,7 @@ const TAP_IDS = new Set([
   'mysteryfruittapa',
 ]);
 
-// Previously reviewed table games are permanently excluded. Keep this format
-// available for future approved titles, separate from the default slot category.
-const TABLE_IDS = new Set([
-]);
-
 export function getGameTypeId(game) {
   if (TAP_IDS.has(game.id)) return 'tap';
-  if (TABLE_IDS.has(game.id)) return 'table';
   return 'slots';
 }
