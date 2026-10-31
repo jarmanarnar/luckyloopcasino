@@ -405,4 +405,10 @@
     .provider-launch:hover { border-color: #39393f; background: #242429; }
     .provider-logo { display: block; width: 100%; height: calc(2.25rem + 1.5 * var(--fluid-step)); object-fit: contain; opacity: .82; }
     .provider-launch:hover .provider-logo { opacity: 1; }
-    .provider-track.is-grid { display: grid; grid-template-columns: repeat(auto-fill, calc(8.25rem + 6 * var(--fluid-step))); overflow: visible; scroll-snap-type: none; }
+    .provider-track.is-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(8.25rem + 6 * var(--fluid-step))), 1fr));
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .provider-track.is-grid .provider-launch { height: auto; min-height: var(--touch-target); aspect-ratio: 2.1; }
