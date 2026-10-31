@@ -6,8 +6,8 @@
 
 .header-context { display: flex; align-items: center; gap: .5rem; min-width: 0; justify-self: start; }
 .site-logo { display: flex; position: relative; flex: none; align-items: center; width: 3.25rem; height: 1.75rem; overflow: hidden; border-radius: .25rem; }
-/* Frame the selected concept's black margins without changing its artwork or header size. */
-.site-logo__image { display: block; position: absolute; left: 50%; top: 50%; width: 130%; height: auto; max-width: none; transform: translate(-50%, -49%); }
+/* Use the approved infinity as the compact mark; keep the original artwork intact. */
+.site-logo__image { display: block; position: absolute; left: 50%; top: 50%; width: 236%; height: auto; max-width: none; transform: translate(-48.7%, -49%); clip-path: inset(0 30.9% 0 28.3%); }
 .header-context > .icon-button {
   box-sizing: border-box;
   flex: none;
@@ -184,8 +184,11 @@
 .wallet-status { min-height: 18px; margin: 14px 0 0; color: var(--wallet-accent); font-size: 12px; line-height: 1.5; }
 .wallet-dialog :focus-visible, .coin-wallet :focus-visible, .wallet-switch:focus-visible { outline: 2px solid #eeeef2; outline-offset: 3px; }
 
+@media (min-width: 45rem) {
+  .site-logo { width: 7rem; height: var(--header-control-size); }
+  .site-logo__image { width: 130%; transform: translate(-50%, -49%); clip-path: none; }
+}
 @media (min-width: 48rem) {
-  .site-logo { width: 7rem; height: 2.5rem; }
   .coin-wallet { --wallet-plus-width: 2.25rem; --wallet-art-size: 2.25rem; --wallet-value-size: 1.125rem; }
   .wallet-switch { --switch-coin-size: 2.25rem; }
 }
