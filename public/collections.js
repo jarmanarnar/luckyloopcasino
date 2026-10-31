@@ -50,7 +50,6 @@ export function getGameReleaseDate(gameOrId) {
 // Editorial starter selection for the prototype, not a usage-based ranking.
 const POPULAR_IDS = [
   'nunchucksr96f100',
-  'dragonsluck00000',
   'SanQuentin',
   'monopolymneyv196',
   'niptuck000000000',
@@ -68,7 +67,6 @@ const popular = new Set(POPULAR_IDS);
 // Nip Tuck stays first as the previously confirmed choice.
 const PICK_IDS = [
   'niptuck000000000',
-  'dragonsluck00000',
   'bloodsuckerstapa',
   'freakshowrevelat',
   'ouija00000000000',

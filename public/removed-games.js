@@ -33,6 +33,7 @@ const removedIds = new Set([
   'casinoholdemne00',
   'roulette2advne00',
   'roulettesne00000',
+  'dragonsluck00000',
   // Original vendor codes for games that used a local shorthand ID.
   'eldorado00000000',
   'starburstr000000',

@@ -33,17 +33,17 @@ test('Popular has its own identity and preserves editorial order before optional
   assert.equal(page.activeMenu, 'popular');
   assert.equal(page.sort, 'featured');
   assert.deepEqual(ids(page).slice(0, 5), [
-    'nunchucksr96f100', 'dragonsluck00000', 'SanQuentin',
-    'monopolymneyv196', 'niptuck000000000',
+    'nunchucksr96f100', 'SanQuentin', 'monopolymneyv196',
+    'niptuck000000000', 'bloodsuckerstapa',
   ]);
 });
 
 test('category provider and text filters intersect without spilling into the full catalog', () => {
   const page = getCatalogPage({
-    type: 'category', categoryId: 'popular', providerId: 'red-tiger', query: '  LuCk  ',
+    type: 'category', categoryId: 'popular', providerId: 'red-tiger', query: '  OuIjA  ',
   });
-  assert.deepEqual(ids(page), ['dragonsluck00000']);
-  assert.equal(page.query, 'LuCk');
+  assert.deepEqual(ids(page), ['ouija00000000000']);
+  assert.equal(page.query, 'OuIjA');
   assert.equal(page.title, 'Popular');
   assert.equal(page.activeMenu, 'popular');
 
@@ -76,7 +76,7 @@ test('search is its own page and can find names across studios or restrict a cat
   assert.deepEqual(ids(page), ['dragonslucktapar']);
 
   const categorySearch = getCatalogPage({ type: 'search', categoryId: 'popular', query: 'dragon' });
-  assert.deepEqual(ids(categorySearch), ['dragonsluck00000']);
+  assert.deepEqual(ids(categorySearch), []);
   const providerNameSearch = getCatalogPage({ type: 'search', query: 'sneaky slots' });
   assert.equal(providerNameSearch.games.length, 3);
   assert.ok(providerNameSearch.games.every(game => game.providerId === 'sneaky-slots'));

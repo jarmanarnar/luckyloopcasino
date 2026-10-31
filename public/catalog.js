@@ -11,7 +11,7 @@ export const PROVIDERS = [
   {
     "id": "red-tiger",
     "name": "Red Tiger",
-    "count": 355
+    "count": 354
   },
   {
     "id": "nolimit-city",
@@ -5486,13 +5486,6 @@ export const GAMES = [
     "id": "jadecharms000000",
     "title": "Jade Charms",
     "url": "https://playin.com/embed/v1/demo/jadecharms000000",
-    "providerId": "red-tiger",
-    "providerName": "Red Tiger"
-  },
-  {
-    "id": "dragonsluck00000",
-    "title": "Dragon's Luck",
-    "url": "https://playin.com/embed/v1/demo/dragonsluck00000",
     "providerId": "red-tiger",
     "providerName": "Red Tiger"
   },

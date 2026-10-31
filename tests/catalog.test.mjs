@@ -20,6 +20,7 @@ const removedGames = [
   'discodanny000000', 'deadwestr96f1000', 'deadalive3r96f10',
   'deadoralive2fb00', 'deadoralive00000',
   'ameriroulette3ne', 'casinoholdemne00', 'roulette2advne00', 'roulettesne00000',
+  'dragonsluck00000',
 ];
 const vendorAliases = {
   gonzo: 'eldorado00000000',
@@ -35,12 +36,12 @@ function vendorCode(game) {
   return new URL(game.url).pathname.split('/').filter(Boolean).at(-1).toLowerCase();
 }
 
-test('reviewed catalog retains 791 unique active games across six providers', () => {
-  assert.equal(GAMES.length, 791);
+test('reviewed catalog retains 790 unique active games across six providers', () => {
+  assert.equal(GAMES.length, 790);
   assert.equal(new Set(GAMES.map(game => game.id)).size, GAMES.length);
   const expectedCounts = {
     netent: 209,
-    'red-tiger': 355,
+    'red-tiger': 354,
     'nolimit-city': 137,
     'big-time-gaming': 79,
     taparoo: 8,
@@ -56,16 +57,16 @@ test('reviewed catalog retains 791 unique active games across six providers', ()
   }
 });
 
-test('Our Picks retains 15 unique active choices with Nip Tuck first', () => {
+test('Our Picks retains 14 unique active choices with Nip Tuck first', () => {
   const picks = getGamesForCategory('picks');
-  assert.equal(picks.length, 15);
+  assert.equal(picks.length, 14);
   assert.equal(picks[0].id, 'niptuck000000000');
   assert.equal(new Set(picks.map(game => game.id)).size, picks.length);
   assert.ok(picks.every(game => GAMES.includes(game)));
 });
 
-test('all 32 removed games and vendor aliases stay out of every collection and launch catalog', () => {
-  assert.equal(removedGames.length, 32);
+test('all 33 removed games and vendor aliases stay out of every collection and launch catalog', () => {
+  assert.equal(removedGames.length, 33);
   const lists = [['launch catalog', GAMES], ...[...CATEGORIES, ...LEGACY_CATEGORIES].map(category => [category.id, getGamesForCategory(category.id)])];
   for (const [name, games] of lists) {
     for (const game of games) {
@@ -121,6 +122,7 @@ test('permanent exclusions reject removed local IDs and renamed entries using ol
 
 test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => {
   for (const id of [
+    'dragonslucktapar', 'dragonslckstacks', 'dragonslckdeluxe', 'dragonsluckmegaw',
     'bloodsuckerstapa', 'bloodsuckersmega',
     'gonzosquesttapar', 'gonzosqumegaways', 'gonzosgoldr30000',
     'starbursttaparoo', 'starburstgar96f1', 'starbursttremef1',
