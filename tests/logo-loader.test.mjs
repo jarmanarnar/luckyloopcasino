@@ -2,113 +2,174 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { initLogoLoader, LOGO_MOTION } from '../public/logo-loader.js';
 
-function setup({ reduced = false, pendingImage = false, canvasAvailable = true } = {}) {
-  const frames = new Map(), contexts = [], observers = [];
-  let frameId = 0, now = 0, resolveImage;
+function setup({ reduced = false, hidden = false } = {}) {
+  const frames = new Map(), timers = new Map();
+  let frameId = 0, timerId = 0, now = 0, complete = false;
   function emitter() {
     const listeners = new Map();
     return {
       listeners,
-      addEventListener(type, action) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(action); },
-      removeEventListener(type, action) { listeners.get(type)?.delete(action); },
-      emit(type) { for (const action of listeners.get(type) || []) action(); },
+      addEventListener(type, listener) {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type).add(listener);
+      },
+      removeEventListener(type, listener) { listeners.get(type)?.delete(listener); },
+      emit(type) { for (const listener of listeners.get(type) || []) listener(); },
     };
   }
-  function makeCanvas() {
-    const ctx = {
-      images: [], lastPoint: null,
-      drawImage(...args) { this.images.push(args); },
-      getImageData() { return { data: new Uint8ClampedArray([255, 255, 255, 255]) }; },
-      putImageData() {}, clearRect() {}, fillRect() {}, setTransform() {}, scale() {},
-      beginPath() {}, moveTo() {}, lineTo(x, y) { this.lastPoint = { x, y }; }, stroke() {},
-    };
-    contexts.push(ctx);
-    return { hidden: true, width: 0, height: 0, getContext: () => canvasAvailable ? ctx : null };
-  }
-  const canvas = makeCanvas();
-  const source = {
-    hidden: false,
-    decode: () => pendingImage ? new Promise(resolve => { resolveImage = resolve; }) : Promise.resolve(),
+  const brand = { dataset: {} };
+  const doc = {
+    ...emitter(), body: { dataset: {} }, hidden,
+    querySelector(selector) {
+      assert.equal(selector, '#app-loader-brand', 'the inline SVG loader requires no image or canvas lookup');
+      return brand;
+    },
+    createElement() { throw new Error('The lightweight loader must not allocate canvases or decode images'); },
   };
-  const brand = { getBoundingClientRect: () => ({ width: 320, height: 320 * 373 / 1416 }) };
-  const nodes = { '#app-loader-brand': brand, '#app-loader-source': source, '#app-loader-logo': canvas };
-  const doc = { ...emitter(), body: { dataset: {} }, hidden: false,
-    querySelector: selector => nodes[selector], createElement: makeCanvas };
   const motion = { ...emitter(), matches: reduced };
   const scope = {
-    devicePixelRatio: 1, matchMedia: () => motion,
+    performance: { now: () => now },
+    matchMedia(query) { assert.equal(query, '(prefers-reduced-motion: reduce)'); return motion; },
+    setTimeout(action, delay) { timers.set(++timerId, { action, at: now + delay }); return timerId; },
+    clearTimeout(id) { timers.delete(id); },
     requestAnimationFrame(action) { frames.set(++frameId, action); return frameId; },
     cancelAnimationFrame(id) { frames.delete(id); },
-    ResizeObserver: class {
-      constructor(action) { this.action = action; this.nodes = new Set(); observers.push(this); }
-      observe(node) { this.nodes.add(node); }
-      disconnect() { this.nodes.clear(); this.disconnected = true; }
-    },
   };
   const controller = initLogoLoader({ document: doc, window: scope });
-  return { controller, source, canvas, brand, doc, motion, frames, contexts, observers,
-    resolveImage: () => resolveImage(),
-    tick(delta = 0) { now += delta; const pending = [...frames.values()]; frames.clear(); pending.forEach(action => action(now)); } };
+  controller.minimum.then(() => { complete = true; });
+  function advance(milliseconds) {
+    const end = now + milliseconds;
+    while (true) {
+      const due = [...timers.entries()].filter(([, timer]) => timer.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+      if (!due) break;
+      const [id, timer] = due;
+      timers.delete(id); now = timer.at; timer.action();
+    }
+    now = end;
+  }
+  return {
+    controller, brand, doc, motion, frames, timers, advance,
+    get complete() { return complete; },
+    paint() { const pending = [...frames.values()]; frames.clear(); pending.forEach(action => action(now)); },
+  };
 }
 
-test('the selected full-wordmark loader uses the approved logo and exact motion settings', async () => {
-  assert.deepEqual(LOGO_MOTION, { duration: 1800, tail: .25, color: '#eeeef2' });
-  const page = setup();
-  await page.controller.ready;
-  assert.equal(page.canvas.hidden, false);
-  assert.equal(page.source.hidden, true);
-  assert.deepEqual(page.contexts[1].images[0].slice(1), [542, 216, 782, 373, 0, 0, 782, 373]);
-  assert.deepEqual(page.contexts[2].images[0].slice(1), [250, 216, 1416, 373, 0, 0, 1416, 373]);
-  page.tick();
-  const start = { ...page.contexts[3].lastPoint };
-  for (let i = 0; i < 36; i++) page.tick(50);
-  const finish = page.contexts[3].lastPoint;
-  assert.ok(Math.hypot(start.x - finish.x, start.y - finish.y) < 1e-8, 'a full cycle takes 1.8 seconds');
-  page.controller.stop();
-  assert.equal(page.frames.size, 0, 'no animation remains after startup completes');
-  assert.equal(page.observers[0].disconnected, true);
+function assertStopped(page) {
+  assert.equal(page.frames.size, 0, 'no pending animation frame remains');
+  assert.equal(page.timers.size, 0, 'no pending minimum-display timer remains');
+  assert.equal(page.brand.dataset.paused, 'true');
   assert.equal([...page.doc.listeners.values()].some(listeners => listeners.size), false);
   assert.equal([...page.motion.listeners.values()].some(listeners => listeners.size), false);
-});
+}
 
-test('background tabs and reduced motion pause the animation without hiding the wordmark', async () => {
+test('the inline infinity remains visible for two complete 1.8-second cycles beginning at its first paint', async () => {
+  assert.deepEqual(LOGO_MOTION, { duration: 1800, cycles: 2 });
   const page = setup();
-  await page.controller.ready;
-  assert.equal(page.frames.size, 1);
+  page.advance(1200);
+  await Promise.resolve();
+  assert.equal(page.complete, false, 'time before the first rendered frame cannot shorten the loader');
+  page.paint();
+  assert.equal(page.brand.dataset.paused, 'false');
+  assert.equal(page.brand.dataset.reduced, 'false');
+  page.advance(3599);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
+  page.advance(1);
+  await page.controller.minimum;
+  assert.equal(page.complete, true);
+  page.controller.stop();
+  assertStopped(page);
+});
+
+test('hidden-tab time and the wait for a resumed paint do not count toward two visible cycles', async () => {
+  const page = setup();
+  page.paint();
+  page.advance(900);
   page.doc.hidden = true; page.doc.emit('visibilitychange');
-  assert.equal(page.frames.size, 0);
+  assert.equal(page.brand.dataset.paused, 'true');
+  assert.equal(page.timers.size, 0);
+  page.advance(20_000);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
   page.doc.hidden = false; page.doc.emit('visibilitychange');
-  assert.equal(page.frames.size, 1);
-  page.motion.matches = true; page.motion.emit('change');
-  assert.equal(page.frames.size, 0);
-  assert.equal(page.canvas.hidden, false);
+  page.advance(500);
+  page.paint();
+  assert.equal(page.brand.dataset.paused, 'false');
+  page.advance(2699);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
+  page.advance(1);
+  await page.controller.minimum;
+  assert.equal(page.complete, true);
+  page.controller.stop();
+  assertStopped(page);
+});
+
+test('a page opened in the background starts its visible minimum only after returning and painting', async () => {
+  const page = setup({ hidden: true });
+  assert.equal(page.brand.dataset.paused, 'true');
+  page.advance(30_000);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
+  page.doc.hidden = false; page.doc.emit('visibilitychange');
+  page.paint();
+  page.advance(3600);
+  await page.controller.minimum;
+  assert.equal(page.complete, true);
+  page.controller.stop();
+  assertStopped(page);
+});
+
+test('reduced motion keeps a static infinity while retaining the same visible display minimum', async () => {
+  const page = setup({ reduced: true });
+  page.paint();
+  assert.equal(page.brand.dataset.reduced, 'true');
+  assert.equal(page.brand.dataset.paused, 'true');
+  page.advance(3599);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
+  page.advance(1);
+  await page.controller.minimum;
+  assert.equal(page.complete, true);
+  page.controller.stop();
+  assertStopped(page);
+});
+
+test('OS and saved motion-preference changes preserve elapsed visible time', async () => {
+  const page = setup();
+  page.paint();
+  page.advance(900);
+  page.motion.matches = true; page.motion.emit('change'); page.paint();
+  assert.equal(page.brand.dataset.reduced, 'true');
+  assert.equal(page.brand.dataset.paused, 'true');
+  page.advance(900);
+  page.doc.body.dataset.reduceMotion = 'true';
+  page.motion.matches = false; page.motion.emit('change'); page.paint();
+  assert.equal(page.brand.dataset.reduced, 'true', 'a saved preference also disables motion');
+  page.advance(900);
+  page.doc.body.dataset.reduceMotion = 'false'; page.doc.emit('loop:preferences-change'); page.paint();
+  assert.equal(page.brand.dataset.reduced, 'false');
+  assert.equal(page.brand.dataset.paused, 'false');
+  page.advance(899);
+  await Promise.resolve();
+  assert.equal(page.complete, false);
+  page.advance(1);
+  await page.controller.minimum;
+  assert.equal(page.complete, true, 'changing preferences does not restart the two-cycle minimum');
+  page.controller.stop();
+  assertStopped(page);
+});
+
+test('stopping before the first paint resolves cleanup and cannot restart from later visibility or preference events', async () => {
+  const page = setup();
+  page.controller.stop();
+  await page.controller.minimum;
+  assert.equal(page.complete, true);
+  assertStopped(page);
+  page.doc.hidden = false; page.doc.emit('visibilitychange');
   page.motion.matches = false; page.motion.emit('change');
-  assert.equal(page.frames.size, 1);
-  page.doc.body.dataset.reduceMotion = 'true'; page.doc.emit('loop:preferences-change');
-  assert.equal(page.frames.size, 0);
+  page.doc.emit('loop:preferences-change');
+  page.advance(10_000); page.paint();
   page.controller.stop();
-});
-
-test('a stopped loader cannot start later when a slow image finally arrives', async () => {
-  const page = setup({ pendingImage: true });
-  page.controller.stop();
-  page.resolveImage();
-  await page.controller.ready;
-  assert.equal(page.frames.size, 0);
-  assert.equal(page.canvas.hidden, true);
-  assert.equal(page.source.hidden, false);
-  assert.equal(page.observers[0].nodes.size, 0);
-});
-
-test('static fallback remains usable when motion is reduced or canvas is unavailable', async () => {
-  const reduced = setup({ reduced: true });
-  await reduced.controller.ready;
-  assert.equal(reduced.frames.size, 0);
-  assert.equal(reduced.canvas.hidden, false);
-  reduced.controller.stop();
-  const fallback = setup({ canvasAvailable: false });
-  await fallback.controller.ready;
-  assert.equal(fallback.source.hidden, false);
-  assert.equal(fallback.frames.size, 0);
-  fallback.controller.stop();
+  assertStopped(page);
 });

@@ -9,8 +9,8 @@ const deferred = () => {
 };
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artwork = Promise.resolve(), load, initialize, geometry = () => 0 } = {}) {
-  const calls = [], timers = new Map(), frames = new Map();
+function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artwork = Promise.resolve(), minimum = Promise.resolve(), load, initialize, geometry = () => 0 } = {}) {
+  const calls = [], logoCalls = [], timers = new Map(), frames = new Map();
   let timerId = 0, frameId = 0, now = 0, revealedAt;
   const element = () => ({
     getClientRects: () => [{}],
@@ -44,17 +44,30 @@ function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artw
     },
     cancelAnimationFrame(id) { frames.delete(id); },
   };
-  const ready = bootApplication({ document: doc, window: scope, load: load || (() => Promise.resolve({
-    initApplication() {
-      calls.push('initialize');
-      initialize?.();
-      return {
-        prepareLayout() { calls.push('prepare-layout'); },
-        restoreInitialScroll() { calls.push('restore-scroll'); },
-      };
+  const ready = bootApplication({ document: doc, window: scope,
+    createLogo(options) {
+      assert.equal(options.document, doc);
+      assert.equal(options.window, scope);
+      logoCalls.push('start');
+      return { minimum, stop() { logoCalls.push('stop'); } };
     },
-  })) });
-  return { doc, nodes, calls, timers, pageImage, ready, get revealedAt() { return revealedAt; } };
+    load: () => {
+      assert.deepEqual(logoCalls, ['start'], 'the loader starts before application imports and initialization');
+      return load ? load() : Promise.resolve({
+        initApplication() {
+          calls.push('initialize');
+          initialize?.();
+          return {
+            prepareLayout() { calls.push('prepare-layout'); },
+            restoreInitialScroll() { calls.push('restore-scroll'); },
+          };
+        },
+      });
+    },
+  });
+  return { doc, nodes, calls, logoCalls, timers, pageImage, ready,
+    elapse(milliseconds) { now += milliseconds; },
+    get revealedAt() { return revealedAt; } };
 }
 
 test('startup waits for every rendered page image, font readiness and settled layout', async () => {
@@ -74,6 +87,54 @@ test('startup waits for every rendered page image, font readiness and settled la
   assert.equal(page.nodes['app-loader'].hidden, true);
   assert.ok(page.revealedAt >= 200);
   assert.equal(page.timers.size, 0);
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
+});
+
+test('fast page assets remain covered until the minimum loader presentation completes', async () => {
+  const minimum = deferred();
+  const page = startup({ minimum: minimum.promise });
+  await settle();
+  page.elapse(3599);
+  await settle();
+  assert.equal(page.doc.body.dataset.appState, 'loading');
+  assert.equal(page.nodes['app-loader'].hidden, false);
+  assert.deepEqual(page.calls, ['initialize'], 'the final layout measurement waits until the presentation gate');
+  assert.equal(page.revealedAt, undefined);
+  assert.deepEqual(page.logoCalls, ['start']);
+  page.elapse(1);
+  minimum.resolve();
+  assert.equal(await page.ready, true);
+  assert.ok(page.revealedAt >= 3800, 'the completed minimum is followed by a fresh quiet layout interval');
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
+});
+
+test('finishing the minimum loader presentation never exposes pending page assets', async () => {
+  const minimum = deferred(), artwork = deferred();
+  const page = startup({ minimum: minimum.promise, artwork: artwork.promise });
+  await settle();
+  page.elapse(3600);
+  minimum.resolve();
+  await settle();
+  assert.equal(page.doc.body.dataset.appState, 'loading');
+  assert.equal(page.nodes['app-loader'].hidden, false);
+  assert.equal(page.revealedAt, undefined);
+  assert.deepEqual(page.logoCalls, ['start']);
+  page.elapse(1400);
+  artwork.resolve();
+  assert.equal(await page.ready, true);
+  assert.ok(page.revealedAt >= 5200);
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
+});
+
+test('layout stability is measured after the minimum completes and restarts for a late geometry change', async () => {
+  const minimum = deferred();
+  const page = startup({ minimum: minimum.promise, geometry: time => time < 3696 ? 0 : 160 });
+  await settle();
+  assert.deepEqual(page.calls, ['initialize']);
+  page.elapse(3600);
+  minimum.resolve();
+  assert.equal(await page.ready, true);
+  assert.ok(page.revealedAt >= 3896, 'late geometry must finish before a fresh full quiet interval');
 });
 
 test('the real header font loads before the first wallet measurement', async () => {
@@ -92,16 +153,18 @@ test('a late layout change restarts the stability interval instead of slipping p
   assert.ok(page.revealedAt >= 296, 'all movement must finish before a full quiet interval is observed');
 });
 
-test('failed page images keep the incomplete page covered and offer retry', async () => {
-  const page = startup({ artwork: Promise.reject(new Error('Image unavailable')) });
+test('failed page images cancel the unfinished loader countdown and offer retry immediately', async () => {
+  const page = startup({ artwork: Promise.reject(new Error('Image unavailable')), minimum: new Promise(() => {}) });
   assert.equal(await page.ready, false);
   assert.equal(page.doc.body.dataset.appState, 'error');
   assert.equal(page.nodes['app-loader'].hidden, false);
   assert.equal(page.nodes['app-load-retry'].hidden, false);
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
+  assert.equal(page.timers.size, 0);
 });
 
 test('unresponsive page assets never reveal a partially loaded page on a timer', async () => {
-  const page = startup({ artwork: new Promise(() => {}) });
+  const page = startup({ artwork: new Promise(() => {}), minimum: new Promise(() => {}) });
   await settle();
   assert.equal(page.doc.body.dataset.appState, 'loading');
   assert.equal(page.nodes['app-loader'].hidden, false);
@@ -110,6 +173,7 @@ test('unresponsive page assets never reveal a partially loaded page on a timer',
   assert.equal(page.doc.body.dataset.appState, 'error');
   assert.equal(page.nodes['app-loader'].hidden, false);
   assert.equal(page.timers.size, 0);
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
 });
 
 test('failed imports and initialization failures expose a working retry', async () => {
@@ -117,21 +181,23 @@ test('failed imports and initialization failures expose a working retry', async 
     { load: () => Promise.reject(new Error('Module unavailable')) },
     { initialize() { throw new Error('Initialization failed'); } },
   ]) {
-    const page = startup(options);
+    const page = startup({ ...options, minimum: new Promise(() => {}) });
     assert.equal(await page.ready, false);
     assert.equal(page.doc.body.dataset.appState, 'error');
     assert.equal(page.nodes['app-load-retry'].hidden, false);
     page.nodes['app-load-retry'].click();
     assert.equal(page.calls.at(-1), 'reload');
     assert.equal(page.timers.size, 0);
+    assert.deepEqual(page.logoCalls, ['start', 'stop']);
   }
 });
 
 test('an unresponsive application import reaches a covered, recoverable error state', async () => {
-  const page = startup({ load: () => new Promise(() => {}) });
+  const page = startup({ load: () => new Promise(() => {}), minimum: new Promise(() => {}) });
   [...page.timers.values()].find(timer => timer.delay === 15_000).action();
   assert.equal(await page.ready, false);
   assert.equal(page.doc.body.dataset.appState, 'error');
   assert.equal(page.calls.includes('initialize'), false);
   assert.equal(page.timers.size, 0);
+  assert.deepEqual(page.logoCalls, ['start', 'stop']);
 });
