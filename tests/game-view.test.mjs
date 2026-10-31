@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { formatRoute, parseRoute } from '../public/routes.js';
 
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
-function gamePage({ hash = '', scrollY = 0 } = {}) {
+function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
   const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
@@ -84,8 +85,21 @@ function gamePage({ hash = '', scrollY = 0 } = {}) {
     cancelAnimationFrame(id) { raf.delete(id); },
     scrollTo(options) { scrolls.push(options); window.scrollX = options.left; window.scrollY = options.top; },
   };
+  let route = parseRoute(hash);
+  const subscribers = [];
+  const routeChanges = [];
+  const router = routerMode ? {
+    getRoute: () => route,
+    navigate(next) {
+      route = next; routeChanges.push(next);
+      currentHash = formatRoute(next);
+      for (const listener of [...subscribers].sort((a, b) => a.priority - b.priority)) listener.fn(next);
+    },
+    subscribe(fn, { priority = 0 } = {}) { subscribers.push({ fn, priority }); },
+    back(fallback) { this.navigate(fallback); },
+  } : undefined;
   const context = {
-    document, window, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
+    document, window, router, formatRoute, parseRoute, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
     GAMES: [
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
       { id: 'beta', title: 'Beta', providerId: 'netent' },
@@ -103,7 +117,7 @@ function gamePage({ hash = '', scrollY = 0 } = {}) {
       observe(node) { this.target = node; }
     },
   };
-  const api = vm.runInNewContext(`${source}\ninitGameView();`, context);
+  const api = vm.runInNewContext(`${source}\ninitGameView({ router });`, context);
   const flushHash = () => windowEvents.emit('hashchange');
   function launcher(id) {
     const button = new Node(`launcher-${id}`);
@@ -111,11 +125,11 @@ function gamePage({ hash = '', scrollY = 0 } = {}) {
     nodes['catalog-shelves'].append(button);
     return button;
   }
-  return { nodes, document, window, frames, readiness, resizers, raf, timers, scrolls, api,
+  return { nodes, document, window, frames, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
     reinitialize: () => context.initGameView(),
     setModal(value) { modalOpen = value; },
     flushHash,
-    navigate(value) { window.location.hash = value; flushHash(); },
+    navigate(value) { if (router) router.navigate(parseRoute(value)); else { window.location.hash = value; flushHash(); } },
     launch(id) { const button = launcher(id); button.focus(); nodes['catalog-shelves'].emit('click', { target: button }); flushHash(); return button; },
     flushPaint() {
       const pending = [...raf.values()]; raf.clear();
@@ -245,4 +259,48 @@ test('invalid or removed links stay in the lobby and cannot create a frame', () 
   page.navigate('#game=removed');
   assert.equal(page.nodes['game-frame-host'].children.length, 0);
   assert.equal(page.document.body.dataset.view, 'lobby');
+});
+
+
+test('routed game launch remembers its provider page and page navigation cleans the iframe before rendering', () => {
+  const page = gamePage({ hash: '#/providers/red-tiger?q=luck&sort=az', routerMode: true });
+  assert.equal(page.document.body.dataset.view, 'lobby');
+  page.launch('alpha');
+  assert.equal(page.router.getRoute().type, 'game');
+  assert.equal(page.router.getRoute().from, '#/providers/red-tiger?q=luck&sort=az');
+  const frame = page.frames[0];
+  let rendered = false;
+  page.router.subscribe(route => {
+    if (route.type !== 'search') return;
+    assert.equal(page.nodes['game-frame-host'].children.length, 0);
+    assert.equal(page.readiness[0].stopped, true);
+    assert.equal(page.nodes['lobby-view'].hidden, false);
+    assert.equal(page.nodes['game-view'].hidden, true);
+    rendered = true;
+    page.nodes.results.focus();
+  });
+  page.router.navigate({ type: 'search', query: 'gold' });
+  page.flushPaint();
+  assert.equal(rendered, true);
+  assert.equal(frame.isConnected, false);
+  assert.equal(page.document.activeElement, page.nodes.results);
+  assert.equal(page.timers.size, 0);
+});
+
+test('Escape from a refreshed game returns to the originating category route without resetting home', () => {
+  const page = gamePage({ hash: '#game=alpha&from=%23%2Fpopular%3Fprovider%3Dred-tiger', routerMode: true });
+  assert.equal(page.frames.length, 1);
+  page.escape();
+  assert.equal(page.router.getRoute().type, 'category');
+  assert.equal(page.router.getRoute().categoryId, 'popular');
+  assert.equal(page.router.getRoute().providerId, 'red-tiger');
+  assert.equal(page.nodes['game-frame-host'].children.length, 0);
+});
+
+test('a removed game deep link canonicalizes to home without allocating a provider session', () => {
+  const page = gamePage({ hash: '#game=removed', routerMode: true });
+  assert.equal(page.router.getRoute().type, 'home');
+  assert.equal(page.frames.length, 0);
+  assert.equal(page.nodes['game-view'].hidden, true);
+  assert.equal(page.nodes['lobby-view'].hidden, false);
 });

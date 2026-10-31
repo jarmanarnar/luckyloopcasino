@@ -1,13 +1,14 @@
 import { GAMES } from './catalog.js';
 import { getLaunchDevice, getLaunchUrl, getFrameScale } from './game-presentation.js';
 import { watchGameReady } from './game-ready.js';
+import { formatRoute, parseRoute } from './routes.js';
 
 const games = new Map(GAMES.map(game => [game.id, game]));
 
 let initialized = false;
 let gameController = null;
 
-export function initGameView() {
+export function initGameView({ router } = {}) {
   if (initialized) return gameController;
 
   const lobby = document.querySelector('#lobby-view');
@@ -146,8 +147,14 @@ export function initGameView() {
   }
 
   function showFromHash({ restoreLobby = true } = {}) {
-    const requested = new URLSearchParams(window.location.hash.slice(1)).get('game');
+    const route = router?.getRoute();
+    const requested = router ? route.type === 'game' ? route.gameId : null
+      : new URLSearchParams(window.location.hash.slice(1)).get('game');
     const key = games.has(requested) ? requested : null;
+    if (router && route.type === 'game' && key === null) {
+      router.navigate({ type: 'home' }, { replace: true });
+      return;
+    }
     if (hasRendered && key === currentGame) return;
     hasRendered = true;
 
@@ -182,7 +189,7 @@ export function initGameView() {
     lobby.hidden = false;
     view.hidden = true;
     status.textContent = '';
-    if (wasGame && restoreLobby) {
+    if (wasGame && restoreLobby && !router) {
       restoreFrame = window.requestAnimationFrame(() => {
         if (currentGame !== null) return;
         window.scrollTo({ left: lobbyScroll.x, top: lobbyScroll.y, behavior: 'instant' });
@@ -192,6 +199,16 @@ export function initGameView() {
   }
 
   function returnToLobby(action = null) {
+    if (router) {
+      const route = router.getRoute();
+      if (action) {
+        router.navigate({ type: 'home' });
+        action();
+      } else {
+        router.back(route.type === 'game' && route.from ? parseRoute(route.from) : { type: 'home' });
+      }
+      return;
+    }
     // Shell destinations need the lobby visible before they render and focus
     // results. Their focus must not be overwritten by ordinary Back restoration.
     if (action) window.cancelAnimationFrame(restoreFrame);
@@ -209,13 +226,18 @@ export function initGameView() {
     const key = button.dataset.game;
     if (!games.has(key)) return;
     lastLauncher = button;
-    window.location.hash = `game=${key}`;
+    if (router) {
+      const route = router.getRoute();
+      const from = route.type === 'game' ? route.from : formatRoute(route);
+      router.navigate({ type: 'game', gameId: key, from });
+    } else window.location.hash = `game=${key}`;
   });
 
   reveal.addEventListener('click', () => {
     if (currentFrame) revealGame(currentFrame, 'manual');
   });
-  window.addEventListener('hashchange', showFromHash);
+  if (router) router.subscribe(() => showFromHash({ restoreLobby: false }), { priority: -100 });
+  else window.addEventListener('hashchange', showFromHash);
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.key !== 'Escape' || currentGame === null) return;
     if (document.querySelector('dialog[open]')) return;

@@ -2,331 +2,286 @@ import { PROVIDERS } from './catalog.js';
 import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
+import { getProviderDetails } from './provider-details.js';
+import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
 
-let initialized = false;
-let catalogController = null;
-const batchSize = 48;
-const shelfSize = 12;
-const categoryById = new Map(CATEGORIES.map(category => [category.id, category]));
-const alphabetic = (a, b) => a.title.localeCompare(b.title);
-
-function element(tag, className, text) {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
+let controller;
+const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first' };
+function node(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined) el.textContent = text;
+  return el;
 }
-
-function textArtwork(game) {
-  const art = element('span', 'game-launch__art');
-  art.append(element('span', '', game.title));
-  return art;
-}
-
-function shelfTitleButton(title, iconId, categoryId) {
-  const button = element('button', 'game-shelf__title-link');
-  button.type = 'button';
-  button.setAttribute('aria-controls', 'catalog-shelves');
-  if (categoryId) button.dataset.openCategory = categoryId;
-  else button.dataset.openProviders = '';
-  button.append(createShelfIcon(iconId), element('span', 'game-shelf__label', title));
-  return button;
-}
-
-function cardFor(game, shelfId) {
-  const card = element('li', 'game-card');
-  const button = element('button', 'game-launch');
-  button.id = `game-${shelfId}-${game.id}`;
-  button.type = 'button';
-  button.dataset.game = game.id;
-  button.dataset.provider = game.providerId;
-  button.setAttribute('aria-label', `Play ${game.title} demo by ${game.providerName}`);
-  button.title = `${game.title} · ${game.providerName}`;
-
-  button.append(textArtwork(game));
-
-  const badge = element('span', 'game-provider-badge');
-  badge.textContent = game.providerName;
-  button.append(badge);
-  card.append(button);
-  return card;
-}
-
-function arrowButton(direction, title, trackId, noun = 'games') {
-  const button = element('button', 'icon-button game-shelf__arrow');
-  button.type = 'button';
-  button.dataset.scroll = direction;
-  button.setAttribute('aria-label', `${direction === 'previous' ? 'Previous' : 'Next'} ${title}${noun ? ` ${noun}` : ''}`);
-  button.setAttribute('aria-controls', trackId);
+function arrowIcon(next = false) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('fill', 'currentColor');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z');
-  if (direction !== 'previous') path.setAttribute('transform', 'translate(24 0) scale(-1 1)');
+  path.setAttribute('d', 'm15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z');
+  if (next) path.setAttribute('transform', 'translate(24 0) scale(-1 1)');
   svg.append(path);
-  button.append(svg);
-  return button;
+  return svg;
+}
+function gameCard(game, shelfId) {
+  const card = node('li', 'game-card');
+  const button = node('button', 'game-launch');
+  button.type = 'button';
+  button.id = `game-${shelfId}-${game.id}`;
+  button.dataset.game = game.id;
+  button.dataset.provider = game.providerId;
+  button.setAttribute('aria-label', `Play ${game.title} demo by ${game.providerName}`);
+  const art = node('span', 'game-launch__art');
+  art.append(node('span', '', game.title));
+  button.append(art, node('span', 'game-provider-badge', game.providerName));
+  card.append(button);
+  return card;
+}
+function providerCard(provider) {
+  const card = node('li', 'provider-card');
+  const button = node('button', 'provider-launch');
+  button.type = 'button';
+  button.dataset.openProvider = provider.id;
+  button.setAttribute('aria-label', `View ${provider.name} games`);
+  const logo = node('img', 'provider-logo');
+  Object.assign(logo, { src: PROVIDER_LOGOS[provider.id].src, alt: provider.name, width: 140, height: 48,
+    loading: 'lazy', decoding: 'async' });
+  button.append(logo);
+  card.append(button);
+  return card;
 }
 
-export function initCatalogView() {
-  if (initialized) return catalogController;
+export function initCatalogView({ router } = {}) {
+  if (controller) return controller;
+  const root = document.querySelector('#lobby-view');
   const shelves = document.querySelector('#catalog-shelves');
   const categories = document.querySelector('#catalog-categories');
   const more = document.querySelector('#catalog-more');
   const empty = document.querySelector('#catalog-empty');
-  if (![shelves, categories, more, empty].every(Boolean)) return;
-  initialized = true;
-
-  let selectedCategory = 'all';
-  let selectedProvider = '';
-  let showProviders = false;
-  let grid = false;
-  let limit = batchSize;
-  let searchQuery = '';
-  const tracks = new Set();
+  const header = document.querySelector('#catalog-page-header');
+  const title = document.querySelector('#catalog-page-title');
+  const controls = document.querySelector('#catalog-page-controls');
+  const input = document.querySelector('#catalog-page-search-input');
+  const providerSelect = document.querySelector('#catalog-page-provider');
+  const categorySelect = document.querySelector('#catalog-page-category');
+  const sortSelect = document.querySelector('#catalog-page-sort');
+  const pagination = document.querySelector('#catalog-pagination');
+  const count = document.querySelector('#catalog-page-count');
+  const details = document.querySelector('#catalog-provider-details');
+  const hero = document.querySelector('#hero-carousel');
+  const toolbar = document.querySelector('.catalog-toolbar');
+  if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
+    providerSelect, categorySelect, sortSelect, pagination, count, details].every(Boolean)) return;
+  const limits = new Map(), tracks = new Set();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
+  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '';
+  const option = (value, text) => Object.assign(node('option', '', text), { value });
+  providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
+  categorySelect.replaceChildren(...CATEGORIES.map(c => option(c.id, c.title)));
   for (const category of CATEGORIES) {
-    const button = element('button', 'catalog-category');
-    button.append(createShelfIcon(category.id), element('span', '', category.title));
+    const button = node('button', 'catalog-category');
     button.type = 'button';
     button.dataset.category = category.id;
-    button.setAttribute('aria-pressed', String(category.id === selectedCategory));
-    button.setAttribute('aria-controls', 'catalog-shelves');
+    button.setAttribute('aria-pressed', String(category.id === 'all'));
+    button.append(createShelfIcon(category.id), node('span', '', category.title));
     categories.append(button);
   }
-
   function updateArrows(track) {
     const section = track.closest('.game-shelf');
-    const maximum = Math.max(0, track.scrollWidth - track.clientWidth);
-    const previous = section.querySelector('[data-scroll="previous"]');
-    const next = section.querySelector('[data-scroll="next"]');
-    if (previous) previous.disabled = track.scrollLeft <= 1;
-    if (next) next.disabled = track.scrollLeft >= maximum - 1;
+    const max = Math.max(0, track.scrollWidth - track.clientWidth);
+    section.querySelector('[data-scroll="previous"]').disabled = track.scrollLeft <= 1;
+    section.querySelector('[data-scroll="next"]').disabled = track.scrollLeft >= max - 1;
   }
-
-  function providerShelf({ isGrid = false } = {}) {
-    const section = element('section', 'game-shelf provider-shelf');
-    section.dataset.shelf = 'providers';
-    section.setAttribute('aria-labelledby', 'shelf-title-providers');
-    const header = element('div', 'game-shelf__header');
-    const heading = element('h2', 'game-shelf__title');
-    heading.id = 'shelf-title-providers';
-    if (isGrid) {
-      heading.append(createShelfIcon('providers'), element('span', 'game-shelf__label', 'Game Providers'));
-    } else {
-      heading.append(shelfTitleButton('Game Providers', 'providers'));
-    }
-    header.append(heading);
-    if (!isGrid) {
-      const actions = element('div', 'game-shelf__actions');
-      const all = element('button', 'shelf-see-all', 'All');
-      all.type = 'button';
-      all.dataset.openProviders = '';
-      all.setAttribute('aria-label', 'See all game providers');
-      const navigation = element('div', 'game-shelf__navigation');
-      navigation.append(arrowButton('previous', 'game providers', 'provider-track', ''),
-        arrowButton('next', 'game providers', 'provider-track', ''));
-      actions.append(all, navigation);
-      header.append(actions);
-    }
-    section.append(header);
-    const track = element('ul', `provider-track${isGrid ? ' is-grid' : ''}`);
-    track.id = 'provider-track';
-    track.setAttribute('aria-label', 'Game providers');
-    track.tabIndex = 0;
-    track.dir = 'ltr';
-    for (const studio of PROVIDERS) {
-      const card = element('li', 'provider-card');
-      const button = element('button', 'provider-launch');
-      button.type = 'button';
-      button.dataset.openProvider = studio.id;
-      button.setAttribute('aria-label', `View ${studio.name} games`);
-      button.title = studio.name;
-      const logo = element('img', 'provider-logo');
-      logo.src = PROVIDER_LOGOS[studio.id].src;
-      logo.alt = studio.name;
-      logo.width = 140;
-      logo.height = 48;
-      logo.loading = 'lazy';
-      logo.decoding = 'async';
-      button.append(logo);
-      card.append(button);
-      track.append(card);
-    }
-    if (!isGrid) {
-      tracks.add(track);
-      track.addEventListener('scroll', () => updateArrows(track), { passive: true });
-    }
-    section.append(track);
-    return section;
-  }
-
-  function shelf({ id, title, games, categoryId, iconId = categoryId || 'providers', isGrid = false }) {
-    const section = element('section', 'game-shelf');
+  function rail(id, label, items, providers = false) {
+    const section = node('section', 'game-shelf');
     section.dataset.shelf = id;
-    const headingId = `shelf-title-${id}`;
-    const trackId = `game-track-${id}`;
-    section.setAttribute('aria-labelledby', headingId);
-    const header = element('div', 'game-shelf__header');
-    const heading = element('div', 'game-shelf__heading');
-    const titleNode = element('h2', 'game-shelf__title');
-    titleNode.id = headingId;
-    if (isGrid) {
-      titleNode.append(createShelfIcon(iconId), element('span', 'game-shelf__label', title));
-    } else {
-      titleNode.append(shelfTitleButton(title, iconId, categoryId));
+    section.setAttribute('aria-labelledby', `shelf-title-${id}`);
+    const head = node('div', 'game-shelf__header');
+    const heading = node('h2', 'game-shelf__title');
+    heading.id = `shelf-title-${id}`;
+    const titleLink = node('button', 'game-shelf__title-link');
+    const all = node('button', 'shelf-see-all', 'All');
+    for (const button of [titleLink, all]) {
+      button.type = 'button';
+      if (providers) button.dataset.openProviders = '';
+      else button.dataset.openCategory = id;
     }
-    heading.append(titleNode);
-    header.append(heading);
-    if (!isGrid) {
-      const actions = element('div', 'game-shelf__actions');
-      const seeAll = element('button', 'shelf-see-all', 'All');
-      seeAll.type = 'button';
-      seeAll.setAttribute('aria-label', `See all ${title} games`);
-      if (categoryId) seeAll.dataset.openCategory = categoryId;
-      actions.append(seeAll);
-      const navigation = element('div', 'game-shelf__navigation');
-      navigation.append(arrowButton('previous', title, trackId), arrowButton('next', title, trackId));
-      actions.append(navigation);
-      header.append(actions);
-    }
-    section.append(header);
-    const track = element('ul', `game-track${isGrid ? ' is-grid' : ''}`);
-    track.id = trackId;
-    track.setAttribute('aria-label', `${title} games`);
-    track.tabIndex = 0;
+    all.setAttribute('aria-label', `See all ${providers ? 'game providers' : `${label} games`}`);
+    titleLink.append(createShelfIcon(id), node('span', 'game-shelf__label', label));
+    heading.append(titleLink);
+    const actions = node('div', 'game-shelf__actions');
+    const navigation = node('div', 'game-shelf__navigation');
+    const track = node('ul', providers ? 'provider-track' : 'game-track');
+    track.id = `${providers ? 'provider' : 'game'}-track-${id}`;
+    track.setAttribute('aria-label', providers ? 'Game providers' : `${label} games`);
     track.dir = 'ltr';
-    const visibleGames = isGrid ? games.slice(0, limit)
-      : categoryId === 'picks' ? games : games.slice(0, shelfSize);
-    visibleGames.forEach(game => track.append(cardFor(game, id)));
-    if (!isGrid) {
-      tracks.add(track);
-      track.addEventListener('scroll', () => updateArrows(track), { passive: true });
+    track.tabIndex = 0;
+    for (const direction of ['previous', 'next']) {
+      const button = node('button', 'icon-button game-shelf__arrow');
+      button.type = 'button';
+      button.dataset.scroll = direction;
+      button.setAttribute('aria-label', `${direction === 'next' ? 'Next' : 'Previous'} ${label}`);
+      button.setAttribute('aria-controls', track.id);
+      button.append(arrowIcon(direction === 'next'));
+      navigation.append(button);
     }
-    section.append(track);
+    actions.append(all, navigation);
+    head.append(heading, actions);
+    track.append(...items.slice(0, providers ? items.length : 12).map(item => providers ? providerCard(item) : gameCard(item, id)));
+    track.addEventListener('scroll', () => updateArrows(track), { passive: true });
+    tracks.add(track);
+    section.append(head, track);
     return section;
   }
-
-  function render({ focusResults = false } = {}) {
-    tracks.clear();
-    const categoryGames = getGamesForCategory(selectedCategory);
-    const query = searchQuery.toLocaleLowerCase();
-    const filtered = categoryGames.filter(game => (!selectedProvider || game.providerId === selectedProvider)
-      && (!query || `${game.title} ${game.providerName}`.toLocaleLowerCase().includes(query)));
-    const home = !grid && !showProviders && selectedCategory === 'all' && !selectedProvider && !searchQuery;
-    const fragment = document.createDocumentFragment();
-    empty.hidden = showProviders || filtered.length !== 0;
-    more.hidden = true;
-    const studio = PROVIDERS.find(item => item.id === selectedProvider);
-    if (showProviders) {
-      fragment.append(providerShelf({ isGrid: true }));
-    } else if (home) {
-      for (const id of ['popular', 'spooky', 'picks', 'slots', 'tap', 'megaways', 'jackpot', 'fruit', 'adventure']) {
-        const category = categoryById.get(id);
-        const games = getGamesForCategory(id);
-        if (games.length) fragment.append(shelf({ id: `category-${id}`, title: category.title,
-          games, categoryId: id }));
-      }
-      fragment.append(providerShelf());
-    } else {
-      const category = categoryById.get(selectedCategory);
-      const title = searchQuery ? `Search: ${searchQuery}` : [selectedCategory !== 'all' ? category.title : '', studio?.name]
-        .filter(Boolean).join(' · ') || 'All Games';
-      const ordered = ['popular', 'picks'].includes(selectedCategory) ? filtered : [...filtered].sort(alphabetic);
-      fragment.append(shelf({ id: 'results', title, games: ordered,
-        iconId: selectedCategory !== 'all' ? selectedCategory : 'providers', isGrid: true }));
-      more.hidden = limit >= filtered.length;
-      more.textContent = `Show ${Math.min(batchSize, Math.max(0, filtered.length - limit))} more`;
+  function providerDetails(provider) {
+    details.hidden = !provider;
+    if (!provider) { detailsId = ''; return; }
+    if (detailsId === provider.id) return;
+    detailsId = provider.id;
+    const info = getProviderDetails(provider.id);
+    const content = node('div');
+    content.id = 'provider-details-more';
+    content.hidden = true;
+    info.description.forEach(text => content.append(node('p', '', text)));
+    const facts = node('dl', 'provider-facts');
+    for (const [label, value] of [['Available games', String(info.gameCount)], ['Game types', info.formats.map(f => f.title).join(', ')]]) {
+      const fact = node('div');
+      fact.append(node('dt', '', label), node('dd', '', value));
+      facts.append(fact);
     }
-    shelves.replaceChildren(fragment);
-    const activeMenu = searchQuery ? 'search' : showProviders || (selectedProvider && selectedCategory === 'all')
-      ? 'providers' : selectedCategory;
-    categories.dataset.activeMenu = activeMenu;
+    content.append(facts);
+    const toggle = node('button', 'text-control', 'Show more');
+    toggle.id = 'provider-details-toggle';
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', content.id);
+    toggle.addEventListener('click', () => {
+      content.hidden = !content.hidden;
+      toggle.textContent = content.hidden ? 'Show more' : 'Show less';
+      toggle.setAttribute('aria-expanded', String(!content.hidden));
+    });
+    details.replaceChildren(node('h2', '', `${info.name} games`), node('p', '', info.summary), content, toggle);
+  }
+  function render(route, meta = {}) {
+    window.clearTimeout(inputTimer);
+    if (route.type === 'game') return;
+    const model = getCatalogPage(route), home = model.type === 'home';
+    document.body.dataset.page = model.type;
+    root.hidden = false;
+    hero.hidden = toolbar.hidden = !home;
+    header.hidden = home;
+    controls.hidden = home || model.type === 'not-found';
+    title.textContent = model.title;
+    document.title = home ? 'LuckyLoop Casino' : `${model.title} · LuckyLoop Casino`;
+    categories.dataset.activeMenu = model.activeMenu;
     for (const button of categories.querySelectorAll('[data-category]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.category === activeMenu));
+      button.setAttribute('aria-pressed', String(button.dataset.category === model.activeMenu));
     }
-    for (const track of tracks) updateArrows(track);
-    if (focusResults) {
-      shelves.scrollIntoView({ block: 'start', behavior: 'instant' });
-      const results = shelves.querySelector('.game-shelf');
-      results.tabIndex = -1;
-      results.focus({ preventScroll: true });
+    if (input.value !== (route.query || '')) input.value = route.query || '';
+    input.placeholder = model.type === 'providers' ? 'Search providers' : 'Search games';
+    input.setAttribute('aria-label', input.placeholder);
+    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search'].includes(model.type);
+    categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
+    sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
+    providerSelect.value = route.providerId || '';
+    categorySelect.value = route.categoryId || 'all';
+    sortSelect.replaceChildren(...(model.allowedSorts || []).map(id => option(id, sortLabels[id])));
+    sortSelect.value = model.sort || '';
+    providerDetails(model.type === 'provider' ? model.provider : null);
+    renderedRoute = route;
+    const key = JSON.stringify(route);
+    if (key === renderedKey) return;
+    renderedKey = key;
+    tracks.clear();
+    empty.hidden = true;
+    more.hidden = true;
+    pagination.hidden = home || model.type === 'not-found';
+    if (home) {
+      shelves.replaceChildren(...LOBBY_CATEGORIES.map(id => rail(id, CATEGORIES.find(c => c.id === id).title, getGamesForCategory(id))),
+        rail('providers', 'Game Providers', PROVIDERS, true));
+    } else if (model.type === 'not-found') {
+      shelves.replaceChildren();
+      empty.textContent = 'This page is unavailable. Return to the casino to browse games.';
+      empty.hidden = false;
+    } else {
+      const providers = model.type === 'providers';
+      const items = providers ? model.providers : model.games;
+      const slice = pageSlice(items, limits.get(key) || PAGE_SIZE);
+      const section = node('section', 'game-shelf catalog-result-shelf');
+      section.setAttribute('aria-labelledby', 'catalog-page-title');
+      const track = node('ul', `${providers ? 'provider-track' : 'game-track'} is-grid`);
+      track.setAttribute('aria-label', providers ? 'Game providers' : `${model.title} games`);
+      track.dir = 'ltr';
+      track.append(...slice.visible.map(item => providers ? providerCard(item) : gameCard(item, 'results')));
+      section.append(track);
+      shelves.replaceChildren(section);
+      empty.hidden = items.length !== 0;
+      empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
+      const noun = providers ? 'providers' : 'games';
+      count.textContent = slice.hasMore ? `Showing ${slice.visible.length} of ${slice.total} ${noun}` : `${slice.total} ${noun}`;
+      pagination.hidden = items.length === 0;
+      more.hidden = !slice.hasMore;
+    }
+    tracks.forEach(updateArrows);
+    if (meta.focus !== false && !meta.pop && meta.source !== 'initial') {
+      (route.type === 'search' ? input : title).focus({ preventScroll: true });
     }
   }
-
-  function openProviders({ focusResults = false } = {}) {
-    searchQuery = '';
-    selectedCategory = 'all';
-    selectedProvider = '';
-    showProviders = true;
-    grid = false;
-    limit = batchSize;
-    render({ focusResults });
-  }
-
-  function resetCatalog() {
-    if (selectedCategory === 'all' && !selectedProvider && !grid && !showProviders) return;
-    selectedCategory = 'all';
-    searchQuery = '';
-    selectedProvider = '';
-    showProviders = false;
-    grid = false;
-    limit = batchSize;
-    render();
-  }
-
+  const openHome = () => router.navigate({ type: 'home' });
+  const openCategory = id => id === 'all' ? openHome() : router.navigate({ type: 'category', categoryId: id });
+  const openProviders = () => router.navigate({ type: 'providers' });
+  const openProvider = id => router.navigate({ type: 'provider', providerId: id });
+  const openSearch = () => { router.navigate({ type: 'search', query: '' }); input.focus({ preventScroll: true }); };
+  const searchGames = query => router.navigate({ type: 'search', query: String(query).trim() });
   categories.addEventListener('click', event => {
     const button = event.target.closest('[data-category]');
-    if (!button) return;
-    if (button.dataset.category === 'all') return resetCatalog();
-    searchQuery = '';
-    selectedCategory = button.dataset.category;
-    showProviders = false;
-    grid = true;
-    limit = batchSize;
-    render();
+    if (button) openCategory(button.dataset.category);
   });
   shelves.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
-    if (event.target.closest('[data-open-providers]')) {
-      openProviders({ focusResults: true });
-      return;
-    }
+    if (event.target.closest('[data-open-providers]')) return openProviders();
     const category = event.target.closest('[data-open-category]');
-    const studio = event.target.closest('[data-open-provider]');
-    if (category || studio) {
-      searchQuery = '';
-      selectedCategory = category?.dataset.openCategory || 'all';
-      selectedProvider = studio?.dataset.openProvider || '';
-      showProviders = false;
-      grid = true;
-      limit = batchSize;
-      render({ focusResults: true });
-      return;
-    }
+    if (category) return openCategory(category.dataset.openCategory);
+    const provider = event.target.closest('[data-open-provider]');
+    if (provider) return openProvider(provider.dataset.openProvider);
     const arrow = event.target.closest('[data-scroll]');
     if (arrow) {
       const track = arrow.closest('.game-shelf').querySelector('.game-track, .provider-track');
       const cardWidth = track.firstElementChild?.getBoundingClientRect().width || 0;
-      track.scrollBy({ left: (arrow.dataset.scroll === 'next' ? 1 : -1)
-        * Math.max(1, track.clientWidth - cardWidth), behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+      track.scrollBy({ left: (arrow.dataset.scroll === 'next' ? 1 : -1) * Math.max(1, track.clientWidth - cardWidth),
+        behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     }
   });
-  more.addEventListener('click', () => { limit += batchSize; render(); });
-  window.addEventListener('resize', () => tracks.forEach(updateArrows), { passive: true });
-  function searchGames(query) {
-    searchQuery = String(query).trim();
-    selectedCategory = 'all';
-    selectedProvider = '';
-    showProviders = false;
-    grid = !!searchQuery;
-    limit = batchSize;
-    render({ focusResults: true });
+  document.querySelector('#catalog-page-back').addEventListener('click', () => router.back(
+    renderedRoute?.type === 'provider' ? { type: 'providers' } : { type: 'home' }));
+  more.addEventListener('click', () => {
+    const key = JSON.stringify(renderedRoute);
+    limits.set(key, (limits.get(key) || PAGE_SIZE) + PAGE_SIZE);
+    renderedKey = '';
+    render(renderedRoute, { focus: false });
+    if (!more.hidden) more.focus({ preventScroll: true });
+  });
+  function updateFilters(changes) {
+    const route = router.getRoute();
+    if (!['category', 'provider', 'providers', 'search'].includes(route.type)) return;
+    router.navigate({ ...route, ...changes }, { replace: true, preserveScroll: true, focus: false });
   }
-  catalogController = { openProviders, searchGames };
-  render();
-  return catalogController;
+  input.addEventListener('input', () => {
+    window.clearTimeout(inputTimer);
+    inputTimer = window.setTimeout(() => updateFilters({ query: input.value }), 120);
+  });
+  document.querySelector('#catalog-page-search-form').addEventListener('submit', event => {
+    event.preventDefault();
+    window.clearTimeout(inputTimer);
+    updateFilters({ query: input.value });
+  });
+  providerSelect.addEventListener('change', () => updateFilters({ providerId: providerSelect.value }));
+  categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value }));
+  sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
+  new ResizeObserver(() => tracks.forEach(updateArrows)).observe(shelves);
+  router.subscribe(render);
+  render(router.getRoute(), { source: 'initial', focus: false });
+  controller = { openHome, openCategory, openProviders, openProvider, openSearch, searchGames };
+  return controller;
 }

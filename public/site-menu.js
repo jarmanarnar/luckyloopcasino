@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openProviders, openSearch, returnToLobby = action => action?.() } = {}) {
+export function initSiteMenu({ openHome, openCategory, openProviders, openSearch } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -165,16 +165,9 @@ export function initSiteMenu({ openProviders, openSearch, returnToLobby = action
   }
 
   function chooseCategory(id) {
-    if (id === 'providers') {
-      if (openProviders) closeMenu(() => returnToLobby(() => openProviders({ focusResults: true })));
-      return;
-    }
-    const target = categories.querySelector(`[data-category="${id}"]`);
-    if (!target) return;
-    closeMenu(() => returnToLobby(() => {
-      target.click();
-      target.focus({ preventScroll: true });
-    }));
+    if (id === 'providers') closeMenu(() => openProviders?.());
+    else if (id === 'all') closeMenu(() => openHome?.());
+    else closeMenu(() => openCategory?.(id));
   }
 
   trigger.addEventListener('click', openMenu);
@@ -182,7 +175,7 @@ export function initSiteMenu({ openProviders, openSearch, returnToLobby = action
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));
   });
-  promotionButton?.addEventListener('click', () => chooseCategory('picks'));
+  promotionButton?.addEventListener('click', () => chooseCategory('popular'));
   navigation.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const item = event.target.closest('[data-menu-category]');

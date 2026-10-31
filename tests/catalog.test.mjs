@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
 import { GAMES, PROVIDERS } from '../public/catalog.js';
-import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, LEGACY_CATEGORIES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { PROVIDER_LOGOS } from '../public/provider-assets.js';
 import { isRemovedGame } from '../public/removed-games.js';
+import { getProviderDetails } from '../public/provider-details.js';
 
 // User-reviewed exclusions are deliberate product decisions, independent of
 // the production exclusion implementation and the original catalog snapshot.
@@ -65,13 +66,46 @@ test('Our Picks retains 15 unique active choices with Nip Tuck first', () => {
 
 test('all 32 removed games and vendor aliases stay out of every collection and launch catalog', () => {
   assert.equal(removedGames.length, 32);
-  const lists = [['launch catalog', GAMES], ...CATEGORIES.map(category => [category.id, getGamesForCategory(category.id)])];
+  const lists = [['launch catalog', GAMES], ...[...CATEGORIES, ...LEGACY_CATEGORIES].map(category => [category.id, getGamesForCategory(category.id)])];
   for (const [name, games] of lists) {
     for (const game of games) {
       assert.equal(blockedCodes.has(game.id.toLowerCase()), false, `${name}: ${game.id}`);
       assert.equal(blockedCodes.has(vendorCode(game)), false, `${name}: ${game.url}`);
     }
   }
+});
+
+test('lobby categories stay focused while existing editorial choices remain available', () => {
+  assert.deepEqual(CATEGORIES.map(category => category.id), ['all', 'popular', 'slots', 'new-releases']);
+  assert.ok(getGamesForCategory('spooky').length > 0);
+  assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
+});
+
+test('new releases contain only active, dated games in descending release order', () => {
+  const releases = getGamesForCategory('new-releases');
+  assert.equal(releases.length, 11);
+  assert.equal(releases[0].id, 'nunchucksr96f100');
+  assert.equal(getGameReleaseDate(releases[0]), '2026-10-29');
+  assert.equal(getGameReleaseDate('unknown'), '');
+  for (const [index, game] of releases.entries()) {
+    assert.ok(GAMES.includes(game));
+    const release = GAME_RELEASES[game.id];
+    assert.match(release.date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(release.date <= '2026-10-31');
+    assert.equal(new URL(release.source).hostname, 'games.nolimitcity.com');
+    if (index > 0) assert.ok(getGameReleaseDate(releases[index - 1]) >= release.date);
+  }
+});
+
+test('provider details describe the active catalog and real available game formats', () => {
+  assert.equal(getProviderDetails('unknown'), null);
+  for (const provider of PROVIDERS) {
+    const details = getProviderDetails(provider.id);
+    assert.equal(details.gameCount, provider.count);
+    assert.equal(details.formats.reduce((total, type) => total + type.count, 0), provider.count);
+    assert.ok(details.formats.every(type => type.count > 0));
+  }
+  assert.deepEqual(getProviderDetails('taparoo').formats, [{ id: 'tap', title: 'Tap Games', count: 8 }]);
 });
 
 test('permanent exclusions reject removed local IDs and renamed entries using old vendor URLs', () => {

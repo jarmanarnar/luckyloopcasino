@@ -2,7 +2,7 @@ import EmblaCarousel from './vendor/embla-carousel/embla-carousel.esm.js';
 
 let initialized = false;
 
-export function initHeroCarousel({ openProviders } = {}) {
+export function initHeroCarousel({ openHome, openCategory, openProviders } = {}) {
   if (initialized) return;
   const root = document.querySelector('#hero-carousel');
   const viewport = document.querySelector('#hero-viewport');
@@ -91,7 +91,7 @@ export function initHeroCarousel({ openProviders } = {}) {
   }
 
   function canRotate() {
-    return !destroyed && !suspended && !reducedMotion.matches
+    return !root.hidden && !destroyed && !suspended && !reducedMotion.matches
       && !hovered && !focused && !dragging && visible && !document.hidden
       && document.body.dataset.view !== 'game' && !document.querySelector('dialog[open]')
       && carousel.scrollSnapList().length > 1;
@@ -165,23 +165,12 @@ export function initHeroCarousel({ openProviders } = {}) {
     if (!(event.target instanceof Element)) return;
     const button = event.target.closest('[data-hero-category]');
     if (!button || !root.contains(button)) return;
-    const categories = document.querySelector('#catalog-categories');
     const id = button.dataset.heroCategory;
-    if (!['picks', 'providers', 'tap', 'slots'].includes(id)) return;
-    const target = categories?.querySelector(`[data-category="${id}"]`);
-    const all = categories?.querySelector('[data-category="all"]');
-    if (!all || (id === 'providers' ? !openProviders : !target)) return;
-    // Category buttons preserve provider filters; a banner starts a fresh collection.
-    all.click();
-    if (id === 'providers') openProviders();
-    else target.click();
-    const shelves = document.querySelector('#catalog-shelves');
-    shelves?.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
-    const firstShelf = shelves?.querySelector('.game-shelf');
-    if (firstShelf) {
-      firstShelf.tabIndex = -1;
-      firstShelf.focus({ preventScroll: true });
-    }
+    if (!id) return;
+    event.preventDefault();
+    if (id === 'all') openHome?.();
+    else if (id === 'providers') openProviders?.();
+    else openCategory?.(id);
   });
 
   carousel.on('select', () => { updateSelection(); scheduleRotation(); });
@@ -202,6 +191,7 @@ export function initHeroCarousel({ openProviders } = {}) {
   stateObserver.observe(document.body, {
     subtree: true, attributes: true, attributeFilter: ['data-view', 'open'],
   });
+  stateObserver.observe(root, { attributes: true, attributeFilter: ['hidden'] });
   const visibilityObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
     visible = entries.some(entry => entry.target === root && entry.isIntersecting);
     scheduleRotation();

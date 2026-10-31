@@ -118,9 +118,11 @@ function heroPage({ reduced = false, intersection = true } = {}) {
   document.querySelector = selector => selector === 'dialog[open]' ? (modal ? new Node() : null) : nodes[selector.slice(1)] || null;
   document.createElement = () => new Node();
   const catalog = {
+    openHome() { provider = ''; category = 'all'; calls.push({ action: 'navigate', id: 'all' }); },
+    openCategory(id) { provider = ''; category = id; calls.push({ action: 'navigate', id }); },
     openProviders(options) {
       providerCalls.push(options);
-      calls.push({ action: 'category', id: 'providers' });
+      calls.push({ action: 'navigate', id: 'providers' });
       provider = '';
       category = 'providers';
       nodes['catalog-categories'].dataset.activeMenu = 'providers';
@@ -239,27 +241,45 @@ test('reduced motion disables autoplay, jumps manual navigation, and updates wit
   assert.equal(page.timers.size, 1);
 });
 
-test('all banner CTAs clear the current provider before opening real collections and move focus to results', () => {
+test('banner CTAs navigate directly without clicking a hidden toolbar or resetting home first', () => {
   for (let index = 0; index < 4; index++) {
     const page = heroPage({ reduced: index === 2 });
     const id = ['picks', 'providers', 'tap', 'slots'][index];
-    assert.equal(page.categoryButtons.providers, undefined);
+    page.nodes['catalog-categories'].querySelector = () => { throw new Error('banner navigation must not query toolbar buttons'); };
     page.slides[index].children[0].click();
-    assert.deepEqual(page.calls.filter(call => call.action === 'category').map(call => call.id), ['all', id]);
+    assert.deepEqual(page.calls.filter(call => call.action === 'navigate').map(call => call.id), [id]);
+    assert.equal(page.calls.some(call => ['category', 'scroll-results', 'focus-results'].includes(call.action)), false,
+      'the destination owns rendering, scroll and focus');
     assert.equal(page.provider, '');
     assert.equal(page.category, id);
-    assert.equal(page.nodes['catalog-categories'].dataset.activeMenu, id);
-    if (id === 'providers') {
-      assert.equal(page.providerCalls.length, 1);
-      assert.equal(page.providerCalls[0], undefined);
-      assert.ok(Object.values(page.categoryButtons).every(button => button.getAttribute('aria-pressed') === 'false'));
-    }
-    const scroll = page.calls.find(call => call.action === 'scroll-results');
-    assert.equal(scroll.options.behavior, index === 2 ? 'instant' : 'smooth');
-    assert.equal(page.document.activeElement, page.firstShelf);
-    assert.equal(page.firstShelf.tabIndex, -1);
-    assert.equal(page.calls.at(-1).options.preventScroll, true);
+    if (id === 'providers') assert.equal(page.providerCalls.length, 1);
   }
+  const page = heroPage();
+  page.slides[0].children[0].dataset.heroCategory = 'all';
+  page.slides[0].children[0].click();
+  assert.deepEqual(page.calls.filter(call => call.action === 'navigate').map(call => call.id), ['all']);
+});
+
+test('leaving the lobby pauses the hidden hero immediately and resumes the remaining countdown on return', () => {
+  const page = heroPage({ intersection: false });
+  const root = page.nodes['hero-carousel'];
+  const fill = page.animations.at(-1);
+  page.elapse(1700);
+  root.hidden = true;
+  page.mutations[0].callback();
+  assert.equal(page.timers.size, 0, 'the hidden page cannot retain an autoplay timer even without IntersectionObserver');
+  assert.equal(fill.playState, 'paused');
+  assert.equal(fill.currentTime, 1700);
+  page.elapse(8000);
+  page.window.emit('pageshow');
+  assert.equal(page.timers.size, 0, 'other resume notifications cannot restart an off-home hero');
+  root.hidden = false;
+  page.mutations[0].callback();
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].duration, 4300);
+  assert.equal(page.animations.at(-1), fill);
+  const hiddenObservation = page.mutations[0].targets.find(target => target.node === root);
+  assert.deepEqual([...hiddenObservation.options.attributeFilter], ['hidden']);
 });
 
 test('page suspension and carousel destruction clear timers; a restored page resumes safely', () => {

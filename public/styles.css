@@ -335,8 +335,6 @@
     }
     .text-control:hover:not(:disabled) { background: var(--control-hover); }
     .text-control:disabled { opacity: .4; cursor: default; }
-    .catalog-more-wrap { margin-top: 24px; text-align: center; }
-    .catalog-more-wrap:has(button[hidden]) { display: none; }
     .catalog-empty { padding-block: 24px; color: var(--text-secondary); font-size: 14px; }
     .game-track {
       display: flex;

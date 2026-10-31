@@ -6,15 +6,19 @@ import { initSiteMenu } from './site-menu.js';
 import { initHeroCarousel } from './hero-carousel.js';
 import { initSiteSearch } from './site-search.js';
 import { initMobileNav } from './mobile-nav.js';
+import { initRouter } from './routes.js';
 
-const catalog = initCatalogView();
+const router = initRouter();
+initGameView({ router });
+const catalog = initCatalogView({ router });
 initCatalogToolbar();
 initWallet();
-const game = initGameView();
-const search = initSiteSearch({ ...catalog, ...game });
-const menu = initSiteMenu({ ...catalog, ...search, ...game });
-initMobileNav({ ...catalog, ...search, ...menu, ...game });
+const search = initSiteSearch(catalog);
+const menu = initSiteMenu({ ...catalog, ...search });
+initMobileNav({ ...catalog, ...search, ...menu });
 initHeroCarousel(catalog);
-document.querySelector('.site-logo')?.addEventListener('click', () => {
-  game.returnToLobby(() => document.querySelector('#catalog-categories [data-category="all"]')?.click());
+
+document.querySelector('.site-logo')?.addEventListener('click', event => {
+  event.preventDefault();
+  catalog.openHome();
 });

@@ -21,10 +21,11 @@ npm test
 
 - Responsive promotional carousel containing four empty frames: one, two or three per view, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Frames use the same shared surface and radius tokens as the game cards. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the frames.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
-- A persistent 72px desktop icon rail expands to 232px. Its hamburger and BUY/REDEEM controls precede search, an Editor’s Favorites promotion and grouped category/provider navigation. Compact icons show accessible custom tooltips; expanded rows show labels. Below 45rem (720px at the default text size) the same content moves into a 232px hamburger drawer with native modal focus handling, Escape/backdrop dismissal and independent scrolling. BUY opens the demo wallet; REDEEM remains disabled. The sidebar is hidden during play and the game retains the full width below its header.
-- Mobile lobby navigation provides Menu, Casino, Search, Providers and Wallet below the same 45rem boundary. The top hamburger is hidden while the bottom bar is present; the logo remains visible on narrow phones. It reuses the existing drawer, catalog and dialogs, tracks the current destination, and returns focus to the originating button when a dialog closes. The fixed bar is 63px high plus the bottom safe-area inset; matching content padding keeps the last row visible. It is hidden at desktop widths and during games.
-- Sidebar search opens a focused dialog and filters the actual catalog by game or provider name. The header uses the selected monochrome LOOP concept as its current wireframe logo.
-- Popular is the first home game shelf and follows All Games in the category bar. It starts with 12 curated demo titles; it is not an analytics-based ranking. Providers remain available through the home provider carousel and hamburger menu, with no Providers item in the horizontal category bar.
+- A persistent 72px desktop icon rail expands to 232px. Its hamburger and BUY/REDEEM controls precede search, a Popular shortcut and grouped category/provider navigation. Compact icons show accessible custom tooltips; expanded rows show labels. Below 45rem (720px at the default text size), the same content moves into a full-screen menu with native modal focus handling, Escape dismissal and independent scrolling. BUY opens the demo wallet; REDEEM remains disabled. The sidebar stays visible beside framed games on desktop.
+- Mobile navigation provides Menu, Casino, Search, Providers and Wallet below the same 45rem boundary, including during games. The top hamburger is hidden while the bottom bar is present. The fixed bar is 63px high with no added bottom safe-area inset, including in standalone mode; matching content padding keeps the last row visible.
+- Search has its own page with live results, category/provider filters and name sorting. The header uses the selected monochrome LOOP concept as its current wireframe logo.
+- Only the lobby includes promotional frames and the All Games, Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. Popular starts with 12 curated demo titles; it is not an analytics-based ranking. New Releases uses a verified subset of provider release dates recorded in collections.js.
+- Categories, the provider directory, individual providers and search have independent URL routes. Provider pages include expandable details derived from the active catalog. Lists load 35 games at a time with Show more. Search and filters survive refresh; Back and Forward restore page scroll. Opening a game remembers its originating page.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
 - Equal game-card sizes in carousels and grids. Game cover artwork is intentionally omitted.
@@ -39,11 +40,12 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | Location | Purpose |
 | --- | --- |
 | `public/index.html`, `styles.css`, `wallet.css` | Page structure and styles |
-| `public/catalog-view.js`, `collections.js`, `game-types.js` | Catalog navigation, curated collections and game-format mapping |
+| `public/routes.js`, `catalog-view.js`, `catalog-page-model.js`, `catalog-pages.css` | Page routing, independent catalog pages, filtering and pagination |
+| `public/collections.js`, `game-types.js`, `provider-details.js` | Collections, verified release dates, game formats and provider summaries |
 | `public/catalog.js`, `removed-games.js` | Reviewed games and permanent exclusions |
 | `public/game-view.js`, `game-ready.js`, `game-presentation.js` | Game routing, lifecycle and presentation |
 | `public/wallet.js`, `wallet-state.js` | Two-currency local demo wallet |
-| `public/site-menu.js`, `site-menu.css`, `site-search.js`, `site-search.css` | Desktop rail, mobile drawer, tooltips and catalog search |
+| `public/site-menu.js`, `site-menu.css`, `site-search.js` | Desktop rail, mobile menu, tooltips and search-page entry |
 | `public/mobile-nav.js`, `mobile-nav.css` | Mobile lobby actions, destination state and bottom safe-area layout |
 | `public/hero-carousel.js`, `hero-carousel.css`, `assets/hero/` | Promotional banners, original artwork and carousel behavior |
 | `public/vendor/embla-carousel/` | Pinned Embla Carousel browser module and MIT license |
@@ -52,6 +54,22 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | `tests/` | Catalog exclusions, loader protocol and server-route checks |
 
 All app imports and assets are relative so `public/` can also be hosted as static files. The local server uses the branded `/luckyloopcasino/` path.
+
+## Page addresses
+
+Routes use URL fragments so direct links and refresh also work on static GitHub Pages without server rewrites:
+
+| Page | Fragment |
+| --- | --- |
+| Lobby | `#/` |
+| Popular | `#/popular` |
+| Slots | `#/slots` |
+| New Releases | `#/new-releases` |
+| Providers | `#/providers` |
+| Single provider | `#/providers/netent` |
+| Search | `#/search?q=Nip+Tuck` |
+
+Provider/category filters and sorting are encoded in the fragment query. Existing `#game=…` links remain supported; launches from a page include a `from` parameter for refresh-safe return navigation.
 
 ## Hosting
 

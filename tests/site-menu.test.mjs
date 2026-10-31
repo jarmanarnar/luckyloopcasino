@@ -140,10 +140,22 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     return nodes[selector.slice(1)] || null;
   };
   document.createElement = () => new Node();
+  const pageHeading = new Node();
+  function routeCategory(id) {
+    assert.equal(nodes['site-menu'].open, false);
+    calls.push(`category:${id}`);
+    nodes['catalog-categories'].dataset.activeMenu = id;
+    document.body.dataset.view = 'lobby';
+    for (const [candidate, node] of categoryButtons) node.setAttribute('aria-pressed', String(candidate === id));
+    pageHeading.focus();
+  }
   const catalog = {
+    openHome() { routeCategory('all'); },
+    openCategory(id) { routeCategory(id); },
     openSearch() {
       assert.equal(nodes['site-menu'].open, false);
-      nodes['site-search'].open = true;
+      nodes['catalog-categories'].dataset.activeMenu = 'search';
+      document.body.dataset.view = 'lobby';
       calls.push('search:open');
       nodes['site-search-input'].focus();
     },
@@ -151,6 +163,8 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
       assert.equal(nodes['site-menu'].open, false);
       providerCalls.push(options);
       calls.push('category:providers');
+      document.body.dataset.view = 'lobby';
+      pageHeading.focus();
       nodes['catalog-categories'].dataset.activeMenu = 'providers';
       for (const button of categoryButtons.values()) button.setAttribute('aria-pressed', 'false');
     },
@@ -184,7 +198,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     breakpoint.emit('change', { matches });
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
-    item, flushClose, providerCalls, headerParent, resize,
+    item, flushClose, providerCalls, headerParent, resize, pageHeading,
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
 
@@ -289,7 +303,7 @@ test('choosing a category from a caller-opened drawer keeps focus on that catego
   page.item('popular').click();
   page.flushClose();
   assert.equal(page.calls.at(-1), 'category:popular');
-  assert.equal(page.document.activeElement, page.categoryButtons.get('popular'));
+  assert.equal(page.document.activeElement, page.pageHeading);
 });
 
 test('inside clicks leave the drawer open while backdrop clicks dismiss it', () => {
@@ -315,17 +329,17 @@ test('a quick reopen waits until the previous native close event finishes', () =
   assert.ok(page.observers[0].targets.length > 0);
 });
 
-test('collections reuse the toolbar and Providers opens independently after the drawer closes', () => {
+test('category and Providers page navigation runs only after the drawer closes', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
-  page.item('picks').click();
+  page.item('slots').click();
   assert.equal(page.nodes['site-menu'].open, false);
-  assert.ok(!page.calls.includes('category:picks'));
+  assert.ok(!page.calls.includes('category:slots'));
   page.flushClose();
-  assert.equal(page.document.activeElement, page.categoryButtons.get('picks'));
-  assert.equal(page.calls.at(-1), 'category:picks');
+  assert.equal(page.document.activeElement, page.pageHeading);
+  assert.equal(page.calls.at(-1), 'category:slots');
   page.nodes['menu-toggle'].click();
-  assert.equal(page.item('picks').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('slots').getAttribute('aria-current'), 'page');
   assert.equal(page.categoryButtons.has('providers'), false);
   page.item('providers').click();
   assert.equal(page.nodes['site-menu'].open, false);
@@ -333,7 +347,7 @@ test('collections reuse the toolbar and Providers opens independently after the 
   page.flushClose();
   assert.equal(page.calls.at(-1), 'category:providers');
   assert.equal(page.providerCalls.length, 1);
-  assert.equal(page.providerCalls[0].focusResults, true);
+  assert.equal(page.providerCalls[0], undefined);
   assert.ok([...page.categoryButtons.values()].every(button => button.getAttribute('aria-pressed') === 'false'));
   page.nodes['menu-toggle'].click();
   assert.equal(page.item('providers').getAttribute('aria-current'), 'page');
@@ -360,21 +374,21 @@ test('mobile search opens after the drawer closes while desktop search opens dir
   assert.equal(mobile.nodes['site-menu'].open, false);
   assert.equal(mobile.nodes['site-search'].open, false);
   mobile.flushClose();
-  assert.equal(mobile.nodes['site-search'].open, true);
+  assert.equal(mobile.nodes['catalog-categories'].dataset.activeMenu, 'search');
   assert.equal(mobile.document.activeElement, mobile.nodes['site-search-input']);
 
   const desktop = menuPage({ desktop: true });
   desktop.nodes['menu-search'].click();
-  assert.equal(desktop.nodes['site-search'].open, true);
+  assert.equal(desktop.nodes['catalog-categories'].dataset.activeMenu, 'search');
   assert.equal(desktop.document.activeElement, desktop.nodes['site-search-input']);
   assert.equal(desktop.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
 });
 
-test('the sidebar promotion opens the existing Our Picks category', () => {
+test('the sidebar promotion opens the Popular page', () => {
   const page = menuPage({ desktop: true });
   page.nodes['menu-promotion'].click();
-  assert.equal(page.calls.at(-1), 'category:picks');
-  assert.equal(page.document.activeElement, page.categoryButtons.get('picks'));
+  assert.equal(page.calls.at(-1), 'category:popular');
+  assert.equal(page.document.activeElement, page.pageHeading);
 });
 
 test('drawer button accents track the selected currency only while open', () => {
@@ -434,11 +448,11 @@ test('desktop collection, Providers and BUY actions run immediately without a dr
   page.nodes['menu-toggle'].click();
   page.item('popular').click();
   assert.equal(page.calls.at(-1), 'category:popular');
-  assert.equal(page.document.activeElement, page.categoryButtons.get('popular'));
+  assert.equal(page.document.activeElement, page.pageHeading);
   page.item('providers').click();
   assert.equal(page.calls.at(-1), 'category:providers');
   assert.equal(page.providerCalls.length, 1);
-  assert.equal(page.providerCalls[0].focusResults, true);
+  assert.equal(page.providerCalls[0], undefined);
   page.nodes['menu-buy'].click();
   assert.equal(page.nodes['wallet-dialog'].open, true);
   assert.equal(page.document.activeElement, page.nodes['wallet-credit']);
@@ -514,7 +528,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
 
 test('expanded and mobile navigation never show collapsed-rail tooltips', () => {
   const page = menuPage({ desktop: true });
-  const item = page.item('picks');
+  const item = page.item('slots');
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
   sidebar.emit('focusin', { target: item });
@@ -585,7 +599,7 @@ test('game shell menu overlays preserve the game and restore their visible opene
   assert.equal(page.calls.includes('lobby:return'), false);
 });
 
-test('game shell category and provider navigation wait for lobby restoration', () => {
+test('game shell category and provider navigation opens its own destination after menu close', () => {
   for (const id of ['popular', 'providers']) {
     const page = menuPage({ routeFromGame: true });
     page.document.body.dataset.view = 'game';
@@ -593,9 +607,7 @@ test('game shell category and provider navigation wait for lobby restoration', (
     page.item(id).click();
     assert.equal(page.calls.includes('lobby:return'), false, 'the menu closes before game routing');
     page.flushClose();
-    assert.equal(page.calls.at(-1), 'lobby:return');
-    assert.equal(page.calls.includes(`category:${id}`), false);
-    page.flushLobby();
+    assert.equal(page.calls.includes('lobby:return'), false, 'routing owns game cleanup without resetting the lobby');
     assert.equal(page.document.body.dataset.view, 'lobby');
     assert.equal(page.calls.at(-1), `category:${id}`);
   }

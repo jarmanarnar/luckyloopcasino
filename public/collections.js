@@ -2,11 +2,16 @@ import { GAMES } from './catalog.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 
 // Game format and editorial collections are separate from the studio/provider.
-// Format mapping is documented in game-types.js. The themed collections make
-// no popularity or release-date claims; a game can belong to several of them.
+// Format mapping is documented in game-types.js. The lobby navigation is a
+// deliberately small set; existing editorial collections remain addressable.
 export const CATEGORIES = [
   { id: 'all', title: 'All Games', description: 'Browse every game type.' },
   { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
+  { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
+  { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
+];
+
+export const LEGACY_CATEGORIES = [
   { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
   { id: 'picks', title: 'Editor’s Favorites', description: 'A handpicked selection for you to try and review.' },
   ...GAME_TYPES,
@@ -15,6 +20,33 @@ export const CATEGORIES = [
   { id: 'fruit', title: 'Fruit Slots', description: 'Fruit-themed titles and collections.' },
   { id: 'adventure', title: 'Adventure', description: 'Explore temples, jungles, pirates and treasure.' },
 ];
+
+const allCategories = [...CATEGORIES, ...LEGACY_CATEGORIES.filter(category => !CATEGORIES.some(item => item.id === category.id))];
+
+// General-release dates checked against the providers' shared official games
+// calendar on 2026-10-31. This is a verified subset, not an invented date for
+// every title or a claim that catalog source order represents release order.
+// https://games.nolimitcity.com/
+// https://netent.com/games?sort=release%3Adesc
+// https://redtiger.com/games?gameSet=hottest-games
+// https://beta.bigtimegaming.com/roadmap
+export const GAME_RELEASES = Object.freeze(Object.fromEntries([
+  ['nunchucksr96f100', '2026-10-29'],
+  ['monopolymneyv196', '2026-10-28'],
+  ['ouija00000000000', '2026-10-27'],
+  ['stevelarryandgog', '2026-10-22'],
+  ['SixFeetUnder', '2026-10-20'],
+  ['powerpuff0000000', '2026-10-13'],
+  ['cocksandrobbers0', '2026-10-07'],
+  ['GatorHunters2', '2026-10-06'],
+  ['gonzosquesttapar', '2026-10-01'],
+  ['bloodsuckerstapa', '2026-10-01'],
+  ['stormfire0000000', '2026-09-30'],
+].map(([id, date]) => [id, Object.freeze({ date, source: 'https://games.nolimitcity.com/' })])));
+
+export function getGameReleaseDate(gameOrId) {
+  return GAME_RELEASES[typeof gameOrId === 'string' ? gameOrId : gameOrId?.id]?.date || '';
+}
 
 // Editorial starter selection for the prototype, not a usage-based ranking.
 const POPULAR_IDS = [
@@ -68,6 +100,7 @@ const SPOOKY_IDS = new Set([
 const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
   popular: game => popular.has(game.id),
+  'new-releases': game => Boolean(getGameReleaseDate(game)),
   picks: game => picks.has(game.id),
   megaways: game => /\bmegaways\b/i.test(game.title),
   jackpot: game => /\bjackpots?\b/i.test(game.title),
@@ -77,15 +110,18 @@ const rules = {
 };
 
 const gamesById = new Map(GAMES.map(game => [game.id, game]));
-const orderedCollections = new Map([['popular', POPULAR_IDS], ['picks', PICK_IDS]]);
-const collections = new Map(CATEGORIES.map(category => [category.id,
+const orderedCollections = new Map([
+  ['popular', POPULAR_IDS], ['picks', PICK_IDS],
+  ['new-releases', Object.keys(GAME_RELEASES).sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a)))],
+]);
+const collections = new Map(allCategories.map(category => [category.id,
   category.id === 'all' ? GAMES
     : orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)
       : GAMES.filter(rules[category.id]),
 ]));
 
 export function getGameCategoryIds(game) {
-  return ['all', ...CATEGORIES.filter(category => category.id !== 'all' && rules[category.id](game)).map(category => category.id)];
+  return ['all', ...allCategories.filter(category => category.id !== 'all' && rules[category.id](game)).map(category => category.id)];
 }
 
 export function getGamesForCategory(id) {

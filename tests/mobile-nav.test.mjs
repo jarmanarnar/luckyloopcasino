@@ -58,8 +58,9 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
       nodes['site-menu'].open = false;
       if (action) closeActions.push(action);
     },
-    openSearch(options) { calls.push({ action: 'search', options }); nodes['site-search'].open = true; },
-    openProviders(options) { calls.push({ action: 'providers', options }); nodes['catalog-categories'].dataset.activeMenu = 'providers'; },
+    openSearch(options) { calls.push({ action: 'search', options }); nodes['catalog-categories'].dataset.activeMenu = 'search'; body.dataset.view = 'lobby'; },
+    openHome() { calls.push({ action: 'all' }); nodes['catalog-categories'].dataset.activeMenu = 'all'; body.dataset.view = 'lobby'; },
+    openProviders(options) { calls.push({ action: 'providers', options }); nodes['catalog-categories'].dataset.activeMenu = 'providers'; body.dataset.view = 'lobby'; },
   };
   if (routeFromGame) api.returnToLobby = action => {
     calls.push({ action: 'lobby:return' });
@@ -105,13 +106,13 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.calls.at(-1).action, 'search');
   assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('search'));
   assert.deepEqual(active(page), ['search']);
-  assert.equal(page.button('search').getAttribute('aria-expanded'), 'true');
+  assert.equal(page.button('search').getAttribute('aria-current'), 'page');
   page.nodes['site-search'].open = false;
   page.flush();
 
   page.button('providers').click();
   assert.equal(page.calls.at(-1).action, 'providers');
-  assert.equal(page.calls.at(-1).options.focusResults, true);
+  assert.equal(page.calls.at(-1).options, undefined);
   assert.equal(page.button('providers').getAttribute('aria-current'), 'page');
 
   page.button('casino').click();
@@ -149,7 +150,7 @@ test('menu destinations wait for the menu close handoff and update the active de
     assert.equal(page.calls.at(-1).action, expected[action]);
     assert.deepEqual(active(page), [action]);
     if (action === 'search') assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('search'));
-    if (action === 'providers') assert.equal(page.calls.at(-1).options.focusResults, true);
+    if (action === 'providers') assert.equal(page.calls.at(-1).options, undefined);
   }
 });
 
@@ -175,8 +176,8 @@ test('desktop and other open dialogs prevent hidden or overlapping actions', () 
   assert.equal(page.calls.at(-1).action, 'providers', 'mobile actions resume after the breakpoint changes');
 });
 
-test('mobile game shell overlays preserve the game while Casino and Providers restore the lobby first', () => {
-  for (const action of ['menu', 'search', 'wallet']) {
+test('Menu and Wallet preserve the current game while page destinations use their own router entry points', () => {
+  for (const action of ['menu', 'wallet']) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
@@ -184,13 +185,11 @@ test('mobile game shell overlays preserve the game while Casino and Providers re
     assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'game');
   }
-  for (const [action, destination] of [['casino', 'all'], ['providers', 'providers']]) {
+  for (const [action, destination] of [['casino', 'all'], ['providers', 'providers'], ['search', 'search']]) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
-    assert.equal(page.calls.at(-1).action, 'lobby:return');
-    assert.equal(page.calls.some(call => call.action === destination), false);
-    page.flushLobby();
+    assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'lobby');
     assert.equal(page.calls.at(-1).action, destination);
   }
@@ -221,8 +220,8 @@ test('state follows navigation from other surfaces and distinguishes destination
   page.nodes['catalog-categories'].dataset.activeMenu = 'search';
   page.flush();
   assert.deepEqual(active(page), ['search']);
-  assert.equal(page.button('search').getAttribute('aria-current'), null);
-  assert.equal(page.button('search').getAttribute('aria-expanded'), 'false');
+  assert.equal(page.button('search').getAttribute('aria-current'), 'page');
+  assert.equal(page.button('search').getAttribute('aria-expanded'), null);
 });
 
 test('dialog state takes precedence and clears expanded/current attributes on dismissal', () => {
@@ -233,16 +232,13 @@ test('dialog state takes precedence and clears expanded/current attributes on di
   assert.deepEqual(active(page), ['wallet']);
   assert.equal(page.button('providers').getAttribute('aria-current'), null);
   assert.equal(page.button('wallet').getAttribute('aria-expanded'), 'true');
-  page.nodes['site-search'].open = true;
-  page.flush();
-  assert.deepEqual(active(page), ['search']);
   page.nodes['site-menu'].open = true;
   page.flush();
   assert.deepEqual(active(page), ['menu']);
   for (const id of ['site-menu', 'site-search', 'wallet-dialog']) page.nodes[id].open = false;
   page.flush();
   assert.deepEqual(active(page), ['providers']);
-  for (const action of ['menu', 'search', 'wallet']) {
+  for (const action of ['menu', 'wallet']) {
     assert.equal(page.button(action).getAttribute('aria-expanded'), 'false');
     assert.equal(page.button(action).getAttribute('aria-current'), null);
   }
@@ -256,7 +252,7 @@ test('initialization is idempotent, requires a complete shell and watches only r
   const page = navPage();
   page.initialize();
   assert.equal(page.observers.length, 1);
-  assert.equal(page.observations.length, 5);
+  assert.equal(page.observations.length, 4);
   for (const observation of page.observations) {
     assert.equal(observation.options.attributes, true);
     assert.equal(observation.options.childList, undefined);

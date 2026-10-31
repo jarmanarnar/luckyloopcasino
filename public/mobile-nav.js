@@ -1,13 +1,12 @@
 let initialized = false;
 
-export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders, returnToLobby = action => action?.() } = {}) {
+export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openProviders } = {}) {
   if (initialized) return;
   const nav = document.querySelector('#mobile-nav');
   const categories = document.querySelector('#catalog-categories');
   const walletAdd = document.querySelector('#wallet-add');
   const dialogs = {
     menu: document.querySelector('#site-menu'),
-    search: document.querySelector('#site-search'),
     wallet: document.querySelector('#wallet-dialog'),
   };
   const buttons = new Map(['menu', 'casino', 'search', 'providers', 'wallet']
@@ -18,14 +17,14 @@ export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders, 
   const desktopMedia = window.matchMedia('(min-width: 45rem)');
 
   function sync() {
-    const selected = dialogs.menu.open ? 'menu' : dialogs.search.open ? 'search'
+    const selected = dialogs.menu.open ? 'menu'
       : dialogs.wallet.open ? 'wallet' : document.body.dataset.view === 'game' ? 'casino'
         : categories.dataset.activeMenu === 'providers' ? 'providers'
         : categories.dataset.activeMenu === 'search' ? 'search' : 'casino';
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);
-      if (active && (action === 'casino' || action === 'providers')) button.setAttribute('aria-current', 'page');
+      if (active && ['casino', 'providers', 'search'].includes(action)) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
       if (dialogs[action]) button.setAttribute('aria-expanded', String(dialogs[action].open));
     }
@@ -37,13 +36,13 @@ export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders, 
         openMenu?.({ returnFocusTo: button });
         break;
       case 'casino':
-        returnToLobby(() => categories.querySelector('[data-category="all"]')?.click());
+        openHome?.();
         break;
       case 'search':
         openSearch?.({ returnFocusTo: button });
         break;
       case 'providers':
-        returnToLobby(() => openProviders?.({ focusResults: true }));
+        openProviders?.();
         break;
       case 'wallet':
         walletAdd.click();
