@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
+const actions = ['menu', 'lobby', 'store', 'redeem', 'promotions'];
 
 function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
@@ -21,7 +22,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     click() { this.emit('click'); }
   }
   const ids = ['mobile-nav', 'catalog-categories', 'site-menu', 'other-dialog',
-    ...['menu', 'lobby', 'search', 'providers', 'store'].map(action => `mobile-nav-${action}`)];
+    ...actions.map(action => `mobile-nav-${action}`)];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
   const body = new Node();
   body.dataset.view = 'lobby';
@@ -54,10 +55,9 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
       nodes['site-menu'].open = false;
       if (action) closeActions.push(action);
     },
-    openSearch(options) { calls.push({ action: 'search', options }); nodes['catalog-categories'].dataset.activeMenu = 'search'; body.dataset.page = 'search'; body.dataset.view = 'lobby'; },
     openHome() { calls.push({ action: 'home' }); nodes['catalog-categories'].dataset.activeMenu = 'lobby'; body.dataset.page = 'home'; body.dataset.view = 'lobby'; },
-    openProviders(options) { calls.push({ action: 'providers', options }); nodes['catalog-categories'].dataset.activeMenu = 'providers'; body.dataset.page = 'providers'; body.dataset.view = 'lobby'; },
     openStore() { calls.push({ action: 'store' }); nodes['catalog-categories'].dataset.activeMenu = 'store'; body.dataset.page = 'store'; body.dataset.view = 'lobby'; },
+    openFeature(pageId) { calls.push({ action: 'feature', pageId }); nodes['catalog-categories'].dataset.activeMenu = pageId; body.dataset.page = 'feature'; body.dataset.view = 'lobby'; },
   };
   if (routeFromGame) api.returnToLobby = action => {
     calls.push({ action: 'lobby:return' });
@@ -82,7 +82,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
 }
 
 function active(page) {
-  return ['menu', 'lobby', 'search', 'providers', 'store'].filter(action => page.button(action).dataset.active === 'true');
+  return actions.filter(action => page.button(action).dataset.active === 'true');
 }
 
 test('mobile actions reuse canonical destinations and preserve the originating dialog button', () => {
@@ -99,17 +99,6 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   page.nodes['site-menu'].open = false;
   page.flush();
 
-  page.button('search').click();
-  assert.equal(page.calls.at(-1).action, 'search');
-  assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('search'));
-  assert.deepEqual(active(page), ['search']);
-  assert.equal(page.button('search').getAttribute('aria-current'), 'page');
-
-  page.button('providers').click();
-  assert.equal(page.calls.at(-1).action, 'providers');
-  assert.equal(page.calls.at(-1).options, undefined);
-  assert.equal(page.button('providers').getAttribute('aria-current'), 'page');
-
   page.button('lobby').click();
   assert.equal(page.calls.at(-1).action, 'home');
   assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
@@ -119,6 +108,15 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.deepEqual(active(page), ['store']);
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
+
+  for (const action of ['redeem', 'promotions']) {
+    page.button(action).click();
+    assert.deepEqual(page.calls.at(-1), { action: 'feature', pageId: action });
+    assert.deepEqual(active(page), [action]);
+    assert.equal(page.button(action).getAttribute('aria-current'), 'page');
+    assert.equal(page.button(action).getAttribute('aria-expanded'), null);
+    assert.equal(page.body.dataset.page, 'feature');
+  }
 });
 
 test('the mobile Menu button closes the menu instead of trying to open it again', () => {
@@ -133,7 +131,7 @@ test('the mobile Menu button closes the menu instead of trying to open it again'
 });
 
 test('menu destinations wait for the menu close handoff and update the active destination', () => {
-  const expected = { lobby: 'home', providers: 'providers', search: 'search', store: 'store' };
+  const expected = { lobby: 'home', store: 'store', redeem: 'feature', promotions: 'feature' };
   for (const action of Object.keys(expected)) {
     const page = navPage();
     page.button('menu').click();
@@ -144,8 +142,7 @@ test('menu destinations wait for the menu close handoff and update the active de
     page.flushClose();
     assert.equal(page.calls.at(-1).action, expected[action]);
     assert.deepEqual(active(page), [action]);
-    if (action === 'search') assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('search'));
-    if (action === 'providers') assert.equal(page.calls.at(-1).options, undefined);
+    if (expected[action] === 'feature') assert.equal(page.calls.at(-1).pageId, action);
   }
 });
 
@@ -154,24 +151,24 @@ test('desktop and other open dialogs prevent hidden or overlapping actions', () 
     const page = navPage({ desktop: mode === 'desktop' });
     if (mode === 'game') page.body.dataset.view = 'game';
     else if (page.nodes[mode]) page.nodes[mode].open = true;
-    for (const action of ['menu', 'lobby', 'search', 'providers', 'store']) page.button(action).click();
+    for (const action of actions) page.button(action).click();
     assert.equal(page.calls.length, 0, mode);
   }
   for (const otherDialog of ['other-dialog']) {
     const page = navPage();
     page.nodes['site-menu'].open = true;
     page.nodes[otherDialog].open = true;
-    for (const action of ['menu', 'lobby', 'search', 'providers', 'store']) page.button(action).click();
+    for (const action of actions) page.button(action).click();
     assert.equal(page.calls.length, 0, `menu plus ${otherDialog}`);
   }
   const page = navPage({ desktop: true });
   page.media.matches = false;
   page.media.emit('change');
-  page.button('providers').click();
-  assert.equal(page.calls.at(-1).action, 'providers', 'mobile actions resume after the breakpoint changes');
+  page.button('promotions').click();
+  assert.equal(page.calls.at(-1).pageId, 'promotions', 'mobile actions resume after the breakpoint changes');
 });
 
-test('Menu preserves the current game while every page destination, including Store, uses its router entry point', () => {
+test('Menu preserves the current game while every page destination uses its router entry point', () => {
   for (const action of ['menu']) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
@@ -180,21 +177,22 @@ test('Menu preserves the current game while every page destination, including St
     assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'game');
   }
-  for (const [action, destination] of [['lobby', 'home'], ['providers', 'providers'], ['search', 'search'], ['store', 'store']]) {
+  for (const [action, destination] of [['lobby', 'home'], ['store', 'store'], ['redeem', 'feature'], ['promotions', 'feature']]) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
     assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'lobby');
     assert.equal(page.calls.at(-1).action, destination);
+    if (destination === 'feature') assert.equal(page.calls.at(-1).pageId, action);
   }
 });
 
-test('an active game selects Lobby even when the previous page was Providers or Store', () => {
-  for (const previous of ['providers', 'store']) {
+test('an active game selects Lobby even when the previous page has its own bottom destination', () => {
+  for (const previous of ['providers', 'store', 'redeem', 'promotions']) {
     const page = navPage();
     page.nodes['catalog-categories'].dataset.activeMenu = previous;
-    page.body.dataset.page = previous;
+    page.body.dataset.page = ['redeem', 'promotions'].includes(previous) ? 'feature' : previous;
     page.body.dataset.view = 'game';
     page.flush();
     assert.deepEqual(active(page), ['lobby']);
@@ -246,16 +244,14 @@ test('state follows navigation from other surfaces and distinguishes destination
     assert.deepEqual(active(page), ['lobby']);
     assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
   }
-  page.nodes['catalog-categories'].dataset.activeMenu = 'providers';
-  page.flush();
-  assert.deepEqual(active(page), ['providers']);
-  assert.equal(page.button('providers').getAttribute('aria-current'), 'page');
-
-  page.nodes['catalog-categories'].dataset.activeMenu = 'search';
-  page.flush();
-  assert.deepEqual(active(page), ['search']);
-  assert.equal(page.button('search').getAttribute('aria-current'), 'page');
-  assert.equal(page.button('search').getAttribute('aria-expanded'), null);
+  for (const destination of ['providers', 'search']) {
+    page.nodes['catalog-categories'].dataset.activeMenu = destination;
+    page.body.dataset.page = destination;
+    page.flush();
+    assert.deepEqual(active(page), ['menu']);
+    assert.equal(page.button('menu').getAttribute('aria-current'), null);
+    assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+  }
 
   page.nodes['catalog-categories'].dataset.activeMenu = 'store';
   page.body.dataset.page = 'store';
@@ -263,6 +259,17 @@ test('state follows navigation from other surfaces and distinguishes destination
   assert.deepEqual(active(page), ['store']);
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
+
+  for (const destination of ['redeem', 'promotions']) {
+    page.nodes['catalog-categories'].dataset.activeMenu = destination;
+    page.body.dataset.page = 'feature';
+    page.flush();
+    assert.deepEqual(active(page), [destination]);
+    assert.equal(page.button(destination).getAttribute('aria-current'), 'page');
+    assert.equal(page.button(destination).getAttribute('aria-expanded'), null);
+    assert.equal(page.button('menu').getAttribute('aria-current'), null);
+    assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+  }
 });
 
 test('dialog state takes precedence and clears expanded/current attributes on dismissal', () => {
@@ -299,6 +306,6 @@ test('initialization is idempotent, requires a complete shell and watches only r
       : observation.target === page.nodes['catalog-categories'] ? ['data-active-menu'] : ['open'];
     assert.deepEqual(Array.from(observation.options.attributeFilter), expected);
   }
-  page.button('providers').click();
+  page.button('redeem').click();
   assert.equal(page.calls.length, 1, 'no duplicate click handlers are added');
 });

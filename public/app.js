@@ -19,7 +19,7 @@ const wallet = initWallet(catalog);
 const features = initFeatureView({ router, wallet });
 const search = initSiteSearch(catalog);
 const menu = initSiteMenu({ ...catalog, ...search, ...features });
-initMobileNav({ ...catalog, ...search, ...menu });
+initMobileNav({ ...catalog, ...search, ...features, ...menu });
 initHeroCarousel(catalog);
 
 document.querySelector('.site-logo')?.addEventListener('click', event => {
