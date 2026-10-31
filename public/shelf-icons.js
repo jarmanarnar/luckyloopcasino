@@ -26,10 +26,6 @@ export function createShelfIcon(id) {
     case 'table':
       svg.append(path('M12 2.5C9.3 6.6 3 10 3 14.3a4.6 4.6 0 0 0 8 3L9 22h6l-2-4.7a4.6 4.6 0 0 0 8-3C21 10 14.7 6.6 12 2.5Z'));
       break;
-    case 'video-poker':
-      svg.append(path('M8.5 2h11A1.5 1.5 0 0 1 21 3.5v15a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 7 18.5v-15A1.5 1.5 0 0 1 8.5 2ZM14 6l-4 5 4 5 4-5-4-5Z'));
-      svg.append(path('M3 5h2v14.5A2.5 2.5 0 0 0 7.5 22H17v1H5.5A2.5 2.5 0 0 1 3 20.5V5Z'));
-      break;
     case 'picks':
       svg.append(path('m12 2.5 3 6 6.6 1-4.8 4.7 1.1 6.6-5.9-3.1-5.9 3.1 1.1-6.6L2.4 9.5l6.6-1 3-6Z'));
       break;

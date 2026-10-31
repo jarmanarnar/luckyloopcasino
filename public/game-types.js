@@ -5,7 +5,6 @@ export const GAME_TYPES = [
   { id: 'slots', title: 'Slots' },
   { id: 'tap', title: 'Tap Games' },
   { id: 'table', title: 'Table Games' },
-  { id: 'video-poker', title: 'Video Poker' },
 ];
 
 // BTG describes Tapcards as tap-and-reveal, scratch-card-style instant games:
@@ -36,14 +35,8 @@ const TAP_IDS = new Set([
 const TABLE_IDS = new Set([
 ]);
 
-// Explicitly described as single-player video poker, not a reel slot:
-// https://netent.com/games/jacks-or-better-double-up
-const VIDEO_POKER_IDS = new Set([
-]);
-
 export function getGameTypeId(game) {
   if (TAP_IDS.has(game.id)) return 'tap';
   if (TABLE_IDS.has(game.id)) return 'table';
-  if (VIDEO_POKER_IDS.has(game.id)) return 'video-poker';
   return 'slots';
 }
