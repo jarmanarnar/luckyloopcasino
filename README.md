@@ -19,7 +19,7 @@ npm test
 
 ## Current behavior
 
-- Responsive promotional carousel in place of the blank hero: one, two or three banners per view, original LuckyLoop artwork, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Banner buttons open the matching game collection or Providers view.
+- Responsive promotional carousel in neutral wireframe form: one, two or three banners per view, grayscale media placeholders, text and working category buttons, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Banner buttons open the matching game collection or Providers view. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the wireframes.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Left hamburger drawer with BUY/REDEEM buttons and working category/provider navigation. BUY opens the demo wallet; REDEEM is a design placeholder until redemption is implemented. It supports Escape/backdrop dismissal, contained scrolling and native modal focus handling; the game back arrow replaces the hamburger during play.
 - Category navigation, a dedicated Providers view, and a provider-logo carousel after all game collections on the home view.
