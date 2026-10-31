@@ -1,8 +1,9 @@
 .hero-carousel {
-  --banner-gap: calc(.75rem + .5 * var(--fluid-step));
-  --banner-height: calc(12rem + var(--fluid-step));
+  --banner-gap: 1rem;
+  --banner-height: 13.5rem;
   --banner-radius: var(--radius-card);
   min-width: 0;
+  container: hero-banner / inline-size;
 }
 .hero-carousel__viewport { overflow: hidden; touch-action: pan-y pinch-zoom; }
 .hero-carousel:not([data-ready]) .hero-carousel__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
@@ -17,9 +18,9 @@
   border-radius: var(--banner-radius);
   background: var(--surface-card);
 }
-.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: var(--touch-target); margin-top: .75rem; }
+.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 1.75rem; margin-top: 0; }
 .hero-carousel__dots { display: flex; align-items: center; }
-.hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: var(--touch-target); padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
+.hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: 1.75rem; padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
 .hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: #62636c; transition: width 180ms ease; }
 .hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: #fff; transform: scaleX(0); transform-origin: left center; }
 .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; }
@@ -27,8 +28,13 @@
 .hero-carousel :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
 .hero-carousel__viewport:focus-visible { outline-offset: -2px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (min-width: 48rem) { .hero-carousel__slide { flex-basis: 50%; } }
-@media (min-width: 90rem) { .hero-carousel__slide { flex-basis: 33.333333%; } }
+@container hero-banner (min-width: 40rem) { .hero-carousel__slide { flex-basis: 50%; } }
+@container hero-banner (min-width: 70rem) { .hero-carousel__slide { flex-basis: 33.333333%; } }
+@media (min-width: 48rem) {
+  .hero-carousel { --banner-height: 11.75rem; }
+  .hero-carousel__controls { min-height: 3rem; margin-top: 1rem; }
+  .hero-carousel__dot { height: 2rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-carousel__dot, .hero-carousel__dot-mark { transition: none; }
   .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-fill { transform: scaleX(1); }

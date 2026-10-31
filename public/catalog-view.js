@@ -84,6 +84,7 @@ export function initCatalogView() {
   let showProviders = false;
   let grid = false;
   let limit = batchSize;
+  let searchQuery = '';
   const tracks = new Set();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -212,8 +213,10 @@ export function initCatalogView() {
   function render({ focusResults = false } = {}) {
     tracks.clear();
     const categoryGames = getGamesForCategory(selectedCategory);
-    const filtered = categoryGames.filter(game => !selectedProvider || game.providerId === selectedProvider);
-    const home = !grid && !showProviders && selectedCategory === 'all' && !selectedProvider;
+    const query = searchQuery.toLocaleLowerCase();
+    const filtered = categoryGames.filter(game => (!selectedProvider || game.providerId === selectedProvider)
+      && (!query || `${game.title} ${game.providerName}`.toLocaleLowerCase().includes(query)));
+    const home = !grid && !showProviders && selectedCategory === 'all' && !selectedProvider && !searchQuery;
     const fragment = document.createDocumentFragment();
     empty.hidden = showProviders || filtered.length !== 0;
     more.hidden = true;
@@ -230,7 +233,7 @@ export function initCatalogView() {
       fragment.append(providerShelf());
     } else {
       const category = categoryById.get(selectedCategory);
-      const title = [selectedCategory !== 'all' ? category.title : '', studio?.name]
+      const title = searchQuery ? `Search: ${searchQuery}` : [selectedCategory !== 'all' ? category.title : '', studio?.name]
         .filter(Boolean).join(' · ') || 'All Games';
       const ordered = ['popular', 'picks'].includes(selectedCategory) ? filtered : [...filtered].sort(alphabetic);
       fragment.append(shelf({ id: 'results', title, games: ordered,
@@ -239,7 +242,7 @@ export function initCatalogView() {
       more.textContent = `Show ${Math.min(batchSize, Math.max(0, filtered.length - limit))} more`;
     }
     shelves.replaceChildren(fragment);
-    const activeMenu = showProviders || (selectedProvider && selectedCategory === 'all')
+    const activeMenu = searchQuery ? 'search' : showProviders || (selectedProvider && selectedCategory === 'all')
       ? 'providers' : selectedCategory;
     categories.dataset.activeMenu = activeMenu;
     for (const button of categories.querySelectorAll('[data-category]')) {
@@ -255,6 +258,7 @@ export function initCatalogView() {
   }
 
   function openProviders({ focusResults = false } = {}) {
+    searchQuery = '';
     selectedCategory = 'all';
     selectedProvider = '';
     showProviders = true;
@@ -266,6 +270,7 @@ export function initCatalogView() {
   function resetCatalog() {
     if (selectedCategory === 'all' && !selectedProvider && !grid && !showProviders) return;
     selectedCategory = 'all';
+    searchQuery = '';
     selectedProvider = '';
     showProviders = false;
     grid = false;
@@ -277,6 +282,7 @@ export function initCatalogView() {
     const button = event.target.closest('[data-category]');
     if (!button) return;
     if (button.dataset.category === 'all') return resetCatalog();
+    searchQuery = '';
     selectedCategory = button.dataset.category;
     showProviders = false;
     grid = true;
@@ -292,6 +298,7 @@ export function initCatalogView() {
     const category = event.target.closest('[data-open-category]');
     const studio = event.target.closest('[data-open-provider]');
     if (category || studio) {
+      searchQuery = '';
       selectedCategory = category?.dataset.openCategory || 'all';
       selectedProvider = studio?.dataset.openProvider || '';
       showProviders = false;
@@ -310,7 +317,16 @@ export function initCatalogView() {
   });
   more.addEventListener('click', () => { limit += batchSize; render(); });
   window.addEventListener('resize', () => tracks.forEach(updateArrows), { passive: true });
-  catalogController = { openProviders };
+  function searchGames(query) {
+    searchQuery = String(query).trim();
+    selectedCategory = 'all';
+    selectedProvider = '';
+    showProviders = false;
+    grid = !!searchQuery;
+    limit = batchSize;
+    render({ focusResults: true });
+  }
+  catalogController = { openProviders, searchGames };
   render();
   return catalogController;
 }

@@ -4,7 +4,9 @@
   column-gap: var(--header-gap);
 }
 
-.header-context { display: flex; align-items: center; min-width: 0; justify-self: start; }
+.header-context { display: flex; align-items: center; gap: .5rem; min-width: 0; justify-self: start; }
+.site-logo { display: flex; flex: none; align-items: center; width: 3.25rem; height: 1.75rem; border-radius: .25rem; }
+.site-logo__image { display: block; width: 100%; height: 100%; object-fit: cover; }
 .header-context > .icon-button {
   box-sizing: border-box;
   flex: none;
@@ -42,10 +44,10 @@
 .coin-art { display: block; flex: none; width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 2px #0005); pointer-events: none; user-select: none; }
 .coin-wallet {
   --wallet-height: var(--header-control-size);
-  --wallet-plus-width: calc(2.5rem + var(--fluid-step));
+  --wallet-plus-width: 2rem;
   --wallet-plus-size: var(--wallet-plus-width);
-  --wallet-art-size: calc(2.25rem + var(--fluid-step));
-  --wallet-value-size: calc(1rem + .75 * var(--fluid-step));
+  --wallet-art-size: 2rem;
+  --wallet-value-size: 1rem;
   --wallet-line-height: calc(var(--wallet-value-size) * 1.25);
   box-sizing: border-box;
   display: flex;
@@ -103,7 +105,7 @@
 .wallet-switch {
   --switch-width: var(--header-side-control-width);
   --switch-height: var(--header-control-size);
-  --switch-coin-size: calc(2.25rem + var(--fluid-step));
+  --switch-coin-size: 2rem;
   --switch-coin-inset: calc((var(--switch-height) - var(--switch-coin-size) - 2px) / 2);
   --switch-travel: calc(var(--switch-width) - var(--switch-coin-size) - 2 * var(--switch-coin-inset) - 2px);
   box-sizing: border-box;
@@ -180,6 +182,13 @@
 .wallet-credit:hover { filter: brightness(1.06); }
 .wallet-status { min-height: 18px; margin: 14px 0 0; color: var(--wallet-accent); font-size: 12px; line-height: 1.5; }
 .wallet-dialog :focus-visible, .coin-wallet :focus-visible, .wallet-switch:focus-visible { outline: 2px solid #eeeef2; outline-offset: 3px; }
+
+@media (min-width: 48rem) {
+  .site-logo { width: 7rem; height: 2.5rem; }
+  .coin-wallet { --wallet-plus-width: 2.25rem; --wallet-art-size: 2.25rem; --wallet-value-size: 1.125rem; }
+  .wallet-switch { --switch-coin-size: 2.25rem; }
+}
+@media (max-width: 22.4375rem) { .site-logo { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .coin-wallet[data-width-motion="true"] { transition: none; }

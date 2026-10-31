@@ -3,7 +3,7 @@ import { createShelfIcon } from './shelf-icons.js';
 
 let initialized = false;
 
-export function initSiteMenu({ openProviders } = {}) {
+export function initSiteMenu({ openProviders, openSearch } = {}) {
   if (initialized) return;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -17,19 +17,26 @@ export function initSiteMenu({ openProviders } = {}) {
   const sidebarHeader = document.querySelector('#sidebar-header');
   const sidebarContent = document.querySelector('#sidebar-content');
   const menuContent = document.querySelector('#menu-content');
+  const shortcuts = document.querySelector('#menu-shortcuts');
+  const mobileHeader = document.querySelector('#menu-mobile-header');
+  const searchButton = document.querySelector('#menu-search');
+  const promotionButton = document.querySelector('#menu-promotion');
+  const tooltip = document.querySelector('#menu-tooltip');
   if (![trigger, dialog, closeButton, navigation, buyButton, categories, wallet, addButton,
-    sidebar, sidebarHeader, sidebarContent, menuContent].every(Boolean)) return;
+    sidebar, sidebarHeader, sidebarContent, menuContent, shortcuts, mobileHeader].every(Boolean)) return;
   initialized = true;
 
   const triggerHome = trigger.parentElement;
+  const triggerSibling = trigger.nextSibling;
   const desktopMedia = window.matchMedia('(min-width: 64rem)');
   let desktop = false;
   let expanded = false;
   let afterClose = null;
   let pendingClose = false;
+  let tooltipTarget = null;
   const items = new Map();
   navigation.replaceChildren();
-  const menuItems = [CATEGORIES[0], { id: 'providers', title: 'Providers' }, ...CATEGORIES.slice(1)];
+  const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
     if (category.id !== 'all' && category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
     const button = document.createElement('button');
@@ -37,7 +44,7 @@ export function initSiteMenu({ openProviders } = {}) {
     button.className = 'site-menu__item';
     button.dataset.menuCategory = category.id;
     button.setAttribute('aria-label', category.title);
-    button.title = category.title;
+    button.dataset.tooltip = category.title;
     const label = document.createElement('span');
     label.className = 'site-menu__label';
     label.textContent = category.title;
@@ -67,6 +74,7 @@ export function initSiteMenu({ openProviders } = {}) {
   }
 
   function setExpanded(value) {
+    hideTooltip();
     expanded = value;
     document.body.dataset.sidebar = value ? 'expanded' : 'collapsed';
     sidebar.dataset.expanded = String(value);
@@ -75,6 +83,7 @@ export function initSiteMenu({ openProviders } = {}) {
   }
 
   function applyLayout() {
+    hideTooltip();
     const restoreFocus = trigger === document.activeElement || dialog.contains(document.activeElement)
       || sidebar.contains(document.activeElement);
     afterClose = null;
@@ -86,6 +95,7 @@ export function initSiteMenu({ openProviders } = {}) {
     sidebar.hidden = !desktop;
     if (desktop) {
       sidebarHeader.append(trigger);
+      sidebarHeader.append(shortcuts);
       sidebarContent.append(menuContent);
       trigger.removeAttribute('aria-haspopup');
       trigger.setAttribute('aria-controls', 'site-sidebar');
@@ -93,7 +103,8 @@ export function initSiteMenu({ openProviders } = {}) {
       observeState();
       syncMenu();
     } else {
-      triggerHome.append(trigger);
+      triggerHome.insertBefore(trigger, triggerSibling);
+      mobileHeader.append(shortcuts);
       dialog.append(menuContent);
       trigger.setAttribute('aria-haspopup', 'dialog');
       trigger.setAttribute('aria-controls', 'site-menu');
@@ -121,6 +132,7 @@ export function initSiteMenu({ openProviders } = {}) {
   }
 
   function closeMenu(action = null) {
+    hideTooltip();
     if (desktop) {
       if (action) action();
       return;
@@ -147,6 +159,10 @@ export function initSiteMenu({ openProviders } = {}) {
   trigger.addEventListener('click', openMenu);
   closeButton.addEventListener('click', () => closeMenu());
   buyButton.addEventListener('click', () => closeMenu(() => addButton.click()));
+  searchButton?.addEventListener('click', () => {
+    if (openSearch) closeMenu(() => openSearch());
+  });
+  promotionButton?.addEventListener('click', () => chooseCategory('picks'));
   navigation.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const item = event.target.closest('[data-menu-category]');
@@ -185,6 +201,34 @@ export function initSiteMenu({ openProviders } = {}) {
     setExpanded(false);
     trigger.focus({ preventScroll: true });
   });
+  function hideTooltip() {
+    if (tooltip) tooltip.hidden = true;
+    tooltipTarget?.removeAttribute('aria-describedby');
+    tooltipTarget = null;
+  }
+  function showTooltip(event) {
+    if (!tooltip || !desktop || expanded || document.body.dataset.view === 'game'
+      || document.querySelector('dialog[open]') || !(event.target instanceof Element)) return;
+    const target = event.target.closest('[data-tooltip]');
+    if (!target || !sidebar.contains(target)) return;
+    hideTooltip();
+    tooltipTarget = target;
+    tooltip.textContent = target.dataset.tooltip;
+    tooltip.hidden = false;
+    target.setAttribute('aria-describedby', tooltip.id);
+    const bounds = target.getBoundingClientRect();
+    const height = tooltip.getBoundingClientRect().height;
+    tooltip.style.left = `${sidebar.getBoundingClientRect().right + 8}px`;
+    tooltip.style.top = `${Math.max(8, Math.min(window.innerHeight - height - 8, bounds.top + (bounds.height - height) / 2))}px`;
+  }
+  sidebar.addEventListener('pointerover', showTooltip);
+  sidebar.addEventListener('focusin', showTooltip);
+  sidebar.addEventListener('pointerout', event => {
+    if (tooltipTarget && !tooltipTarget.contains(event.relatedTarget)) hideTooltip();
+  });
+  sidebar.addEventListener('focusout', hideTooltip);
+  menuContent.addEventListener('scroll', hideTooltip, { passive: true });
+  window.addEventListener('resize', hideTooltip, { passive: true });
   window.addEventListener('hashchange', () => closeMenu());
   desktopMedia.addEventListener('change', applyLayout);
   applyLayout();

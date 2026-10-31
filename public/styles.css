@@ -9,38 +9,39 @@
     :root {
       color-scheme: dark;
       background: #000;
-      /* One bounded scale drives component sizes; viewport changes never reset it. */
+      /* Fixed component steps keep the lobby proportional across viewport sizes. */
       --fluid-step: clamp(0rem, calc(.833333vw - .166667rem), .5rem);
-      --header-control-size: calc(3rem + var(--fluid-step));
-      --header-side-control-width: calc(4rem + 2.25 * var(--fluid-step));
-      --header-padding: calc(.75rem + .75 * var(--fluid-step));
-      --header-gap: calc(.25rem + .5 * var(--fluid-step));
+      --header-control-size: 2.25rem;
+      --header-side-control-width: 3.5rem;
+      --header-padding: .875rem;
+      --header-gap: .5rem;
       --top-bar-height: calc(var(--header-control-size) + 2 * var(--header-padding) + env(safe-area-inset-top, 0px));
       --top-bar-background: #000;
       --top-bar-divider: #232326;
       --header-font-family: 'Arimo', Arial, sans-serif;
       --header-font-weight: 700;
-      --header-icon-size: calc(1.5rem + .5 * var(--fluid-step));
-      --wallet-copy-inset-start: calc(.5rem + 2 * var(--fluid-step));
-      --wallet-copy-inset-end: calc(.375rem + 1.25 * var(--fluid-step));
+      --header-icon-size: 1.25rem;
+      --wallet-copy-inset-start: .875rem;
+      --wallet-copy-inset-end: .5rem;
       --wallet-copy-gap: .25rem;
-      --wallet-inset-end: calc(.25rem + .25 * var(--fluid-step));
+      --wallet-inset-end: .1875rem;
       --control-radius: 999px;
-      --page-max-width: 85rem;
-      --page-gutter: calc(.75rem + 3 * var(--fluid-step));
+      --page-max-width: 71rem;
+      --page-gutter: 1rem;
       --page-inset: max(var(--page-gutter), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
       --page-content-width: min(var(--page-max-width), calc(100% - 2 * var(--page-inset)));
-      --hero-gap: calc(1rem + var(--fluid-step));
-      --catalog-toolbar-height: 4rem;
-      --catalog-toolbar-padding: .625rem;
+      --hero-gap: 1rem;
+      --catalog-control-size: 2.5rem;
+      --catalog-toolbar-height: 3.5rem;
+      --catalog-toolbar-padding: .5rem;
       --catalog-accent: #e8bf65;
       --surface-control: #20212a;
       --catalog-active-background: var(--surface-control);
       --text-primary: #eeeef2;
       --text-secondary: #9b9ba5;
-      --control-hover: #1b1b20;
+      --control-hover: color-mix(in srgb, var(--surface-control), var(--text-primary) 8%);
       --surface-card: #1c1c22;
-      --radius-card: calc(.5rem + .125 * var(--fluid-step));
+      --radius-card: .5rem;
       --sidebar-rail-width: 4.5rem;
       --sidebar-expanded-width: 14.5rem;
       --sidebar-width: 0px;
@@ -48,12 +49,12 @@
       --sidebar-divider: var(--top-bar-divider);
       --sidebar-duration: 240ms;
       --sidebar-easing: cubic-bezier(.22, 1, .36, 1);
-      --game-card-width: calc(8.25rem + 4.75 * var(--fluid-step));
-      --game-card-gap: calc(.625rem + .75 * var(--fluid-step));
+      --game-card-width: 8rem;
+      --game-card-gap: .625rem;
       --game-card-background: var(--surface-card);
       --game-card-radius: var(--radius-card);
-      --shelf-title-size: calc(1.25rem + .5 * var(--fluid-step));
-      --game-title-size: calc(.875rem + .25 * var(--fluid-step));
+      --shelf-title-size: 1.25rem;
+      --game-title-size: .8125rem;
       --touch-target: 2.75rem;
     }
     html, body { margin: 0; min-height: 100%; background: #000; scrollbar-width: none; overscroll-behavior-y: none; }
@@ -163,14 +164,14 @@
       position: relative;
       flex: 1;
       min-width: 0;
-      height: var(--touch-target);
+      height: var(--catalog-control-size);
     }
     .catalog-category-arrow {
       position: absolute;
       z-index: 1;
       top: 0;
-      width: var(--touch-target);
-      height: var(--touch-target);
+      width: var(--catalog-control-size);
+      height: var(--catalog-control-size);
       border: 0;
       border-radius: 0;
       background: #000;
@@ -205,7 +206,7 @@
       align-items: center;
       gap: .25rem;
       min-width: 0;
-      height: var(--touch-target);
+      height: var(--catalog-control-size);
       box-sizing: border-box;
       padding: 0;
       overflow-x: auto;
@@ -219,8 +220,8 @@
       align-items: center;
       gap: 8px;
       flex: none;
-      height: var(--touch-target);
-      padding: 0 calc(.75rem + .375 * var(--fluid-step));
+      height: var(--catalog-control-size);
+      padding: 0 .875rem;
       border: 0;
       border-radius: 10px;
       background: transparent;
@@ -245,16 +246,16 @@
       padding-bottom: 2.5rem;
     }
     .catalog-shelves { scroll-margin-top: calc(var(--top-bar-height) + var(--catalog-toolbar-height) + 16px); }
-    .game-shelf { min-width: 0; margin-block-start: calc(1.5rem + var(--fluid-step)); }
-    .game-shelf + .game-shelf { margin-block-start: calc(2rem + var(--fluid-step)); }
+    .game-shelf { min-width: 0; margin-block-start: 1.5rem; }
+    .game-shelf + .game-shelf { margin-block-start: 2.5rem; }
     .game-shelf__header {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: calc(.625rem + .75 * var(--fluid-step));
-      min-height: var(--touch-target);
-      margin-bottom: calc(.75rem + .25 * var(--fluid-step));
+      gap: .75rem;
+      min-height: 2.25rem;
+      margin-bottom: .875rem;
     }
     .game-shelf__title {
       display: flex;
@@ -274,7 +275,7 @@
       gap: 10px;
       min-width: 0;
       max-width: 100%;
-      min-height: var(--touch-target);
+      min-height: 2.25rem;
       padding: 0;
       border: 0;
       border-radius: 4px;
@@ -290,10 +291,10 @@
     .game-shelf__navigation { display: flex; gap: 4px; }
     .game-shelf__actions { display: flex; flex: none; align-items: center; gap: .5rem; margin-inline-start: auto; }
     .game-shelf__arrow {
-      width: var(--touch-target);
-      height: var(--touch-target);
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: 8px;
-      background: #222226;
+      background: var(--surface-control);
       color: #b4b4bd;
     }
     .game-shelf__arrow svg { width: 18px; height: 18px; }
@@ -303,7 +304,7 @@
       .game-shelf__navigation, .catalog-category-arrow { display: none; }
     }
     .shelf-see-all {
-      min-height: var(--touch-target);
+      min-height: 2.25rem;
       padding: 0 2px;
       border: 0;
       background: transparent;
@@ -348,19 +349,19 @@
       scroll-snap-type: none;
     }
     @supports (width: 1cqi) {
-      /* Fit whole columns to the actual content lane, shared by grids and rails. */
+      /* A shared content-lane scale keeps grid and rail cards the same size. */
       .game-track {
         --game-columns: 1;
         --game-card-width: calc((100cqi - (var(--game-columns) - 1) * var(--game-card-gap)) / var(--game-columns));
       }
       .game-track.is-grid { grid-template-columns: repeat(var(--game-columns), minmax(0, 1fr)); }
-      @container game-catalog (min-width: 18rem) { .game-track { --game-columns: 2; } }
-      @container game-catalog (min-width: 28rem) { .game-track { --game-columns: 3; } }
-      @container game-catalog (min-width: 38rem) { .game-track { --game-columns: 4; } }
-      @container game-catalog (min-width: 48rem) { .game-track { --game-columns: 5; } }
-      @container game-catalog (min-width: 60rem) { .game-track { --game-columns: 6; } }
-      @container game-catalog (min-width: 72rem) { .game-track { --game-columns: 7; } }
-      @container game-catalog (min-width: 84rem) { .game-track { --game-columns: 8; } }
+      @container game-catalog (min-width: 12rem) { .game-track { --game-columns: 2; } }
+      @container game-catalog (min-width: 18rem) { .game-track { --game-columns: 3; } }
+      @container game-catalog (min-width: 28rem) { .game-track { --game-columns: 4; } }
+      @container game-catalog (min-width: 36rem) { .game-track { --game-columns: 5; } }
+      @container game-catalog (min-width: 44rem) { .game-track { --game-columns: 6; } }
+      @container game-catalog (min-width: 52rem) { .game-track { --game-columns: 7; } }
+      @container game-catalog (min-width: 62rem) { .game-track { --game-columns: 8; } }
     }
     .game-card {
       flex: 0 0 var(--game-card-width);
@@ -393,7 +394,7 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      padding: 16px 12px 6px;
+      padding: 12px 8px 6px;
       overflow: hidden;
       background: transparent;
       color: #d4d4db;
@@ -414,11 +415,11 @@
       flex: none;
       display: block;
       width: 100%;
-      padding: 6px 8px 12px;
+      padding: 6px 6px 10px;
       overflow: hidden;
       color: #aaaab5;
       text-align: center;
-      font-size: calc(.625rem + .125 * var(--fluid-step));
+      font-size: .625rem;
       font-weight: 400;
       line-height: 1.2;
       text-overflow: ellipsis;
@@ -426,15 +427,20 @@
     }
     .provider-track { display: flex; gap: var(--game-card-gap); margin: 0; padding: 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; list-style: none; }
     .provider-track::-webkit-scrollbar { display: none; }
-    .provider-card { flex: 0 0 calc(8.25rem + 6 * var(--fluid-step)); min-width: 0; scroll-snap-align: start; }
-    .provider-launch { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: calc(4rem + 3 * var(--fluid-step)); padding: .75rem 1.125rem; border: 1px solid transparent; border-radius: .75rem; background: #19191d; cursor: pointer; }
+    .provider-card { flex: 0 0 9rem; min-width: 0; scroll-snap-align: start; }
+    .provider-launch { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 4.5rem; padding: .75rem 1rem; border: 1px solid transparent; border-radius: .625rem; background: var(--surface-card); cursor: pointer; }
     .provider-launch:hover { border-color: #39393f; background: #242429; }
-    .provider-logo { display: block; width: 100%; height: calc(2.25rem + 1.5 * var(--fluid-step)); object-fit: contain; opacity: .82; }
+    .provider-logo { display: block; width: 100%; height: 2.25rem; object-fit: contain; opacity: .82; }
     .provider-launch:hover .provider-logo { opacity: 1; }
     .provider-track.is-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(8.25rem + 6 * var(--fluid-step))), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
       overflow: visible;
       scroll-snap-type: none;
     }
     .provider-track.is-grid .provider-launch { height: auto; min-height: var(--touch-target); aspect-ratio: 2.1; }
+    @media (min-width: 48rem) {
+      :root { --header-control-size: 2.5rem; --header-padding: .75rem; --header-side-control-width: 4rem; --header-icon-size: 1.375rem; --page-gutter: 1.5rem; --game-card-gap: 1rem; --shelf-title-size: 1.5rem; --game-title-size: .875rem; }
+      .game-shelf + .game-shelf { margin-block-start: 3rem; }
+    }
+    @media (min-width: 64rem) { :root { --page-gutter: 3rem; } }
