@@ -78,12 +78,12 @@ export function initCatalogView({ router } = {}) {
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '';
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
-  categorySelect.replaceChildren(...CATEGORIES.map(c => option(c.id, c.title)));
+  categorySelect.replaceChildren(option('all', 'All Games'), ...CATEGORIES.map(c => option(c.id, c.title)));
   for (const category of CATEGORIES) {
     const button = node('button', 'catalog-category');
     button.type = 'button';
     button.dataset.category = category.id;
-    button.setAttribute('aria-pressed', String(category.id === 'all'));
+    button.setAttribute('aria-pressed', 'false');
     button.append(createShelfIcon(category.id), node('span', '', category.title));
     categories.append(button);
   }

@@ -118,7 +118,6 @@
 }
 .wallet-switch[aria-checked="true"] .coin-art { transform: translateY(-50%) translateX(var(--switch-travel)); }
 
-.coin-wallet :focus-visible, .wallet-switch:focus-visible { outline: 2px solid #eeeef2; outline-offset: 3px; }
 
 @media (min-width: 45rem) {
   .site-logo { width: 7rem; height: var(--header-control-size); }

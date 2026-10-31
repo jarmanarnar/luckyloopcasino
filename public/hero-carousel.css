@@ -25,8 +25,6 @@
 .hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: #fff; transform: scaleX(0); transform-origin: left center; }
 .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; }
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
-.hero-carousel :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
-.hero-carousel__viewport:focus-visible { outline-offset: -2px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @container hero-banner (min-width: 40rem) { .hero-carousel__slide { flex-basis: 50%; } }
 @container hero-banner (min-width: 70rem) { .hero-carousel__slide { flex-basis: 33.333333%; } }

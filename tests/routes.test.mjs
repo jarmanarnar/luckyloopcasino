@@ -43,7 +43,7 @@ function browser(hash = '') {
 test('category, provider and search links retain their page and filters after refresh', () => {
   const routes = [
     { type: 'home' },
-    { type: 'category', categoryId: 'all' },
+    { type: 'search', query: '' },
     { type: 'store' },
     { type: 'category', categoryId: 'popular', providerId: 'netent', query: 'Dragon & luck', sort: 'az' },
     { type: 'category', categoryId: 'new-releases' },
@@ -63,13 +63,39 @@ test('category, provider and search links retain their page and filters after re
   }
 });
 
-test('Lobby and the complete games catalog have separate refresh-safe addresses', () => {
+test('removed All Games addresses resolve to Search and preserve their filters on refresh', () => {
   assert.deepEqual(parseRoute('#/'), { type: 'home' });
   assert.equal(formatRoute({ type: 'home' }), '#/');
-  const all = { type: 'category', categoryId: 'all' };
-  assert.equal(formatRoute(all), '#/all-games');
-  assert.deepEqual(parseRoute('#/all-games'), all);
-  assert.deepEqual(parseRoute('#/all-games?provider=netent&q=coin'), { ...all, query: 'coin', providerId: 'netent' });
+  assert.equal(formatRoute({ type: 'category', categoryId: 'all' }), '#/search');
+  assert.equal(formatRoute({ type: 'search', query: '', categoryId: 'all' }), '#/search');
+  const search = { type: 'search', query: 'coin', providerId: 'netent', sort: 'za' };
+  for (const alias of ['all-games', 'all']) {
+    assert.deepEqual(parseRoute(`#/${alias}`), { type: 'search', query: '' });
+    const hash = `#/${alias}?provider=netent&q=coin&sort=za`;
+    assert.deepEqual(parseRoute(hash), search);
+    const page = browser(hash);
+    assert.deepEqual(initRouter({ window: page.scope }).getRoute(), search);
+    assert.equal(page.scope.location.hash, formatRoute(search));
+    assert.equal(page.entries.length, 1, 'legacy links are replaced without adding a history entry');
+  }
+});
+
+test('legacy All Games hash navigation canonicalizes in place and details return to Search', () => {
+  const page = browser('#/popular');
+  const router = initRouter({ window: page.scope });
+  const seen = [];
+  router.subscribe(route => seen.push(route));
+  page.manualHash('#/all-games?q=gold&provider=netent'); page.flush();
+  const search = { type: 'search', query: 'gold', providerId: 'netent' };
+  assert.deepEqual(router.getRoute(), search);
+  assert.equal(page.scope.location.hash, '#/search?q=gold&provider=netent');
+  assert.equal(page.entries.length, 2);
+  page.emit('popstate'); page.emit('hashchange');
+  assert.equal(seen.length, 1, 'normalization does not duplicate the native route events');
+  page.move(-1); page.flush();
+  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'popular' });
+  const details = parseRoute(`#/games/niptuck000000000?${new URLSearchParams({ from: '#/all-games?q=nip' })}`);
+  assert.equal(details.from, '#/search?q=nip');
 });
 
 test('game details have their own refresh-safe address and retain a valid shell origin', () => {

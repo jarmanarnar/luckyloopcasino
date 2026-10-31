@@ -26,7 +26,6 @@
 .feature-button--primary { color: var(--catalog-accent); }
 .feature-button:hover, .feature-tab:hover { background: var(--control-hover); }
 .feature-button:disabled { color: var(--text-secondary); cursor: default; }
-.feature-view :is(button,a,input,select,textarea,summary):focus-visible { outline: none; box-shadow: 0 0 0 2px var(--catalog-accent); }
 .feature-input { box-sizing: border-box; display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--touch-target); padding: .75rem; border: 1px solid var(--top-bar-divider); border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font: inherit; font-size: 1rem; line-height: 1.4; }
 textarea.feature-input { resize: vertical; }
 .feature-field { display: grid; gap: .625rem; min-width: 0; margin: 0; padding: 0; border: 0; font-size: .8125rem; font-weight: 700; line-height: 1.5; }

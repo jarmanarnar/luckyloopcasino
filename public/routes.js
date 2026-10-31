@@ -5,6 +5,8 @@ const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'spooky'
 const sortIds = new Set(['featured', 'az', 'za', 'newest']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
+const isLegacyAllGamesHash = hash => ['all-games', 'all'].includes(
+  decode(String(hash).replace(/^#/, '').split('?')[0].replace(/^\//, '').replace(/\/$/, '')));
 
 function detailsOrigin(value) {
   if (typeof value !== 'string' || !/^#(?:\/|$)/.test(value)) return '';
@@ -36,7 +38,7 @@ export function parseRoute(hash = '') {
     const from = detailsOrigin(params.get('from'));
     return { type: 'game-details', gameId: segments[1], ...(from ? { from } : {}) };
   }
-  if (segments.length === 1 && segments[0] === 'all-games') route = { type: 'category', categoryId: 'all' };
+  if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
   else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
   else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
   else if (segments[0] === 'store' && segments.length === 1) return { type: 'store' };
@@ -71,13 +73,13 @@ export function formatRoute(route = { type: 'home' }) {
     if (route.from && !route.from.includes('game=')) params.set('from', route.from);
     return `#${params}`;
   }
-  const path = route.type === 'category' ? route.categoryId === 'all' ? 'all-games' : route.categoryId
+  const path = route.type === 'category' ? route.categoryId === 'all' ? 'search' : route.categoryId
     : route.type === 'provider' ? `providers/${encodeURIComponent(route.providerId)}`
       : route.type === 'providers' ? 'providers' : 'search';
   const params = new URLSearchParams();
   if (route.query) params.set('q', route.query);
   if (route.providerId && route.type !== 'provider') params.set('provider', route.providerId);
-  if (route.categoryId && route.type !== 'category') params.set('category', route.categoryId);
+  if (route.categoryId && route.categoryId !== 'all' && route.type !== 'category') params.set('category', route.categoryId);
   if (route.sort && sortIds.has(route.sort)) params.set('sort', route.sort);
   return `#/${path}${params.size ? `?${params}` : ''}`;
 }
@@ -93,7 +95,9 @@ export function initRouter({ window: scope = window } = {}) {
   const position = () => ({ x: scope.scrollX || 0, y: scope.scrollY || 0 });
   let entry = history.state?.loopRoute || { id: ++serial, index: 0, scroll: position() };
   serial = Math.max(serial, entry.id);
-  history.replaceState({ ...history.state, loopRoute: entry }, '', location.href);
+  history.replaceState({ ...history.state, loopRoute: entry }, '',
+    isLegacyAllGamesHash(location.hash) ? formatRoute(currentRoute) : location.href);
+  currentUrl = location.href;
   history.scrollRestoration = 'manual';
 
   function savePosition() { positions.set(entry.id, position()); }
@@ -129,8 +133,9 @@ export function initRouter({ window: scope = window } = {}) {
     const previous = currentRoute;
     entry = history.state?.loopRoute || { id: ++serial, index: 0, scroll: { x: 0, y: 0 } };
     serial = Math.max(serial, entry.id);
-    history.replaceState({ ...history.state, loopRoute: entry }, '', location.href);
     currentRoute = parseRoute(location.hash);
+    history.replaceState({ ...history.state, loopRoute: entry }, '',
+      isLegacyAllGamesHash(location.hash) ? formatRoute(currentRoute) : location.href);
     currentUrl = location.href;
     emit(previous, { restore: true, source: 'history', focus: false });
   }

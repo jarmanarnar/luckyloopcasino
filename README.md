@@ -23,13 +23,13 @@ npm test
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Game cards open a dedicated, refresh-safe introduction page with a wireframe portrait, linked provider, shared favorites, game format, known release date, collection links and related games. Information and Description tabs keep details separate from launch. Play demo starts the existing framed game; browsing details does not load a provider or count as a game visit. Legacy direct demo links still work. Unavailable RTP, volatility and win statistics are omitted.
 - A persistent 72px desktop icon rail expands to 232px. Its hamburger and BUY/REDEEM controls precede search, Promotions and grouped casino, reward, membership, partner, account and support destinations. Compact icons show accessible custom tooltips; expanded rows show labels. Below 45rem (720px at the default text size), the menu slides above the page, ending at the permanent 63px bottom bar. The bottom navigation stays in place throughout opening and closing. The covered page is inert, keyboard focus stays within the menu and bottom bar, Escape dismisses the menu and its content scrolls independently. BUY opens Store; REDEEM opens a clearly marked preview. The sidebar stays visible beside framed games on desktop.
-- Mobile navigation provides Menu, Store, Lobby, Redeem and Promotions in that order below the same 45rem boundary, including during games. Lobby sits in the middle and uses the approved infinity from the header wordmark. Search and Providers remain available in Menu. Lobby also has a standalone group in the sidebar, separate from the complete All Games catalog. The top hamburger is hidden while the bottom bar is present. The fixed bar is 63px high with no added bottom safe-area inset, including in standalone mode; matching content padding keeps the last row visible.
+- Mobile navigation provides Menu, Store, Lobby, Redeem and Promotions in that order below the same 45rem boundary, including during games. Lobby sits in the middle and uses the approved infinity from the header wordmark. Search and Providers remain available in Menu. Lobby also has a standalone group in the sidebar. Search is the complete game catalog; the former All Games destination redirects there. The top hamburger is hidden while the bottom bar is present. The fixed bar is 63px high with no added bottom safe-area inset, including in standalone mode; matching content padding keeps the last row visible.
 - Store is an independent page opened by mobile Store, sidebar BUY or the header plus. Its nine USD package prices, GC amounts, free SC and Popular/Best labels match the Crown Coins Store observed on 2026-10-31. Price buttons open package previews only; they do not charge or change demo balances. The former wallet dialog and free-credit button have been removed; currency switching and header balance animation remain.
 - The Lounge links VIP Club, Daily Bonus, Invite Friends and CoinBack, following the four areas observed in Crown Coins. Bonus Hub, Rank System, Free Money, Missions, Promotions, Partners, Affiliate Program and Crypto & Earn are independent wireframe pages inspired by the organization of Qzino. No competitor artwork, program qualification or financial promises are imported.
 - Daily Bonus grants local demo GC once per device-local calendar day, advancing a seven-day streak. Three introductory missions grant one-time demo GC for profile customization, opening a game and daily check-in. Eligibility, collection history and discovery ranks persist across refresh. These rewards do not change provider game balances.
 - Profile name/avatar, Favorites, Activity History and Notifications use real local state. Only game openings and local reward claims are recorded; no invented bets, wins or transactions. Removed games are filtered from stored history, favorites and discovery. Settings mask the header balance and reduce interface motion, including stopping banner autoplay. Live Support previews an unsent message and FAQ; Blog contains original prototype guides. VIP, CoinBack, referrals, affiliate, crypto and redemption areas remain explicit program previews without external services.
 - Search has its own page with live results, category/provider filters and name sorting. The header uses the selected monochrome LOOP concept as its current wireframe logo.
-- Only the lobby includes promotional frames and the All Games, Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. Popular starts with 12 curated demo titles; it is not an analytics-based ranking. New Releases uses a verified subset of provider release dates recorded in collections.js.
+- Only the lobby includes promotional frames and the Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. Popular starts with 12 curated demo titles; it is not an analytics-based ranking. New Releases uses a verified subset of provider release dates recorded in collections.js.
 - Categories, the provider directory, individual providers and search have independent URL routes. Provider pages include expandable details derived from the active catalog. Lists load 35 games at a time with Show more. Search and filters survive refresh; Back and Forward restore page scroll. Opening a game remembers its originating page.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
@@ -70,7 +70,6 @@ Routes use URL fragments so direct links and refresh also work on static GitHub 
 | Page | Fragment |
 | --- | --- |
 | Lobby | `#/` |
-| All Games catalog | `#/all-games` |
 | Popular | `#/popular` |
 | Slots | `#/slots` |
 | New Releases | `#/new-releases` |
@@ -86,6 +85,8 @@ Routes use URL fragments so direct links and refresh also work on static GitHub 
 | Services | `#/support`, `#/blog`, `#/settings`, `#/redeem` |
 
 Provider/category filters and sorting are encoded in the fragment query. Existing `#game=…` links remain supported; launches from a page include a `from` parameter for refresh-safe return navigation.
+
+Legacy `#/all-games` and `#/all` addresses redirect to `#/search`, preserving search, provider and sorting filters. All Games remains a search filter for the complete catalog, not a separate page or navigation entry.
 
 ## Hosting
 

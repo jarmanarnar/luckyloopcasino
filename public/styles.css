@@ -64,10 +64,10 @@
       --catalog-accent: #8bdfb3;
     }
     button, input, select { font: inherit; }
-    button:focus-visible, input:focus-visible, select:focus-visible,
-    .game-track:focus-visible, .provider-track:focus-visible {
-      outline: 2px solid var(--text-primary);
-      outline-offset: 4px;
+    /* Focus keeps keyboard behavior without drawing selection frames. */
+    :focus { outline: none; }
+    :where(button, a, input, select, textarea, summary, [tabindex]) {
+      -webkit-tap-highlight-color: transparent;
     }
     [hidden] { display: none !important; }
     .top-bar {

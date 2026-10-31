@@ -76,7 +76,7 @@ test('all 32 removed games and vendor aliases stay out of every collection and l
 });
 
 test('lobby categories stay focused while existing editorial choices remain available', () => {
-  assert.deepEqual(CATEGORIES.map(category => category.id), ['all', 'popular', 'slots', 'new-releases']);
+  assert.deepEqual(CATEGORIES.map(category => category.id), ['popular', 'slots', 'new-releases']);
   assert.ok(getGamesForCategory('spooky').length > 0);
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
 });

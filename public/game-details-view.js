@@ -101,7 +101,6 @@ export function initGameDetails({ router, member } = {}) {
 
   function detailsCard(game, formatName) {
     const card = node('details', 'game-details-card');
-    card.open = true;
     const summary = node('summary', 'game-details-summary');
     const chevron = arrowIcon();
     chevron.classList.add('game-details-chevron');

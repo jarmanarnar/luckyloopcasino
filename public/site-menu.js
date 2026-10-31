@@ -59,7 +59,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
   items.set('lobby', lobbyButton);
   const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
-    if (category.id !== 'all' && category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
+    if (category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'site-menu__item';

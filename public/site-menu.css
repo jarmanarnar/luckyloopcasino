@@ -218,13 +218,6 @@ html:has(#site-menu[open]) { overflow: hidden; }
 .site-menu__help summary svg { flex: none; width: 1rem; height: 1rem; transition: transform 180ms ease; }
 .site-menu__help[open] summary svg { transform: rotate(180deg); }
 .site-menu__help p { margin: .5rem 0 .875rem; font-size: .75rem; line-height: 1.6; }
-.site-menu :focus-visible,
-.site-sidebar :focus-visible { outline: none; }
-.site-menu__shortcut:focus-visible,
-.site-menu__search:focus-visible,
-.site-menu__promotion:focus-visible,
-.site-menu__item:focus-visible,
-.site-menu__help summary:focus-visible { background: var(--control-hover); color: var(--text-primary); }
 
 .site-menu__tooltip {
   position: fixed;

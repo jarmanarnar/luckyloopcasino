@@ -5,7 +5,6 @@ import { GAME_TYPES, getGameTypeId } from './game-types.js';
 // Format mapping is documented in game-types.js. The lobby navigation is a
 // deliberately small set; existing editorial collections remain addressable.
 export const CATEGORIES = [
-  { id: 'all', title: 'All Games', description: 'Browse every game type.' },
   { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
   { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
   { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
@@ -115,13 +114,12 @@ const orderedCollections = new Map([
   ['new-releases', Object.keys(GAME_RELEASES).sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a)))],
 ]);
 const collections = new Map(allCategories.map(category => [category.id,
-  category.id === 'all' ? GAMES
-    : orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)
-      : GAMES.filter(rules[category.id]),
+  orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)
+    : GAMES.filter(rules[category.id]),
 ]));
 
 export function getGameCategoryIds(game) {
-  return ['all', ...allCategories.filter(category => category.id !== 'all' && rules[category.id](game)).map(category => category.id)];
+  return allCategories.filter(category => rules[category.id](game)).map(category => category.id);
 }
 
 export function getGamesForCategory(id) {

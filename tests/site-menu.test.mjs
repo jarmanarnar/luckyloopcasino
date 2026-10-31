@@ -141,7 +141,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
     const button = new Node();
     button.dataset.category = id;
-    button.setAttribute('aria-pressed', String(id === 'all'));
+    button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => {
       calls.push(`category:${id}`);
       nodes['catalog-categories'].dataset.activeMenu = id;
@@ -258,28 +258,37 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
   assert.equal(page.item('lobby').getAttribute('aria-current'), 'page');
-  assert.equal(page.item('all').getAttribute('aria-current'), null);
-  for (const category of CATEGORIES) assert.equal(!!page.item(category.id), category.id === 'all' || getGamesForCategory(category.id).length > 0);
+  assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
+  assert.equal(page.categoryButtons.has('all'), false);
+  for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
   assert.equal(page.nodes['menu-navigation'].children.at(-1), page.item('providers'));
   assert.equal(page.categoryButtons.has('providers'), false);
 });
 
-test('Lobby has its own sidebar group and All Games opens the catalog instead of the Lobby', () => {
+test('Lobby stays separate from categories and Search is the complete catalog entry', () => {
   const page = menuPage({ desktop: true });
-  const lobby = page.item('lobby'), all = page.item('all');
-  assert.notEqual(lobby.parentElement, all.parentElement);
+  const lobby = page.item('lobby'), popular = page.item('popular');
+  assert.notEqual(lobby.parentElement, popular.parentElement);
   assert.equal(lobby.getAttribute('aria-label'), 'Lobby');
-  all.click();
-  assert.equal(page.calls.at(-1), 'category:all');
+  assert.equal(page.item('all'), undefined);
+  popular.click();
+  assert.equal(page.calls.at(-1), 'category:popular');
   assert.equal(page.document.body.dataset.page, 'category');
   page.observers[0].callback();
-  assert.equal(all.getAttribute('aria-current'), 'page');
+  assert.equal(popular.getAttribute('aria-current'), 'page');
+  assert.equal(lobby.getAttribute('aria-current'), null);
+  page.nodes['menu-search'].click();
+  assert.equal(page.calls.at(-1), 'search:open');
+  assert.equal(page.document.body.dataset.page, 'search');
+  assert.equal(page.document.activeElement, page.nodes['site-search-input']);
+  page.observers[0].callback();
+  assert.equal(popular.getAttribute('aria-current'), null);
   assert.equal(lobby.getAttribute('aria-current'), null);
   lobby.click();
   assert.equal(page.calls.at(-1), 'home:open');
   page.observers[0].callback();
   assert.equal(lobby.getAttribute('aria-current'), 'page');
-  assert.equal(all.getAttribute('aria-current'), null);
+  assert.equal(popular.getAttribute('aria-current'), null);
 });
 
 test('Escape closes the drawer, resets its trigger and restores focus', () => {
@@ -417,7 +426,7 @@ test('category and Providers page navigation runs only after the drawer closes',
   assert.ok([...page.categoryButtons.values()].every(button => button.getAttribute('aria-pressed') === 'false'));
   page.nodes['menu-toggle'].click();
   assert.equal(page.item('providers').getAttribute('aria-current'), 'page');
-  assert.equal(page.item('all').getAttribute('aria-current'), null);
+  assert.equal(page.item('slots').getAttribute('aria-current'), null);
 });
 
 test('BUY opens the Store page only after the mobile menu closes and keeps destination focus', () => {
@@ -474,7 +483,7 @@ test('member destinations are grouped separately and navigate after the mobile d
   assert.equal(page.document.activeElement, page.pageHeading);
   page.nodes['menu-toggle'].click();
   assert.equal(page.feature('vip-club').getAttribute('aria-current'), 'page');
-  assert.equal(page.item('all').getAttribute('aria-current'), null);
+  assert.equal(page.item('lobby').getAttribute('aria-current'), null);
 });
 
 test('REDEEM opens a separate preview destination instead of performing a transaction', () => {

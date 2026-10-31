@@ -20,7 +20,7 @@ export function getCatalogPage(route) {
     return { type: 'not-found', title: 'Page not found', activeMenu: '' };
   }
   const collection = route.type === 'category' ? getGamesForCategory(category.id)
-    : route.type === 'search' && category && category.id !== 'all' ? getGamesForCategory(category.id) : GAMES;
+    : route.type === 'search' && category ? getGamesForCategory(category.id) : GAMES;
   const games = collection.filter(game => (!route.providerId || game.providerId === route.providerId)
     && (!query || matches(`${game.title} ${game.providerName}`, query)));
   const defaultSort = route.type === 'category' && category.id === 'popular' ? 'featured'
