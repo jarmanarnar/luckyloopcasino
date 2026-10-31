@@ -134,7 +134,7 @@ test('maximum balances use the actual collision lane without changing header row
   assert.deepEqual(page.rootWrites, []);
 });
 
-test('showing the game back button updates collision bounds without changing header rows', async () => {
+test('leading header content updates collision bounds without changing header rows', async () => {
   const page = await walletPage();
   const leading = page.nodes['.header-context'];
   assert.ok(page.observers[0].nodes.includes(leading));

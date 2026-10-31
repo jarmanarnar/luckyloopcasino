@@ -6,8 +6,8 @@ import vm from 'node:vm';
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
 
-function navPage({ desktop = false, missing = null } = {}) {
-  const calls = [], observations = [], observers = [], closeActions = [];
+function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
+  const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
   class Node {
     constructor() { this.dataset = {}; this.attributes = new Map(); this.listeners = new Map(); this.open = false; this.hidden = false; }
     setAttribute(name, value) { this.attributes.set(name, value); }
@@ -61,6 +61,10 @@ function navPage({ desktop = false, missing = null } = {}) {
     openSearch(options) { calls.push({ action: 'search', options }); nodes['site-search'].open = true; },
     openProviders(options) { calls.push({ action: 'providers', options }); nodes['catalog-categories'].dataset.activeMenu = 'providers'; },
   };
+  if (routeFromGame) api.returnToLobby = action => {
+    calls.push({ action: 'lobby:return' });
+    lobbyActions.push(() => { body.dataset.view = 'lobby'; action?.(); });
+  };
   const context = {
     document, api,
     window: { matchMedia(query) { assert.equal(query, '(min-width: 45rem)'); return media; } },
@@ -74,6 +78,7 @@ function navPage({ desktop = false, missing = null } = {}) {
     initialize() { vm.runInNewContext('initMobileNav(api);', context); },
     flush() { for (const observer of observers) observer.callback(); },
     flushClose() { while (closeActions.length) closeActions.shift()(); },
+    flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); },
     button(action) { return nodes[`mobile-nav-${action}`]; },
   };
 }
@@ -148,8 +153,8 @@ test('menu destinations wait for the menu close handoff and update the active de
   }
 });
 
-test('desktop, game mode and other open dialogs prevent hidden or overlapping actions', () => {
-  for (const mode of ['desktop', 'game', 'site-search', 'wallet-dialog']) {
+test('desktop and other open dialogs prevent hidden or overlapping actions', () => {
+  for (const mode of ['desktop', 'site-search', 'wallet-dialog']) {
     const page = navPage({ desktop: mode === 'desktop' });
     if (mode === 'game') page.body.dataset.view = 'game';
     else if (page.nodes[mode]) page.nodes[mode].open = true;
@@ -168,6 +173,36 @@ test('desktop, game mode and other open dialogs prevent hidden or overlapping ac
   page.media.emit('change');
   page.button('providers').click();
   assert.equal(page.calls.at(-1).action, 'providers', 'mobile actions resume after the breakpoint changes');
+});
+
+test('mobile game shell overlays preserve the game while Casino and Providers restore the lobby first', () => {
+  for (const action of ['menu', 'search', 'wallet']) {
+    const page = navPage({ routeFromGame: true });
+    page.body.dataset.view = 'game';
+    page.button(action).click();
+    assert.equal(page.calls.at(-1).action, action);
+    assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
+    assert.equal(page.body.dataset.view, 'game');
+  }
+  for (const [action, destination] of [['casino', 'all'], ['providers', 'providers']]) {
+    const page = navPage({ routeFromGame: true });
+    page.body.dataset.view = 'game';
+    page.button(action).click();
+    assert.equal(page.calls.at(-1).action, 'lobby:return');
+    assert.equal(page.calls.some(call => call.action === destination), false);
+    page.flushLobby();
+    assert.equal(page.body.dataset.view, 'lobby');
+    assert.equal(page.calls.at(-1).action, destination);
+  }
+});
+
+test('an active game selects Casino even when the last lobby destination was Providers', () => {
+  const page = navPage();
+  page.nodes['catalog-categories'].dataset.activeMenu = 'providers';
+  page.body.dataset.view = 'game';
+  page.flush();
+  assert.deepEqual(active(page), ['casino']);
+  assert.equal(page.button('casino').getAttribute('aria-current'), 'page');
 });
 
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {

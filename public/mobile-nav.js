@@ -1,6 +1,6 @@
 let initialized = false;
 
-export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders } = {}) {
+export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders, returnToLobby = action => action?.() } = {}) {
   if (initialized) return;
   const nav = document.querySelector('#mobile-nav');
   const categories = document.querySelector('#catalog-categories');
@@ -19,7 +19,8 @@ export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders }
 
   function sync() {
     const selected = dialogs.menu.open ? 'menu' : dialogs.search.open ? 'search'
-      : dialogs.wallet.open ? 'wallet' : categories.dataset.activeMenu === 'providers' ? 'providers'
+      : dialogs.wallet.open ? 'wallet' : document.body.dataset.view === 'game' ? 'casino'
+        : categories.dataset.activeMenu === 'providers' ? 'providers'
         : categories.dataset.activeMenu === 'search' ? 'search' : 'casino';
     for (const [action, button] of buttons) {
       const active = action === selected;
@@ -36,13 +37,13 @@ export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders }
         openMenu?.({ returnFocusTo: button });
         break;
       case 'casino':
-        categories.querySelector('[data-category="all"]')?.click();
+        returnToLobby(() => categories.querySelector('[data-category="all"]')?.click());
         break;
       case 'search':
         openSearch?.({ returnFocusTo: button });
         break;
       case 'providers':
-        openProviders?.({ focusResults: true });
+        returnToLobby(() => openProviders?.({ focusResults: true }));
         break;
       case 'wallet':
         walletAdd.click();
@@ -52,8 +53,7 @@ export function initMobileNav({ openMenu, closeMenu, openSearch, openProviders }
   }
 
   function activate(action, button) {
-    if (desktopMedia.matches || document.body.dataset.view === 'game'
-      || document.querySelector('dialog[open]:not(#site-menu)')) return;
+    if (desktopMedia.matches || document.querySelector('dialog[open]:not(#site-menu)')) return;
     if (dialogs.menu.open) {
       if (!closeMenu) return;
       if (action === 'menu') closeMenu();

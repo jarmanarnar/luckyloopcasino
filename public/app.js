@@ -10,11 +10,11 @@ import { initMobileNav } from './mobile-nav.js';
 const catalog = initCatalogView();
 initCatalogToolbar();
 initWallet();
-initGameView();
-const search = initSiteSearch(catalog);
-const menu = initSiteMenu({ ...catalog, ...search });
-initMobileNav({ ...catalog, ...search, ...menu });
+const game = initGameView();
+const search = initSiteSearch({ ...catalog, ...game });
+const menu = initSiteMenu({ ...catalog, ...search, ...game });
+initMobileNav({ ...catalog, ...search, ...menu, ...game });
 initHeroCarousel(catalog);
 document.querySelector('.site-logo')?.addEventListener('click', () => {
-  document.querySelector('#catalog-categories [data-category="all"]')?.click();
+  game.returnToLobby(() => document.querySelector('#catalog-categories [data-category="all"]')?.click());
 });

@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openProviders, openSearch } = {}) {
+export function initSiteMenu({ openProviders, openSearch, returnToLobby = action => action?.() } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -88,9 +88,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   }
 
   function restoreMenuFocus(preferred = null) {
-    const candidates = document.body.dataset.view === 'game'
-      ? [document.querySelector('#back-to-lobby')]
-      : [preferred, trigger, bottomTrigger];
+    const candidates = [preferred, trigger, bottomTrigger, document.querySelector('.site-logo')];
     candidates.find(node => node?.getClientRects().length)?.focus({ preventScroll: true });
   }
 
@@ -138,7 +136,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   }
 
   function openMenu({ returnFocusTo = trigger } = {}) {
-    if (pendingClose || document.body.dataset.view === 'game' || document.querySelector('dialog[open]')) return;
+    if (pendingClose || document.querySelector('dialog[open]')) return;
     if (desktop) {
       setExpanded(!expanded);
       return;
@@ -168,21 +166,21 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
 
   function chooseCategory(id) {
     if (id === 'providers') {
-      if (openProviders) closeMenu(() => openProviders({ focusResults: true }));
+      if (openProviders) closeMenu(() => returnToLobby(() => openProviders({ focusResults: true })));
       return;
     }
     const target = categories.querySelector(`[data-category="${id}"]`);
     if (!target) return;
-    closeMenu(() => {
+    closeMenu(() => returnToLobby(() => {
       target.click();
       target.focus({ preventScroll: true });
-    });
+    }));
   }
 
   trigger.addEventListener('click', openMenu);
   buyButton.addEventListener('click', () => closeMenu(() => addButton.click()));
   searchButton?.addEventListener('click', () => {
-    if (openSearch) closeMenu(() => openSearch());
+    if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));
   });
   promotionButton?.addEventListener('click', () => chooseCategory('picks'));
   navigation.addEventListener('click', event => {
@@ -229,7 +227,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
     tooltipTarget = null;
   }
   function showTooltip(event) {
-    if (!tooltip || !desktop || expanded || document.body.dataset.view === 'game'
+    if (!tooltip || !desktop || expanded
       || document.querySelector('dialog[open]') || !(event.target instanceof Element)) return;
     const target = event.target.closest('[data-tooltip]');
     if (!target || !sidebar.contains(target)) return;

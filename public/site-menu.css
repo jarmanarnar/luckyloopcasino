@@ -1,4 +1,3 @@
-body[data-view="game"] .menu-toggle { display: none; }
 #menu-toggle { border: 0; background: transparent; box-shadow: none; color: var(--text-secondary); }
 html:has(#site-menu[open]) { overflow: hidden; }
 
@@ -24,6 +23,17 @@ html:has(#site-menu[open]) { overflow: hidden; }
   overflow: hidden;
   border-right: 1px solid var(--sidebar-divider);
   transition: width var(--sidebar-duration) var(--sidebar-easing);
+}
+/* Continue the header divider through both sidebar layouts without changing their height. */
+.site-sidebar::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset-inline: 0;
+  top: calc(var(--top-bar-height) - 1px);
+  height: 1px;
+  background: var(--sidebar-divider);
+  pointer-events: none;
 }
 .site-sidebar__header,
 .site-menu__mobile-header {
@@ -89,6 +99,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
   padding-top: calc(.625rem + env(safe-area-inset-top, 0px));
   padding-left: max(.75rem, env(safe-area-inset-left, 0px));
   padding-right: max(.75rem, env(safe-area-inset-right, 0px));
+  box-shadow: inset 0 -1px 0 var(--sidebar-divider);
 }
 /* Keep the original bottom navigation inside the modal's accessible surface. */
 .site-menu > .mobile-nav { position: static; flex: none; width: 100%; }
@@ -273,14 +284,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
   .site-sidebar[data-expanded="false"] .site-menu__search > span,
   .site-sidebar[data-expanded="false"] .site-menu__promotion-copy,
   .site-sidebar[data-expanded="false"] .site-menu__footer { display: none; }
-  body[data-sidebar="collapsed"]:not([data-view="game"]) .site-menu__tooltip { display: block; }
-  body[data-view="game"] {
-    --sidebar-width: 0px;
-    padding-left: 0;
-    transition: none;
-  }
-  body[data-view="game"] .top-bar { left: 0; right: 0; transition: none; }
-  body[data-view="game"] .site-sidebar { display: none; }
+  body[data-sidebar="collapsed"] .site-menu__tooltip { display: block; }
 }
 @media (prefers-reduced-motion: reduce) {
   .site-menu, .site-menu::backdrop, .site-menu__help summary svg,

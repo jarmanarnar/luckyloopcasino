@@ -77,6 +77,7 @@
       padding-block: calc(var(--header-padding) + env(safe-area-inset-top, 0px)) var(--header-padding);
       background: var(--top-bar-background);
       border-bottom: 0;
+      box-shadow: inset 0 -1px 0 var(--top-bar-divider);
       position: fixed;
       top: 0;
       inset-inline: 0;
@@ -101,19 +102,26 @@
       overflow: hidden;
     }
     .game-view {
+      --game-stage-gap: .5rem;
       grid-row: 1;
       position: relative;
-      width: 100%;
+      box-sizing: border-box;
+      width: calc(100% - 2 * max(var(--game-stage-gap), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)));
       min-width: 0;
       min-height: 0;
+      margin: var(--game-stage-gap) auto;
+      border: 3px solid var(--surface-control);
+      border-radius: calc(2 * var(--radius-card));
       overflow: hidden;
       background: #000;
       outline: none;
     }
+    @media (min-width: 45rem) {
+      .game-view { --game-stage-gap: 1rem; }
+    }
     .game-frame-host {
       position: absolute;
       inset: 0;
-      inset: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
       overflow: hidden;
     }
     .game-frame-host iframe { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; border: 0; }

@@ -5,22 +5,23 @@ import { watchGameReady } from './game-ready.js';
 const games = new Map(GAMES.map(game => [game.id, game]));
 
 let initialized = false;
+let gameController = null;
 
 export function initGameView() {
-  if (initialized) return;
+  if (initialized) return gameController;
 
   const lobby = document.querySelector('#lobby-view');
   const view = document.querySelector('#game-view');
   const host = document.querySelector('#game-frame-host');
-  const back = document.querySelector('#back-to-lobby');
   const status = document.querySelector('#game-load-status');
   const loading = document.querySelector('#game-loading');
   const reveal = document.querySelector('#game-loading-reveal');
   const shelves = document.querySelector('#catalog-shelves');
-  if (![lobby, view, host, back, status, loading, reveal, shelves].every(Boolean)) return;
+  if (![lobby, view, host, status, loading, reveal, shelves].every(Boolean)) return;
   initialized = true;
 
   let currentGame = null;
+  let hasRendered = false;
   let currentFrame = null;
   let lastLauncher = null;
   let lobbyScroll = { x: 0, y: 0 };
@@ -144,10 +145,11 @@ export function initGameView() {
     }, 10000);
   }
 
-  function showFromHash() {
+  function showFromHash({ restoreLobby = true } = {}) {
     const requested = new URLSearchParams(window.location.hash.slice(1)).get('game');
     const key = games.has(requested) ? requested : null;
-    if (key === currentGame && key !== null) return;
+    if (hasRendered && key === currentGame) return;
+    hasRendered = true;
 
     window.cancelAnimationFrame(restoreFrame);
     const wasGame = currentGame !== null;
@@ -162,7 +164,6 @@ export function initGameView() {
       document.body.dataset.view = 'game';
       lobby.hidden = true;
       view.hidden = false;
-      back.hidden = false;
       mountFrame(key);
       window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
       view.focus({ preventScroll: true });
@@ -180,15 +181,25 @@ export function initGameView() {
     document.body.dataset.view = 'lobby';
     lobby.hidden = false;
     view.hidden = true;
-    back.hidden = true;
     status.textContent = '';
-    if (wasGame) {
+    if (wasGame && restoreLobby) {
       restoreFrame = window.requestAnimationFrame(() => {
         if (currentGame !== null) return;
         window.scrollTo({ left: lobbyScroll.x, top: lobbyScroll.y, behavior: 'instant' });
         if (lastLauncher?.isConnected) lastLauncher.focus({ preventScroll: true });
       });
     }
+  }
+
+  function returnToLobby(action = null) {
+    // Shell destinations need the lobby visible before they render and focus
+    // results. Their focus must not be overwritten by ordinary Back restoration.
+    if (action) window.cancelAnimationFrame(restoreFrame);
+    if (currentGame !== null || window.location.hash) {
+      window.location.hash = '';
+      showFromHash({ restoreLobby: !action });
+    }
+    if (action) action();
   }
 
   shelves.addEventListener('click', event => {
@@ -201,7 +212,6 @@ export function initGameView() {
     window.location.hash = `game=${key}`;
   });
 
-  back.addEventListener('click', () => { window.location.hash = ''; });
   reveal.addEventListener('click', () => {
     if (currentFrame) revealGame(currentFrame, 'manual');
   });
@@ -210,7 +220,9 @@ export function initGameView() {
     if (event.defaultPrevented || event.key !== 'Escape' || currentGame === null) return;
     if (document.querySelector('dialog[open]')) return;
     event.preventDefault();
-    window.location.hash = '';
+    returnToLobby();
   });
   showFromHash();
+  gameController = { returnToLobby };
+  return gameController;
 }

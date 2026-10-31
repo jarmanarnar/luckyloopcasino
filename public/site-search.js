@@ -1,6 +1,6 @@
 let initialized = false;
 
-export function initSiteSearch({ searchGames } = {}) {
+export function initSiteSearch({ searchGames, returnToLobby = action => action?.() } = {}) {
   if (initialized) return;
   const dialog = document.querySelector('#site-search');
   const input = document.querySelector('#site-search-input');
@@ -12,7 +12,7 @@ export function initSiteSearch({ searchGames } = {}) {
   let searchOpener = null;
 
   function openSearch({ returnFocusTo = null } = {}) {
-    if (document.querySelector('dialog[open]') || document.body.dataset.view === 'game') return;
+    if (document.querySelector('dialog[open]')) return;
     submitted = false;
     searchOpener = returnFocusTo;
     dialog.showModal();
@@ -33,18 +33,14 @@ export function initSiteSearch({ searchGames } = {}) {
     if (!query) return;
     submitted = true;
     dialog.close();
-    searchGames(query);
+    returnToLobby(() => searchGames(query));
   });
   dialog.addEventListener('close', () => {
     if (submitted) return;
-    const back = document.querySelector('#back-to-lobby');
-    if (document.body.dataset.view === 'game') {
-      back?.focus({ preventScroll: true });
-      return;
-    }
     const trigger = document.querySelector('#menu-search');
     const focusTarget = [searchOpener, trigger, document.querySelector('#menu-toggle'),
-      document.querySelector('#mobile-nav-search'), document.querySelector('#mobile-nav-menu')]
+      document.querySelector('#mobile-nav-search'), document.querySelector('#mobile-nav-menu'),
+      document.querySelector('.site-logo')]
       .find(node => node?.getClientRects().length);
     focusTarget?.focus({ preventScroll: true });
   });

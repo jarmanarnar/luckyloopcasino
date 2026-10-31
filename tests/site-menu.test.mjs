@@ -7,8 +7,8 @@ import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
-function menuPage({ desktop = false } = {}) {
-  const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [];
+function menuPage({ desktop = false, routeFromGame = false } = {}) {
+  const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   class Node {
     constructor() {
@@ -87,7 +87,7 @@ function menuPage({ desktop = false } = {}) {
   document.body = new Node();
   document.body.dataset.view = 'lobby';
   const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy',
-    'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit',
+    'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'site-logo', 'wallet-credit',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
     'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
     'bottom-menu', 'mobile-nav', 'mobile-nav-menu'];
@@ -100,7 +100,7 @@ function menuPage({ desktop = false } = {}) {
   nodes['mobile-nav-menu'].visible = false;
   nodes['menu-tooltip'].bounds = { left: 0, right: 120, top: 0, bottom: 32, width: 120, height: 32 };
   const headerParent = new Node();
-  headerParent.append(nodes['menu-toggle'], nodes['back-to-lobby']);
+  headerParent.append(nodes['menu-toggle'], nodes['site-logo']);
   nodes['site-menu'].append(nodes['menu-mobile-header'], nodes['menu-content']);
   nodes['menu-mobile-header'].append(nodes['menu-shortcuts']);
   nodes['menu-shortcuts'].append(nodes['menu-buy']);
@@ -155,6 +155,10 @@ function menuPage({ desktop = false } = {}) {
       for (const button of categoryButtons.values()) button.setAttribute('aria-pressed', 'false');
     },
   };
+  if (routeFromGame) catalog.returnToLobby = action => {
+    calls.push('lobby:return');
+    lobbyActions.push(() => { document.body.dataset.view = 'lobby'; action?.(); });
+  };
   const context = {
     document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
     createShelfIcon: () => new Node(),
@@ -180,7 +184,8 @@ function menuPage({ desktop = false } = {}) {
     breakpoint.emit('change', { matches });
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
-    item, flushClose, providerCalls, headerParent, resize };
+    item, flushClose, providerCalls, headerParent, resize,
+    flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
 
 test('menu opens once, focuses BUY, and only lists available collections', () => {
@@ -268,14 +273,14 @@ test('resizing an open bottom-menu drawer to desktop keeps focus on the desktop 
   assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
 });
 
-test('game navigation prioritizes the game back control over a remembered caller', () => {
+test('game navigation closes the menu and restores its visible shell opener', () => {
   const page = menuPage();
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   page.document.body.dataset.view = 'game';
   page.windowEvents.hashchange();
   page.flushClose();
   assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.document.activeElement, page.nodes['back-to-lobby']);
+  assert.equal(page.document.activeElement, page.nodes['bottom-menu']);
 });
 
 test('choosing a category from a caller-opened drawer keeps focus on that category', () => {
@@ -388,7 +393,7 @@ test('drawer button accents track the selected currency only while open', () => 
   assert.equal(page.nodes['site-menu'].dataset.currency, 'GC');
 });
 
-test('entering a game closes the menu and returns focus to the visible back control', () => {
+test('entering a game closes an existing menu and still allows reopening the game shell menu', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
   page.document.body.dataset.view = 'game';
@@ -396,9 +401,9 @@ test('entering a game closes the menu and returns focus to the visible back cont
   page.windowEvents.hashchange();
   page.flushClose();
   assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.document.activeElement, page.nodes['back-to-lobby']);
+  assert.equal(page.document.activeElement, page.nodes['site-logo']);
   page.nodes['menu-toggle'].click();
-  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.nodes['site-menu'].open, true);
 });
 
 test('desktop sidebar toggles without creating a modal or moving its shared content twice', () => {
@@ -470,7 +475,7 @@ test('switching an expanded desktop sidebar to mobile restores the header and st
   page.flushClose();
   assert.equal(page.nodes['site-sidebar'].hidden, true);
   assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
-  assert.deepEqual(page.headerParent.children, [page.nodes['menu-toggle'], page.nodes['back-to-lobby']]);
+  assert.deepEqual(page.headerParent.children, [page.nodes['menu-toggle'], page.nodes['site-logo']]);
   assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['menu-mobile-header']);
   assert.deepEqual(page.nodes['menu-mobile-header'].children, [page.nodes['menu-shortcuts']]);
   assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
@@ -530,7 +535,7 @@ test('expanded and mobile navigation never show collapsed-rail tooltips', () => 
   assert.equal(item.getAttribute('aria-describedby'), null);
 });
 
-test('collapsed tooltips are dismissed by scrolling and game navigation and suppressed behind another modal', () => {
+test('collapsed tooltips are dismissed by navigation but remain available in the game shell', () => {
   const page = menuPage({ desktop: true });
   const item = page.item('popular');
   const sidebar = page.nodes['site-sidebar'];
@@ -550,7 +555,74 @@ test('collapsed tooltips are dismissed by scrolling and game navigation and supp
   page.windowEvents.hashchange();
   assert.equal(tooltip.hidden, true);
   sidebar.emit('pointerover', { target: item });
-  assert.equal(tooltip.hidden, true);
+  assert.equal(tooltip.hidden, false);
+});
+
+test('game shell menu overlays preserve the game and restore their visible opener', () => {
+  const page = menuPage({ routeFromGame: true });
+  page.document.body.dataset.view = 'game';
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  assert.equal(page.nodes['site-menu'].open, true);
+  page.api.closeMenu();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+  assert.equal(page.document.body.dataset.view, 'game');
+  assert.equal(page.calls.includes('lobby:return'), false);
+
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  page.nodes['mobile-nav-menu'].visible = false;
+  page.api.closeMenu();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle'], 'a hidden game opener falls back to the visible shell menu control');
+  page.nodes['mobile-nav-menu'].visible = true;
+
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  page.nodes['menu-buy'].click();
+  page.flushClose();
+  assert.equal(page.nodes['wallet-dialog'].open, true);
+  assert.equal(page.document.body.dataset.view, 'game');
+  assert.equal(page.calls.includes('lobby:return'), false);
+});
+
+test('game shell category and provider navigation wait for lobby restoration', () => {
+  for (const id of ['popular', 'providers']) {
+    const page = menuPage({ routeFromGame: true });
+    page.document.body.dataset.view = 'game';
+    page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+    page.item(id).click();
+    assert.equal(page.calls.includes('lobby:return'), false, 'the menu closes before game routing');
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'lobby:return');
+    assert.equal(page.calls.includes(`category:${id}`), false);
+    page.flushLobby();
+    assert.equal(page.document.body.dataset.view, 'lobby');
+    assert.equal(page.calls.at(-1), `category:${id}`);
+  }
+});
+
+test('Escape collapses an expanded desktop sidebar without also leaving the game', () => {
+  const page = menuPage({ desktop: true, routeFromGame: true });
+  page.document.body.dataset.view = 'game';
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  const event = page.nodes['site-sidebar'].emit('keydown', { key: 'Escape' });
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
+  assert.equal(page.document.body.dataset.view, 'game');
+  assert.equal(page.calls.includes('lobby:return'), false);
+});
+
+test('menu dismissal uses the logo if every remembered or menu control is hidden', () => {
+  const page = menuPage();
+  page.document.body.dataset.view = 'game';
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.nodes['bottom-menu'].visible = false;
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = false;
+  page.api.closeMenu();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['site-logo']);
 });
 
 
