@@ -29,8 +29,11 @@ function searchPage() {
     close() { this.open = false; calls.push('search:close'); closeEvents.push(() => this.emit('close')); }
   }
   const ids = ['site-search', 'site-search-input', 'site-search-form', 'site-search-close',
-    'menu-search', 'menu-toggle', 'wallet-dialog', 'catalog-results', 'back-to-lobby'];
+    'menu-search', 'menu-toggle', 'wallet-dialog', 'catalog-results', 'back-to-lobby', 'bottom-search',
+    'mobile-nav-search', 'mobile-nav-menu'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
+  nodes['mobile-nav-search'].visible = false;
+  nodes['mobile-nav-menu'].visible = false;
   document.querySelector = selector => selector === 'dialog[open]'
     ? ['site-search', 'wallet-dialog'].map(id => nodes[id]).find(node => node.open) || null
     : nodes[selector.slice(1)] || null;
@@ -69,7 +72,7 @@ test('search focuses and selects its input while respecting the active modal and
 
 test('search rejects an empty query and submits trimmed text without stealing focus back from results', () => {
   const page = searchPage();
-  page.api.openSearch();
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
   page.nodes['site-search-input'].value = '   ';
   assert.equal(page.nodes['site-search-form'].emit('submit').defaultPrevented, true);
   assert.equal(page.nodes['site-search'].open, true);
@@ -81,6 +84,53 @@ test('search rejects an empty query and submits trimmed text without stealing fo
   assert.equal(page.document.activeElement, page.nodes['catalog-results']);
   page.flushClose();
   assert.equal(page.document.activeElement, page.nodes['catalog-results']);
+});
+
+test('dismissing a caller-opened search restores focus to the caller', () => {
+  const page = searchPage();
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
+  page.nodes['site-search'].close();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['bottom-search']);
+});
+
+test('a hidden search opener uses the visible search or header fallback', () => {
+  const page = searchPage();
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
+  page.nodes['bottom-search'].visible = false;
+  page.nodes['site-search-close'].emit('click');
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['menu-search']);
+
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
+  page.nodes['menu-search'].visible = false;
+  page.nodes['site-search'].emit('click', { clientX: 600, clientY: 100 });
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+});
+
+test('search opened from the drawer returns to bottom Search when the drawer and top hamburger are hidden', () => {
+  const page = searchPage();
+  page.nodes['menu-search'].visible = false;
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-search'].visible = true;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openSearch();
+  page.nodes['site-search-close'].emit('click');
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-search']);
+});
+
+test('hidden search callers fall back to bottom Menu if no Search control remains visible', () => {
+  const page = searchPage();
+  page.nodes['menu-search'].visible = false;
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
+  page.nodes['bottom-search'].visible = false;
+  page.nodes['site-search'].close();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
 });
 
 test('dismissing search restores the visible search control or its menu fallback', () => {
@@ -101,7 +151,7 @@ test('dismissing search restores the visible search control or its menu fallback
 
 test('history navigation into a game closes search and restores the visible game back control', () => {
   const page = searchPage();
-  page.api.openSearch();
+  page.api.openSearch({ returnFocusTo: page.nodes['bottom-search'] });
   page.document.body.dataset.view = 'game';
   page.nodes['menu-search'].visible = false;
   page.nodes['menu-toggle'].visible = false;

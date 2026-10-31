@@ -87,13 +87,15 @@ function menuPage({ desktop = false } = {}) {
   const ids = ['menu-toggle', 'site-menu', 'menu-close', 'menu-navigation', 'menu-buy',
     'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'back-to-lobby', 'wallet-credit',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
-    'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input'];
+    'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
+    'bottom-menu', 'mobile-nav-menu'];
   const nodes = Object.fromEntries(ids.map(id => {
     const node = new Node();
     node.id = id;
     return [id, node];
   }));
   nodes['menu-tooltip'].hidden = true;
+  nodes['mobile-nav-menu'].visible = false;
   nodes['menu-tooltip'].bounds = { left: 0, right: 120, top: 0, bottom: 32, width: 120, height: 32 };
   const headerParent = new Node();
   headerParent.append(nodes['menu-toggle'], nodes['back-to-lobby']);
@@ -156,7 +158,7 @@ function menuPage({ desktop = false } = {}) {
       innerWidth: 1280, innerHeight: 900,
       addEventListener(type, callback) { windowEvents[type] = callback; },
       matchMedia(query) {
-        assert.match(query, /min-width:\s*64rem/);
+        assert.match(query, /min-width:\s*45rem/);
         return breakpoint;
       },
     },
@@ -166,14 +168,14 @@ function menuPage({ desktop = false } = {}) {
       disconnect() { this.targets = []; }
     },
   };
-  vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
+  const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-navigation'].children.find(node => node.dataset.menuCategory === id);
   const resize = matches => {
     breakpoint.matches = matches;
     breakpoint.emit('change', { matches });
   };
-  return { nodes, document, calls, categoryButtons, observers, windowEvents, context,
+  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
     item, flushClose, providerCalls, headerParent, resize };
 }
 
@@ -201,6 +203,84 @@ test('Escape closes the drawer, resets its trigger and restores focus', () => {
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
   assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
   assert.equal(page.observers[0].targets.length, 0);
+});
+
+test('a caller can open the drawer and receive focus again when it is dismissed', () => {
+  const page = menuPage();
+  assert.equal(page.context.initSiteMenu(), page.api, 'reinitialization returns the same menu controller');
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  page.nodes['site-menu'].emit('cancel');
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['bottom-menu']);
+});
+
+test('a hidden drawer opener falls back to the visible header control', () => {
+  const page = menuPage();
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.nodes['bottom-menu'].visible = false;
+  page.nodes['menu-close'].click();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+});
+
+test('a hidden caller and header hamburger fall back to the visible bottom Menu button', () => {
+  const page = menuPage();
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.nodes['bottom-menu'].visible = false;
+  page.nodes['menu-close'].click();
+  page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+});
+
+test('changing between desktop and bottom navigation transfers focus to the visible menu control', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['menu-toggle'].focus();
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.resize(false);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+
+  page.nodes['menu-toggle'].visible = true;
+  page.nodes['mobile-nav-menu'].visible = false;
+  page.resize(true);
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+});
+
+test('resizing an open bottom-menu drawer to desktop keeps focus on the desktop trigger after native close', () => {
+  const page = menuPage();
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  assert.equal(page.document.activeElement, page.nodes['menu-close']);
+  page.nodes['menu-toggle'].visible = true;
+  page.nodes['mobile-nav-menu'].visible = false;
+  page.resize(true);
+  page.flushClose();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+});
+
+test('game navigation prioritizes the game back control over a remembered caller', () => {
+  const page = menuPage();
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.document.body.dataset.view = 'game';
+  page.windowEvents.hashchange();
+  page.flushClose();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.document.activeElement, page.nodes['back-to-lobby']);
+});
+
+test('choosing a category from a caller-opened drawer keeps focus on that category', () => {
+  const page = menuPage();
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.item('popular').click();
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'category:popular');
+  assert.equal(page.document.activeElement, page.categoryButtons.get('popular'));
 });
 
 test('inside clicks leave the drawer open while backdrop clicks dismiss it', () => {

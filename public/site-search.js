@@ -9,10 +9,12 @@ export function initSiteSearch({ searchGames } = {}) {
   if (!dialog || !input || !form || !close || !searchGames) return;
   initialized = true;
   let submitted = false;
+  let searchOpener = null;
 
-  function openSearch() {
+  function openSearch({ returnFocusTo = null } = {}) {
     if (document.querySelector('dialog[open]') || document.body.dataset.view === 'game') return;
     submitted = false;
+    searchOpener = returnFocusTo;
     dialog.showModal();
     input.focus({ preventScroll: true });
     input.select();
@@ -41,8 +43,10 @@ export function initSiteSearch({ searchGames } = {}) {
       return;
     }
     const trigger = document.querySelector('#menu-search');
-    const fallback = document.querySelector('#menu-toggle');
-    (trigger?.getClientRects().length ? trigger : fallback)?.focus({ preventScroll: true });
+    const focusTarget = [searchOpener, trigger, document.querySelector('#menu-toggle'),
+      document.querySelector('#mobile-nav-search'), document.querySelector('#mobile-nav-menu')]
+      .find(node => node?.getClientRects().length);
+    focusTarget?.focus({ preventScroll: true });
   });
   window.addEventListener('hashchange', () => {
     if (dialog.open) dialog.close();

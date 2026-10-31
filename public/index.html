@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="wallet.css">
   <link rel="stylesheet" href="site-menu.css">
+  <link rel="stylesheet" href="mobile-nav.css">
   <link rel="stylesheet" href="hero-carousel.css">
   <link rel="stylesheet" href="site-search.css">
 </head>
@@ -27,7 +28,7 @@
         <button class="icon-button game-back" id="back-to-lobby" type="button" aria-label="Back to lobby" hidden>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z"/></svg>
         </button>
-        <a class="site-logo" href="#" aria-label="LuckyLoop Casino home"><img class="site-logo__image" src="assets/luckyloop-logo-sketch.png" width="1024" height="572" alt="LuckyLoop Casino"></a>
+        <a class="site-logo" href="#" aria-label="LuckyLoop Casino home"><img class="site-logo__image" src="assets/loop-wireframe-v1.png" width="1916" height="821" alt="LOOP"></a>
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group">
         <span class="wallet-balance-copy"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
@@ -79,6 +80,13 @@
       </div>
     </div>
   </main>
+  <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" lang="en" dir="ltr" hidden>
+    <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
+    <button id="mobile-nav-casino" class="mobile-nav__item" data-mobile-action="casino" type="button" aria-controls="catalog-shelves"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2 3.5 10.5C-.3 14.3 2.1 20 6.8 20c2.6 0 4.2-1.4 4.2-1.4L9 22h6l-2-3.4s1.6 1.4 4.2 1.4c4.7 0 7.1-5.7 3.3-9.5L12 2Z"/></svg><span class="mobile-nav__label">Casino</span></button>
+    <button id="mobile-nav-search" class="mobile-nav__item" data-mobile-action="search" type="button" aria-haspopup="dialog" aria-controls="site-search" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.26 15.17l4.53 4.54 1.42-1.42-4.54-4.53A8.5 8.5 0 0 0 10.5 2Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg><span class="mobile-nav__label">Search</span></button>
+    <button id="mobile-nav-providers" class="mobile-nav__item" data-mobile-action="providers" type="button" aria-controls="catalog-shelves"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="mobile-nav__label">Providers</span></button>
+    <button id="mobile-nav-wallet" class="mobile-nav__item" data-mobile-action="wallet" type="button" aria-haspopup="dialog" aria-controls="wallet-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M5 3h13v3H5a1 1 0 0 0 0 2h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm13 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg><span class="mobile-nav__label">Wallet</span></button>
+  </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
       <button id="menu-close" class="icon-button site-menu__close" type="button" aria-label="Close menu" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg></button>
@@ -89,7 +97,7 @@
     </div>
     <div id="menu-content" class="site-menu__scroll">
       <button id="menu-search" class="site-menu__search" type="button" aria-label="Search games" data-tooltip="Search" aria-haspopup="dialog" aria-controls="site-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="site-menu__label">Search</span></button>
-      <button id="menu-promotion" class="site-menu__promotion" type="button" aria-label="Explore Our Picks" data-tooltip="Our Picks"><svg class="game-shelf__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10v3h4v3c0 3-1.8 5-4.8 5.5-.7 1.3-1.8 2.2-3.2 2.5v3h4v3H7v-3h4v-3c-1.4-.3-2.5-1.2-3.2-2.5C4.8 13 3 11 3 8V5h4V2ZM5 7v1c0 1.7.8 2.8 2.1 3.3L7 7H5Zm12 0-.1 4.3C18.2 10.8 19 9.7 19 8V7h-2Z"/></svg><span class="site-menu__promotion-copy"><strong>Our Picks</strong><small>Find your next favorite</small></span></button>
+      <button id="menu-promotion" class="site-menu__promotion" type="button" aria-label="Explore Editor’s Favorites" data-tooltip="Editor’s Favorites"><svg class="game-shelf__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10v3h4v3c0 3-1.8 5-4.8 5.5-.7 1.3-1.8 2.2-3.2 2.5v3h4v3H7v-3h4v-3c-1.4-.3-2.5-1.2-3.2-2.5C4.8 13 3 11 3 8V5h4V2ZM5 7v1c0 1.7.8 2.8 2.1 3.3L7 7H5Zm12 0-.1 4.3C18.2 10.8 19 9.7 19 8V7h-2Z"/></svg><span class="site-menu__promotion-copy"><strong>Editor’s Favorites</strong><small>Find your next favorite</small></span></button>
       <nav id="menu-navigation" class="site-menu__navigation" aria-label="Casino navigation"></nav>
       <footer class="site-menu__footer">
         <details class="site-menu__help">

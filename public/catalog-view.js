@@ -224,7 +224,7 @@ export function initCatalogView() {
     if (showProviders) {
       fragment.append(providerShelf({ isGrid: true }));
     } else if (home) {
-      for (const id of ['popular', 'picks', 'slots', 'tap', 'spooky', 'megaways', 'jackpot', 'fruit', 'adventure']) {
+      for (const id of ['popular', 'spooky', 'picks', 'slots', 'tap', 'megaways', 'jackpot', 'fruit', 'adventure']) {
         const category = categoryById.get(id);
         const games = getGamesForCategory(id);
         if (games.length) fragment.append(shelf({ id: `category-${id}`, title: category.title,

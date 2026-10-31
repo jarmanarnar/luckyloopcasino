@@ -7,13 +7,13 @@ import { GAME_TYPES, getGameTypeId } from './game-types.js';
 export const CATEGORIES = [
   { id: 'all', title: 'All Games', description: 'Browse every game type.' },
   { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
-  { id: 'picks', title: 'Our Picks', description: 'A handpicked selection for you to try and review.' },
+  { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
+  { id: 'picks', title: 'Editor’s Favorites', description: 'A handpicked selection for you to try and review.' },
   ...GAME_TYPES,
   { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
   { id: 'jackpot', title: 'Jackpot Picks', description: 'Demo titles from the Jackpot collection.' },
   { id: 'fruit', title: 'Fruit Slots', description: 'Fruit-themed titles and collections.' },
   { id: 'adventure', title: 'Adventure', description: 'Explore temples, jungles, pirates and treasure.' },
-  { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
 ];
 
 // Editorial starter selection for the prototype, not a usage-based ranking.

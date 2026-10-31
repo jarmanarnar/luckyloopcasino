@@ -5,13 +5,15 @@ import { initCatalogToolbar } from './catalog-toolbar.js';
 import { initSiteMenu } from './site-menu.js';
 import { initHeroCarousel } from './hero-carousel.js';
 import { initSiteSearch } from './site-search.js';
+import { initMobileNav } from './mobile-nav.js';
 
 const catalog = initCatalogView();
 initCatalogToolbar();
 initWallet();
 initGameView();
 const search = initSiteSearch(catalog);
-initSiteMenu({ ...catalog, ...search });
+const menu = initSiteMenu({ ...catalog, ...search });
+initMobileNav({ ...catalog, ...search, ...menu });
 initHeroCarousel(catalog);
 document.querySelector('.site-logo')?.addEventListener('click', () => {
   document.querySelector('#catalog-categories [data-category="all"]')?.click();

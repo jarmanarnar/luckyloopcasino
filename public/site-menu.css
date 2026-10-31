@@ -226,7 +226,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
 }
 .site-menu__tooltip::before { content: ''; position: absolute; top: calc(50% - .25rem); left: -.25rem; width: .5rem; height: .5rem; background: inherit; transform: rotate(45deg); }
 
-@media (min-width: 64rem) {
+@media (min-width: 45rem) {
   body[data-sidebar] {
     --sidebar-width: var(--sidebar-rail-width);
     padding-left: var(--sidebar-width);

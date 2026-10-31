@@ -1,0 +1,53 @@
+:root {
+  --mobile-nav-height: calc(3.9375rem + env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-nav {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 30;
+  inset: auto 0 0;
+  display: none;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: var(--mobile-nav-height);
+  padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(.75rem, env(safe-area-inset-left, 0px));
+  border: 0;
+  border-top: 1px solid var(--top-bar-divider);
+  background: var(--top-bar-background);
+  color: var(--text-secondary);
+  font-family: var(--header-font-family);
+}
+.mobile-nav__item {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  min-width: 0;
+  min-height: var(--touch-target);
+  height: 100%;
+  margin: 0;
+  padding: .375rem .125rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
+.mobile-nav__label { font-size: .6875rem; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+.mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }
+.mobile-nav__item:is([aria-current="page"], [data-active="true"]) .mobile-nav__icon { color: var(--catalog-accent); }
+.mobile-nav__item:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -3px; }
+
+@media (width < 45rem) {
+  body[data-mobile-nav="true"]:not([data-view="game"]) { padding-bottom: var(--mobile-nav-height); }
+  body[data-mobile-nav="true"]:not([data-view="game"]) .mobile-nav { display: grid; }
+  body[data-mobile-nav="true"]:not([data-view="game"]) .top-bar #menu-toggle { display: none; }
+  body[data-mobile-nav="true"]:not([data-view="game"]) .top-bar .site-logo { display: flex; }
+  html:has(body[data-mobile-nav="true"]:not([data-view="game"])) { scroll-padding-block-end: var(--mobile-nav-height); }
+}

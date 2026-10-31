@@ -2,9 +2,10 @@ import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 
 let initialized = false;
+let menuController = null;
 
 export function initSiteMenu({ openProviders, openSearch } = {}) {
-  if (initialized) return;
+  if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
   const closeButton = document.querySelector('#menu-close');
@@ -22,18 +23,20 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   const searchButton = document.querySelector('#menu-search');
   const promotionButton = document.querySelector('#menu-promotion');
   const tooltip = document.querySelector('#menu-tooltip');
+  const bottomTrigger = document.querySelector('#mobile-nav-menu');
   if (![trigger, dialog, closeButton, navigation, buyButton, categories, wallet, addButton,
     sidebar, sidebarHeader, sidebarContent, menuContent, shortcuts, mobileHeader].every(Boolean)) return;
   initialized = true;
 
   const triggerHome = trigger.parentElement;
   const triggerSibling = trigger.nextSibling;
-  const desktopMedia = window.matchMedia('(min-width: 64rem)');
+  const desktopMedia = window.matchMedia('(min-width: 45rem)');
   let desktop = false;
   let expanded = false;
   let afterClose = null;
   let pendingClose = false;
   let tooltipTarget = null;
+  let menuOpener = trigger;
   const items = new Map();
   navigation.replaceChildren();
   const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
@@ -82,9 +85,17 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
     trigger.setAttribute('aria-label', value ? 'Collapse sidebar' : 'Expand sidebar');
   }
 
+  function restoreMenuFocus(preferred = null) {
+    const candidates = document.body.dataset.view === 'game'
+      ? [document.querySelector('#back-to-lobby')]
+      : [preferred, trigger, bottomTrigger];
+    candidates.find(node => node?.getClientRects().length)?.focus({ preventScroll: true });
+  }
+
   function applyLayout() {
     hideTooltip();
-    const restoreFocus = trigger === document.activeElement || dialog.contains(document.activeElement)
+    const restoreFocus = trigger === document.activeElement || (bottomTrigger && bottomTrigger === document.activeElement)
+      || dialog.contains(document.activeElement)
       || sidebar.contains(document.activeElement);
     afterClose = null;
     if (dialog.open) {
@@ -114,15 +125,16 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
       sidebar.dataset.expanded = 'false';
       observer.disconnect();
     }
-    if (restoreFocus && document.body.dataset.view !== 'game') trigger.focus({ preventScroll: true });
+    if (restoreFocus) restoreMenuFocus();
   }
 
-  function openMenu() {
+  function openMenu({ returnFocusTo = trigger } = {}) {
     if (pendingClose || document.body.dataset.view === 'game' || document.querySelector('dialog[open]')) return;
     if (desktop) {
       setExpanded(!expanded);
       return;
     }
+    menuOpener = returnFocusTo;
     syncMenu();
     afterClose = null;
     dialog.showModal();
@@ -192,8 +204,7 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
       action();
       return;
     }
-    const focusTarget = trigger.getClientRects().length ? trigger : document.querySelector('#back-to-lobby');
-    focusTarget?.focus({ preventScroll: true });
+    restoreMenuFocus(menuOpener);
   });
   sidebar.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || !expanded) return;
@@ -232,4 +243,6 @@ export function initSiteMenu({ openProviders, openSearch } = {}) {
   window.addEventListener('hashchange', () => closeMenu());
   desktopMedia.addEventListener('change', applyLayout);
   applyLayout();
+  menuController = { openMenu };
+  return menuController;
 }
