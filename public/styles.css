@@ -38,10 +38,12 @@
       --text-primary: #eeeef2;
       --text-secondary: #9b9ba5;
       --control-hover: #1b1b20;
+      --surface-card: #1c1c22;
+      --radius-card: calc(.5rem + .125 * var(--fluid-step));
       --game-card-width: calc(8.25rem + 4.75 * var(--fluid-step));
       --game-card-gap: calc(.625rem + .75 * var(--fluid-step));
-      --game-card-background: #1c1c22;
-      --game-card-radius: calc(.5rem + .125 * var(--fluid-step));
+      --game-card-background: var(--surface-card);
+      --game-card-radius: var(--radius-card);
       --shelf-title-size: calc(1.25rem + .5 * var(--fluid-step));
       --game-title-size: calc(.875rem + .25 * var(--fluid-step));
       --touch-target: 2.75rem;
