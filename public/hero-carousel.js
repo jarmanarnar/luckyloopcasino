@@ -16,6 +16,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
   initialized = true;
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motionReduced = () => reducedMotion.matches || document.body.dataset.reduceMotion === 'true';
   const carousel = EmblaCarousel(viewport, {
     loop: true, align: 'start', slidesToScroll: 1, containScroll: false,
   });
@@ -26,7 +27,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
   let startedAt = null;
   let progressAnimation = null;
   let progressIndex = -1;
-  let progressReduced = reducedMotion.matches;
+  let progressReduced = motionReduced();
   let hovered = false;
   let focused = root.contains(document.activeElement);
   let dragging = false;
@@ -79,7 +80,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
     progressAnimation?.cancel();
     progressAnimation = null;
     progressIndex = carousel.selectedScrollSnap();
-    progressReduced = reducedMotion.matches;
+    progressReduced = motionReduced();
     if (!progressReduced) {
       const fill = dotButtons[progressIndex].children[0].children[0];
       progressAnimation = fill.animate([
@@ -91,7 +92,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
   }
 
   function canRotate() {
-    return !root.hidden && !destroyed && !suspended && !reducedMotion.matches
+    return !root.hidden && !destroyed && !suspended && !motionReduced()
       && !hovered && !focused && !dragging && visible && !document.hidden
       && document.body.dataset.view !== 'game' && !document.querySelector('dialog[open]')
       && carousel.scrollSnapList().length > 1;
@@ -99,7 +100,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
 
   function scheduleRotation() {
     if (destroyed) return;
-    if (progressIndex !== carousel.selectedScrollSnap() || progressReduced !== reducedMotion.matches) resetProgress();
+    if (progressIndex !== carousel.selectedScrollSnap() || progressReduced !== motionReduced()) resetProgress();
     if (!canRotate()) { stopTimer(); return; }
     // Observers and overlapping pause reasons must not restart the countdown.
     if (timer !== null) return;
@@ -130,7 +131,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
   function move(action) {
     stopTimer();
     const previous = carousel.selectedScrollSnap();
-    action(reducedMotion.matches);
+    action(motionReduced());
     if (carousel.selectedScrollSnap() === previous) resetProgress();
     announceSelection();
     scheduleRotation();
@@ -208,6 +209,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
     controls.hidden = true;
   });
   reducedMotion.addEventListener('change', scheduleRotation);
+  document.addEventListener('loop:preferences-change', scheduleRotation);
   document.addEventListener('visibilitychange', scheduleRotation);
   window.addEventListener('pagehide', () => { suspended = true; scheduleRotation(); });
   window.addEventListener('pageshow', () => { suspended = false; scheduleRotation(); });

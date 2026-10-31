@@ -1,0 +1,178 @@
+/* Store wireframe uses the same surfaces, spacing and original coin assets. */
+.store-view {
+  box-sizing: border-box;
+  min-width: 0;
+  padding-bottom: 2rem;
+  color: var(--text-primary);
+}
+
+.store-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: .5rem 0 1.5rem;
+}
+
+.store-heading { min-width: 0; }
+.store-heading h1 { margin: 0; font-size: var(--shelf-title-size); line-height: 1.25; }
+.store-heading p { margin: .375rem 0 0; color: var(--text-secondary); font-size: .875rem; }
+.store-balance { color: var(--text-secondary); font-size: .8125rem; line-height: 1.5; }
+
+.store-packages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1rem;
+  width: 100%;
+  max-width: 45rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.store-package {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .875rem;
+  min-width: 0;
+  padding: 1.25rem 1rem 1rem;
+  border: 1px solid var(--top-bar-divider);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  text-align: center;
+}
+
+.store-package__badge {
+  position: absolute;
+  top: -.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  align-self: center;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: .25rem .625rem;
+  border-radius: var(--radius-card);
+  background: var(--surface-control);
+  color: var(--catalog-accent);
+  font-size: .6875rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.store-package__amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.store-package__amount .coin-art { width: 1.125rem; height: 1.125rem; }
+.store-package__amount > span { min-width: 0; overflow-wrap: anywhere; }
+.store-package__amount small { color: var(--text-secondary); font-size: .6875rem; line-height: 1.2; }
+
+.store-package__art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5rem;
+  padding-block: .25rem;
+}
+
+.store-package__art .coin-art { width: 3.5rem; height: 3.5rem; filter: none; }
+.store-package__art .coin-art + .coin-art { margin-left: -.625rem; margin-top: 1rem; }
+
+.store-package__bonus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  min-height: 2rem;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: .875rem;
+  line-height: 1.4;
+}
+
+.store-package__bonus > span { color: var(--text-secondary); font-size: .625rem; font-weight: 700; }
+.store-package__bonus .coin-art { width: 1.125rem; height: 1.125rem; filter: none; }
+.store-package__bonus strong { min-width: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
+.store-package__price {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--touch-target);
+  margin-top: auto;
+  padding: .625rem .375rem;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--surface-control);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.store-package__price:hover { background: var(--control-hover); }
+.store-package__price:focus-visible,
+.store-package-dialog .icon-button:focus-visible { outline: 2px solid var(--catalog-accent); outline-offset: 2px; }
+.store-preview-note { max-width: 45rem; margin: 1rem auto 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.5; text-align: center; }
+
+.store-package-dialog {
+  box-sizing: border-box;
+  width: min(26rem, calc(100% - 2rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  padding: 1.25rem;
+  overflow-y: auto;
+  border: 1px solid var(--top-bar-divider);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  color: var(--text-primary);
+}
+
+.store-package-dialog::backdrop { background: color-mix(in srgb, var(--top-bar-background) 75%, transparent); }
+.store-package-dialog form { margin: 0; }
+.store-package-dialog header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1rem; }
+.store-package-dialog h2 { min-width: 0; margin: 0; font-size: var(--shelf-title-size); line-height: 1.25; overflow-wrap: anywhere; }
+.store-package-close.icon-button { flex: none; width: var(--touch-target); height: var(--touch-target); background: var(--surface-control); border-radius: var(--radius-card); }
+.store-package-facts { display: grid; gap: .75rem; margin: 0; line-height: 1.4; }
+.store-package-facts > div { display: flex; justify-content: space-between; gap: 1rem; }
+.store-package-facts dt { min-width: 0; color: var(--text-secondary); }
+.store-package-facts dd { min-width: 0; margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.store-package-dialog .store-preview-note { text-align: left; }
+
+@media (max-width: 32rem) {
+  .store-header { gap: .5rem; margin-bottom: 1rem; }
+  .store-packages { gap: 1rem .5rem; }
+  .store-package { gap: .625rem; padding: .75rem .375rem .375rem; }
+  .store-package__badge { padding-inline: .25rem; font-size: .5625rem; }
+  .store-package__amount { flex-wrap: nowrap; gap: .125rem; font-size: .875rem; }
+  .store-package__amount .coin-art { width: .875rem; height: .875rem; }
+  .store-package__art { min-height: 3.75rem; }
+  .store-package__art .coin-art { width: 2.5rem; height: 2.5rem; }
+  .store-package__art .coin-art + .coin-art { margin-left: -.625rem; margin-top: .625rem; }
+  .store-package__bonus { gap: .125rem; font-size: .75rem; }
+  .store-package__bonus > span { font-size: .5625rem; }
+  .store-package__bonus .coin-art { width: .875rem; height: .875rem; }
+  .store-package__price { font-size: .875rem; }
+}
+
+@media (max-width: 18.75rem) {
+  .store-packages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

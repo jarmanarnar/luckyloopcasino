@@ -1,14 +1,14 @@
-import { CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit } from './wallet-state.js';
+import { CURRENCIES, createWalletState, formatBalance, selectCurrency } from './wallet-state.js';
 import { createWalletCounter, resolveWalletFrame } from './wallet-counter.js';
 
 const STORAGE_KEY = 'luckyloopcasino-demo-wallet-v1';
 const LEGACY_STORAGE_KEYS = ['luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
 let initialized = false;
+let walletController;
 
-export function initWallet() {
-  if (initialized) return;
+export function initWallet({ openStore } = {}) {
+  if (initialized) return walletController;
   const wallet = document.querySelector('#coin-wallet');
-  const dialog = document.querySelector('#wallet-dialog');
   const balanceCopy = document.querySelector('#coin-wallet > .wallet-balance-copy');
   const balanceValue = document.querySelector('#wallet-balance-value');
   const currencyLabel = document.querySelector('#wallet-currency-label');
@@ -16,11 +16,7 @@ export function initWallet() {
   const switchCoin = document.querySelector('#currency-coin');
   const addButton = document.querySelector('#wallet-add');
   const addArt = document.querySelector('#wallet-add-art');
-  const creditButton = document.querySelector('#wallet-add-credit');
-  const status = document.querySelector('#wallet-status');
-  const totals = { GC: document.querySelector('#wallet-gc-total'), SC: document.querySelector('#wallet-sc-total') };
-  if (![wallet, dialog, balanceCopy, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt, creditButton, status,
-    ...Object.values(totals)].every(Boolean)) return;
+  if (![wallet, balanceCopy, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt].every(Boolean)) return;
   initialized = true;
 
   function readSaved() {
@@ -37,7 +33,7 @@ export function initWallet() {
     catch { return null; }
   }
   let state = createWalletState(readSaved());
-  const selectors = [...document.querySelectorAll('[data-wallet-currency]')];
+  let preferences = { hideBalance: false, reducedMotion: false };
   const header = wallet.parentElement;
   const leadingControl = document.querySelector('.header-context');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -153,7 +149,7 @@ export function initWallet() {
     counter.cancel();
     targetAmount = amount;
     formatAmount = formatter;
-    if (!animate || reducedMotion.matches || document.hidden || counter.value === amount) {
+    if (!animate || reducedMotion.matches || preferences.reducedMotion || document.hidden || counter.value === amount) {
       finishBalance();
       return;
     }
@@ -170,7 +166,6 @@ export function initWallet() {
   function render({ animate = true } = {}) {
     const code = state.currency;
     wallet.dataset.currency = code;
-    dialog.dataset.currency = code;
     currencyLabel.textContent = code;
     applyLayout(readLayout());
     switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
@@ -182,17 +177,9 @@ export function initWallet() {
     const amount = state.balances[code] / precision;
     updateBalance(amount, formatter, animate, renderedCurrency !== null && renderedCurrency !== code);
     renderedCurrency = code;
-    wallet.setAttribute('aria-label', `Demo wallet: ${formatBalance(code, state.balances[code])} ${code}`);
-    addButton.setAttribute('aria-label', `Add demo ${CURRENCIES[code].name}`);
-    creditButton.textContent = `Add ${formatBalance(code, CURRENCIES[code].credit)} ${code}`;
-    for (const [currency, total] of Object.entries(totals)) {
-      total.textContent = formatBalance(currency, state.balances[currency]);
-    }
-    for (const button of selectors) {
-      const currency = button.dataset.walletCurrency;
-      button.setAttribute('aria-pressed', String(currency === code));
-      button.setAttribute('aria-label', `${CURRENCIES[currency].name}, ${formatBalance(currency, state.balances[currency])} ${currency}`);
-    }
+    wallet.setAttribute('aria-label', preferences.hideBalance ? `${CURRENCIES[code].name} balance hidden`
+      : `${CURRENCIES[code].name} balance: ${formatBalance(code, state.balances[code])} ${code}`);
+    addButton.setAttribute('aria-label', 'Open store');
   }
 
   function save() {
@@ -200,42 +187,15 @@ export function initWallet() {
     catch { /* Session interactions remain available when browser storage is disabled. */ }
   }
 
-  function openWallet() {
-    status.textContent = '';
-    addButton.setAttribute('aria-expanded', 'true');
-    if (!dialog.open) dialog.showModal();
-    creditButton.focus({ preventScroll: true });
-  }
-
   function changeCurrency(code) {
     state = selectCurrency(state, code);
-    status.textContent = '';
     render();
     save();
     wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
       detail: { currency: state.currency, demo: true } }));
   }
-  selectors.forEach(button => button.addEventListener('click', () => changeCurrency(button.dataset.walletCurrency)));
   coinSwitch.addEventListener('click', () => changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
-  addButton.addEventListener('click', () => openWallet());
-  creditButton.addEventListener('click', () => {
-    const previous = state.balances[state.currency];
-    state = addDemoCredit(state);
-    render();
-    save();
-    const code = state.currency;
-    status.textContent = previous === state.balances[code] ? 'Demo balance limit reached.'
-      : `Added ${formatBalance(code, state.balances[code] - previous)} ${code}. Balance: ${formatBalance(code, state.balances[code])} ${code}.`;
-  });
-  dialog.addEventListener('close', () => {
-    addButton.setAttribute('aria-expanded', 'false');
-  });
-  dialog.addEventListener('click', event => {
-    if (event.target !== dialog) return;
-    const bounds = dialog.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right
-      || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
-  });
+  addButton.addEventListener('click', () => openStore?.());
   window.addEventListener('storage', event => {
     if (event.key !== STORAGE_KEY && event.key !== null) return;
     state = createWalletState(readSaved());
@@ -255,4 +215,17 @@ export function initWallet() {
     document.fonts.ready.then(() => scheduleLayout(true));
     document.fonts.addEventListener('loadingdone', () => scheduleLayout(true));
   }
+  walletController = {
+    creditGold(amount) {
+      if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 7000 || state.balances.GC + amount > 999999999) return false;
+      state = { ...state, balances: { ...state.balances, GC: state.balances.GC + amount } };
+      save(); render(); return true;
+    },
+    setPreferences(next) {
+      preferences = { hideBalance: next.hideBalance === true, reducedMotion: next.reducedMotion === true };
+      render({ animate: false });
+      balanceCopy.setAttribute('aria-hidden', String(preferences.hideBalance));
+    },
+  };
+  return walletController;
 }

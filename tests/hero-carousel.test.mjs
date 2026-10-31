@@ -142,6 +142,7 @@ function heroPage({ reduced = false, intersection = true } = {}) {
     select(index) { selected = index; emit('select'); }, emit,
     modal(value) { modal = value; mutations[0].callback(); },
     visibility(value) { document.hidden = value; documentEvents.emit('visibilitychange'); },
+    preferenceMotion(value) { document.body.dataset.reduceMotion = String(value); documentEvents.emit('loop:preferences-change'); },
   };
 }
 
@@ -159,6 +160,21 @@ test('initializes once, reveals controls, and labels the four promotions with on
   assert.equal(page.slides[3].getAttribute('aria-label'), '4 of 4: Slots');
   assert.equal(page.nodes['hero-status'].textContent, '');
   assert.equal(page.timers.size, 0, 'intersection must confirm visibility before autoplay');
+});
+
+test('saved site motion preference pauses autoplay and fill without overriding the operating-system preference', () => {
+  const page = heroPage(); page.visible();
+  assert.equal(page.timers.size, 1);
+  page.preferenceMotion(true);
+  assert.equal(page.timers.size, 0);
+  assert.equal(page.animations.filter(animation => animation.playState === 'running').length, 0);
+  page.nodes['hero-viewport'].emit('keydown', { key: 'ArrowRight' });
+  assert.equal(page.calls.at(-1).jump, true);
+  page.preferenceMotion(false);
+  assert.equal(page.timers.size, 1);
+  page.motion.matches = true; page.motion.emit('change');
+  page.preferenceMotion(false);
+  assert.equal(page.timers.size, 0);
 });
 
 test('dots and viewport keys navigate through the loop and announce only manual changes', () => {

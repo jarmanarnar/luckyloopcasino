@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit } from '../public/wallet-state.js';
+import { CURRENCIES, createWalletState, formatBalance, selectCurrency } from '../public/wallet-state.js';
 
 const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initWallet', 'function initWallet');
 
 async function walletPage({ font = 16, width = 320, saved } = {}) {
-  const events = {}, frames = [], observers = [], calls = [];
+  const events = {}, frames = [], observers = [], calls = [], storeCalls = [], storageWrites = [];
   const rootProperties = new Map();
   const rootWrites = [];
   const rootStyle = {
@@ -23,9 +23,9 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
     setAttribute(key, value) { this.attributes[key] = value; },
     getBoundingClientRect() { return { width: this.width, height: this.height }; },
   });
-  const selectors = ['.top-bar', '.header-context', '#coin-wallet', '#wallet-dialog', '#coin-wallet > .wallet-balance-copy',
+  const selectors = ['.top-bar', '.header-context', '#coin-wallet', '#coin-wallet > .wallet-balance-copy',
     '#wallet-balance-value', '#wallet-currency-label', '#coin-type-switch', '#currency-coin',
-    '#wallet-add', '#wallet-add-art', '#wallet-add-credit', '#wallet-status', '#wallet-gc-total', '#wallet-sc-total'];
+    '#wallet-add', '#wallet-add-art'];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, node()]));
   const header = node();
   header.width = width - 1.5 * font;
@@ -51,7 +51,8 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
   };
   const fonts = { ready: Promise.resolve(), addEventListener(key, callback) { events[key] = callback; } };
   const context = {
-    CURRENCIES, createWalletState, formatBalance, selectCurrency, addDemoCredit,
+    CURRENCIES, createWalletState, formatBalance, selectCurrency,
+    openStore: () => storeCalls.push('store'),
     createWalletCounter({ onFrame }) {
       let value = 0;
       return {
@@ -71,7 +72,7 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
     },
     window: { matchMedia: () => ({ matches: false, addEventListener() {} }),
       addEventListener(key, callback) { events[key] = callback; } },
-    localStorage: { getItem: () => saved ? JSON.stringify(saved) : null, setItem() {} },
+    localStorage: { getItem: () => saved ? JSON.stringify(saved) : null, setItem(key, value) { storageWrites.push({ key, value }); } },
     getComputedStyle: styleFor,
     requestAnimationFrame(callback) { frames.push(callback); return frames.length; },
     ResizeObserver: class {
@@ -81,11 +82,75 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
     CustomEvent: class {},
   };
   const flush = () => { while (frames.length) frames.shift()(); };
-  vm.runInNewContext(`${source}\ninitWallet();`, context);
+  const controller = vm.runInNewContext(`${source}\ninitWallet({ openStore });`, context);
   await Promise.resolve();
   flush();
-  return { nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, flush };
+  return { controller, nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, storeCalls, storageWrites, flush };
 }
+
+test('demo Gold Coin awards validate amounts before touching saved balances', async () => {
+  const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  const before = page.calls.length;
+  for (const amount of [0, -1, 1.5, NaN, Infinity, 7001, '1000', null, undefined]) {
+    assert.equal(page.controller.creditGold(amount), false, `invalid award ${String(amount)}`);
+  }
+  assert.deepEqual(page.storageWrites, []);
+  assert.equal(page.calls.length, before, 'rejected awards do not restart the counter');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
+
+  const full = await walletPage({ saved: { currency: 'GC', balances: { GC: 999999999, SC: 8500 } } });
+  assert.equal(full.controller.creditGold(1), false, 'an award cannot exceed the balance limit');
+  assert.deepEqual(full.storageWrites, []);
+});
+
+test('a valid local reward adds only Gold Coins and preserves the selected Sweeps balance', async () => {
+  const page = await walletPage({ saved: { currency: 'SC', balances: { GC: 130000, SC: 8500 } } });
+  assert.equal(page.controller.creditGold(1000), true);
+  const saved = JSON.parse(page.storageWrites.at(-1).value);
+  assert.deepEqual(saved, { currency: 'SC', balances: { GC: 131000, SC: 8500 } });
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'SC');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+
+  page.controller.setPreferences({ reducedMotion: true });
+  page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '131,000', 'the reward is visible when switching to GC');
+  assert.equal(page.controller.creditGold(7000), true, 'the largest supported demo award remains valid');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '138,000');
+});
+
+test('private balances have a hidden accessible name and reduced-motion preferences stop currency animation', async () => {
+  const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  page.controller.setPreferences({ hideBalance: true, reducedMotion: true });
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Gold Coins balance hidden');
+  assert.equal(page.nodes['#coin-wallet > .wallet-balance-copy'].attributes['aria-hidden'], 'true');
+  const before = page.calls.length;
+  page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.calls.slice(before).includes('animate'), false);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance hidden');
+
+  page.controller.setPreferences({ hideBalance: false, reducedMotion: false });
+  assert.equal(page.nodes['#coin-wallet > .wallet-balance-copy'].attributes['aria-hidden'], 'false');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+  const restored = page.calls.length;
+  page.nodes['#coin-type-switch'].events.click();
+  assert.ok(page.calls.slice(restored).includes('animate'), 'normal animation resumes when the preference is disabled');
+});
+
+test('header plus opens the Store page without requiring a wallet dialog or adding credit', async () => {
+  const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  const balance = page.nodes['#wallet-balance-value'].textContent;
+  const before = page.calls.length;
+  assert.equal(page.nodes['#wallet-dialog'], undefined);
+  assert.equal(page.nodes['#wallet-add-credit'], undefined);
+  assert.equal(page.nodes['#wallet-add'].attributes['aria-label'], 'Open store');
+  page.nodes['#wallet-add'].events.click();
+  assert.deepEqual(page.storeCalls, ['store']);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, balance);
+  assert.equal(page.calls.length, before, 'opening the Store does not restart the balance animation');
+  assert.deepEqual(page.storageWrites, [], 'opening the Store must not grant coins or alter saved balances');
+});
 
 test('height-only viewport changes keep the balance counter running', async () => {
   const page = await walletPage();

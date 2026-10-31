@@ -7,14 +7,18 @@ import { initHeroCarousel } from './hero-carousel.js';
 import { initSiteSearch } from './site-search.js';
 import { initMobileNav } from './mobile-nav.js';
 import { initRouter } from './routes.js';
+import { initStoreView } from './store-view.js';
+import { initFeatureView } from './feature-view.js';
 
 const router = initRouter();
 initGameView({ router });
 const catalog = initCatalogView({ router });
+initStoreView({ router });
 initCatalogToolbar();
-initWallet();
+const wallet = initWallet(catalog);
+const features = initFeatureView({ router, wallet });
 const search = initSiteSearch(catalog);
-const menu = initSiteMenu({ ...catalog, ...search });
+const menu = initSiteMenu({ ...catalog, ...search, ...features });
 initMobileNav({ ...catalog, ...search, ...menu });
 initHeroCarousel(catalog);
 

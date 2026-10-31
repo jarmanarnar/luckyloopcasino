@@ -9,9 +9,21 @@ const ids = page => page.games.map(game => game.id);
 
 test('home remains a lobby with Popular, Slots and New Releases in the requested order', () => {
   assert.deepEqual(getCatalogPage({ type: 'home' }), {
-    type: 'home', title: 'Casino', activeMenu: 'all',
+    type: 'home', title: 'Lobby', activeMenu: 'lobby',
   });
   assert.deepEqual(LOBBY_CATEGORIES, ['popular', 'slots', 'new-releases']);
+});
+
+test('All Games is a complete searchable catalog page distinct from the Lobby overview', () => {
+  const page = getCatalogPage({ type: 'category', categoryId: 'all' });
+  assert.equal(page.type, 'category');
+  assert.equal(page.title, 'All Games');
+  assert.equal(page.activeMenu, 'all');
+  assert.equal(page.games.length, GAMES.length);
+  assert.equal(pageSlice(page.games).visible.length, PAGE_SIZE);
+  assert.equal(pageSlice(page.games).hasMore, true);
+  const filtered = getCatalogPage({ type: 'category', categoryId: 'all', providerId: 'taparoo', query: 'blood' });
+  assert.deepEqual(ids(filtered), ['bloodsuckerstapa']);
 });
 
 test('Popular has its own identity and preserves editorial order before optional sorting', () => {
@@ -121,7 +133,6 @@ test('short or empty result sets never offer another page', () => {
 test('unknown destinations are explicit missing pages rather than the lobby or an unrelated collection', () => {
   for (const route of [
     { type: 'category', categoryId: 'missing' },
-    { type: 'category', categoryId: 'all' },
     { type: 'provider', providerId: 'missing' },
     { type: 'not-found' },
   ]) {

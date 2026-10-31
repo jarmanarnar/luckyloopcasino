@@ -9,13 +9,13 @@ const matches = (value, query) => value.toLocaleLowerCase().includes(query.toLoc
 
 export function getCatalogPage(route) {
   const query = String(route.query || '').trim();
-  if (route.type === 'home') return { type: 'home', title: 'Casino', activeMenu: 'all' };
+  if (route.type === 'home') return { type: 'home', title: 'Lobby', activeMenu: 'lobby' };
   if (route.type === 'providers') return { type: 'providers', title: 'Game Providers', activeMenu: 'providers', query,
     providers: PROVIDERS.filter(provider => matches(provider.name, query)) };
   const category = categories.get(route.categoryId);
   const provider = PROVIDERS.find(item => item.id === route.providerId);
   if (!['category', 'provider', 'search'].includes(route.type)
-    || (route.type === 'category' && (!category || category.id === 'all'))
+    || (route.type === 'category' && !category)
     || (route.type === 'provider' && !provider)) {
     return { type: 'not-found', title: 'Page not found', activeMenu: '' };
   }

@@ -1,30 +1,30 @@
 let initialized = false;
 
-export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openProviders } = {}) {
+export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openProviders, openStore } = {}) {
   if (initialized) return;
   const nav = document.querySelector('#mobile-nav');
   const categories = document.querySelector('#catalog-categories');
-  const walletAdd = document.querySelector('#wallet-add');
   const dialogs = {
     menu: document.querySelector('#site-menu'),
-    wallet: document.querySelector('#wallet-dialog'),
   };
-  const buttons = new Map(['menu', 'casino', 'search', 'providers', 'wallet']
+  const buttons = new Map(['menu', 'lobby', 'search', 'providers', 'store']
     .map(action => [action, document.querySelector(`#mobile-nav-${action}`)]));
-  if (![nav, categories, walletAdd, ...Object.values(dialogs), ...buttons.values()].every(Boolean)) return;
+  if (![nav, categories, ...Object.values(dialogs), ...buttons.values()].every(Boolean)) return;
   initialized = true;
 
   const desktopMedia = window.matchMedia('(min-width: 45rem)');
 
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
-      : dialogs.wallet.open ? 'wallet' : document.body.dataset.view === 'game' ? 'casino'
+      : document.body.dataset.view === 'game' ? 'lobby'
+        : document.body.dataset.page === 'feature' ? 'menu'
+        : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
         : categories.dataset.activeMenu === 'providers' ? 'providers'
-        : categories.dataset.activeMenu === 'search' ? 'search' : 'casino';
+        : categories.dataset.activeMenu === 'search' ? 'search' : 'lobby';
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);
-      if (active && ['casino', 'providers', 'search'].includes(action)) button.setAttribute('aria-current', 'page');
+      if (active && ['lobby', 'providers', 'search', 'store'].includes(action)) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
       if (dialogs[action]) button.setAttribute('aria-expanded', String(dialogs[action].open));
     }
@@ -35,7 +35,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openP
       case 'menu':
         openMenu?.({ returnFocusTo: button });
         break;
-      case 'casino':
+      case 'lobby':
         openHome?.();
         break;
       case 'search':
@@ -44,8 +44,8 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openP
       case 'providers':
         openProviders?.();
         break;
-      case 'wallet':
-        walletAdd.click();
+      case 'store':
+        openStore?.();
         break;
     }
     sync();
@@ -67,7 +67,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openSearch, openP
 
   const observer = new MutationObserver(sync);
   observer.observe(categories, { attributes: true, attributeFilter: ['data-active-menu'] });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['data-view'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['data-view', 'data-page'] });
   for (const dialog of Object.values(dialogs)) {
     observer.observe(dialog, { attributes: true, attributeFilter: ['open'] });
   }

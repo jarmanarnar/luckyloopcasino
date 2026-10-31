@@ -73,7 +73,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
       for (let parent = this.parent; parent; parent = parent.parent) parent.emit('click', event);
     }
     closest(selector) {
-      const property = { '[data-menu-category]': 'menuCategory', '[data-tooltip]': 'tooltip' }[selector];
+      const property = { '[data-menu-category]': 'menuCategory', '[data-menu-feature]': 'menuFeature', '[data-tooltip]': 'tooltip' }[selector];
       if (!property) throw new Error(`Unexpected selector ${selector}`);
       return this.dataset[property] ? this : this.parent?.closest(selector) || null;
     }
@@ -86,8 +86,8 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   }
   document.body = new Node();
   document.body.dataset.view = 'lobby';
-  const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy',
-    'catalog-categories', 'coin-wallet', 'wallet-add', 'wallet-dialog', 'site-logo', 'wallet-credit',
+  const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy', 'menu-redeem',
+    'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
     'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
     'bottom-menu', 'mobile-nav', 'mobile-nav-menu'];
@@ -103,7 +103,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   headerParent.append(nodes['menu-toggle'], nodes['site-logo']);
   nodes['site-menu'].append(nodes['menu-mobile-header'], nodes['menu-content']);
   nodes['menu-mobile-header'].append(nodes['menu-shortcuts']);
-  nodes['menu-shortcuts'].append(nodes['menu-buy']);
+  nodes['menu-shortcuts'].append(nodes['menu-buy'], nodes['menu-redeem']);
   nodes['menu-content'].append(nodes['menu-search'], nodes['menu-promotion'], nodes['menu-navigation']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
   nodes['mobile-nav'].append(nodes['mobile-nav-menu']);
@@ -111,7 +111,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   const breakpoint = new Node();
   breakpoint.matches = desktop;
   nodes['coin-wallet'].dataset.currency = 'GC';
-  nodes['catalog-categories'].dataset.activeMenu = 'all';
+  nodes['catalog-categories'].dataset.activeMenu = 'lobby';
   const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
     const button = new Node();
     button.dataset.category = id;
@@ -129,14 +129,8 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     }
     return categoryButtons.get(selector.match(/^\[data-category="([^"]+)"\]$/)?.[1]) || null;
   };
-  nodes['wallet-add'].addEventListener('click', () => {
-    assert.equal(nodes['site-menu'].open, false);
-    nodes['wallet-dialog'].open = true;
-    calls.push('wallet:open');
-    nodes['wallet-credit'].focus();
-  });
   document.querySelector = selector => {
-    if (selector === 'dialog[open]') return ['site-menu', 'wallet-dialog', 'site-search'].map(id => nodes[id]).find(node => node.open) || null;
+    if (selector === 'dialog[open]') return ['site-menu', 'other-dialog', 'site-search'].map(id => nodes[id]).find(node => node.open) || null;
     return nodes[selector.slice(1)] || null;
   };
   document.createElement = () => new Node();
@@ -146,16 +140,40 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     calls.push(`category:${id}`);
     nodes['catalog-categories'].dataset.activeMenu = id;
     document.body.dataset.view = 'lobby';
+    document.body.dataset.page = 'category';
     for (const [candidate, node] of categoryButtons) node.setAttribute('aria-pressed', String(candidate === id));
     pageHeading.focus();
   }
   const catalog = {
-    openHome() { routeCategory('all'); },
+    openHome() {
+      assert.equal(nodes['site-menu'].open, false);
+      calls.push('home:open');
+      nodes['catalog-categories'].dataset.activeMenu = 'lobby';
+      document.body.dataset.view = 'lobby'; document.body.dataset.page = 'home';
+      pageHeading.focus();
+    },
     openCategory(id) { routeCategory(id); },
+    openStore() {
+      assert.equal(nodes['site-menu'].open, false);
+      calls.push('store:open');
+      document.body.dataset.view = 'lobby';
+      document.body.dataset.page = 'store';
+      nodes['catalog-categories'].dataset.activeMenu = 'store';
+      pageHeading.focus();
+    },
+    openFeature(id) {
+      assert.equal(nodes['site-menu'].open, false);
+      calls.push(`feature:${id}`);
+      document.body.dataset.view = 'lobby';
+      document.body.dataset.page = id;
+      nodes['catalog-categories'].dataset.activeMenu = id;
+      pageHeading.focus();
+    },
     openSearch() {
       assert.equal(nodes['site-menu'].open, false);
       nodes['catalog-categories'].dataset.activeMenu = 'search';
       document.body.dataset.view = 'lobby';
+      document.body.dataset.page = 'search';
       calls.push('search:open');
       nodes['site-search-input'].focus();
     },
@@ -164,6 +182,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
       providerCalls.push(options);
       calls.push('category:providers');
       document.body.dataset.view = 'lobby';
+      document.body.dataset.page = 'providers';
       pageHeading.focus();
       nodes['catalog-categories'].dataset.activeMenu = 'providers';
       for (const button of categoryButtons.values()) button.setAttribute('aria-pressed', 'false');
@@ -192,13 +211,14 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   };
   const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
-  const item = id => nodes['menu-navigation'].children.find(node => node.dataset.menuCategory === id);
+  const item = id => nodes['menu-content'].children.flatMap(group => group.children).find(node => node.dataset.menuCategory === id);
+  const feature = id => nodes['menu-content'].children.flatMap(group => group.children).find(node => node.dataset.menuFeature === id);
   const resize = matches => {
     breakpoint.matches = matches;
     breakpoint.emit('change', { matches });
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
-    item, flushClose, providerCalls, headerParent, resize, pageHeading,
+    item, feature, flushClose, providerCalls, headerParent, resize, pageHeading,
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
 
@@ -210,10 +230,29 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
-  assert.equal(page.item('all').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('lobby').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('all').getAttribute('aria-current'), null);
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), category.id === 'all' || getGamesForCategory(category.id).length > 0);
   assert.equal(page.nodes['menu-navigation'].children.at(-1), page.item('providers'));
   assert.equal(page.categoryButtons.has('providers'), false);
+});
+
+test('Lobby has its own sidebar group and All Games opens the catalog instead of the Lobby', () => {
+  const page = menuPage({ desktop: true });
+  const lobby = page.item('lobby'), all = page.item('all');
+  assert.notEqual(lobby.parentElement, all.parentElement);
+  assert.equal(lobby.getAttribute('aria-label'), 'Lobby');
+  all.click();
+  assert.equal(page.calls.at(-1), 'category:all');
+  assert.equal(page.document.body.dataset.page, 'category');
+  page.observers[0].callback();
+  assert.equal(all.getAttribute('aria-current'), 'page');
+  assert.equal(lobby.getAttribute('aria-current'), null);
+  lobby.click();
+  assert.equal(page.calls.at(-1), 'home:open');
+  page.observers[0].callback();
+  assert.equal(lobby.getAttribute('aria-current'), 'page');
+  assert.equal(all.getAttribute('aria-current'), null);
 });
 
 test('Escape closes the drawer, resets its trigger and restores focus', () => {
@@ -354,17 +393,17 @@ test('category and Providers page navigation runs only after the drawer closes',
   assert.equal(page.item('all').getAttribute('aria-current'), null);
 });
 
-test('BUY hands off to the existing wallet without overlapping modals or losing focus', () => {
+test('BUY opens the Store page only after the mobile menu closes and keeps destination focus', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
   page.nodes['menu-buy'].click();
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.nodes['wallet-dialog'].open, false);
+  assert.equal(page.calls.includes('store:open'), false);
   page.flushClose();
-  assert.equal(page.nodes['wallet-dialog'].open, true);
-  assert.equal(page.document.activeElement, page.nodes['wallet-credit']);
-  assert.deepEqual(page.calls.slice(-2), ['menu:close', 'wallet:open']);
+  assert.equal(page.document.body.dataset.page, 'store');
+  assert.equal(page.document.activeElement, page.pageHeading);
+  assert.deepEqual(page.calls.slice(-2), ['menu:close', 'store:open']);
 });
 
 test('mobile search opens after the drawer closes while desktop search opens directly', () => {
@@ -384,11 +423,39 @@ test('mobile search opens after the drawer closes while desktop search opens dir
   assert.equal(desktop.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
 });
 
-test('the sidebar promotion opens the Popular page', () => {
+test('the sidebar promotion opens the dedicated Promotions page', () => {
   const page = menuPage({ desktop: true });
   page.nodes['menu-promotion'].click();
-  assert.equal(page.calls.at(-1), 'category:popular');
+  assert.equal(page.calls.at(-1), 'feature:promotions');
   assert.equal(page.document.activeElement, page.pageHeading);
+});
+
+test('member destinations are grouped separately and navigate after the mobile drawer closes', () => {
+  const page = menuPage();
+  for (const id of ['lounge', 'bonus-hub', 'daily-bonus', 'vip-club', 'rank-system', 'free-money',
+    'invite-friends', 'missions', 'partners', 'affiliate-program', 'crypto-earn',
+    'profile', 'history', 'favorites', 'notifications', 'support', 'blog', 'settings']) {
+    assert.ok(page.feature(id), `${id} has a dedicated sidebar entry`);
+    assert.equal(page.feature(id).dataset.tooltip, page.feature(id).getAttribute('aria-label'));
+  }
+  page.nodes['menu-toggle'].click();
+  page.feature('vip-club').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.calls.includes('feature:vip-club'), false);
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'feature:vip-club');
+  assert.equal(page.document.activeElement, page.pageHeading);
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.feature('vip-club').getAttribute('aria-current'), 'page');
+  assert.equal(page.item('all').getAttribute('aria-current'), null);
+});
+
+test('REDEEM opens a separate preview destination instead of performing a transaction', () => {
+  const page = menuPage({ desktop: true });
+  assert.equal(page.nodes['menu-redeem'].disabled, false);
+  page.nodes['menu-redeem'].click();
+  assert.equal(page.calls.at(-1), 'feature:redeem');
+  assert.equal(page.calls.includes('store:open'), false);
 });
 
 test('drawer button accents track the selected currency only while open', () => {
@@ -454,11 +521,11 @@ test('desktop collection, Providers and BUY actions run immediately without a dr
   assert.equal(page.providerCalls.length, 1);
   assert.equal(page.providerCalls[0], undefined);
   page.nodes['menu-buy'].click();
-  assert.equal(page.nodes['wallet-dialog'].open, true);
-  assert.equal(page.document.activeElement, page.nodes['wallet-credit']);
+  assert.equal(page.document.body.dataset.page, 'store');
+  assert.equal(page.document.activeElement, page.pageHeading);
   assert.equal(page.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
   page.flushClose();
-  assert.equal(page.calls.at(-1), 'wallet:open');
+  assert.equal(page.calls.at(-1), 'store:open');
 });
 
 test('switching an open mobile drawer to desktop closes it and reparents one live navigation tree', () => {
@@ -559,10 +626,10 @@ test('collapsed tooltips are dismissed by navigation but remain available in the
   page.nodes['menu-content'].emit('scroll');
   assert.equal(tooltip.hidden, true);
 
-  page.nodes['wallet-dialog'].open = true;
+  page.nodes['other-dialog'].open = true;
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, true);
-  page.nodes['wallet-dialog'].open = false;
+  page.nodes['other-dialog'].open = false;
   sidebar.emit('pointerover', { target: item });
   assert.equal(tooltip.hidden, false);
   page.document.body.dataset.view = 'game';
@@ -572,7 +639,7 @@ test('collapsed tooltips are dismissed by navigation but remain available in the
   assert.equal(tooltip.hidden, false);
 });
 
-test('game shell menu overlays preserve the game and restore their visible opener', () => {
+test('game shell menu preserves the game until BUY opens the Store page', () => {
   const page = menuPage({ routeFromGame: true });
   page.document.body.dataset.view = 'game';
   page.nodes['mobile-nav-menu'].visible = true;
@@ -594,8 +661,9 @@ test('game shell menu overlays preserve the game and restore their visible opene
   page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
   page.nodes['menu-buy'].click();
   page.flushClose();
-  assert.equal(page.nodes['wallet-dialog'].open, true);
-  assert.equal(page.document.body.dataset.view, 'game');
+  assert.equal(page.document.body.dataset.page, 'store');
+  assert.equal(page.document.body.dataset.view, 'lobby');
+  assert.equal(page.document.activeElement, page.pageHeading);
   assert.equal(page.calls.includes('lobby:return'), false);
 });
 

@@ -21,8 +21,12 @@ npm test
 
 - Responsive promotional carousel containing four empty frames: one, two or three per view, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Frames use the same shared surface and radius tokens as the game cards. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the frames.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
-- A persistent 72px desktop icon rail expands to 232px. Its hamburger and BUY/REDEEM controls precede search, a Popular shortcut and grouped category/provider navigation. Compact icons show accessible custom tooltips; expanded rows show labels. Below 45rem (720px at the default text size), the same content moves into a full-screen menu with native modal focus handling, Escape dismissal and independent scrolling. BUY opens the demo wallet; REDEEM remains disabled. The sidebar stays visible beside framed games on desktop.
-- Mobile navigation provides Menu, Casino, Search, Providers and Wallet below the same 45rem boundary, including during games. The top hamburger is hidden while the bottom bar is present. The fixed bar is 63px high with no added bottom safe-area inset, including in standalone mode; matching content padding keeps the last row visible.
+- A persistent 72px desktop icon rail expands to 232px. Its hamburger and BUY/REDEEM controls precede search, Promotions and grouped casino, reward, membership, partner, account and support destinations. Compact icons show accessible custom tooltips; expanded rows show labels. Below 45rem (720px at the default text size), the same content moves into a full-screen menu with native modal focus handling, Escape dismissal and independent scrolling. BUY opens Store; REDEEM opens a clearly marked preview. The sidebar stays visible beside framed games on desktop.
+- Mobile navigation provides Menu, Lobby, Search, Providers and Store below the same 45rem boundary, including during games. Lobby also has a standalone group in the sidebar, separate from the complete All Games catalog. The top hamburger is hidden while the bottom bar is present. The fixed bar is 63px high with no added bottom safe-area inset, including in standalone mode; matching content padding keeps the last row visible.
+- Store is an independent page opened by mobile Store, sidebar BUY or the header plus. Its nine USD package prices, GC amounts, free SC and Popular/Best labels match the Crown Coins Store observed on 2026-10-31. Price buttons open package previews only; they do not charge or change demo balances. The former wallet dialog and free-credit button have been removed; currency switching and header balance animation remain.
+- The Lounge links VIP Club, Daily Bonus, Invite Friends and CoinBack, following the four areas observed in Crown Coins. Bonus Hub, Rank System, Free Money, Missions, Promotions, Partners, Affiliate Program and Crypto & Earn are independent wireframe pages inspired by the organization of Qzino. No competitor artwork, program qualification or financial promises are imported.
+- Daily Bonus grants local demo GC once per device-local calendar day, advancing a seven-day streak. Three introductory missions grant one-time demo GC for profile customization, opening a game and daily check-in. Eligibility, collection history and discovery ranks persist across refresh. These rewards do not change provider game balances.
+- Profile name/avatar, Favorites, Activity History and Notifications use real local state. Only game openings and local reward claims are recorded; no invented bets, wins or transactions. Removed games are filtered from stored history, favorites and discovery. Settings mask the header balance and reduce interface motion, including stopping banner autoplay. Live Support previews an unsent message and FAQ; Blog contains original prototype guides. VIP, CoinBack, referrals, affiliate, crypto and redemption areas remain explicit program previews without external services.
 - Search has its own page with live results, category/provider filters and name sorting. The header uses the selected monochrome LOOP concept as its current wireframe logo.
 - Only the lobby includes promotional frames and the All Games, Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. Popular starts with 12 curated demo titles; it is not an analytics-based ranking. New Releases uses a verified subset of provider release dates recorded in collections.js.
 - Categories, the provider directory, individual providers and search have independent URL routes. Provider pages include expandable details derived from the active catalog. Lists load 35 games at a time with Show more. Search and filters survive refresh; Back and Forward restore page scroll. Opening a game remembers its originating page.
@@ -45,6 +49,9 @@ The wallet is local demo state and is independent of provider balances. Game eng
 | `public/catalog.js`, `removed-games.js` | Reviewed games and permanent exclusions |
 | `public/game-view.js`, `game-ready.js`, `game-presentation.js` | Game routing, lifecycle and presentation |
 | `public/wallet.js`, `wallet-state.js` | Two-currency local demo wallet |
+| `public/store-view.js`, `store-packages.js`, `store.css` | Store page, observed package values and preview dialog |
+| `public/feature-pages.js`, `feature-view.js`, `feature-pages.css` | Member-area route identities, shared page shell and wireframe components |
+| `public/rewards-pages.js`, `account-pages.js`, `member-state.js` | Lounge/rewards, account/services and validated local activity state |
 | `public/site-menu.js`, `site-menu.css`, `site-search.js` | Desktop rail, mobile menu, tooltips and search-page entry |
 | `public/mobile-nav.js`, `mobile-nav.css` | Mobile lobby actions, destination state and bottom safe-area layout |
 | `public/hero-carousel.js`, `hero-carousel.css`, `assets/hero/` | Promotional banners, original artwork and carousel behavior |
@@ -62,12 +69,20 @@ Routes use URL fragments so direct links and refresh also work on static GitHub 
 | Page | Fragment |
 | --- | --- |
 | Lobby | `#/` |
+| All Games catalog | `#/all-games` |
 | Popular | `#/popular` |
 | Slots | `#/slots` |
 | New Releases | `#/new-releases` |
 | Providers | `#/providers` |
 | Single provider | `#/providers/netent` |
 | Search | `#/search?q=Nip+Tuck` |
+| Store | `#/store` |
+| Lounge / Bonus Hub | `#/lounge`, `#/bonus-hub` |
+| Daily Bonus / Missions | `#/daily-bonus`, `#/missions`, `#/free-money` |
+| Membership | `#/vip-club`, `#/rank-system`, `#/coinback` |
+| Promotions / Partners | `#/promotions`, `#/partners`, `#/invite-friends`, `#/affiliate-program`, `#/crypto-earn` |
+| Account | `#/profile`, `#/history`, `#/favorites`, `#/notifications` |
+| Services | `#/support`, `#/blog`, `#/settings`, `#/redeem` |
 
 Provider/category filters and sorting are encoded in the fragment query. Existing `#game=…` links remain supported; launches from a page include a `from` parameter for refresh-safe return navigation.
 

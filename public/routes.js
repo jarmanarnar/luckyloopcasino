@@ -1,5 +1,7 @@
+import { isFeaturePage } from './feature-pages.js';
+
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
-const categoryIds = new Set(['popular', 'slots', 'new-releases', 'spooky', 'picks', 'tap', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'spooky', 'picks', 'tap', 'megaways', 'jackpot', 'fruit', 'adventure']);
 const sortIds = new Set(['featured', 'az', 'za', 'newest']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
@@ -18,7 +20,10 @@ export function parseRoute(hash = '') {
   const segments = path.replace(/^\//, '').replace(/\/$/, '').split('/').map(decode);
   const params = new URLSearchParams(search);
   let route;
-  if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
+  if (segments.length === 1 && segments[0] === 'all-games') route = { type: 'category', categoryId: 'all' };
+  else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
+  else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
+  else if (segments[0] === 'store' && segments.length === 1) return { type: 'store' };
   else if (segments[0] === 'providers' && segments.length === 1) route = { type: 'providers' };
   else if (segments[0] === 'providers' && segments.length === 2 && validId(segments[1])) route = { type: 'provider', providerId: segments[1] };
   else if (segments[0] === 'search' && segments.length === 1) route = { type: 'search', query: '' };
@@ -36,12 +41,14 @@ export function parseRoute(hash = '') {
 
 export function formatRoute(route = { type: 'home' }) {
   if (route.type === 'home') return '#/';
+  if (route.type === 'feature') return isFeaturePage(route.pageId) ? `#/${route.pageId}` : '#/';
+  if (route.type === 'store') return '#/store';
   if (route.type === 'game') {
     const params = new URLSearchParams({ game: route.gameId });
     if (route.from && !route.from.includes('game=')) params.set('from', route.from);
     return `#${params}`;
   }
-  const path = route.type === 'category' ? route.categoryId
+  const path = route.type === 'category' ? route.categoryId === 'all' ? 'all-games' : route.categoryId
     : route.type === 'provider' ? `providers/${encodeURIComponent(route.providerId)}`
       : route.type === 'providers' ? 'providers' : 'search';
   const params = new URLSearchParams();

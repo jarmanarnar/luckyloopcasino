@@ -166,6 +166,14 @@ export function initCatalogView({ router } = {}) {
   function render(route, meta = {}) {
     window.clearTimeout(inputTimer);
     if (route.type === 'game') return;
+    if (route.type === 'store' || route.type === 'feature') {
+      root.hidden = true;
+      hero.hidden = true;
+      document.body.dataset.page = route.type;
+      categories.dataset.activeMenu = route.type === 'store' ? 'store' : route.pageId;
+      for (const button of categories.querySelectorAll('[data-category]')) button.setAttribute('aria-pressed', 'false');
+      return;
+    }
     const model = getCatalogPage(route), home = model.type === 'home';
     document.body.dataset.page = model.type;
     root.hidden = false;
@@ -229,9 +237,10 @@ export function initCatalogView({ router } = {}) {
     }
   }
   const openHome = () => router.navigate({ type: 'home' });
-  const openCategory = id => id === 'all' ? openHome() : router.navigate({ type: 'category', categoryId: id });
+  const openCategory = id => router.navigate({ type: 'category', categoryId: id });
   const openProviders = () => router.navigate({ type: 'providers' });
   const openProvider = id => router.navigate({ type: 'provider', providerId: id });
+  const openStore = () => router.navigate({ type: 'store' });
   const openSearch = () => { router.navigate({ type: 'search', query: '' }); input.focus({ preventScroll: true }); };
   const searchGames = query => router.navigate({ type: 'search', query: String(query).trim() });
   categories.addEventListener('click', event => {
@@ -282,6 +291,6 @@ export function initCatalogView({ router } = {}) {
   new ResizeObserver(() => tracks.forEach(updateArrows)).observe(shelves);
   router.subscribe(render);
   render(router.getRoute(), { source: 'initial', focus: false });
-  controller = { openHome, openCategory, openProviders, openProvider, openSearch, searchGames };
+  controller = { openHome, openCategory, openProviders, openProvider, openStore, openSearch, searchGames };
   return controller;
 }

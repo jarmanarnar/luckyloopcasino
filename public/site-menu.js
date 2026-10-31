@@ -4,15 +4,15 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openHome, openCategory, openProviders, openSearch } = {}) {
+export function initSiteMenu({ openHome, openCategory, openProviders, openSearch, openStore, openFeature } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
   const navigation = document.querySelector('#menu-navigation');
   const buyButton = document.querySelector('#menu-buy');
+  const redeemButton = document.querySelector('#menu-redeem');
   const categories = document.querySelector('#catalog-categories');
   const wallet = document.querySelector('#coin-wallet');
-  const addButton = document.querySelector('#wallet-add');
   const sidebar = document.querySelector('#site-sidebar');
   const sidebarHeader = document.querySelector('#sidebar-header');
   const sidebarContent = document.querySelector('#sidebar-content');
@@ -24,7 +24,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
   const tooltip = document.querySelector('#menu-tooltip');
   const bottomTrigger = document.querySelector('#mobile-nav-menu');
   const bottomNav = document.querySelector('#mobile-nav');
-  if (![trigger, dialog, navigation, buyButton, categories, wallet, addButton,
+  if (![trigger, dialog, navigation, buyButton, categories, wallet,
     sidebar, sidebarHeader, sidebarContent, menuContent, shortcuts, mobileHeader].every(Boolean)) return;
   initialized = true;
 
@@ -40,7 +40,24 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
   let tooltipTarget = null;
   let menuOpener = trigger;
   const items = new Map();
+  const featureItems = new Map();
   navigation.replaceChildren();
+  const lobbyGroup = document.createElement('nav');
+  lobbyGroup.className = 'site-menu__navigation site-menu__lobby';
+  lobbyGroup.setAttribute('aria-label', 'Lobby navigation');
+  const lobbyButton = document.createElement('button');
+  lobbyButton.type = 'button';
+  lobbyButton.className = 'site-menu__item';
+  lobbyButton.dataset.menuCategory = 'lobby';
+  lobbyButton.dataset.tooltip = 'Lobby';
+  lobbyButton.setAttribute('aria-label', 'Lobby');
+  const lobbyLabel = document.createElement('span');
+  lobbyLabel.className = 'site-menu__label';
+  lobbyLabel.textContent = 'Lobby';
+  lobbyButton.append(createShelfIcon('lobby'), lobbyLabel);
+  lobbyGroup.append(lobbyButton);
+  menuContent.insertBefore(lobbyGroup, navigation);
+  items.set('lobby', lobbyButton);
   const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
     if (category.id !== 'all' && category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
@@ -58,12 +75,64 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
     items.set(category.id, button);
   }
 
+  // Separate destinations keep rewards and account tools out of the casino catalog.
+  const featureGroups = [
+    { label: 'Lounge and rewards', items: [['lounge', 'Lounge'], ['bonus-hub', 'Bonus Hub'], ['daily-bonus', 'Daily Bonus']] },
+    { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
+    { label: 'Ways to earn', items: [['free-money', 'Free Money'], ['invite-friends', 'Invite Friends'], ['missions', 'Missions']] },
+    { label: 'Partners', items: [['partners', 'Partners'], ['affiliate-program', 'Affiliate Program'], ['crypto-earn', 'Crypto & Earn']] },
+    { label: 'My account', items: [['profile', 'My Profile'], ['history', 'History'], ['favorites', 'Favorites'], ['notifications', 'Notifications']] },
+    { label: 'Help and preferences', items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings']] },
+  ];
+  const footer = document.querySelector('.site-menu__footer');
+  for (const group of featureGroups) {
+    const section = document.createElement('nav');
+    section.className = 'site-menu__navigation site-menu__feature-group';
+    section.setAttribute('aria-label', group.label);
+    for (const [id, title] of group.items) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'site-menu__item';
+      button.dataset.menuFeature = id;
+      button.dataset.tooltip = title;
+      button.setAttribute('aria-label', title);
+      const label = document.createElement('span');
+      label.className = 'site-menu__label';
+      label.textContent = title;
+      button.append(createShelfIcon(id), label);
+      section.append(button);
+      featureItems.set(id, button);
+    }
+    menuContent.insertBefore(section, footer);
+  }
+  if (redeemButton) redeemButton.disabled = false;
+  if (promotionButton) {
+    promotionButton.setAttribute('aria-label', 'Promotions');
+    promotionButton.dataset.tooltip = 'Promotions';
+    const copy = document.createElement('span');
+    copy.className = 'site-menu__promotion-copy';
+    const label = document.createElement('strong');
+    label.textContent = 'Promotions';
+    const subtitle = document.createElement('small');
+    subtitle.textContent = 'Explore rewards and events';
+    copy.append(label, subtitle);
+    promotionButton.replaceChildren(createShelfIcon('promotions'), copy);
+  }
+
   function syncMenu() {
     const selected = categories.dataset.activeMenu
-      || categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category || 'all';
+      || categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category || 'lobby';
     for (const [id, button] of items) {
       if (id === selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
+    }
+    for (const [id, button] of featureItems) {
+      if (id === selected) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    }
+    if (promotionButton) {
+      if (selected === 'promotions') promotionButton.setAttribute('aria-current', 'page');
+      else promotionButton.removeAttribute('aria-current');
     }
     const code = wallet.dataset.currency === 'SC' ? 'SC' : 'GC';
     dialog.dataset.currency = code;
@@ -166,16 +235,25 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
 
   function chooseCategory(id) {
     if (id === 'providers') closeMenu(() => openProviders?.());
-    else if (id === 'all') closeMenu(() => openHome?.());
+    else if (id === 'lobby') closeMenu(() => openHome?.());
     else closeMenu(() => openCategory?.(id));
   }
 
   trigger.addEventListener('click', openMenu);
-  buyButton.addEventListener('click', () => closeMenu(() => addButton.click()));
+  lobbyButton.addEventListener('click', () => chooseCategory('lobby'));
+  buyButton.addEventListener('click', () => closeMenu(() => openStore?.()));
+  redeemButton?.addEventListener('click', () => closeMenu(() => openFeature?.('redeem')));
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));
   });
-  promotionButton?.addEventListener('click', () => chooseCategory('popular'));
+  promotionButton?.addEventListener('click', () => closeMenu(() => openFeature?.('promotions')));
+  menuContent.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const item = event.target.closest('[data-menu-feature]');
+    if (item && menuContent.contains(item) && featureItems.has(item.dataset.menuFeature)) {
+      closeMenu(() => openFeature?.(item.dataset.menuFeature));
+    }
+  });
   navigation.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const item = event.target.closest('[data-menu-category]');

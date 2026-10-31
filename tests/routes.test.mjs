@@ -43,6 +43,8 @@ function browser(hash = '') {
 test('category, provider and search links retain their page and filters after refresh', () => {
   const routes = [
     { type: 'home' },
+    { type: 'category', categoryId: 'all' },
+    { type: 'store' },
     { type: 'category', categoryId: 'popular', providerId: 'netent', query: 'Dragon & luck', sort: 'az' },
     { type: 'category', categoryId: 'new-releases' },
     { type: 'providers', query: 'Tiger' },
@@ -59,6 +61,34 @@ test('category, provider and search links retain their page and filters after re
   for (const hash of ['#', '#/', '#/unrecognised', '#/providers/%E0%A4%A', '#/providers/../../x']) {
     assert.deepEqual(parseRoute(hash), { type: 'home' });
   }
+});
+
+test('Lobby and the complete games catalog have separate refresh-safe addresses', () => {
+  assert.deepEqual(parseRoute('#/'), { type: 'home' });
+  assert.equal(formatRoute({ type: 'home' }), '#/');
+  const all = { type: 'category', categoryId: 'all' };
+  assert.equal(formatRoute(all), '#/all-games');
+  assert.deepEqual(parseRoute('#/all-games'), all);
+  assert.deepEqual(parseRoute('#/all-games?provider=netent&q=coin'), { ...all, query: 'coin', providerId: 'netent' });
+});
+
+test('Store has an independent refresh-safe address and returns through browser history', () => {
+  const page = browser('#/providers/netent');
+  const router = initRouter({ window: page.scope });
+  const calls = [];
+  router.subscribe(route => calls.push(`render:${route.type}`));
+  router.subscribe(route => calls.push(`cleanup:${route.type}`), { priority: -100 });
+  router.navigate({ type: 'store' }); page.flush();
+  assert.equal(page.scope.location.hash, '#/store');
+  assert.deepEqual(router.getRoute(), { type: 'store' });
+  assert.deepEqual(calls, ['cleanup:store', 'render:store']);
+  assert.deepEqual(initRouter({ window: browser('#/store').scope }).getRoute(), { type: 'store' });
+  assert.deepEqual(parseRoute('#/store?q=gold&provider=netent'), { type: 'store' }, 'catalog filters do not leak into Store');
+  router.back(); page.flush();
+  assert.deepEqual(router.getRoute(), { type: 'provider', providerId: 'netent' });
+  const fresh = initRouter({ window: browser('#/store').scope });
+  fresh.back();
+  assert.deepEqual(fresh.getRoute(), { type: 'home' });
 });
 
 test('routed navigation synchronously cleans the game before a destination renders and deduplicates native events', () => {

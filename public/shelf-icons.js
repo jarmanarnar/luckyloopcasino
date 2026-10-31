@@ -13,6 +13,57 @@ export function createShelfIcon(id) {
   });
   const path = d => shape('path', { d, 'fill-rule': 'evenodd', 'clip-rule': 'evenodd' });
   switch (id) {
+    case 'lounge':
+    case 'vip-club':
+      svg.append(path('m2 5 5 4 5-6 5 6 5-4-3 14H5L2 5Zm3 16h14v2H5v-2Z'));
+      break;
+    case 'bonus-hub':
+    case 'daily-bonus':
+      svg.append(path('M11 7H4V5a3 3 0 0 1 5.5-1.7L12 6l2.5-2.7A3 3 0 0 1 20 5v2h-7v4h9V8H2v3h9V7ZM6 5a1 1 0 0 0 1 1h2.6L8 4.6A1 1 0 0 0 6 5Zm10-.4L14.4 6H17a1 1 0 1 0-1-1.4ZM3 13h8v9H5a2 2 0 0 1-2-2v-7Zm10 0h8v7a2 2 0 0 1-2 2h-6v-9Z'));
+      break;
+    case 'rank-system':
+      svg.append(path('M12 2 3 6v6c0 5 5.3 8.8 9 10 3.7-1.2 9-5 9-10V6l-9-4Zm0 4 1.8 3.7 4.1.6-3 2.9.7 4.1-3.6-1.9-3.6 1.9.7-4.1-3-2.9 4.1-.6L12 6Z'));
+      break;
+    case 'free-money':
+    case 'crypto-earn':
+      svg.append(path('M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm8 3a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm1 2v1h2v2h-3v1h1a2 2 0 0 1 0 4v1h-2v-1H9v-2h3v-1h-1a2 2 0 0 1 0-4V8h2Z'));
+      break;
+    case 'missions':
+      svg.append(path('M9 2h6v3h4a2 2 0 0 1 2 2v14H3V7a2 2 0 0 1 2-2h4V2Zm2 2v3h2V4h-2ZM6 11v2h2v-2H6Zm4 0v2h8v-2h-8Zm-4 5v2h2v-2H6Zm4 0v2h8v-2h-8Z'));
+      break;
+    case 'invite-friends':
+    case 'partners':
+    case 'affiliate-program':
+      svg.append(path('M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm9 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM2 19a7 7 0 0 1 14 0v2H2v-2Zm15 2v-2a8 8 0 0 0-2.6-5.9A6 6 0 0 1 23 18v3h-6Z'));
+      break;
+    case 'profile':
+      svg.append(path('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm-6 12a6 6 0 0 1 12 0H6Z'));
+      break;
+    case 'history':
+      svg.append(path('M12 2a10 10 0 1 1-9.5 13h2.2A8 8 0 1 0 6 6.7L9 10H1V2l3.5 3.3A10 10 0 0 1 12 2Zm-1 5h2v5.1l3.5 2.1-1 1.7-4.5-2.7V7Z'));
+      break;
+    case 'favorites':
+      svg.append(path('M12 21C7 17 2 13.5 2 8a5.5 5.5 0 0 1 10-3.2A5.5 5.5 0 0 1 22 8c0 5.5-5 9-10 13Z'));
+      break;
+    case 'notifications':
+      svg.append(path('M10 3a2 2 0 1 1 4 0 7 7 0 0 1 5 6v5l3 4H2l3-4V9a7 7 0 0 1 5-6Zm-1 17h6a3 3 0 0 1-6 0Z'));
+      break;
+    case 'support':
+      svg.append(path('M12 2a9 9 0 0 1 9 9v1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2v1a3 3 0 0 1-3 3h-5v-3h5a1 1 0 0 0 1-1v-8a5 5 0 0 0-10 0v8H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2v-1a9 9 0 0 1 9-9Z'));
+      break;
+    case 'blog':
+      svg.append(path('M5 2h14a2 2 0 0 1 2 2v18H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm2 4v2h10V6H7Zm0 5v2h10v-2H7Zm0 5v2h7v-2H7Z'));
+      break;
+    case 'settings':
+      svg.append(path('m9.2 2-.5 3-2.1 1.2L3.8 5 1 9.8l2.3 2.1v2.2L1 16.2 3.8 21l2.8-1.2L8.7 21l.5 3h5.6l.5-3 2.1-1.2 2.8 1.2 2.8-4.8-2.3-2.1v-2.2L23 9.8 20.2 5l-2.8 1.2L15.3 5l-.5-3H9.2ZM12 8a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z'));
+      break;
+    case 'redeem':
+      svg.append(path('M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z'));
+      break;
+    case 'promotions':
+      svg.append(path('m2 8 13-5v16L2 14V8Zm15-3 5-3v6l-5-1V5Zm0 6h6v3h-6v-3ZM5 16l3 1.2L10 22H6l-1-6Zm12 1 5 1v5l-5-3v-3Z'));
+      break;
+    case 'lobby':
     case 'all':
       svg.append(path('M12 2.5 2 10.8V13h2v6.8c0 .7.5 1.2 1.2 1.2H9v-6h6v6h3.8c.7 0 1.2-.5 1.2-1.2V13h2v-2.2L12 2.5Z'));
       break;

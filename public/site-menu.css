@@ -190,6 +190,8 @@ html:has(#site-menu[open]) { overflow: hidden; }
   border-radius: var(--menu-group-radius);
   background: var(--surface-control);
 }
+.site-menu__feature-group { margin: 0; }
+.site-menu__promotion[aria-current="page"] { background: var(--control-hover); }
 .site-menu__item {
   box-sizing: border-box;
   display: flex;

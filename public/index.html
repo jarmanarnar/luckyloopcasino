@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="mobile-nav.css">
   <link rel="stylesheet" href="hero-carousel.css">
   <link rel="stylesheet" href="catalog-pages.css">
+  <link rel="stylesheet" href="store.css">
+  <link rel="stylesheet" href="feature-pages.css">
 </head>
 <body data-sidebar="collapsed">
   <aside id="site-sidebar" class="site-sidebar" aria-label="Casino sidebar" lang="en" dir="ltr" hidden>
@@ -29,7 +31,7 @@
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group">
         <span class="wallet-balance-copy"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
-        <button id="wallet-add" class="icon-button" type="button" aria-label="Add demo coins" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-dialog"><img id="wallet-add-art" src="assets/coins/add-gold.svg" width="48" height="48" alt="" aria-hidden="true"></button>
+        <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/add-gold.svg" width="48" height="48" alt="" aria-hidden="true"></button>
       </div>
       <button id="coin-type-switch" class="wallet-switch" type="button" role="switch" aria-label="Use Sweeps Coins" aria-checked="false"><img id="currency-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="36" height="36" alt="" aria-hidden="true"></button>
     </div>
@@ -93,15 +95,15 @@
   </main>
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" lang="en" dir="ltr" hidden>
     <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
-    <button id="mobile-nav-casino" class="mobile-nav__item" data-mobile-action="casino" type="button" aria-controls="catalog-shelves"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2 3.5 10.5C-.3 14.3 2.1 20 6.8 20c2.6 0 4.2-1.4 4.2-1.4L9 22h6l-2-3.4s1.6 1.4 4.2 1.4c4.7 0 7.1-5.7 3.3-9.5L12 2Z"/></svg><span class="mobile-nav__label">Casino</span></button>
+    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2.5 2 10.8V13h2v6.8c0 .7.5 1.2 1.2 1.2H9v-6h6v6h3.8c.7 0 1.2-.5 1.2-1.2V13h2v-2.2L12 2.5Z"/></svg><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-search" class="mobile-nav__item" data-mobile-action="search" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.26 15.17l4.53 4.54 1.42-1.42-4.54-4.53A8.5 8.5 0 0 0 10.5 2Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg><span class="mobile-nav__label">Search</span></button>
     <button id="mobile-nav-providers" class="mobile-nav__item" data-mobile-action="providers" type="button" aria-controls="catalog-shelves"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="mobile-nav__label">Providers</span></button>
-    <button id="mobile-nav-wallet" class="mobile-nav__item" data-mobile-action="wallet" type="button" aria-haspopup="dialog" aria-controls="wallet-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M5 3h13v3H5a1 1 0 0 0 0 2h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm13 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg><span class="mobile-nav__label">Wallet</span></button>
+    <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-controls="store-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
   </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
       <div id="menu-shortcuts" class="site-menu__shortcuts">
-        <button id="menu-buy" class="site-menu__shortcut site-menu__shortcut--buy" type="button" aria-label="BUY" data-tooltip="BUY"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 3h13v3H5a1 1 0 0 0 0 2h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm13 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg><span class="site-menu__shortcut-label">BUY</span></button>
+        <button id="menu-buy" class="site-menu__shortcut site-menu__shortcut--buy" type="button" aria-label="BUY" data-tooltip="BUY"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="site-menu__shortcut-label">BUY</span></button>
         <button id="menu-redeem" class="site-menu__shortcut" type="button" aria-label="REDEEM" data-tooltip="REDEEM" disabled><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v13H3V6a2 2 0 0 1 2-2Zm1 3v3h12V7H6Zm2 6H6v3h2v-3Zm5 0h-2v3h2v-3Zm5 0h-2v3h2v-3Z"/></svg><span class="site-menu__shortcut-label">REDEEM</span></button>
       </div>
     </div>
@@ -119,21 +121,26 @@
     </div>
   </dialog>
   <div id="menu-tooltip" class="site-menu__tooltip" role="tooltip" hidden></div>
-  <dialog id="wallet-dialog" class="wallet-dialog" aria-labelledby="wallet-dialog-title" lang="en" dir="ltr">
-    <form method="dialog">
-      <header class="wallet-dialog__header">
-        <div class="wallet-dialog__heading"><span class="wallet-dialog__brand">LuckyLoop Casino</span><h2 id="wallet-dialog-title">Demo wallet</h2></div>
-        <button id="wallet-close" class="icon-button" value="close" aria-label="Close wallet" type="submit"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button>
-      </header>
-    </form>
-    <p class="wallet-dialog__note">Demo balances for this prototype. Game demos use their own balance.</p>
-    <div id="wallet-balances" class="wallet-balances">
-      <button class="wallet-balance-row" type="button" data-wallet-currency="GC" aria-pressed="true"><img class="coin-art" src="assets/coins/gold-coin.svg" width="44" height="44" alt="" aria-hidden="true"><span class="wallet-balance-row__name">Gold Coins<span>GC</span></span><strong id="wallet-gc-total">125,000</strong></button>
-      <button class="wallet-balance-row" type="button" data-wallet-currency="SC" aria-pressed="false"><img class="coin-art" src="assets/coins/sweeps-coin.svg" width="44" height="44" alt="" aria-hidden="true"><span class="wallet-balance-row__name">Sweeps Coins<span>SC</span></span><strong id="wallet-sc-total">15.00</strong></button>
-    </div>
-    <button id="wallet-add-credit" type="button" class="wallet-credit">Add 1,000 GC</button>
-    <p id="wallet-status" role="status" aria-live="polite" class="wallet-status"></p>
-  </dialog>
+  <main id="store-view" class="page-content store-view" lang="en" dir="ltr" hidden>
+    <header class="store-header">
+      <div class="store-heading"><h1 tabindex="-1">Store</h1><p>Gold Coins packages</p></div>
+    </header>
+    <ul id="store-packages" class="store-packages" aria-label="Gold Coins packages"></ul>
+    <p class="store-preview-note">Package preview only. Purchases are not available yet.</p>
+    <dialog id="store-package-dialog" class="store-package-dialog" aria-labelledby="store-package-title" aria-describedby="store-package-note">
+      <form method="dialog"><header><h2 id="store-package-title">Package details</h2><button class="store-package-close icon-button" type="submit" aria-label="Close package details"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></header></form>
+      <div id="store-package-details"></div>
+      <p id="store-package-note" class="store-preview-note">Package preview only. Purchases are not available yet.</p>
+    </dialog>
+  </main>
+  <main id="feature-view" class="page-content feature-view" lang="en" dir="ltr" hidden>
+    <header class="feature-header">
+      <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to previous page"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
+      <div><h1 id="feature-title" tabindex="-1"></h1><p id="feature-description" class="feature-muted"></p></div>
+    </header>
+    <div id="feature-content"></div>
+    <p id="feature-status" class="feature-status" role="status" aria-live="polite" aria-atomic="true"></p>
+  </main>
   <script type="module" src="app.js"></script>
 </body>
 </html>
