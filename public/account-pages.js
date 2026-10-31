@@ -272,22 +272,6 @@ function redeem(ctx) {
   return root;
 }
 
-function favorites(ctx) {
-  const saved = new Set(ctx.state().favorites || []);
-  const games = ctx.games.filter(game => saved.has(game.id));
-  if (!games.length) return empty(ctx, 'Save your favorites', 'Use the heart beside a game in your history to build this collection.', ctx.link('history', 'Open game history'));
-  const grid = ctx.node('ul', 'feature-grid feature-grid--3 feature-list');
-  for (const game of games) {
-    const item = ctx.node('li', 'feature-card feature-stack');
-    item.append(ctx.node('span', 'feature-kicker', game.providerName), ctx.node('h2', 'feature-section-title', game.title));
-    const actions = ctx.node('div', 'feature-actions');
-    actions.append(button(ctx, 'View game', () => ctx.openGame(game.id)), button(ctx, 'Remove favorite', () => ctx.toggleFavorite?.(game.id)));
-    item.append(actions);
-    grid.append(item);
-  }
-  return grid;
-}
-
 /** Each page shares the shell, route lifecycle and local state owned by feature-view. */
 export function renderAccountPage(pageId, ctx) {
   switch (pageId) {
@@ -298,7 +282,6 @@ export function renderAccountPage(pageId, ctx) {
     case 'blog': return blog(ctx);
     case 'notifications': return notifications(ctx);
     case 'redeem': return redeem(ctx);
-    case 'favorites': return favorites(ctx);
     default: return null;
   }
 }

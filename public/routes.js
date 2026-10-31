@@ -2,7 +2,7 @@ import { isFeaturePage } from './feature-pages.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
 const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'spooky', 'picks', 'tap', 'megaways', 'jackpot', 'fruit', 'adventure']);
-const sortIds = new Set(['featured', 'az', 'za', 'newest']);
+const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
 const isLegacyAllGamesHash = hash => ['all-games', 'all'].includes(
@@ -39,6 +39,7 @@ export function parseRoute(hash = '') {
     return { type: 'game-details', gameId: segments[1], ...(from ? { from } : {}) };
   }
   if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
+  else if (segments.length === 1 && segments[0] === 'favorites') route = { type: 'favorites' };
   else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
   else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
   else if (segments[0] === 'store' && segments.length === 1) return { type: 'store' };
@@ -51,7 +52,7 @@ export function parseRoute(hash = '') {
   const providerId = params.get('provider');
   if (route.type !== 'provider' && validId(providerId)) route.providerId = providerId;
   const categoryId = params.get('category');
-  if (route.type !== 'category' && categoryIds.has(categoryId)) route.categoryId = categoryId;
+  if (!['category', 'favorites'].includes(route.type) && categoryIds.has(categoryId)) route.categoryId = categoryId;
   const sort = params.get('sort');
   if (sortIds.has(sort)) route.sort = sort;
   return route;
@@ -73,13 +74,14 @@ export function formatRoute(route = { type: 'home' }) {
     if (route.from && !route.from.includes('game=')) params.set('from', route.from);
     return `#${params}`;
   }
-  const path = route.type === 'category' ? route.categoryId === 'all' ? 'search' : route.categoryId
+  const path = route.type === 'favorites' ? 'favorites'
+    : route.type === 'category' ? route.categoryId === 'all' ? 'search' : route.categoryId
     : route.type === 'provider' ? `providers/${encodeURIComponent(route.providerId)}`
       : route.type === 'providers' ? 'providers' : 'search';
   const params = new URLSearchParams();
   if (route.query) params.set('q', route.query);
   if (route.providerId && route.type !== 'provider') params.set('provider', route.providerId);
-  if (route.categoryId && route.categoryId !== 'all' && route.type !== 'category') params.set('category', route.categoryId);
+  if (route.categoryId && route.categoryId !== 'all' && !['category', 'favorites'].includes(route.type)) params.set('category', route.categoryId);
   if (route.sort && sortIds.has(route.sort)) params.set('sort', route.sort);
   return `#/${path}${params.size ? `?${params}` : ''}`;
 }

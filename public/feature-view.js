@@ -62,6 +62,7 @@ export function initFeatureView({ router, wallet } = {}) {
     link(pageId, text, className = 'feature-button') {
       const a = node('a', className, text);
       const route = isFeaturePage(pageId) ? { type: 'feature', pageId }
+        : pageId === 'favorites' ? { type: 'favorites' }
         : pageId === 'store' ? { type: 'store' } : pageId === 'providers' ? { type: 'providers' }
           : pageId === 'all' || pageId === 'home' ? { type: 'home' } : { type: 'category', categoryId: pageId };
       a.href = formatRoute(route);
@@ -105,7 +106,7 @@ export function initFeatureView({ router, wallet } = {}) {
     if (!isFeature) return;
     const page = FEATURE_PAGES[currentPage];
     header.className = page.showHeader ? 'feature-header' : 'feature-header visually-hidden';
-    back.hidden = !page.showHeader;
+    back.hidden = !page.showHeader || !page.showBack;
     document.body.dataset.page = 'feature';
     document.querySelector('#catalog-categories').dataset.activeMenu = currentPage;
     title.textContent = page.title;

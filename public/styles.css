@@ -78,14 +78,11 @@
     body[data-app-starting] > :not(#app-loader) *::before,
     body[data-app-starting] > :not(#app-loader) *::after { transition: none !important; animation: none !important; }
     .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: #000; color: var(--text-primary); text-align: center; touch-action: none; }
-    .app-loader > img { display: block; width: 8rem; height: auto; }
-    .app-loader__spinner { width: 1.5rem; height: 1.5rem; border: 2px solid var(--surface-control); border-top-color: var(--gold-accent); border-radius: 50%; animation: app-loading 800ms linear infinite; }
+    .app-loader__brand { position: relative; width: min(20rem, calc(100vw - 3rem)); aspect-ratio: 1416 / 373; overflow: hidden; }
+    .app-loader__brand > img { position: absolute; width: 135.310735%; height: auto; max-width: none; left: -17.655367%; top: -57.908847%; }
+    .app-loader__brand > canvas { display: block; width: 100%; height: 100%; }
     .app-loader__message { margin: 0; color: var(--text-secondary); font-size: .875rem; }
     .app-loader__retry { min-height: var(--touch-target); padding: .625rem 1.25rem; border: 0; border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font-weight: 700; cursor: pointer; }
-    body[data-app-state="error"] .app-loader__spinner { display: none; }
-    body[data-reduce-motion="true"] .app-loader__spinner { animation: none; }
-    @keyframes app-loading { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .app-loader__spinner { animation: none; } }
     .top-bar {
       font-family: var(--header-font-family);
       box-sizing: border-box;

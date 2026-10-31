@@ -52,13 +52,29 @@ function memberPage(initialRoute, storage = new Map()) {
 }
 
 test('visible member Back controls return to the lobby after visiting another internal page', () => {
-  for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader)) {
+  for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader && page.showBack)) {
     const page = memberPage({ type: 'feature', pageId: 'profile' });
     page.router.navigate({ type: 'feature', pageId });
     page.nodes['feature-back'].listeners.get('click')();
     assert.equal(page.navigations.at(-1).type, 'home', pageId);
     assert.equal(page.nodes['feature-view'].hidden, true);
   }
+});
+
+test('selected page headers are hidden while Notifications keeps its title without a Back button', () => {
+  const page = memberPage({ type: 'feature', pageId: 'settings' });
+  for (const pageId of ['invite-friends', 'affiliate-program', 'profile', 'history']) {
+    page.router.navigate({ type: 'feature', pageId });
+    assert.match(page.nodes['feature-header'].className, /visually-hidden/);
+    assert.equal(page.nodes['feature-back'].hidden, true);
+    assert.equal(page.nodes['feature-view'].hidden, false, 'the page content remains available');
+  }
+  page.router.navigate({ type: 'feature', pageId: 'notifications' });
+  assert.equal(page.nodes['feature-header'].className, 'feature-header');
+  assert.equal(page.nodes['feature-title'].textContent, 'Notifications');
+  assert.equal(page.nodes['feature-back'].hidden, true);
+  page.router.navigate({ type: 'feature', pageId: 'settings' });
+  assert.equal(page.nodes['feature-back'].hidden, false, 'other pages restore their Back control');
 });
 
 test('shared favorites persist and notify across views while returned snapshots cannot mutate member state', () => {
@@ -82,8 +98,13 @@ test('shared favorites persist and notify across views while returned snapshots 
   assert.deepEqual([...page.api.member.getState().favorites], []);
 });
 
-test('opening details from Favorites preserves its origin and only an explicit game launch records history', () => {
-  const page = memberPage({ type: 'feature', pageId: 'favorites' });
+test('account links open the Favorites catalog and browsing details does not record game history', () => {
+  const page = memberPage({ type: 'feature', pageId: 'profile' });
+  const link = page.context().link('favorites', 'Favorites');
+  assert.equal(link.href, '#/favorites');
+  link.listeners.get('click')({ preventDefault() {} });
+  assert.equal(page.navigations.at(-1).type, 'favorites');
+  assert.equal(page.nodes['feature-view'].hidden, true);
   page.context().openGame('alpha');
   assert.equal(page.navigations.at(-1).type, 'game-details');
   assert.equal(page.navigations.at(-1).from, '#/favorites');

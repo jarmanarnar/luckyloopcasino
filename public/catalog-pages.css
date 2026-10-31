@@ -108,6 +108,19 @@ body:not([data-page="home"]) #catalog-shelves {
 .catalog-result-shelf .game-track,
 .catalog-result-shelf .provider-track { min-width: 0; }
 
+body:not([data-page="home"]) .catalog-empty--favorites {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 18rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+.catalog-empty--favorites h2 { margin: 0; color: var(--text-primary); font-size: 1.25rem; }
+.catalog-empty--favorites p { max-width: 24rem; margin: .5rem 0 1.5rem; font-size: .875rem; }
+.catalog-empty--favorites .text-control { padding-inline: 1.25rem; background: var(--surface-control); border: 0; }
+
 .catalog-pagination {
   display: flex;
   flex-direction: column;

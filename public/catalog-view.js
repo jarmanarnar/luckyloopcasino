@@ -3,10 +3,10 @@ import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
-import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
+import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, getFavoriteGames, pageSlice } from './catalog-page-model.js';
 
 let controller;
-const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first' };
+const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved' };
 function node(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -52,7 +52,7 @@ function providerCard(provider) {
   return card;
 }
 
-export function initCatalogView({ router } = {}) {
+export function initCatalogView({ router, member } = {}) {
   if (controller) return controller;
   const root = document.querySelector('#lobby-view');
   const shelves = document.querySelector('#catalog-shelves');
@@ -76,6 +76,7 @@ export function initCatalogView({ router } = {}) {
   const limits = new Map(), tracks = new Set();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '';
+  let favoriteKey = JSON.stringify(member?.getState().favorites || []);
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
   categorySelect.replaceChildren(option('all', 'All Games'), ...CATEGORIES.map(c => option(c.id, c.title)));
@@ -105,6 +106,7 @@ export function initCatalogView({ router } = {}) {
     for (const button of [titleLink, all]) {
       button.type = 'button';
       if (providers) button.dataset.openProviders = '';
+      else if (id === 'favorites') button.dataset.openFavorites = '';
       else button.dataset.openCategory = id;
     }
     all.setAttribute('aria-label', `See all ${providers ? 'game providers' : `${label} games`}`);
@@ -175,7 +177,9 @@ export function initCatalogView({ router } = {}) {
       for (const button of categories.querySelectorAll('[data-category]')) button.setAttribute('aria-pressed', 'false');
       return;
     }
-    const model = getCatalogPage(route), home = model.type === 'home';
+    const favoriteIds = member?.getState().favorites || [];
+    const model = getCatalogPage(route, { favoriteIds });
+    const home = model.type === 'home', favorites = model.type === 'favorites';
     document.body.dataset.page = model.type;
     root.hidden = false;
     hero.hidden = toolbar.hidden = !home;
@@ -190,7 +194,7 @@ export function initCatalogView({ router } = {}) {
     if (input.value !== (route.query || '')) input.value = route.query || '';
     input.placeholder = model.type === 'providers' ? 'Search providers' : 'Search games';
     input.setAttribute('aria-label', input.placeholder);
-    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search'].includes(model.type);
+    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search', 'favorites'].includes(model.type);
     categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
     sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
     providerSelect.value = route.providerId || '';
@@ -203,11 +207,15 @@ export function initCatalogView({ router } = {}) {
     if (key === renderedKey) return;
     renderedKey = key;
     tracks.clear();
+    empty.className = 'catalog-empty';
+    empty.replaceChildren();
     empty.hidden = true;
     more.hidden = true;
     pagination.hidden = home || model.type === 'not-found';
     if (home) {
-      shelves.replaceChildren(...LOBBY_CATEGORIES.map(id => rail(id, CATEGORIES.find(c => c.id === id).title, getGamesForCategory(id))),
+      const favorites = getFavoriteGames(favoriteIds);
+      shelves.replaceChildren(...(favorites.length ? [rail('favorites', 'Favorites', favorites)] : []),
+        ...LOBBY_CATEGORIES.map(id => rail(id, CATEGORIES.find(c => c.id === id).title, getGamesForCategory(id))),
         rail('providers', 'Game Providers', PROVIDERS, true));
     } else if (model.type === 'not-found') {
       shelves.replaceChildren();
@@ -226,8 +234,16 @@ export function initCatalogView({ router } = {}) {
       section.append(track);
       shelves.replaceChildren(section);
       empty.hidden = items.length !== 0;
-      empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
-      const noun = providers ? 'providers' : 'games';
+      if (favorites && !items.length) {
+        const noSavedGames = model.savedCount === 0;
+        empty.className = 'catalog-empty catalog-empty--favorites';
+        const browse = node('button', 'text-control', noSavedGames ? 'Explore games' : 'Clear filters');
+        browse.type = 'button';
+        browse.dataset.favoritesEmptyAction = noSavedGames ? 'browse' : 'clear';
+        empty.append(node('h2', '', noSavedGames ? 'Your favorites start here' : 'No matching favorites'),
+          node('p', '', noSavedGames ? 'Save games with the heart to keep them all in one place.' : 'Try a different search or provider.'), browse);
+      } else empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
+      const noun = providers ? 'providers' : slice.total === 1 ? 'game' : 'games';
       count.textContent = slice.hasMore ? `Showing ${slice.visible.length} of ${slice.total} ${noun}` : `${slice.total} ${noun}`;
       pagination.hidden = items.length === 0;
       more.hidden = !slice.hasMore;
@@ -239,6 +255,7 @@ export function initCatalogView({ router } = {}) {
   }
   const openHome = () => router.navigate({ type: 'home' });
   const openCategory = id => router.navigate({ type: 'category', categoryId: id });
+  const openFavorites = () => router.navigate({ type: 'favorites' });
   const openProviders = () => router.navigate({ type: 'providers' });
   const openProvider = id => router.navigate({ type: 'provider', providerId: id });
   const openStore = () => router.navigate({ type: 'store' });
@@ -251,6 +268,7 @@ export function initCatalogView({ router } = {}) {
   shelves.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     if (event.target.closest('[data-open-providers]')) return openProviders();
+    if (event.target.closest('[data-open-favorites]')) return openFavorites();
     const category = event.target.closest('[data-open-category]');
     if (category) return openCategory(category.dataset.openCategory);
     const provider = event.target.closest('[data-open-provider]');
@@ -264,6 +282,12 @@ export function initCatalogView({ router } = {}) {
     }
   });
   document.querySelector('#catalog-page-back').addEventListener('click', openHome);
+  empty.addEventListener('click', event => {
+    const action = event.target.closest('[data-favorites-empty-action]');
+    if (!action) return;
+    if (action.dataset.favoritesEmptyAction === 'browse') openSearch();
+    else router.navigate({ type: 'favorites' }, { replace: true });
+  });
   more.addEventListener('click', () => {
     const key = JSON.stringify(renderedRoute);
     limits.set(key, (limits.get(key) || PAGE_SIZE) + PAGE_SIZE);
@@ -273,7 +297,7 @@ export function initCatalogView({ router } = {}) {
   });
   function updateFilters(changes) {
     const route = router.getRoute();
-    if (!['category', 'provider', 'providers', 'search'].includes(route.type)) return;
+    if (!['category', 'provider', 'providers', 'search', 'favorites'].includes(route.type)) return;
     router.navigate({ ...route, ...changes }, { replace: true, preserveScroll: true, focus: false });
   }
   input.addEventListener('input', () => {
@@ -289,8 +313,16 @@ export function initCatalogView({ router } = {}) {
   categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value }));
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
   new ResizeObserver(() => tracks.forEach(updateArrows)).observe(shelves);
+  member?.subscribe(() => {
+    const key = JSON.stringify(member.getState().favorites);
+    if (key === favoriteKey) return;
+    favoriteKey = key;
+    renderedKey = '';
+    if (!['home', 'favorites'].includes(router.getRoute().type)) return;
+    render(router.getRoute(), { focus: false });
+  });
   router.subscribe(render);
   render(router.getRoute(), { source: 'initial', focus: false });
-  controller = { openHome, openCategory, openProviders, openProvider, openStore, openSearch, searchGames };
+  controller = { openHome, openCategory, openFavorites, openProviders, openProvider, openStore, openSearch, searchGames };
   return controller;
 }

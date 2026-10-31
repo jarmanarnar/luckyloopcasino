@@ -7,6 +7,37 @@ import { getCatalogPage, LOBBY_CATEGORIES, PAGE_SIZE, pageSlice } from '../publi
 
 const ids = page => page.games.map(game => game.id);
 
+test('Favorites uses only saved, available games with its own search, provider filter and ordering', () => {
+  const favoriteIds = ['nunchucksr96f100', 'SanQuentin', 'ouija00000000000', 'removed-game', 'SanQuentin'];
+  const before = [...favoriteIds];
+  const page = getCatalogPage({ type: 'favorites' }, { favoriteIds });
+  assert.equal(page.title, 'Favorites');
+  assert.equal(page.activeMenu, 'favorites');
+  assert.equal(page.type, 'favorites');
+  assert.equal(page.sort, 'saved');
+  assert.deepEqual(page.allowedSorts, ['saved', 'az', 'za']);
+  assert.equal(page.savedCount, 3);
+  assert.deepEqual(ids(page), ['ouija00000000000', 'SanQuentin', 'nunchucksr96f100']);
+  assert.deepEqual(ids(getCatalogPage({ type: 'favorites', query: '  OuIjA ', providerId: 'red-tiger' }, { favoriteIds })), ['ouija00000000000']);
+  const ascending = getCatalogPage({ type: 'favorites', sort: 'az' }, { favoriteIds });
+  const descending = getCatalogPage({ type: 'favorites', sort: 'za' }, { favoriteIds });
+  assert.deepEqual(ids(descending), ids(ascending).toReversed());
+  assert.deepEqual(favoriteIds, before, 'rendering never reorders saved member state');
+  assert.equal(getCatalogPage({ type: 'favorites', sort: 'featured' }, { favoriteIds }).sort, 'saved');
+});
+
+test('Favorites distinguishes an empty collection from a search with no matches and updates from current state', () => {
+  const empty = getCatalogPage({ type: 'favorites' });
+  assert.equal(empty.savedCount, 0);
+  assert.deepEqual(empty.games, []);
+  const favoriteIds = ['nunchucksr96f100'];
+  const filtered = getCatalogPage({ type: 'favorites', query: 'not-saved' }, { favoriteIds });
+  assert.equal(filtered.savedCount, 1);
+  assert.deepEqual(filtered.games, []);
+  assert.deepEqual(ids(getCatalogPage({ type: 'favorites' }, { favoriteIds })), favoriteIds);
+  assert.deepEqual(getCatalogPage({ type: 'favorites' }, { favoriteIds: [] }).games, []);
+});
+
 test('home remains a lobby with Popular, Slots and New Releases in the requested order', () => {
   assert.deepEqual(getCatalogPage({ type: 'home' }), {
     type: 'home', title: 'Lobby', activeMenu: 'lobby',

@@ -1,10 +1,11 @@
 import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
+import { getFavoriteGames } from './catalog-page-model.js';
 
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openCategory, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
+export function initSiteMenu({ openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -46,10 +47,28 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   const featureItems = new Map();
   const disclosures = new Map();
   let selectedFeature = null;
+  function featureButton(id, title) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'site-menu__item';
+    button.dataset.menuFeature = id;
+    button.dataset.tooltip = title;
+    button.setAttribute('aria-label', title);
+    if (id === 'how-to-play') {
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-controls', 'how-to-play-dialog');
+    }
+    const label = document.createElement('span');
+    label.className = 'site-menu__label';
+    label.textContent = title;
+    button.append(createShelfIcon(id), label);
+    featureItems.set(id, button);
+    return button;
+  }
   navigation.replaceChildren();
-  const menuItems = [...CATEGORIES, { id: 'providers', title: 'Providers' }];
+  const menuItems = [{ id: 'favorites', title: 'Favorites' }, ...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
-    if (category.id !== 'providers' && getGamesForCategory(category.id).length === 0) continue;
+    if (!['favorites', 'providers'].includes(category.id) && getGamesForCategory(category.id).length === 0) continue;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'site-menu__item';
@@ -63,13 +82,23 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
     navigation.append(button);
     items.set(category.id, button);
   }
+  function syncFavorites() {
+    const button = items.get('favorites');
+    button.hidden = getFavoriteGames(member?.getState?.().favorites || []).length === 0;
+    if (button.hidden) {
+      if (tooltipTarget === button) hideTooltip();
+      if (document.activeElement === button) items.get('popular')?.focus({ preventScroll: true });
+    }
+  }
+  member?.subscribe(syncFavorites);
+  syncFavorites();
 
   // Separate destinations keep rewards and account tools out of the casino catalog.
   const featureGroups = [
     { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
     { label: 'Free Money', items: [['free-money', 'Free Money']] },
     { label: 'Partners', disclosure: 'partners', items: [['partners', 'Partners'], ['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
-    { label: 'My account', items: [['profile', 'My Profile'], ['history', 'History'], ['favorites', 'Favorites'], ['notifications', 'Notifications']] },
+    { label: 'My account', items: [['profile', 'My Profile'], ['history', 'History'], ['notifications', 'Notifications']] },
     { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
   ];
   for (const group of featureGroups) {
@@ -78,22 +107,8 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
     section.setAttribute('aria-label', group.label);
     let list = section;
     for (const [id, title] of group.items) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'site-menu__item';
-      button.dataset.menuFeature = id;
-      button.dataset.tooltip = title;
-      button.setAttribute('aria-label', title);
-      if (id === 'how-to-play') {
-        button.setAttribute('aria-haspopup', 'dialog');
-        button.setAttribute('aria-controls', 'how-to-play-dialog');
-      }
-      const label = document.createElement('span');
-      label.className = 'site-menu__label';
-      label.textContent = title;
-      button.append(createShelfIcon(id), label);
+      const button = featureButton(id, title);
       list.append(button);
-      featureItems.set(id, button);
       if (id === group.disclosure) {
         const chevron = createShelfIcon('chevron-down');
         chevron.setAttribute('class', 'site-menu__chevron');
@@ -277,7 +292,8 @@ export function initSiteMenu({ openCategory, openProviders, openSearch, openStor
   }
 
   function chooseCategory(id) {
-    if (id === 'providers') closeMenu(() => openProviders?.());
+    if (id === 'favorites') closeMenu(() => openFavorites?.());
+    else if (id === 'providers') closeMenu(() => openProviders?.());
     else closeMenu(() => openCategory?.(id));
   }
 

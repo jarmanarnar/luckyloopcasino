@@ -4,14 +4,15 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
 import { createMemberState, dailyStatus, claimDailyReward } from '../public/member-state.js';
+import { getFavoriteGames } from '../public/catalog-page-model.js';
 
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
-function menuPage({ desktop = false, routeFromGame = false, storage = new Map() } = {}) {
+function menuPage({ desktop = false, routeFromGame = false, storage = new Map(), favorites = [] } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
-  let clock = new Date(2026, 9, 31, 12), memberState = createMemberState(), timerId = 0;
+  let clock = new Date(2026, 9, 31, 12), memberState = createMemberState({ favorites }), timerId = 0;
   const memberListeners = [], timers = new Map();
   class Node {
     constructor(tagName = 'div') {
@@ -176,6 +177,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map() 
   }
   const catalog = {
     member: {
+      getState: () => memberState,
       getDailyStatus: now => dailyStatus(memberState, now),
       subscribe(listener) { memberListeners.push(listener); },
     },
@@ -193,6 +195,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map() 
       pageHeading.focus();
     },
     openCategory(id) { routeCategory(id); },
+    openFavorites() { routeCategory('favorites'); },
     openStore() {
       assert.equal(nodes['site-menu'].open, false);
       calls.push('store:open');
@@ -233,7 +236,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map() 
     lobbyActions.push(() => { document.body.dataset.view = 'lobby'; action?.(); });
   };
   const context = {
-    document, Element: Node, CATEGORIES, getGamesForCategory, catalog,
+    document, Element: Node, CATEGORIES, getGamesForCategory, getFavoriteGames, catalog,
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [clock])); } },
     setTimeout(callback, delay) { timers.set(++timerId, { callback, delay }); return timerId; },
@@ -265,6 +268,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map() 
     item, feature, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     claimDaily() { memberState = claimDailyReward(memberState, clock).state; memberListeners.forEach(listener => listener()); },
+    setFavorites(favorites) { memberState = createMemberState({ ...memberState, favorites }); memberListeners.forEach(listener => listener()); },
     tickMinutes(minutes) {
       clock = new Date(clock.getTime() + minutes * 60_000);
       const queued = [...timers.values()]; timers.clear(); queued.forEach(timer => timer.callback());
@@ -530,11 +534,11 @@ test('the mobile daily banner waits for menu closure before opening Daily Bonus'
   assert.equal(page.calls.at(-1), 'feature:daily-bonus');
 });
 
-test('member destinations are grouped separately and navigate after the mobile drawer closes', () => {
+test('member destinations navigate after the mobile drawer closes', () => {
   const page = menuPage();
   for (const id of ['vip-club', 'rank-system', 'free-money',
     'invite-friends', 'partners', 'affiliate-program',
-    'profile', 'history', 'favorites', 'notifications', 'support', 'blog', 'settings']) {
+    'profile', 'history', 'notifications', 'support', 'blog', 'settings']) {
     assert.ok(page.feature(id), `${id} has a dedicated sidebar entry`);
     assert.equal(page.feature(id).dataset.tooltip, page.feature(id).getAttribute('aria-label'));
   }
@@ -552,6 +556,52 @@ test('member destinations are grouped separately and navigate after the mobile d
   page.nodes['menu-toggle'].click();
   assert.equal(page.feature('vip-club').getAttribute('aria-current'), 'page');
   assert.equal(page.item('lobby'), undefined);
+});
+
+test('Favorites appears once above Popular and opens the catalog after closing the mobile drawer', () => {
+  for (const desktop of [true, false]) {
+    const page = menuPage({ desktop, favorites: ['nunchucksr96f100'] });
+    const favorites = page.item('favorites');
+    assert.equal(favorites.hidden, false);
+    assert.equal(page.nodes['menu-navigation'].children[0], favorites);
+    assert.equal(page.nodes['menu-navigation'].children[1], page.item('popular'));
+    assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
+    assert.equal(page.feature('favorites'), undefined, 'Favorites is a casino destination, separate from account tools');
+    page.api.openMenu();
+    favorites.click();
+    if (!desktop) {
+      assert.equal(page.nodes['site-menu'].open, false);
+      assert.equal(page.calls.includes('category:favorites'), false);
+      page.flushClose();
+      page.api.openMenu();
+    } else page.observers[0].callback();
+    assert.ok(page.calls.includes('category:favorites'));
+    assert.equal(favorites.getAttribute('aria-current'), 'page');
+    assert.equal(page.item('popular').getAttribute('aria-current'), null);
+  }
+});
+
+test('Favorites is absent from desktop and mobile navigation until the first valid saved game and hides after the last removal', () => {
+  for (const desktop of [true, false]) {
+    const page = menuPage({ desktop });
+    const favorites = page.item('favorites');
+    page.api.openMenu();
+    assert.equal(favorites.getClientRects().length, 0);
+    page.setFavorites(['removed-game']);
+    assert.equal(favorites.hidden, true);
+    page.setFavorites(['nunchucksr96f100']);
+    assert.equal(favorites.hidden, false);
+    assert.equal(favorites.getClientRects().length, 1);
+    assert.equal(favorites.nextSibling, page.item('popular'));
+    favorites.focus();
+    page.setFavorites([]);
+    assert.equal(favorites.getClientRects().length, 0);
+    assert.equal(page.document.activeElement, page.item('popular'), 'focus must not remain in a hidden item');
+    assert.equal(page.item('popular').hidden, false);
+    page.setFavorites(['SanQuentin']);
+    assert.equal(favorites.getClientRects().length, 1);
+    assert.equal(page.nodes['menu-navigation'].children.filter(node => node.dataset.menuCategory === 'favorites').length, 1);
+  }
 });
 
 test('REDEEM opens a separate preview destination instead of performing a transaction', () => {

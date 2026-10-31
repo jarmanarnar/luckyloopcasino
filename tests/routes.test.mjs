@@ -90,6 +90,8 @@ test('category, provider and search links retain their page and filters after re
   const routes = [
     { type: 'home' },
     { type: 'search', query: '' },
+    { type: 'favorites' },
+    { type: 'favorites', query: 'Dragon & luck', providerId: 'netent', sort: 'saved' },
     { type: 'store' },
     { type: 'category', categoryId: 'popular', providerId: 'netent', query: 'Dragon & luck', sort: 'az' },
     { type: 'category', categoryId: 'new-releases' },
@@ -146,7 +148,7 @@ test('legacy All Games hash navigation canonicalizes in place and details return
 
 test('game details have their own refresh-safe address and retain a valid shell origin', () => {
   const origins = ['#/', '#/popular?provider=netent', '#/providers/netent?q=gold&sort=az',
-    '#/search?q=nip+%26+tuck&category=slots', '#/store', '#/history'];
+    '#/search?q=nip+%26+tuck&category=slots', '#/favorites?q=gold&provider=netent&sort=az', '#/store', '#/history'];
   for (const from of origins) {
     const details = { type: 'game-details', gameId: 'niptuck000000000', from };
     const hash = formatRoute(details);

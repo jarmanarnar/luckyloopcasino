@@ -20,6 +20,7 @@ npm test
 ## Current behavior
 
 - A branded startup loader waits for the requested route, saved local state, font loading, every rendered page image and 200ms of measured layout stability. Initial transitions and banner rotation stay disabled through the first revealed paint. Missing assets or startup failures offer a retry instead of exposing an incomplete page on a timer. Refresh retains the desktop sidebar width and restores the page scroll after rendering; mobile drawers stay closed on reload.
+- The loader uses the approved full LOOP wordmark with a white snake-like highlight around its original infinity: a 1.8-second cycle and 25% trail. It stops when startup completes, pauses in background tabs, and shows a static wordmark for reduced motion.
 - Responsive promotional carousel containing four empty frames: one, two or three per view, circular touch/drag navigation, and a white pagination fill synchronized with automatic rotation. Interaction pauses both the countdown and fill; they resume together. Frames use the same shared surface and radius tokens as the game cards. The earlier artwork remains in `assets/hero/` for later design work and is not loaded by the frames.
 - Fixed wallet header with safe-area spacing, original gold G and emerald S coins, separate demo balances and an independent coin switch.
 - Game cards open a dedicated, refresh-safe introduction page with a wireframe portrait, linked provider, shared favorites, game format, known release date, collection links and related games. Information and Description tabs keep details separate from launch. Play demo starts the edge-to-edge game stage; browsing details does not load a provider or count as a game visit. Legacy direct demo links still work. Unavailable RTP, volatility and win statistics are omitted.
@@ -33,9 +34,10 @@ npm test
 - Search has its own page with live results, category/provider filters and name sorting. The header uses the selected monochrome LOOP concept as its current wireframe logo.
 - How to Play sits immediately below Settings in the sidebar and opens a three-step modal explaining the GC and SC modes with the original coin artwork. Previous/next arrows, keyboard arrows, Escape and Back to Lobby work on desktop and mobile. The former bottom-of-menu accordion has been removed.
 - Partners is a closed-by-default sidebar disclosure containing Referral (the existing Invite Friends page) and Affiliate. Its children open within the same container, separated by a divider. In the desktop icon rail, selecting Partners expands the sidebar and its group; selecting a child in the mobile menu closes the menu before navigation.
-- Only the lobby includes promotional frames and the Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. Popular starts with 37 curated demo titles; it is not an analytics-based ranking. New Releases contains the latest 100 active titles by verified provider release date, recorded in collections.js.
-- Categories, the provider directory, individual providers and search have independent URL routes. Provider pages include expandable details derived from the active catalog. Lists load 35 games at a time with Show more. Search and filters survive refresh; Back and Forward restore page scroll. Opening a game remembers its originating page.
+- Only the lobby includes promotional frames and the Popular, Slots, New Releases category bar. Its shelves are Popular, Slots, New Releases and finally Game Providers. A nonempty Favorites collection adds a matching game carousel above Popular, with its title and All button opening the complete Favorites page. Adding the first favorite or removing the last immediately shows or hides both this carousel and the sidebar Favorites destination; empty or retired-only collections leave neither visible. Popular starts with 37 curated demo titles; it is not an analytics-based ranking. New Releases contains the latest 100 active titles by verified provider release date, recorded in collections.js.
+- Categories, Favorites, the provider directory, individual providers and search have independent URL routes. Favorites shares the catalog's exact portrait game cards, search, provider filter and pagination, with Recently saved and name sorting. Empty collections and searches with no matching favorites have separate recovery actions. Profile shortcuts and game detail hearts use the same persisted member collection. Provider pages include expandable details derived from the active catalog. Lists load 35 games at a time with Show more. Search and filters survive refresh; Back and Forward restore page scroll. Opening a game remembers its originating page.
 - Header Back controls on member pages, catalog/search/provider pages and pre-game details always navigate directly to the lobby, regardless of the previous page. Browser history remains available through native Back and Forward.
+- Invite Friends, Affiliate Program, My Profile and Activity History omit the visible page header. Notifications keeps its heading without the Back control. Favorites is the first casino sidebar destination, immediately above Popular, and no longer appears in the account group.
 - Clickable carousel titles and All buttons open the same complete collection; category and provider pages show their title.
 - Provider detail views highlight Providers; selecting a game category highlights that category.
 - Equal game-card sizes in carousels and grids. Game cover artwork is intentionally omitted.
@@ -82,6 +84,7 @@ Routes use URL fragments so direct links and refresh also work on static GitHub 
 | Popular | `#/popular` |
 | Slots | `#/slots` |
 | New Releases | `#/new-releases` |
+| Favorites | `#/favorites` |
 | Providers | `#/providers` |
 | Single provider | `#/providers/netent` |
 | Search | `#/search?q=Nip+Tuck` |
@@ -89,7 +92,7 @@ Routes use URL fragments so direct links and refresh also work on static GitHub 
 | Daily Bonus / Free Money | `#/daily-bonus`, `#/free-money` |
 | Membership | `#/vip-club`, `#/rank-system`, `#/coinback` |
 | Partners | `#/partners`, `#/invite-friends`, `#/affiliate-program` |
-| Account | `#/profile`, `#/history`, `#/favorites`, `#/notifications` |
+| Account | `#/profile`, `#/history`, `#/notifications` |
 | Services | `#/support`, `#/blog`, `#/settings`, `#/redeem` |
 
 Provider/category filters and sorting are encoded in the fragment query. Existing `#game=…` links remain supported; launches from a page include a `from` parameter for refresh-safe return navigation.

@@ -8,6 +8,7 @@
   <meta name="description" content="LuckyLoop Casino — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>LuckyLoop Casino</title>
   <link rel="preload" href="assets/fonts/arimo-bold-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/loop-wireframe-v1.png" as="image" fetchpriority="high">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="wallet.css">
   <link rel="stylesheet" href="site-menu.css">
@@ -21,8 +22,10 @@
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
-    <img src="assets/loop-wireframe-v1.png" width="1916" height="821" alt="LOOP">
-    <span class="app-loader__spinner" aria-hidden="true"></span>
+    <div id="app-loader-brand" class="app-loader__brand" role="img" aria-label="LOOP">
+      <img id="app-loader-source" src="assets/loop-wireframe-v1.png" width="1916" height="821" alt="" aria-hidden="true" fetchpriority="high">
+      <canvas id="app-loader-logo" aria-hidden="true" hidden></canvas>
+    </div>
     <p id="app-load-status" class="visually-hidden">Loading LuckyLoop Casino…</p>
     <button id="app-load-retry" class="app-loader__retry" type="button" hidden>Try again</button>
     <noscript><p>Enable JavaScript to load the site.</p></noscript>
@@ -90,7 +93,7 @@
       <label class="catalog-page-filter"><span class="visually-hidden">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></label>
     </div>
     <div id="catalog-shelves" class="catalog-shelves" lang="en" dir="ltr"></div>
-    <p id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, category or provider.</p>
+    <div id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, category or provider.</div>
     <div id="catalog-pagination" class="catalog-pagination" lang="en" dir="ltr" hidden><p id="catalog-page-count" role="status"></p><button id="catalog-more" class="text-control" type="button" hidden>Show more</button></div>
     <section id="catalog-provider-details" class="catalog-provider-details" lang="en" dir="ltr" hidden></section>
   </main>

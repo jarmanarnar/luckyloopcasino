@@ -15,11 +15,11 @@ import { initHowToPlay } from './how-to-play.js';
 export function initApplication() {
   const router = initRouter();
   initGameView({ router });
-  const catalog = initCatalogView({ router });
+  const wallet = initWallet({ openStore: () => router.navigate({ type: 'store' }) });
+  const features = initFeatureView({ router, wallet });
+  const catalog = initCatalogView({ router, member: features.member });
   initStoreView({ router });
   initCatalogToolbar();
-  const wallet = initWallet(catalog);
-  const features = initFeatureView({ router, wallet });
   initGameDetails({ router, member: features.member });
   const search = initSiteSearch(catalog);
   const help = initHowToPlay({ router, openHome: catalog.openHome });
