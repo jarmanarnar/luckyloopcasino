@@ -7,7 +7,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   const dialogs = {
     menu: document.querySelector('#site-menu'),
   };
-  const buttons = new Map(['menu', 'lobby', 'store', 'redeem', 'promotions']
+  const buttons = new Map(['menu', 'store', 'lobby', 'redeem', 'promotions']
     .map(action => [action, document.querySelector(`#mobile-nav-${action}`)]));
   if (![nav, categories, ...Object.values(dialogs), ...buttons.values()].every(Boolean)) return;
   initialized = true;

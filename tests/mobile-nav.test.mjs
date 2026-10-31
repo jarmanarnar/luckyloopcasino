@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
-const actions = ['menu', 'lobby', 'store', 'redeem', 'promotions'];
+const actions = ['menu', 'store', 'lobby', 'redeem', 'promotions'];
 
 function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];

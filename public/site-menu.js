@@ -30,8 +30,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
 
   const triggerHome = trigger.parentElement;
   const triggerSibling = trigger.nextSibling;
-  const bottomNavHome = bottomNav?.parentElement;
-  const bottomNavSibling = bottomNav?.nextSibling;
+  const menuBackground = new Map();
   const desktopMedia = window.matchMedia('(min-width: 45rem)');
   let desktop = false;
   let expanded = false;
@@ -161,9 +160,16 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
     candidates.find(node => node?.getClientRects().length)?.focus({ preventScroll: true });
   }
 
-  function restoreBottomNav() {
-    if (bottomNavHome && bottomNav.parentElement === dialog) {
-      bottomNavHome.insertBefore(bottomNav, bottomNavSibling);
+  function setMenuBackgroundInert(active) {
+    if (active) {
+      for (const element of document.body.children) {
+        if (element === dialog || element === bottomNav || menuBackground.has(element)) continue;
+        menuBackground.set(element, element.inert);
+        element.inert = true;
+      }
+    } else {
+      for (const [element, inert] of menuBackground) element.inert = inert;
+      menuBackground.clear();
     }
   }
 
@@ -173,7 +179,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
       || dialog.contains(document.activeElement)
       || sidebar.contains(document.activeElement);
     afterClose = null;
-    restoreBottomNav();
+    setMenuBackgroundInert(false);
     if (dialog.open) {
       pendingClose = true;
       dialog.close();
@@ -213,8 +219,10 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
     menuOpener = returnFocusTo;
     syncMenu();
     afterClose = null;
-    if (bottomNav) dialog.append(bottomNav);
-    dialog.showModal();
+    // The mobile bar remains in the shell. A non-modal dialog lets that same
+    // bar stay interactive while the covered page is inert.
+    dialog.show();
+    setMenuBackgroundInert(true);
     trigger.setAttribute('aria-expanded', 'true');
     buyButton.focus({ preventScroll: true });
     observeState();
@@ -229,7 +237,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
     if (!dialog.open) return;
     afterClose = action;
     pendingClose = true;
-    restoreBottomNav();
+    setMenuBackgroundInert(false);
     dialog.close();
   }
 
@@ -271,7 +279,7 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
   });
   dialog.addEventListener('close', () => {
     pendingClose = false;
-    restoreBottomNav();
+    setMenuBackgroundInert(false);
     if (desktop) {
       afterClose = null;
       return;
@@ -285,6 +293,24 @@ export function initSiteMenu({ openHome, openCategory, openProviders, openSearch
       return;
     }
     restoreMenuFocus(menuOpener);
+  });
+  document.addEventListener('keydown', event => {
+    if (desktop || !dialog.open || event.defaultPrevented) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMenu();
+      return;
+    }
+    if (event.key !== 'Tab' || event.ctrlKey || event.altKey || event.metaKey) return;
+    const controls = [dialog, bottomNav].filter(Boolean).flatMap(root =>
+      [...root.querySelectorAll('button, a[href], input, select, textarea, summary, [tabindex]')])
+      .filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
+    if (!controls.length) return;
+    const current = controls.indexOf(document.activeElement);
+    const next = current < 0 ? event.shiftKey ? controls.length - 1 : 0
+      : (current + (event.shiftKey ? -1 : 1) + controls.length) % controls.length;
+    event.preventDefault();
+    controls[next].focus({ preventScroll: true });
   });
   sidebar.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || !expanded) return;

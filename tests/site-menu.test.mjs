@@ -11,7 +11,9 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [];
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   class Node {
-    constructor() {
+    constructor(tagName = 'div') {
+      this.tagName = tagName.toUpperCase();
+      this.tabIndex = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'SUMMARY', 'A'].includes(this.tagName) ? 0 : -1;
       this.dataset = {};
       this.attributes = new Map();
       this.listeners = new Map();
@@ -20,6 +22,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
       this.visible = true;
       this.open = false;
       this.hidden = false;
+      this.inert = false;
       this.style = {};
     }
     get parentElement() { return this.parent || null; }
@@ -63,7 +66,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     emit(type, details = {}) {
       const event = {
         target: this, defaultPrevented: false,
-        preventDefault() { this.defaultPrevented = true; }, ...details,
+        preventDefault() { this.defaultPrevented = true; }, stopPropagation() {}, ...details,
       };
       for (const listener of this.listeners.get(type) || []) listener(event);
       return event;
@@ -78,10 +81,25 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
       return this.dataset[property] ? this : this.parent?.closest(selector) || null;
     }
     contains(node) { for (let next = node; next; next = next.parent) if (next === this) return true; return false; }
-    focus() { if (this.visible) document.activeElement = this; }
-    getClientRects() { return this.visible ? [{}] : []; }
+    querySelectorAll(selector) {
+      assert.equal(selector, 'button, a[href], input, select, textarea, summary, [tabindex]');
+      const descendants = this.children.flatMap(child => [child, ...child.descendants()]);
+      return descendants.filter(child => ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'SUMMARY'].includes(child.tagName)
+        || (child.tagName === 'A' && (child.href || child.getAttribute('href')))
+        || child.attributes.has('tabindex'));
+    }
+    descendants() { return this.children.flatMap(child => [child, ...child.descendants()]); }
+    focus() { if (this.getClientRects().length && !this.disabled && !this.hasInertAncestor()) document.activeElement = this; }
+    hasInertAncestor() { for (let next = this; next; next = next.parent) if (next.inert) return true; return false; }
+    getClientRects() {
+      for (let next = this; next; next = next.parent) {
+        if (!next.visible || next.hidden || (next.tagName === 'DIALOG' && !next.open)) return [];
+      }
+      return [{}];
+    }
     getBoundingClientRect() { return this.bounds || { left: 0, right: 320, top: 0, bottom: 700, width: 320, height: 700 }; }
-    showModal() { this.open = true; calls.push('menu:open'); }
+    show() { this.open = true; calls.push('menu:open'); }
+    showModal() { throw new Error('Mobile Menu must not create a modal above the persistent bottom navigation'); }
     close() { this.open = false; calls.push('menu:close'); closeEvents.push(() => this.emit('close')); }
   }
   document.body = new Node();
@@ -90,9 +108,14 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
     'menu-mobile-header', 'menu-search', 'menu-promotion', 'menu-tooltip', 'site-search', 'site-search-input',
-    'bottom-menu', 'mobile-nav', 'mobile-nav-menu'];
+    'bottom-menu', 'mobile-nav', 'mobile-nav-menu', 'mobile-nav-store', 'mobile-nav-lobby', 'mobile-nav-redeem', 'mobile-nav-promotions',
+    'lobby-view', 'game-view', 'store-view', 'feature-view', 'game-details-view'];
   const nodes = Object.fromEntries(ids.map(id => {
-    const node = new Node();
+    const tagName = id === 'site-menu' || id === 'other-dialog' || id === 'site-search' ? 'dialog'
+      : id === 'menu-toggle' || id === 'menu-buy' || id === 'menu-redeem' || id === 'menu-search' || id === 'menu-promotion'
+        || id === 'bottom-menu' || id.startsWith('mobile-nav-') ? 'button'
+        : id === 'site-logo' ? 'a' : id === 'site-search-input' ? 'input' : 'div';
+    const node = new Node(tagName);
     node.id = id;
     return [id, node];
   }));
@@ -106,8 +129,11 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   nodes['menu-shortcuts'].append(nodes['menu-buy'], nodes['menu-redeem']);
   nodes['menu-content'].append(nodes['menu-search'], nodes['menu-promotion'], nodes['menu-navigation']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
-  nodes['mobile-nav'].append(nodes['mobile-nav-menu']);
-  document.body.append(headerParent, nodes['site-sidebar'], nodes['mobile-nav'], nodes['site-menu']);
+  nodes['mobile-nav'].append(...['menu', 'store', 'lobby', 'redeem', 'promotions'].map(action => nodes[`mobile-nav-${action}`]));
+  document.body.append(headerParent, nodes['site-sidebar'], nodes['lobby-view'], nodes['game-view'], nodes['store-view'],
+    nodes['feature-view'], nodes['game-details-view'], nodes['mobile-nav'], nodes['site-menu']);
+  const documentEvents = new Node();
+  document.addEventListener = documentEvents.addEventListener.bind(documentEvents);
   const breakpoint = new Node();
   breakpoint.matches = desktop;
   nodes['coin-wallet'].dataset.currency = 'GC';
@@ -133,7 +159,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
     if (selector === 'dialog[open]') return ['site-menu', 'other-dialog', 'site-search'].map(id => nodes[id]).find(node => node.open) || null;
     return nodes[selector.slice(1)] || null;
   };
-  document.createElement = () => new Node();
+  document.createElement = tag => new Node(tag);
   const pageHeading = new Node();
   function routeCategory(id) {
     assert.equal(nodes['site-menu'].open, false);
@@ -219,6 +245,7 @@ function menuPage({ desktop = false, routeFromGame = false } = {}) {
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
     item, feature, flushClose, providerCalls, headerParent, resize, pageHeading,
+    keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
 }
 
@@ -528,12 +555,12 @@ test('desktop collection, Providers and BUY actions run immediately without a dr
   assert.equal(page.calls.at(-1), 'store:open');
 });
 
-test('switching an open mobile drawer to desktop closes it and reparents one live navigation tree', () => {
+test('switching an open mobile drawer to desktop closes it while the bottom bar stays in its original parent', () => {
   const page = menuPage();
   assert.equal(page.nodes['site-sidebar'].hidden, true);
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, true);
-  assert.equal(page.nodes['mobile-nav'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
   page.resize(true);
   assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
   assert.equal(page.nodes['site-menu'].open, false);
@@ -706,7 +733,7 @@ test('menu dismissal uses the logo if every remembered or menu control is hidden
 });
 
 
-test('full-screen menu keeps the same bottom navigation interactive and restores it before deferred actions', () => {
+test('mobile menu leaves one persistent bottom navigation in place through open, close and deferred actions', () => {
   const page = menuPage();
   const nav = page.nodes['mobile-nav'];
   const opener = page.nodes['mobile-nav-menu'];
@@ -716,9 +743,10 @@ test('full-screen menu keeps the same bottom navigation interactive and restores
   assert.equal(nav.nextSibling, page.nodes['site-menu']);
 
   page.api.openMenu({ returnFocusTo: opener });
-  assert.equal(nav.parentElement, page.nodes['site-menu']);
-  assert.equal(nav.children[0], opener, 'the live navigation is moved, preserving its controls and listeners');
-  assert.equal(page.nodes['site-menu'].children.at(-1), nav);
+  assert.equal(nav.parentElement, page.document.body);
+  assert.equal(nav.children[0], opener, 'the same controls remain in the fixed application bar');
+  assert.equal(nav.nextSibling, page.nodes['site-menu']);
+  assert.equal(page.nodes['site-menu'].contains(nav), false, 'the menu must not acquire a separate bottom navigation');
 
   let actionRan = false;
   page.api.closeMenu(() => {
@@ -726,16 +754,82 @@ test('full-screen menu keeps the same bottom navigation interactive and restores
     assert.equal(nav.parentElement, page.document.body);
     actionRan = true;
   });
-  assert.equal(nav.parentElement, page.document.body, 'restore before the native close event, so the bottom bar does not disappear');
-  assert.equal(nav.nextSibling, page.nodes['site-menu'], 'restore the original document position');
+  assert.equal(nav.parentElement, page.document.body, 'the bottom bar never moves while the close action is pending');
+  assert.equal(nav.nextSibling, page.nodes['site-menu'], 'the original document position is unchanged');
   assert.equal(actionRan, false);
   page.flushClose();
   assert.equal(actionRan, true);
 
   page.api.openMenu({ returnFocusTo: opener });
-  assert.equal(nav.parentElement, page.nodes['site-menu']);
+  assert.equal(nav.parentElement, page.document.body);
   page.api.closeMenu();
   page.flushClose();
   assert.equal(nav.parentElement, page.document.body);
   assert.equal(page.document.activeElement, opener);
+});
+
+test('mobile menu makes only the background inert and restores each prior state before destination actions', () => {
+  const page = menuPage();
+  page.nodes['game-view'].inert = true;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  for (const id of ['lobby-view', 'game-view', 'store-view', 'feature-view', 'game-details-view', 'site-sidebar']) {
+    assert.equal(page.nodes[id].inert, true, id);
+  }
+  assert.equal(page.headerParent.inert, true);
+  assert.equal(page.nodes['site-menu'].inert, false);
+  assert.equal(page.nodes['mobile-nav'].inert, false);
+  page.nodes['site-logo'].focus();
+  assert.equal(page.document.activeElement, page.nodes['menu-buy'], 'the background cannot acquire focus');
+  page.nodes['mobile-nav-promotions'].focus();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-promotions'], 'the fixed navigation remains interactive');
+
+  let actionRan = false;
+  page.api.closeMenu(() => {
+    actionRan = true;
+    assert.equal(page.nodes['lobby-view'].inert, false);
+    assert.equal(page.headerParent.inert, false);
+    assert.equal(page.nodes['game-view'].inert, true, 'previous inert states must not be erased');
+  });
+  assert.equal(page.nodes['lobby-view'].inert, false, 'release the shell before the native close handoff');
+  assert.equal(actionRan, false);
+  page.flushClose();
+  assert.equal(actionRan, true);
+});
+
+test('mobile focus cycles through the menu and the permanent bottom bar and document Escape closes it', () => {
+  const page = menuPage();
+  const opener = page.nodes['mobile-nav-menu'];
+  opener.visible = true;
+  page.api.openMenu({ returnFocusTo: opener });
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+  assert.equal(page.keydown('Tab', { shiftKey: true }).defaultPrevented, true);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-promotions']);
+  assert.equal(page.keydown('Tab').defaultPrevented, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+
+  page.nodes['mobile-nav-promotions'].disabled = true;
+  page.nodes['mobile-nav-redeem'].visible = false;
+  page.keydown('Tab', { shiftKey: true });
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-lobby'], 'skip hidden and disabled controls');
+  assert.equal(page.keydown('Tab', { ctrlKey: true }).defaultPrevented, false, 'browser shortcuts stay available');
+  assert.equal(page.keydown('Escape').defaultPrevented, true);
+  assert.equal(page.nodes['site-menu'].open, false);
+  page.flushClose();
+  assert.equal(page.document.activeElement, opener);
+  assert.equal(page.keydown('Tab').defaultPrevented, false, 'normal page focus resumes after dismissal');
+});
+
+test('switching to desktop releases mobile background inert state without moving the fixed bar', () => {
+  const page = menuPage();
+  page.api.openMenu();
+  assert.equal(page.nodes['lobby-view'].inert, true);
+  page.resize(true);
+  assert.equal(page.nodes['lobby-view'].inert, false);
+  assert.equal(page.headerParent.inert, false);
+  assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
+  assert.equal(page.nodes['site-sidebar'].inert, false);
+  assert.equal(page.nodes['site-menu'].open, false);
+  page.flushClose();
+  assert.equal(page.keydown('Tab').defaultPrevented, false);
 });
