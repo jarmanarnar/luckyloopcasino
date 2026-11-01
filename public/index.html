@@ -20,7 +20,7 @@
     .app-loader__brand[data-reduced="true"] .app-loader__base { opacity: 1; }
     .app-loader__message { margin: 0; color: #9b9ba5; font: .875rem Arial, sans-serif; }
     .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: #20212a; color: #eeeef2; font-weight: 700; cursor: pointer; }
-    @keyframes app-loader-orbit { from { stroke-dashoffset: var(--offset); } to { stroke-dashoffset: calc(var(--offset) - 100); } }
+    @keyframes app-loader-orbit { from { stroke-dashoffset: calc(var(--offset) * 1px); } to { stroke-dashoffset: calc(var(--offset) * 1px - 100px); } }
     @media (prefers-reduced-motion: reduce) {
       .app-loader__orbit { display: none; }
       .app-loader__base { opacity: 1; }
