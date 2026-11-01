@@ -20,7 +20,7 @@ export function initAuthView({ account, router } = {}) {
   let signedIn = account.isSignedIn();
 
   for (const container of document.querySelectorAll('[data-loop-promo]')) {
-    container.innerHTML = '<span class="loop-promo__brand"><img src="assets/loop-wireframe-v1.png" alt="" width="1916" height="821"></span>'
+    container.innerHTML = '<span class="loop-promo__brand"><img src="assets/loop-wordmark.svg" alt="" width="1413" height="370"></span>'
       + '<div class="loop-promo__copy"><span class="loop-promo__eyebrow">MAKE IT A LOOP</span><strong class="loop-promo__title">PLAY<br>YOUR WAY.</strong><p class="loop-promo__caption">Discover your next favorite.</p></div>'
       + '<div class="loop-promo__coins"><img class="loop-promo__coin loop-promo__coin--gold" src="assets/coins/gold-coin.svg" width="220" height="220" alt=""><img class="loop-promo__coin loop-promo__coin--sweeps" src="assets/coins/sweeps-coin.svg" width="180" height="180" alt=""></div>'
       + '<i class="loop-promo__spark loop-promo__spark--one"></i><i class="loop-promo__spark loop-promo__spark--two"></i><i class="loop-promo__spark loop-promo__spark--three"></i>';

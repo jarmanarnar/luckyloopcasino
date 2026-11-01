@@ -452,6 +452,8 @@
       -webkit-box-orient: vertical;
       overflow-wrap: anywhere;
     }
+    .game-launch__art[data-artwork="true"] { position: relative; padding: 0; }
+    .game-cover { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
     .game-provider-badge {
       box-sizing: border-box;
       flex: none;
@@ -467,6 +469,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .game-launch__art[data-artwork="true"] + .game-provider-badge { display: none; }
     .provider-track { display: flex; gap: var(--game-card-gap); margin: 0; padding: 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; list-style: none; }
     .provider-track::-webkit-scrollbar { display: none; }
     .provider-card { flex: 0 0 9rem; min-width: 0; scroll-snap-align: start; }
@@ -482,7 +485,7 @@
     }
     .provider-track.is-grid .provider-launch { height: auto; min-height: var(--touch-target); aspect-ratio: 2.1; }
     @media (min-width: 48rem) {
-      :root { --header-control-size: 2.5rem; --header-padding: .75rem; --header-side-control-width: 4rem; --header-icon-size: 1.375rem; --page-gutter: 1.5rem; --game-card-gap: 1rem; --shelf-title-size: 1.5rem; --game-title-size: .875rem; }
+      :root { --page-gutter: 1.5rem; --game-card-gap: 1rem; --shelf-title-size: 1.5rem; --game-title-size: .875rem; }
       .game-shelf + .game-shelf { margin-block-start: 3rem; }
     }
     @media (min-width: 64rem) { :root { --page-gutter: 3rem; } }

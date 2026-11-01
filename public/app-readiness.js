@@ -3,7 +3,9 @@ export async function waitForPageAssets(doc) {
   // behind the loader instead of letting them appear after the page is shown.
   const images = [...doc.images].filter(image => image.getClientRects().length);
   for (const image of images) image.loading = 'eager';
-  await Promise.all([doc.fonts?.ready, ...images.map(image => image.decode())]);
+  await Promise.all([doc.fonts?.ready, ...images.map(image => image.decode().catch(error => {
+    if (image.dataset?.optionalArtwork !== 'true') throw error;
+  }))]);
 }
 
 function layoutSnapshot(doc) {

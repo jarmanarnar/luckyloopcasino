@@ -5,9 +5,9 @@
 }
 
 .header-context { display: flex; align-items: center; gap: .5rem; min-width: 0; justify-self: start; }
-.site-logo { display: flex; position: relative; flex: none; align-items: center; width: 3.25rem; height: 1.75rem; overflow: hidden; border-radius: .25rem; }
-/* Use the approved infinity as the compact mark; keep the original artwork intact. */
-.site-logo__image { display: block; position: absolute; left: 50%; top: 50%; width: 236%; height: auto; max-width: none; transform: translate(-48.7%, -49%); clip-path: inset(0 30.9% 0 28.3%); }
+.site-logo { display: flex; flex: none; align-items: center; justify-content: center; width: 3.25rem; height: 1.75rem; border-radius: .25rem; }
+.site-logo__image { display: block; width: 100%; height: 100%; object-fit: contain; }
+.site-logo__image--wordmark { display: none; }
 .header-context > .icon-button {
   box-sizing: border-box;
   flex: none;
@@ -120,12 +120,9 @@
 
 
 @media (min-width: 45rem) {
-  .site-logo { width: 7rem; height: var(--header-control-size); }
-  .site-logo__image { width: 130%; transform: translate(-50%, -49%); clip-path: none; }
-}
-@media (min-width: 48rem) {
-  .coin-wallet { --wallet-plus-width: 2.25rem; --wallet-art-size: 2.25rem; --wallet-value-size: 1.125rem; }
-  .wallet-switch { --switch-coin-size: 2.25rem; }
+  .site-logo { width: 6.5rem; height: 2rem; }
+  .site-logo__image--wordmark { display: block; }
+  .site-logo__image--mark { display: none; }
 }
 @media (max-width: 22.4375rem) { .site-logo { display: none; } }
 

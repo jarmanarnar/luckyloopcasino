@@ -4,6 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
 import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
+import { createGameArt } from './game-artwork-view.js';
 
 let controller;
 const SHELF_GAME_LIMIT = 24;
@@ -48,8 +49,7 @@ function gameCard(game, shelfId) {
   button.dataset.game = game.id;
   button.dataset.provider = game.providerId;
   button.setAttribute('aria-label', `View ${game.title} by ${game.providerName}`);
-  const art = node('span', 'game-launch__art');
-  art.append(node('span', '', game.title));
+  const art = createGameArt(game);
   button.append(art, node('span', 'game-provider-badge', game.providerName));
   card.append(button);
   return card;

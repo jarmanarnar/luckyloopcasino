@@ -3,6 +3,8 @@ import { CATEGORIES, LEGACY_CATEGORIES, getGameCategoryIds, getGameReleaseDate }
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
+import { createGameArt } from './game-artwork-view.js';
+import { GAME_ARTWORK } from './game-artwork.js';
 
 const games = new Map(GAMES.map(game => [game.id, game]));
 const providerNames = new Map(PROVIDERS.map(provider => [provider.id, provider.name]));
@@ -170,8 +172,7 @@ export function initGameDetails({ router, member } = {}) {
       button.type = 'button';
       button.dataset.game = candidate.id;
       button.setAttribute('aria-label', `View ${candidate.title} details`);
-      const art = node('span', 'game-launch__art');
-      art.append(node('span', '', candidate.title));
+      const art = createGameArt(candidate);
       button.append(art, node('span', 'game-provider-badge', candidate.providerName));
       button.addEventListener('click', () => openDetails(candidate.id));
       card.append(button);
@@ -215,6 +216,7 @@ export function initGameDetails({ router, member } = {}) {
     hero.setAttribute('aria-labelledby', 'game-details-title');
     const art = node('div', 'game-details-art');
     art.setAttribute('aria-hidden', 'true');
+    if (GAME_ARTWORK[game.id]) art.append(createGameArt(game, { eager: true }));
     const copy = node('div', 'game-details-copy');
     const byline = node('p', 'game-details-byline');
     byline.append(document.createTextNode('By '), routeLink(game.providerName, { type: 'provider', providerId: game.providerId }));

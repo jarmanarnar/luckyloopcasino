@@ -1,8 +1,9 @@
 .guest-header-actions { display: flex; align-items: center; justify-self: end; gap: .5rem; }
 .guest-header-actions[hidden], .coin-wallet[hidden], .wallet-switch[hidden], .guest-welcome[hidden] { display: none !important; }
 body[data-auth="guest"] .top-bar__inner { grid-template-columns: minmax(0,1fr) auto; }
-body[data-auth="guest"] .site-logo { display: flex; width: 7rem; height: var(--header-control-size); }
-body[data-auth="guest"] .site-logo__image { display: block; width: 130%; clip-path: none; transform: translate(-50%,-49%); }
+body[data-auth="guest"] .site-logo { display: flex; width: 6.5rem; height: 2rem; }
+body[data-auth="guest"] .site-logo__image--wordmark { display: block; }
+body[data-auth="guest"] .site-logo__image--mark { display: none; }
 .auth-button, .auth-icon-button, .auth-social { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; border: 1px solid #303137; border-radius: .6rem; padding: .625rem 1.25rem; font: 700 .875rem/1.25 var(--header-font-family); color: var(--text-primary); cursor: pointer; text-decoration: none; }
 .auth-button--secondary, .auth-icon-button { background: #202124; }
 .auth-button--primary { color: #211705; border-color: #f7d983; background: linear-gradient(125deg,#e4b44c 0%,#f8d87d 72%,#f4c966 73%,#ffe6a0 100%); box-shadow: inset 0 -3px 0 #ae7b27, inset 0 1px 0 #fff4bf; }
@@ -10,6 +11,8 @@ body[data-auth="guest"] .site-logo__image { display: block; width: 130%; clip-pa
 .auth-button:disabled { cursor: wait; opacity: .7; }
 .auth-icon-button { width: 2.75rem; padding: .75rem; }
 .auth-icon-button svg { width: 1.125rem; height: 1.125rem; }
+.guest-header-actions :is(.auth-button, .auth-icon-button) { height: var(--header-control-size); min-height: var(--header-control-size); padding-block: 0; }
+.guest-header-actions .auth-icon-button { width: var(--header-control-size); padding-inline: 0; }
 .guest-welcome { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(19rem,1fr); overflow: hidden; border: 1px solid #29292c; border-radius: 1.125rem; background: #171719; margin-bottom: 1.75rem; }
 .guest-register-card { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: stretch; padding: 2rem; text-align: center; }
 .guest-register-card h1 { margin: 0; color: #fafafa; font: 700 clamp(1.5rem,2.5vw,2rem)/1.2 var(--header-font-family); letter-spacing: -.055em; }
@@ -28,7 +31,7 @@ body[data-auth="guest"] .site-logo__image { display: block; width: 130%; clip-pa
 .loop-promo { position: relative; isolation: isolate; overflow: hidden; min-width: 0; background: radial-gradient(ellipse at 87% 85%,#f6c76399,transparent 50%),linear-gradient(125deg,#34211c,#74542d 65%,#c48b32); color: #fff3d2; }
 .loop-promo::before { content: ''; position: absolute; z-index: -1; width: 32rem; height: 32rem; right: -14rem; top: -16rem; border: 1px solid #ffe2a033; border-radius: 50%; box-shadow: 0 0 0 3rem #ffe2a00a,0 0 0 6rem #ffe2a00a,0 0 0 9rem #ffe2a00a; }
 .loop-promo__brand { position: relative; display: block; width: 6rem; height: 2.6rem; overflow: hidden; }
-.loop-promo__brand img { position: absolute; width: 130%; height: auto; max-width: none; top: 50%; left: 50%; transform: translate(-50%,-49%); mix-blend-mode: screen; }
+.loop-promo__brand img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .loop-promo__copy { position: relative; z-index: 2; }
 .loop-promo__eyebrow { display: block; margin-bottom: .875rem; font-size: .625rem; font-weight: 700; letter-spacing: .22em; color: #ffe5a6; }
 .loop-promo__title { display: block; font: 700 clamp(2.5rem,4vw,3.6rem)/.96 var(--header-font-family); letter-spacing: -.07em; text-shadow: 0 3px 14px #1f100b55; }
@@ -107,8 +110,8 @@ body[data-auth-dialog="open"] { overflow: hidden; }
 @media (max-width: 44.99rem) {
   .guest-extra { display: none; }
   .guest-header-actions { gap: .375rem; }
-  .guest-header-actions .auth-button { padding-inline: .875rem; min-height: 2.5rem; font-size: .75rem; }
-  body[data-auth="guest"] .site-logo { width: 4.75rem; height: 2.5rem; }
+  .guest-header-actions .auth-button { padding-inline: .875rem; }
+  body[data-auth="guest"] .site-logo { width: 4.75rem; }
   .guest-welcome { display: flex; flex-direction: column; border-radius: .875rem; margin-bottom: 1rem; }
   .loop-promo--wide { min-height: 14rem; padding: 1.25rem 1.5rem; border-radius: .8rem; }
   .loop-promo--wide .loop-promo__brand { width: 5rem; height: 2rem; }

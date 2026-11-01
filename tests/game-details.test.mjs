@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 import { formatRoute, parseRoute } from '../public/routes.js';
+import { createGameArt } from '../public/game-artwork-view.js';
+import { GAME_ARTWORK } from '../public/game-artwork.js';
 
 const source = (await readFile(new URL('../public/game-details-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameDetails', 'function initGameDetails');
@@ -63,6 +65,7 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
   };
   const context = {
     document, router, member, formatRoute, parseRoute, GAMES: games,
+    GAME_ARTWORK, createGameArt: (game, options) => createGameArt(game, { ...options, document }),
     PROVIDERS: [{ id: 'studio', name: 'Studio' }, { id: 'other', name: 'Other Studio' }],
     CATEGORIES: [{ id: 'all', title: 'All Games' }, { id: 'popular', title: 'Popular' }, { id: 'slots', title: 'Slots' }],
     LEGACY_CATEGORIES: [], GAME_TYPES: [{ id: 'slots', title: 'Slots' }],
