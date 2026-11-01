@@ -4,7 +4,7 @@ import { createWalletCounter, resolveWalletFrame } from './wallet-counter.js';
 let initialized = false;
 let walletController;
 
-export function initWallet({ openStore, account } = {}) {
+export function initWallet({ openStore, account, router } = {}) {
   if (initialized) return walletController;
   const wallet = document.querySelector('#coin-wallet');
   const switchBalanceCopy = document.querySelector('#coin-type-switch > .wallet-balance-copy');
@@ -13,6 +13,7 @@ export function initWallet({ openStore, account } = {}) {
   const currencyLabel = document.querySelector('#wallet-currency-label');
   const coinSwitch = document.querySelector('#coin-type-switch');
   const switchCoin = document.querySelector('#currency-coin');
+  const purchaseLabel = document.querySelector('#wallet-purchase-label');
   const addButton = document.querySelector('#wallet-add');
   const addArt = document.querySelector('#wallet-add-art');
   if (![wallet, balanceCopy, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt].every(Boolean)) return;
@@ -153,6 +154,23 @@ export function initWallet({ openStore, account } = {}) {
     counter.animateTo(amount, formatter);
   }
 
+  const inGame = () => router?.getRoute().type === 'game';
+  function syncHeaderAction() {
+    const purchasing = inGame();
+    balanceCopy.hidden = purchasing;
+    if (purchaseLabel) purchaseLabel.hidden = !purchasing;
+    coinSwitch.dataset.action = purchasing ? 'store' : 'currency';
+    switchCoin.src = purchasing ? addArt.src
+      : state.currency === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
+    coinSwitch.setAttribute('role', purchasing ? 'button' : 'switch');
+    if (purchasing) coinSwitch.removeAttribute('aria-checked');
+    else coinSwitch.setAttribute('aria-checked', String(state.currency === 'SC'));
+    const action = purchasing ? 'Buy Coins' : `Switch to ${CURRENCIES[state.currency === 'GC' ? 'SC' : 'GC'].name}`;
+    coinSwitch.title = action;
+    if (purchasing || switchBalanceCopy) coinSwitch.setAttribute('aria-label', purchasing ? action
+      : `${wallet.getAttribute('aria-label')}. ${action}`);
+  }
+
   function render({ animate = true } = {}) {
     const code = state.currency;
     wallet.dataset.currency = code;
@@ -160,10 +178,7 @@ export function initWallet({ openStore, account } = {}) {
     if (switchBalanceCopy) coinSwitch.dataset.balanceMotion = String(animate && renderedCurrency !== null && renderedCurrency !== code &&
       !reducedMotion.matches && !preferences.reducedMotion && !document.hidden);
     applyLayout(readLayout());
-    switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
     addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
-    coinSwitch.setAttribute('aria-checked', String(code === 'SC'));
-    coinSwitch.title = `Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`;
     const precision = 10 ** CURRENCIES[code].decimals;
     const formatter = value => formatBalance(code, value * precision);
     const amount = state.balances[code] / precision;
@@ -173,9 +188,9 @@ export function initWallet({ openStore, account } = {}) {
       : `${CURRENCIES[code].name} balance: ${formatBalance(code, state.balances[code])} ${code}`);
     if (switchBalanceCopy) {
       balanceCopy.setAttribute('aria-hidden', 'true');
-      coinSwitch.setAttribute('aria-label', `${wallet.getAttribute('aria-label')}. Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`);
     }
     addButton.setAttribute('aria-label', 'Open store');
+    syncHeaderAction();
   }
 
   async function changeCurrency(code) {
@@ -185,12 +200,12 @@ export function initWallet({ openStore, account } = {}) {
       if (!result.ok) throw new Error(result.reason);
       wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
         detail: { currency: state.currency, demo: true } }));
-      coinSwitch.title = `Switch to ${CURRENCIES[state.currency === 'GC' ? 'SC' : 'GC'].name}`;
+      syncHeaderAction();
     } catch {
-      coinSwitch.title = 'Unable to save your currency. Please try again.';
+      if (!inGame()) coinSwitch.title = 'Unable to save your currency. Please try again.';
     } finally { coinSwitch.disabled = false; }
   }
-  coinSwitch.addEventListener('click', () => changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
+  coinSwitch.addEventListener('click', () => inGame() ? openStore?.() : changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
   addButton.addEventListener('click', () => openStore?.());
   account.subscribe(() => {
     const next = account.getSnapshot().wallet;
@@ -210,6 +225,7 @@ export function initWallet({ openStore, account } = {}) {
     if (document.hidden) finishBalance();
   });
   render({ animate: false });
+  router?.subscribe(syncHeaderAction);
   const layoutObserver = new ResizeObserver(() => scheduleLayout());
   for (const node of [header, addButton, coinSwitch, leadingControl].filter(Boolean)) layoutObserver.observe(node);
   if (document.fonts) {

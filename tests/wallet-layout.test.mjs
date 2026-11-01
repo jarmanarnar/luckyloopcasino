@@ -13,7 +13,7 @@ afterEach(() => { accounts.splice(0).forEach(account => account.close()); });
 const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initWallet', 'function initWallet');
 
-async function walletPage({ font = 16, width = 320, saved, realCounter = false, balanceInSwitch = false } = {}) {
+async function walletPage({ font = 16, width = 320, saved, realCounter = false, balanceInSwitch = false, initialRoute = 'home' } = {}) {
   const events = {}, frames = [], observers = [], calls = [], storeCalls = [], storageWrites = [];
   const counterFrames = new Map();
   let counterTime = 0, counterFrameId = 0;
@@ -30,11 +30,12 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     addEventListener(key, callback) { this.events[key] = callback; },
     setAttribute(key, value) { this.attributes[key] = value; },
     getAttribute(key) { return this.attributes[key] ?? null; },
+    removeAttribute(key) { delete this.attributes[key]; },
     getBoundingClientRect() { return { width: this.width, height: this.height }; },
   });
   const selectors = ['.top-bar', '.header-context', '#coin-wallet', '#coin-wallet > .wallet-balance-copy',
     '#wallet-balance-value', '#wallet-currency-label', '#coin-type-switch', '#currency-coin',
-    '#wallet-add', '#wallet-add-art'];
+    '#wallet-add', '#wallet-add-art', '#wallet-purchase-label'];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, node()]));
   if (balanceInSwitch) nodes['#coin-type-switch > .wallet-balance-copy'] = nodes['#coin-wallet > .wallet-balance-copy'];
   const header = node();
@@ -64,8 +65,11 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     storage: { getItem: key => key === 'luckyloopcasino-demo-wallet-v1' && saved ? JSON.stringify(saved) : null } });
   accounts.push(account);
   await account.register({ email: 'wallet-test@example.test', password: 'WalletDemo37!', accepted: true });
+  let route = { type: initialRoute };
+  const routeListeners = [];
+  const router = { getRoute: () => route, subscribe: listener => routeListeners.push(listener) };
   const context = {
-    CURRENCIES, createWalletState, formatBalance, selectCurrency, account, resolveWalletFrame,
+    CURRENCIES, createWalletState, formatBalance, selectCurrency, account, resolveWalletFrame, router,
     openStore: () => storeCalls.push('store'),
     createWalletCounter(options) {
       if (realCounter) return createWalletCounter({ ...options, now: () => counterTime,
@@ -103,10 +107,11 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     CustomEvent: class {},
   };
   const flush = () => { while (frames.length) frames.shift()?.(); };
-  const controller = vm.runInNewContext(`${source}\ninitWallet({ openStore, account });`, context);
+  const controller = vm.runInNewContext(`${source}\ninitWallet({ openStore, account, router });`, context);
   await Promise.resolve();
   flush();
   return { controller, account, nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, storeCalls, storageWrites, flush,
+    navigate(type) { route = { type }; routeListeners.forEach(listener => listener()); },
     frame(at) {
       counterTime = at;
       const callbacks = [...counterFrames.values()];
@@ -116,6 +121,44 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     get pendingCounterFrames() { return counterFrames.size; },
   };
 }
+
+test('inside a game the wallet becomes Buy Coins, opens Store without changing currency or ledger, and restores the toggle on exit', async () => {
+  for (const currency of ['GC', 'SC']) {
+    const page = await walletPage({ balanceInSwitch: true, saved: { currency, balances: { GC: 130000, SC: 8500 } } });
+    const before = page.account.getSnapshot();
+    const button = page.nodes['#coin-type-switch'];
+    page.navigate('game');
+    assert.equal(button.attributes.role, 'button');
+    assert.equal(button.attributes['aria-label'], 'Buy Coins');
+    assert.equal(button.attributes['aria-checked'], undefined);
+    assert.equal(page.nodes['#wallet-purchase-label'].hidden, false);
+    assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, true);
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg');
+    await button.events.click();
+    assert.deepEqual(page.storeCalls, ['store']);
+    assert.deepEqual(page.account.getSnapshot().wallet, before.wallet);
+    assert.deepEqual(page.account.getSnapshot().ledger, before.ledger);
+    page.navigate('store');
+    assert.equal(button.attributes.role, 'switch');
+    assert.equal(button.attributes['aria-checked'], String(currency === 'SC'));
+    assert.equal(page.nodes['#wallet-purchase-label'].hidden, true);
+    assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, false);
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg');
+    await button.events.click();
+    assert.notEqual(page.account.getSnapshot().wallet.currency, currency);
+  }
+});
+
+test('a direct game entry and account settings updates retain the purchase action without exposing a balance', async () => {
+  const page = await walletPage({ balanceInSwitch: true, initialRoute: 'game' });
+  const button = page.nodes['#coin-type-switch'];
+  assert.equal(button.attributes['aria-label'], 'Buy Coins');
+  await page.account.saveSettings({ hideBalance: true, reducedMotion: true });
+  assert.equal(button.attributes['aria-label'], 'Buy Coins');
+  assert.equal(button.attributes.role, 'button');
+  assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, true);
+  assert.equal(page.nodes['#wallet-purchase-label'].hidden, false);
+});
 
 test('the balance inside the switch uses the same counter and changes mode without changing balances or the ledger', async () => {
   const page = await walletPage({ balanceInSwitch: true, realCounter: true,

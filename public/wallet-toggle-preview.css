@@ -25,7 +25,7 @@ body[data-wallet-layout="balance-toggle"] .wallet-switch {
   --wallet-line-height: 1.25rem;
   color: var(--text-primary);
 }
-body[data-wallet-layout="balance-toggle"] .wallet-switch > .wallet-balance-copy {
+body[data-wallet-layout="balance-toggle"] .wallet-switch > :is(.wallet-balance-copy, .wallet-purchase-copy) {
   position: absolute;
   inset: 0 .75rem 0 calc(var(--switch-coin-size) + .625rem);
   display: flex;
@@ -34,6 +34,7 @@ body[data-wallet-layout="balance-toggle"] .wallet-switch > .wallet-balance-copy 
   padding: 0;
   pointer-events: none;
 }
+.wallet-purchase-copy { font: var(--header-font-weight) var(--wallet-value-size)/var(--wallet-line-height) var(--header-font-family); }
 body[data-wallet-layout="balance-toggle"] .wallet-switch[aria-checked="true"] > .wallet-balance-copy {
   inset: 0 calc(var(--switch-coin-size) + .625rem) 0 .75rem;
 }

@@ -20,7 +20,7 @@ export async function initApplication() {
   const auth = initAuthView({ account, router: initRouter() });
   const router = auth.router;
   initGameView({ router });
-  const wallet = initWallet({ account, openStore: () => router.navigate({ type: 'store' }) });
+  const wallet = initWallet({ account, router, openStore: () => router.navigate({ type: 'store' }) });
   const features = initFeatureView({ router, wallet, account, auth });
   const catalog = initCatalogView({ router, member: features.member });
   initStoreView({ router });
