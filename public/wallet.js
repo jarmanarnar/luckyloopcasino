@@ -1,5 +1,6 @@
 import { CURRENCIES, formatBalance } from './wallet-state.js';
 import { createWalletCounter, resolveWalletFrame } from './wallet-counter.js';
+import { initWalletMenu } from './wallet-menu.js';
 
 let initialized = false;
 let walletController;
@@ -36,6 +37,8 @@ export function initWallet({ openStore, account, router } = {}) {
   let animation = null;
   let layoutFrame = null;
   let fontsChanged = false;
+  const menu = document.querySelector('#wallet-currency-menu')
+    ? initWalletMenu({ account, router, openStore, selectCurrency: changeCurrency }) : null;
 
   function readLayout() {
     const outer = getComputedStyle(wallet);
@@ -156,6 +159,7 @@ export function initWallet({ openStore, account, router } = {}) {
 
   const inGame = () => router?.getRoute().type === 'game';
   function syncHeaderAction() {
+    if (menu) { balanceCopy.hidden = false; menu.render(); return; }
     const purchasing = inGame();
     balanceCopy.hidden = purchasing;
     if (purchaseLabel) purchaseLabel.hidden = !purchasing;
@@ -201,11 +205,13 @@ export function initWallet({ openStore, account, router } = {}) {
       wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
         detail: { currency: state.currency, demo: true } }));
       syncHeaderAction();
+      return true;
     } catch {
       if (!inGame()) coinSwitch.title = 'Unable to save your currency. Please try again.';
+      return false;
     } finally { coinSwitch.disabled = false; }
   }
-  coinSwitch.addEventListener('click', () => inGame() ? openStore?.() : changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
+  coinSwitch.addEventListener('click', () => menu ? menu.toggle() : inGame() ? openStore?.() : changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
   addButton.addEventListener('click', () => openStore?.());
   account.subscribe(() => {
     const next = account.getSnapshot().wallet;
