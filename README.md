@@ -15,7 +15,10 @@ Open [LuckyLoop Casino](http://127.0.0.1:4320/luckyloopcasino/). Only one local 
 ```sh
 npm run check
 npm test
+npm run build
 ```
+
+GitHub Pages publishes `dist/`. Each build versions stylesheet and module entry URLs and includes an import map for the same commit, so cached modules from an earlier release cannot mix with new page markup. Module source and provider assets stay unchanged; local development still serves `public/`.
 
 ## Current behavior
 
