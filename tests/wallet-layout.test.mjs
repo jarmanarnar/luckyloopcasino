@@ -13,7 +13,7 @@ afterEach(() => { accounts.splice(0).forEach(account => account.close()); });
 const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initWallet', 'function initWallet');
 
-async function walletPage({ font = 16, width = 320, saved, realCounter = false, balanceInSwitch = false, initialRoute = 'home' } = {}) {
+async function walletPage({ font = 16, width = 320, saved, realCounter = false, balanceInSwitch = false, currencyMenu = false, initialRoute = 'home' } = {}) {
   const events = {}, frames = [], observers = [], calls = [], storeCalls = [], storageWrites = [];
   const counterFrames = new Map();
   let counterTime = 0, counterFrameId = 0;
@@ -38,6 +38,7 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     '#wallet-add', '#wallet-add-art', '#wallet-purchase-label'];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, node()]));
   if (balanceInSwitch) nodes['#coin-type-switch > .wallet-balance-copy'] = nodes['#coin-wallet > .wallet-balance-copy'];
+  if (currencyMenu) nodes['#wallet-currency-menu'] = node();
   const header = node();
   header.width = width - 1.5 * font;
   nodes['#coin-wallet'].parentElement = header;
@@ -70,6 +71,7 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
   const router = { getRoute: () => route, subscribe: listener => routeListeners.push(listener) };
   const context = {
     CURRENCIES, createWalletState, formatBalance, selectCurrency, account, resolveWalletFrame, router,
+    initWalletMenu: () => ({ render() {}, toggle() {} }),
     openStore: () => storeCalls.push('store'),
     createWalletCounter(options) {
       if (realCounter) return createWalletCounter({ ...options, now: () => counterTime,
@@ -111,6 +113,12 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
   await Promise.resolve();
   flush();
   return { controller, account, nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, storeCalls, storageWrites, flush,
+    resizeCurrencyTrigger(nextWidth) {
+      const trigger = nodes['#coin-type-switch'];
+      trigger.width = nextWidth;
+      observers.filter(observer => observer.nodes.includes(trigger)).forEach(observer => observer.callback());
+      flush();
+    },
     navigate(type) { route = { type }; routeListeners.forEach(listener => listener()); },
     frame(at) {
       counterTime = at;
@@ -121,6 +129,20 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false, 
     get pendingCounterFrames() { return counterFrames.size; },
   };
 }
+
+test('a currency trigger that follows the number width does not interrupt an in-progress balance count', async () => {
+  const page = await walletPage({ balanceInSwitch: true, currencyMenu: true, realCounter: true,
+    saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  await page.account.selectCurrency('SC');
+  page.frame(180);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '49.14');
+  page.resizeCurrencyTrigger(100);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '49.14');
+  assert.equal(page.pendingCounterFrames, 1);
+  page.frame(720);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+  assert.equal(page.pendingCounterFrames, 0);
+});
 
 test('inside a game the wallet becomes Buy Coins, opens Store without changing currency or ledger, and restores the toggle on exit', async () => {
   for (const currency of ['GC', 'SC']) {

@@ -233,7 +233,9 @@ export function initWallet({ openStore, account, router } = {}) {
   render({ animate: false });
   router?.subscribe(syncHeaderAction);
   const layoutObserver = new ResizeObserver(() => scheduleLayout());
-  for (const node of [header, addButton, coinSwitch, leadingControl].filter(Boolean)) layoutObserver.observe(node);
+  // The dropdown trigger follows its text width; counter frames must not
+  // interrupt themselves when that width changes during currency counting.
+  for (const node of [header, addButton, ...(!menu ? [coinSwitch] : []), leadingControl].filter(Boolean)) layoutObserver.observe(node);
   if (document.fonts) {
     document.fonts.ready.then(() => scheduleLayout(true));
     document.fonts.addEventListener('loadingdone', () => scheduleLayout(true));
