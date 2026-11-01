@@ -3,7 +3,8 @@ import test from 'node:test';
 import { GAMES } from '../public/catalog.js';
 import { createMemberState, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit, taskEligible, MEMBER_STORAGE_KEY } from '../public/member-state.js';
 import { getDemoRank } from '../public/rewards-pages.js';
-import { initFeatureView } from '../public/feature-view.js';
+import { IDBFactory } from 'fake-indexeddb';
+import { openDemoAccount } from '../public/demo-account.js';
 
 const localDay = (day, hour = 12, minute = 0) => new Date(2026, 9, day, hour, minute);
 
@@ -136,15 +137,8 @@ test('achieved discovery rank survives the activity history retention limit and 
   assert.equal(taskEligible('first-game', { ...state, history: [] }), true, 'discovery survives a truncated activity log');
 });
 
-test('member view removes retired games from persisted history and favorites before recording a new visit', () => {
-  const oldDocument = globalThis.document;
-  const oldStorage = globalThis.localStorage;
-  const nodes = new Map();
-  const getNode = selector => {
-    if (!nodes.has(selector)) nodes.set(selector, { hidden: false, dataset: {}, addEventListener() {} });
-    return nodes.get(selector);
-  };
-  let stored = JSON.stringify(createMemberState({
+test('demo account removes retired games from history and favorites before recording a new visit', async () => {
+  const stored = JSON.stringify(createMemberState({
     favorites: ['gonzo', GAMES[0].id, 'not-in-catalog'],
     discoveredGameIds: ['gonzo', GAMES[0].id, 'not-in-catalog'],
     history: [
@@ -153,23 +147,17 @@ test('member view removes retired games from persisted history and favorites bef
       { id: 'reward', type: 'reward', title: 'Daily bonus', at: localDay(20).toISOString() },
     ],
   }));
-  globalThis.document = { querySelector: getNode, body: { dataset: {} }, dispatchEvent() {}, addEventListener() {} };
-  globalThis.localStorage = {
-    getItem: key => key === MEMBER_STORAGE_KEY ? stored : null,
-    setItem(key, value) { if (key === MEMBER_STORAGE_KEY) stored = value; },
-  };
+  const account = await openDemoAccount({ indexedDB: new IDBFactory(), scope: undefined,
+    storage: { getItem: key => key === MEMBER_STORAGE_KEY ? stored : null }, catalogIds: GAMES.map(game => game.id) });
   try {
-    initFeatureView({ router: { getRoute: () => ({ type: 'game', gameId: GAMES[1].id }), subscribe() {} },
-      wallet: { setPreferences() {} } });
-    const saved = JSON.parse(stored);
+    await account.register({ email: 'member-test@example.test', password: 'MemberDemo37!', accepted: true });
+    await account.recordGameVisit(GAMES[1]);
+    const saved = account.getSnapshot().member;
     assert.deepEqual(saved.favorites, [GAMES[0].id]);
     assert.deepEqual(saved.discoveredGameIds, [GAMES[0].id, GAMES[1].id]);
     assert.equal(saved.history.some(entry => entry.gameId === 'gonzo'), false);
     assert.equal(saved.history.some(entry => entry.type === 'reward'), true);
     assert.equal(saved.history.at(-1).gameId, GAMES[1].id);
     assert.equal(getDemoRank(saved).games, 2);
-  } finally {
-    if (oldDocument === undefined) delete globalThis.document; else globalThis.document = oldDocument;
-    if (oldStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = oldStorage;
-  }
+  } finally { account.close(); }
 });

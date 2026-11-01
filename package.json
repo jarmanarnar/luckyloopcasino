@@ -15,5 +15,8 @@
   },
   "dependencies": {
     "embla-carousel": "8.6.0"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.7"
   }
 }

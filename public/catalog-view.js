@@ -3,10 +3,26 @@ import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
-import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, getFavoriteGames, pageSlice } from './catalog-page-model.js';
+import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
 
 let controller;
+const SHELF_GAME_LIMIT = 24;
 const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved' };
+
+export function getShelfScrollTarget(track, direction, position = track.scrollLeft) {
+  const first = track.firstElementChild;
+  const second = first?.nextElementSibling;
+  if (!second || !track.clientWidth) return 0;
+  const card = first.getBoundingClientRect();
+  const stride = second.getBoundingClientRect().left - card.left;
+  if (stride <= 0) return 0;
+  const gap = stride - card.width;
+  // Keep the last visible card as the first card of the next row.
+  const visible = Math.max(1, Math.ceil((track.clientWidth + gap - 1) / stride));
+  const step = Math.max(1, visible - 1);
+  const index = Math.round(position / stride) + (direction === 'next' ? step : -step);
+  return Math.max(0, Math.min(index * stride, track.scrollWidth - track.clientWidth));
+}
 function node(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -63,6 +79,8 @@ export function initCatalogView({ router, member } = {}) {
   const title = document.querySelector('#catalog-page-title');
   const controls = document.querySelector('#catalog-page-controls');
   const input = document.querySelector('#catalog-page-search-input');
+  const lobbySearch = document.querySelector('#lobby-search-form');
+  const lobbyInput = document.querySelector('#lobby-search-input');
   const providerSelect = document.querySelector('#catalog-page-provider');
   const categorySelect = document.querySelector('#catalog-page-category');
   const sortSelect = document.querySelector('#catalog-page-sort');
@@ -72,10 +90,11 @@ export function initCatalogView({ router, member } = {}) {
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
   if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
-    providerSelect, categorySelect, sortSelect, pagination, count, details].every(Boolean)) return;
-  const limits = new Map(), tracks = new Set();
+    providerSelect, categorySelect, sortSelect, pagination, count, details, lobbySearch, lobbyInput].every(Boolean)) return;
+  const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '';
+  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', lobbyQuery = '';
+  const viewKey = route => JSON.stringify(route.type === 'home' ? { ...route, query: lobbyQuery } : route);
   let favoriteKey = JSON.stringify(member?.getState().favorites || []);
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
@@ -91,8 +110,9 @@ export function initCatalogView({ router, member } = {}) {
   function updateArrows(track) {
     const section = track.closest('.game-shelf');
     const max = Math.max(0, track.scrollWidth - track.clientWidth);
-    section.querySelector('[data-scroll="previous"]').disabled = track.scrollLeft <= 1;
-    section.querySelector('[data-scroll="next"]').disabled = track.scrollLeft >= max - 1;
+    const position = scrollTargets.get(track) ?? track.scrollLeft;
+    section.querySelector('[data-scroll="previous"]').disabled = position <= 1;
+    section.querySelector('[data-scroll="next"]').disabled = position >= max - 1;
   }
   function rail(id, label, items, providers = false) {
     const section = node('section', 'game-shelf');
@@ -130,8 +150,23 @@ export function initCatalogView({ router, member } = {}) {
     }
     actions.append(all, navigation);
     head.append(heading, actions);
-    track.append(...items.slice(0, providers ? items.length : 12).map(item => providers ? providerCard(item) : gameCard(item, id)));
+    track.append(...items.slice(0, providers ? items.length : SHELF_GAME_LIMIT)
+      .map(item => providers ? providerCard(item) : gameCard(item, id)));
+    const endCard = node('li', `${providers ? 'provider-card' : 'game-card'} shelf-view-all-card`);
+    const viewAll = node('button', 'shelf-view-all');
+    viewAll.type = 'button';
+    Object.assign(viewAll.dataset, all.dataset);
+    viewAll.setAttribute('aria-label', `View all ${items.length} ${providers ? 'game providers' : `${label} games`}`);
+    viewAll.append(node('span', 'shelf-view-all__title', 'View All'),
+      node('span', 'shelf-view-all__count', `${items.length} ${providers ? 'providers' : items.length === 1 ? 'game' : 'games'}`));
+    endCard.append(viewAll);
+    track.append(endCard);
     track.addEventListener('scroll', () => updateArrows(track), { passive: true });
+    const releaseTarget = () => { scrollTargets.delete(track); updateArrows(track); };
+    track.addEventListener('scrollend', releaseTarget);
+    for (const event of ['pointerdown', 'wheel', 'keydown']) {
+      track.addEventListener(event, releaseTarget, { passive: true });
+    }
     tracks.add(track);
     section.append(head, track);
     return section;
@@ -177,17 +212,20 @@ export function initCatalogView({ router, member } = {}) {
       for (const button of categories.querySelectorAll('[data-category]')) button.setAttribute('aria-pressed', 'false');
       return;
     }
+    const home = route.type === 'home';
+    if (!home) { lobbyQuery = ''; lobbyInput.value = ''; }
     const favoriteIds = member?.getState().favorites || [];
-    const model = getCatalogPage(route, { favoriteIds });
-    const home = model.type === 'home', favorites = model.type === 'favorites';
-    document.body.dataset.page = model.type;
+    const model = getCatalogPage(home && lobbyQuery ? { type: 'search', query: lobbyQuery } : route, { favoriteIds });
+    const favorites = model.type === 'favorites';
+    document.body.dataset.page = home ? 'home' : model.type;
     root.hidden = false;
     hero.hidden = toolbar.hidden = !home;
+    lobbySearch.hidden = !home;
     header.hidden = home;
     controls.hidden = home || model.type === 'not-found';
     title.textContent = model.title;
     document.title = home ? 'LuckyLoop Casino' : `${model.title} · LuckyLoop Casino`;
-    categories.dataset.activeMenu = model.activeMenu;
+    categories.dataset.activeMenu = home ? 'lobby' : model.activeMenu;
     for (const button of categories.querySelectorAll('[data-category]')) {
       button.setAttribute('aria-pressed', String(button.dataset.category === model.activeMenu));
     }
@@ -203,7 +241,7 @@ export function initCatalogView({ router, member } = {}) {
     sortSelect.value = model.sort || '';
     providerDetails(model.type === 'provider' ? model.provider : null);
     renderedRoute = route;
-    const key = JSON.stringify(route);
+    const key = viewKey(route);
     if (key === renderedKey) return;
     renderedKey = key;
     tracks.clear();
@@ -211,10 +249,9 @@ export function initCatalogView({ router, member } = {}) {
     empty.replaceChildren();
     empty.hidden = true;
     more.hidden = true;
-    pagination.hidden = home || model.type === 'not-found';
-    if (home) {
-      const favorites = getFavoriteGames(favoriteIds);
-      shelves.replaceChildren(...(favorites.length ? [rail('favorites', 'Favorites', favorites)] : []),
+    pagination.hidden = (home && !lobbyQuery) || model.type === 'not-found';
+    if (home && !lobbyQuery) {
+      shelves.replaceChildren(
         ...LOBBY_CATEGORIES.map(id => rail(id, CATEGORIES.find(c => c.id === id).title, getGamesForCategory(id))),
         rail('providers', 'Game Providers', PROVIDERS, true));
     } else if (model.type === 'not-found') {
@@ -226,7 +263,12 @@ export function initCatalogView({ router, member } = {}) {
       const items = providers ? model.providers : model.games;
       const slice = pageSlice(items, limits.get(key) || PAGE_SIZE);
       const section = node('section', 'game-shelf catalog-result-shelf');
-      section.setAttribute('aria-labelledby', 'catalog-page-title');
+      section.setAttribute('aria-labelledby', home ? 'lobby-search-results-title' : 'catalog-page-title');
+      if (home) {
+        const heading = node('h2', 'game-shelf__title lobby-search-results-heading', 'Games');
+        heading.id = 'lobby-search-results-title';
+        section.append(heading);
+      }
       const track = node('ul', `${providers ? 'provider-track' : 'game-track'} is-grid`);
       track.setAttribute('aria-label', providers ? 'Game providers' : `${model.title} games`);
       track.dir = 'ltr';
@@ -276,8 +318,10 @@ export function initCatalogView({ router, member } = {}) {
     const arrow = event.target.closest('[data-scroll]');
     if (arrow) {
       const track = arrow.closest('.game-shelf').querySelector('.game-track, .provider-track');
-      const cardWidth = track.firstElementChild?.getBoundingClientRect().width || 0;
-      track.scrollBy({ left: (arrow.dataset.scroll === 'next' ? 1 : -1) * Math.max(1, track.clientWidth - cardWidth),
+      const left = getShelfScrollTarget(track, arrow.dataset.scroll, scrollTargets.get(track) ?? track.scrollLeft);
+      scrollTargets.set(track, left);
+      updateArrows(track);
+      track.scrollTo({ left,
         behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     }
   });
@@ -289,7 +333,7 @@ export function initCatalogView({ router, member } = {}) {
     else router.navigate({ type: 'favorites' }, { replace: true });
   });
   more.addEventListener('click', () => {
-    const key = JSON.stringify(renderedRoute);
+    const key = viewKey(renderedRoute);
     limits.set(key, (limits.get(key) || PAGE_SIZE) + PAGE_SIZE);
     renderedKey = '';
     render(renderedRoute, { focus: false });
@@ -300,6 +344,22 @@ export function initCatalogView({ router, member } = {}) {
     if (!['category', 'provider', 'providers', 'search', 'favorites'].includes(route.type)) return;
     router.navigate({ ...route, ...changes }, { replace: true, preserveScroll: true, focus: false });
   }
+  function searchLobby() {
+    if (router.getRoute().type !== 'home') return;
+    const query = lobbyInput.value.trim();
+    if (query === lobbyQuery) return;
+    lobbyQuery = query;
+    render(router.getRoute(), { focus: false });
+  }
+  lobbyInput.addEventListener('input', () => {
+    window.clearTimeout(inputTimer);
+    inputTimer = window.setTimeout(searchLobby, 120);
+  });
+  lobbySearch.addEventListener('submit', event => {
+    event.preventDefault();
+    window.clearTimeout(inputTimer);
+    searchLobby();
+  });
   input.addEventListener('input', () => {
     window.clearTimeout(inputTimer);
     inputTimer = window.setTimeout(() => updateFilters({ query: input.value }), 120);
@@ -312,13 +372,16 @@ export function initCatalogView({ router, member } = {}) {
   providerSelect.addEventListener('change', () => updateFilters({ providerId: providerSelect.value }));
   categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value }));
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
-  new ResizeObserver(() => tracks.forEach(updateArrows)).observe(shelves);
+  new ResizeObserver(() => tracks.forEach(track => {
+    scrollTargets.delete(track);
+    updateArrows(track);
+  })).observe(shelves);
   member?.subscribe(() => {
     const key = JSON.stringify(member.getState().favorites);
     if (key === favoriteKey) return;
     favoriteKey = key;
+    if (router.getRoute().type !== 'favorites') return;
     renderedKey = '';
-    if (!['home', 'favorites'].includes(router.getRoute().type)) return;
     render(router.getRoute(), { focus: false });
   });
   router.subscribe(render);

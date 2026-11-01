@@ -43,6 +43,7 @@ function profile(ctx) {
   const shortcuts = ctx.node('div', 'feature-actions');
   shortcuts.append(ctx.link('history', 'Activity history'), ctx.link('favorites', 'Favorites'), ctx.link('rank-system', 'My rank'));
   overview.append(shortcuts);
+  if (ctx.logout) overview.append(button(ctx, 'Log out', () => ctx.logout()));
   const form = ctx.node('form', 'feature-card feature-stack');
   form.append(ctx.node('h2', 'feature-section-title', 'Edit profile'));
   const name = ctx.node('input', 'feature-input');
@@ -75,7 +76,7 @@ function profile(ctx) {
   const status = ctx.node('p', 'feature-muted');
   status.setAttribute('role', 'status');
   form.append(avatarField, save, status);
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', async event => {
     event.preventDefault();
     const displayName = name.value.trim();
     if (displayName.length < 2) {
@@ -83,7 +84,13 @@ function profile(ctx) {
       name.focus();
       return;
     }
-    if (ctx.saveProfile({ displayName, avatar: selected }) !== false) ctx.notify('Profile saved in this browser.');
+    const patch = {};
+    if (displayName !== state.profile.displayName) patch.displayName = displayName;
+    if (selected !== state.profile.avatar) patch.avatar = selected;
+    save.disabled = true;
+    try {
+      if (await ctx.saveProfile(patch) !== false) ctx.notify('Profile saved in this browser.');
+    } finally { save.disabled = false; }
   });
   root.append(overview, form);
   return root;
@@ -99,11 +106,12 @@ function activity(ctx) {
   const labels = [['all', 'All'], ['game', 'Games'], ['reward', 'Rewards'], ['transaction', 'Transactions']];
   const render = () => {
     for (const item of filters.children) item.setAttribute('aria-pressed', String(item.dataset.type === selected));
-    const entries = [...ctx.state().history].filter(entry => selected === 'all' || entry.type === selected).reverse();
+    const entries = [...ctx.state().history].filter(entry => selected === 'all'
+      || (selected === 'transaction' ? Boolean(entry.transactionId) : entry.type === selected)).reverse();
     panel.replaceChildren();
     if (!entries.length) {
       panel.append(empty(ctx, selected === 'transaction' ? 'No transactions' : 'No activity yet',
-        selected === 'transaction' ? 'Package previews do not create purchases or redemptions.' : 'Games opened and demo rewards collected in this browser will appear here.',
+        selected === 'transaction' ? 'Your demo coin movements will appear here.' : 'Games opened and demo rewards collected in this browser will appear here.',
         ctx.link('daily-bonus', 'Daily Bonus')));
       return;
     }
@@ -113,8 +121,15 @@ function activity(ctx) {
       const copy = ctx.node('div', 'feature-stack');
       const time = ctx.node('time', 'feature-muted', when(entry.at));
       if (!Number.isNaN(new Date(entry.at).getTime())) time.dateTime = new Date(entry.at).toISOString();
-      copy.append(ctx.node('span', 'feature-kicker', entry.type === 'game' ? 'Game opened' : entry.type === 'reward' ? 'Demo reward' : 'Activity'),
+      copy.append(ctx.node('span', 'feature-kicker', entry.type === 'game' ? 'Game opened' : entry.type === 'reward' ? 'Demo reward' : 'Opening balance'),
         ctx.node('h2', 'feature-section-title', entry.title), ctx.node('p', 'feature-muted', entry.detail || ''), time);
+      if (entry.transactionId) {
+        const details = ctx.node('details', 'feature-disclosure');
+        details.append(ctx.node('summary', '', 'Transaction details'),
+          ctx.node('p', 'feature-muted', `Status: Completed · ${entry.currency}`),
+          ctx.node('p', 'feature-muted', `Reference: ${entry.transactionId}`));
+        copy.append(details);
+      }
       item.append(copy);
       if (entry.gameId && ctx.games.some(game => game.id === entry.gameId)) {
         const actions = ctx.node('div', 'feature-actions');
@@ -161,10 +176,14 @@ function settings(ctx) {
   const save = ctx.node('button', 'feature-button feature-button--primary', 'Save preferences');
   save.type = 'submit';
   form.append(motionRow, balanceRow, save);
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', async event => {
     event.preventDefault();
-    ctx.saveSettings({ reducedMotion: reduced.checked, hideBalance: hidden.checked });
-    ctx.notify('Preferences saved.');
+    const patch = {};
+    if (reduced.checked !== state.reducedMotion) patch.reducedMotion = reduced.checked;
+    if (hidden.checked !== state.hideBalance) patch.hideBalance = hidden.checked;
+    save.disabled = true;
+    try { if (await ctx.saveSettings(patch)) ctx.notify('Preferences saved.'); }
+    finally { save.disabled = false; }
   });
   return form;
 }

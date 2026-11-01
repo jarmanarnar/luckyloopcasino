@@ -103,9 +103,16 @@ function dailyBonus(ctx, t) {
       t.n('small', 'feature-muted', collected ? 'Collected' : current ? 'Ready' : 'Upcoming'));
     days.append(el);
   }
-  const claim = t.button(daily.available ? `Collect ${amount(daily.amount)} GC` : 'Collected today', () => {
-    const result = ctx.claimDaily();
-    ctx.notify(result.ok ? `${amount(result.amount)} demo GC added to your balance.` : result.reason || 'Your bonus has already been collected today.');
+  const claim = t.button(daily.available ? `Collect ${amount(daily.amount)} GC` : 'Collected today', async () => {
+    claim.disabled = true;
+    claim.textContent = 'Collecting…';
+    try {
+      const result = await ctx.claimDaily();
+      ctx.notify(result.ok ? `${amount(result.amount)} demo GC added to your balance.` : result.reason || 'Your bonus has already been collected today.');
+    } finally {
+      claim.disabled = !ctx.dailyStatus().available;
+      claim.textContent = claim.disabled ? 'Collected today' : `Collect ${amount(daily.amount)} GC`;
+    }
   }, !daily.available);
   const time = daily.nextAt ? new Date(daily.nextAt).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : 'tomorrow';
   return t.stack(
@@ -162,15 +169,23 @@ function freeMoney(ctx, t) {
   const cards = DEMO_TASKS.map(task => {
     const complete = taskComplete(task.id, state);
     const collected = claimed.has(task.id);
+    const collect = t.button('Collect reward', async () => {
+      collect.disabled = true;
+      collect.textContent = 'Collecting…';
+      try {
+        const result = await ctx.claimTask(task.id);
+        ctx.notify(result.ok ? `${amount(result.amount)} demo GC added to your balance.` : result.reason || 'This reward is not available.');
+      } finally {
+        collect.disabled = ctx.state().taskClaims.includes(task.id);
+        collect.textContent = collect.disabled ? 'Collected' : 'Collect reward';
+      }
+    });
     return t.card(task.title, task.description, 'tasks',
       t.n('strong', '', `${amount(task.amount)} GC`),
       t.n('p', 'feature-kicker', collected ? 'Collected' : complete ? 'Ready to collect' : 'In progress'),
       t.progress(complete ? 1 : 0, `${task.title} progress`),
       collected ? t.note('Added to your local demo balance.') : complete
-        ? t.button('Collect reward', () => {
-          const result = ctx.claimTask(task.id);
-          ctx.notify(result.ok ? `${amount(result.amount)} demo GC added to your balance.` : result.reason || 'This reward is not available.');
-        }) : ctx.link(task.target, task.action));
+        ? collect : ctx.link(task.target, task.action));
   });
   return t.stack(
     t.card('Small tasks. A little extra luck.', 'Explore the prototype and collect local demo Gold Coins along the way.', 'free-money',

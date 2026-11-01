@@ -76,6 +76,14 @@
 
 .catalog-page-search input::placeholder { color: var(--text-secondary); opacity: 1; }
 
+.lobby-search {
+  width: 100%;
+  margin-block: .5rem 0;
+  border-radius: .625rem;
+}
+
+.lobby-search-results-heading { margin-block: 1.5rem .875rem; }
+
 .catalog-page-filter {
   display: flex;
   flex: 1 1 12rem;

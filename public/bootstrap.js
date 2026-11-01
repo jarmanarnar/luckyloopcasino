@@ -20,8 +20,8 @@ export async function bootApplication({ document: doc = document, window: scope 
     const [application] = await deadline(Promise.all([
       load(), doc.fonts?.load('700 16px Arimo'),
     ]), 15_000);
-    const router = application.initApplication();
-    await Promise.all([deadline(waitForPageAssets(doc), 15_000), logo.minimum]);
+    const router = await deadline(application.initApplication(), 15_000);
+    await deadline(waitForPageAssets(doc), 15_000);
     router.prepareLayout();
     router.restoreInitialScroll();
     await waitForStableLayout(doc, scope);

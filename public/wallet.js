@@ -1,12 +1,10 @@
-import { CURRENCIES, createWalletState, formatBalance, selectCurrency } from './wallet-state.js';
+import { CURRENCIES, formatBalance } from './wallet-state.js';
 import { createWalletCounter, resolveWalletFrame } from './wallet-counter.js';
 
-const STORAGE_KEY = 'luckyloopcasino-demo-wallet-v1';
-const LEGACY_STORAGE_KEYS = ['luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
 let initialized = false;
 let walletController;
 
-export function initWallet({ openStore } = {}) {
+export function initWallet({ openStore, account } = {}) {
   if (initialized) return walletController;
   const wallet = document.querySelector('#coin-wallet');
   const balanceCopy = document.querySelector('#coin-wallet > .wallet-balance-copy');
@@ -19,21 +17,9 @@ export function initWallet({ openStore } = {}) {
   if (![wallet, balanceCopy, balanceValue, currencyLabel, coinSwitch, switchCoin, addButton, addArt].every(Boolean)) return;
   initialized = true;
 
-  function readSaved() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved !== null) return JSON.parse(saved);
-      const legacy = LEGACY_STORAGE_KEYS.map(key => localStorage.getItem(key)).find(value => value !== null);
-      if (legacy === undefined) return null;
-      const migrated = createWalletState(JSON.parse(legacy));
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated)); }
-      catch { /* Keep migrated balances available when browser storage is read-only. */ }
-      return migrated;
-    }
-    catch { return null; }
-  }
-  let state = createWalletState(readSaved());
-  let preferences = { hideBalance: false, reducedMotion: false };
+  let state = account.getSnapshot().wallet;
+  let preferences = account.getMemberState().settings;
+  let signedIn = account.isSignedIn();
   const header = wallet.parentElement;
   const leadingControl = document.querySelector('.header-context');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -149,7 +135,7 @@ export function initWallet({ openStore } = {}) {
     counter.cancel();
     targetAmount = amount;
     formatAmount = formatter;
-    if (!animate || reducedMotion.matches || preferences.reducedMotion || document.hidden || counter.value === amount) {
+    if (currencyChanged || !animate || reducedMotion.matches || preferences.reducedMotion || document.hidden || counter.value === amount) {
       finishBalance();
       return;
     }
@@ -182,24 +168,29 @@ export function initWallet({ openStore } = {}) {
     addButton.setAttribute('aria-label', 'Open store');
   }
 
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    catch { /* Session interactions remain available when browser storage is disabled. */ }
-  }
-
-  function changeCurrency(code) {
-    state = selectCurrency(state, code);
-    render();
-    save();
-    wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
-      detail: { currency: state.currency, demo: true } }));
+  async function changeCurrency(code) {
+    coinSwitch.disabled = true;
+    try {
+      const result = await account.selectCurrency(code);
+      if (!result.ok) throw new Error(result.reason);
+      wallet.dispatchEvent(new CustomEvent('wallet:currency-change', { bubbles: true,
+        detail: { currency: state.currency, demo: true } }));
+      coinSwitch.title = `Switch to ${CURRENCIES[state.currency === 'GC' ? 'SC' : 'GC'].name}`;
+    } catch {
+      coinSwitch.title = 'Unable to save your currency. Please try again.';
+    } finally { coinSwitch.disabled = false; }
   }
   coinSwitch.addEventListener('click', () => changeCurrency(state.currency === 'GC' ? 'SC' : 'GC'));
   addButton.addEventListener('click', () => openStore?.());
-  window.addEventListener('storage', event => {
-    if (event.key !== STORAGE_KEY && event.key !== null) return;
-    state = createWalletState(readSaved());
-    render();
+  account.subscribe(() => {
+    const next = account.getSnapshot().wallet;
+    const settings = account.getMemberState().settings;
+    const sessionChanged = signedIn !== account.isSignedIn();
+    signedIn = account.isSignedIn();
+    const changed = JSON.stringify(next) !== JSON.stringify(state) || JSON.stringify(settings) !== JSON.stringify(preferences);
+    state = next;
+    preferences = settings;
+    if (changed || sessionChanged) render({ animate: !sessionChanged });
   });
   window.addEventListener('resize', () => scheduleLayout(), { passive: true });
   reducedMotion.addEventListener('change', () => {
@@ -222,11 +213,6 @@ export function initWallet({ openStore } = {}) {
       fontsChanged = false;
       applyLayout(readLayout());
       finishBalance();
-    },
-    creditGold(amount) {
-      if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 7000 || state.balances.GC + amount > 999999999) return false;
-      state = { ...state, balances: { ...state.balances, GC: state.balances.GC + amount } };
-      save(); render(); return true;
     },
     setPreferences(next) {
       preferences = { hideBalance: next.hideBalance === true, reducedMotion: next.reducedMotion === true };

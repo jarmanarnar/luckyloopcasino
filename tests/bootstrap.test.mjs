@@ -90,51 +90,28 @@ test('startup waits for every rendered page image, font readiness and settled la
   assert.deepEqual(page.logoCalls, ['start', 'stop']);
 });
 
-test('fast page assets remain covered until the minimum loader presentation completes', async () => {
-  const minimum = deferred();
-  const page = startup({ minimum: minimum.promise });
-  await settle();
-  page.elapse(3599);
-  await settle();
-  assert.equal(page.doc.body.dataset.appState, 'loading');
-  assert.equal(page.nodes['app-loader'].hidden, false);
-  assert.deepEqual(page.calls, ['initialize'], 'the final layout measurement waits until the presentation gate');
-  assert.equal(page.revealedAt, undefined);
-  assert.deepEqual(page.logoCalls, ['start']);
-  page.elapse(1);
-  minimum.resolve();
+test('ready assets reveal the page without waiting for any animation cycle or legacy minimum', async () => {
+  const page = startup({ minimum: new Promise(() => {}) });
   assert.equal(await page.ready, true);
-  assert.ok(page.revealedAt >= 3800, 'the completed minimum is followed by a fresh quiet layout interval');
+  assert.equal(page.nodes['app-loader'].hidden, true);
+  assert.equal(page.doc.body.dataset.appState, 'ready');
+  assert.ok(page.revealedAt >= 200 && page.revealedAt < 1000);
+  assert.equal(page.timers.size, 0);
   assert.deepEqual(page.logoCalls, ['start', 'stop']);
 });
 
-test('finishing the minimum loader presentation never exposes pending page assets', async () => {
-  const minimum = deferred(), artwork = deferred();
-  const page = startup({ minimum: minimum.promise, artwork: artwork.promise });
+test('elapsed animation time never reveals assets that are still loading', async () => {
+  const artwork = deferred();
+  const page = startup({ artwork: artwork.promise, minimum: new Promise(() => {}) });
   await settle();
-  page.elapse(3600);
-  minimum.resolve();
+  page.elapse(10_000);
   await settle();
   assert.equal(page.doc.body.dataset.appState, 'loading');
   assert.equal(page.nodes['app-loader'].hidden, false);
-  assert.equal(page.revealedAt, undefined);
-  assert.deepEqual(page.logoCalls, ['start']);
-  page.elapse(1400);
   artwork.resolve();
   assert.equal(await page.ready, true);
-  assert.ok(page.revealedAt >= 5200);
+  assert.equal(page.nodes['app-loader'].hidden, true);
   assert.deepEqual(page.logoCalls, ['start', 'stop']);
-});
-
-test('layout stability is measured after the minimum completes and restarts for a late geometry change', async () => {
-  const minimum = deferred();
-  const page = startup({ minimum: minimum.promise, geometry: time => time < 3696 ? 0 : 160 });
-  await settle();
-  assert.deepEqual(page.calls, ['initialize']);
-  page.elapse(3600);
-  minimum.resolve();
-  assert.equal(await page.ready, true);
-  assert.ok(page.revealedAt >= 3896, 'late geometry must finish before a fresh full quiet interval');
 });
 
 test('the real header font loads before the first wallet measurement', async () => {
@@ -147,13 +124,27 @@ test('the real header font loads before the first wallet measurement', async () 
   assert.equal(await page.ready, true);
 });
 
+test('account initialization completes before page assets, layout and reveal; persistence errors keep retry available', async () => {
+  const account = deferred();
+  const page = startup({ load: () => Promise.resolve({ initApplication: () => account.promise }) });
+  await settle();
+  assert.equal(page.doc.body.dataset.appState, 'loading');
+  assert.equal(page.nodes['app-loader'].hidden, false);
+  account.resolve({ prepareLayout() {}, restoreInitialScroll() {} });
+  assert.equal(await page.ready, true);
+  const failed = startup({ load: () => Promise.resolve({ initApplication: () => Promise.reject(new Error('Storage unavailable')) }) });
+  assert.equal(await failed.ready, false);
+  assert.equal(failed.nodes['app-load-retry'].hidden, false);
+  assert.equal(failed.nodes['app-loader'].hidden, false);
+});
+
 test('a late layout change restarts the stability interval instead of slipping past a two-frame wait', async () => {
   const page = startup({ geometry: time => time < 96 ? 0 : 160 });
   assert.equal(await page.ready, true);
   assert.ok(page.revealedAt >= 296, 'all movement must finish before a full quiet interval is observed');
 });
 
-test('failed page images cancel the unfinished loader countdown and offer retry immediately', async () => {
+test('failed page images stop loader motion and offer retry immediately', async () => {
   const page = startup({ artwork: Promise.reject(new Error('Image unavailable')), minimum: new Promise(() => {}) });
   assert.equal(await page.ready, false);
   assert.equal(page.doc.body.dataset.appState, 'error');

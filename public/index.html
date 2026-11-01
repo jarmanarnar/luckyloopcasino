@@ -37,8 +37,9 @@
   <link rel="stylesheet" href="feature-pages.css">
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
+  <link rel="stylesheet" href="auth.css">
 </head>
-<body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true">
+<body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
     <div id="app-loader-brand" class="app-loader__brand" data-paused="true" role="img" aria-label="LOOP infinity">
       <svg viewBox="0 0 782 373" fill="currentColor" aria-hidden="true" focusable="false">
@@ -101,14 +102,32 @@
         </button>
         <a class="site-logo" href="#" aria-label="LuckyLoop Casino home"><img class="site-logo__image" src="assets/loop-wireframe-v1.png" width="1916" height="821" alt="LOOP"></a>
       </div>
-      <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group">
+      <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group" hidden>
         <span class="wallet-balance-copy"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
         <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/add-gold.svg" width="48" height="48" alt="" aria-hidden="true"></button>
       </div>
-      <button id="coin-type-switch" class="wallet-switch" type="button" role="switch" aria-label="Use Sweeps Coins" aria-checked="false"><img id="currency-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="36" height="36" alt="" aria-hidden="true"></button>
+      <button id="coin-type-switch" class="wallet-switch" type="button" role="switch" aria-label="Use Sweeps Coins" aria-checked="false" hidden><img id="currency-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="36" height="36" alt="" aria-hidden="true"></button>
+      <div id="guest-header-actions" class="guest-header-actions">
+        <button class="auth-icon-button guest-extra" type="button" data-auth-open="register" aria-label="Join to collect bonuses"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11h8v10H4a1 1 0 0 1-1-1v-9Zm10 0h8v9a1 1 0 0 1-1 1h-7V11ZM2 6h20v4H2V6Zm10-1C6 5 4 3 6 1c3-2 6 4 6 4Zm0 0c6 0 8-2 6-4-3-2-6 4-6 4Z"/></svg></button>
+        <button class="auth-button auth-button--secondary" type="button" data-auth-open="login">Login</button>
+        <button class="auth-button auth-button--primary" type="button" data-auth-open="register">Register</button>
+      </div>
     </div>
   </header>
   <main class="page-content" id="lobby-view">
+    <section id="guest-welcome" class="guest-welcome" aria-label="Welcome to LOOP" lang="en" dir="ltr">
+      <div class="loop-promo loop-promo--wide" data-loop-promo aria-hidden="true"></div>
+      <div class="guest-register-card">
+        <h1>Welcome to LOOP</h1>
+        <p>You’re almost in</p>
+        <button class="auth-button auth-button--primary guest-register-now" type="button" data-auth-open="register">Register Now</button>
+        <div class="auth-divider"><span>Or continue with</span></div>
+        <div class="auth-social-row">
+          <button class="auth-social" type="button" data-auth-social="Google"><span class="auth-google" aria-hidden="true">G</span>Google</button>
+          <button class="auth-social" type="button" data-auth-social="Facebook"><span class="auth-facebook" aria-hidden="true">f</span>Facebook</button>
+        </div>
+      </div>
+    </section>
     <section class="hero-carousel" id="hero-carousel" role="region" aria-roledescription="carousel" aria-label="Featured promotions" lang="en" dir="ltr">
       <div class="hero-carousel__viewport" id="hero-viewport" tabindex="0" aria-label="Promotional banners" aria-live="off">
         <div class="hero-carousel__track" id="hero-track">
@@ -138,6 +157,10 @@
         <button id="catalog-category-next" class="catalog-category-arrow catalog-category-arrow--next" type="button" aria-label="Next game categories" aria-controls="catalog-categories" disabled hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z" transform="translate(24 0) scale(-1 1)"/></svg></button>
       </div>
     </section>
+    <form id="lobby-search-form" class="catalog-page-search lobby-search" role="search" aria-label="Search lobby games" lang="en" dir="ltr">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.26 15.17l4.53 4.54 1.42-1.42-4.54-4.53A8.5 8.5 0 0 0 10.5 2Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
+      <input id="lobby-search-input" type="search" placeholder="Enter at least 1 character" aria-label="Search games" autocomplete="off">
+    </form>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
       <button id="catalog-page-back" class="catalog-page-back icon-button" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
       <h1 id="catalog-page-title" tabindex="-1"></h1>
@@ -220,6 +243,39 @@
     <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
     <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>Back to Lobby</button>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
+  </dialog>
+  <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title" lang="en" dir="ltr">
+    <button id="auth-close" class="auth-close icon-button" type="button" aria-label="Close login and registration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <div class="auth-layout">
+      <aside class="loop-promo loop-promo--portrait" data-loop-promo aria-hidden="true"></aside>
+      <div class="auth-content">
+        <h2 id="auth-title" class="visually-hidden">Login to LOOP</h2>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button id="auth-tab-login" type="button" role="tab" aria-selected="true" aria-controls="auth-panel">Login</button>
+          <button id="auth-tab-register" type="button" role="tab" aria-selected="false" aria-controls="auth-panel" tabindex="-1">Register</button>
+        </div>
+        <div id="auth-panel" role="tabpanel" aria-labelledby="auth-tab-login">
+          <form id="auth-form" class="auth-form">
+            <label class="auth-field" for="auth-email"><span>Email</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm8 8 8-5V7l-8 5-8-5v1l8 5Z"/></svg><input id="auth-email" name="email" type="email" placeholder="Enter your email" autocomplete="email" maxlength="254" required></span></label>
+            <label class="auth-field" for="auth-password"><span>Password</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 9V7a5 5 0 0 1 10 0v2h1a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1Zm2 0h6V7a3 3 0 0 0-6 0v2Zm3 5a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7Z"/></svg><input id="auth-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="8" maxlength="256" required><button id="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="auth-eye-slash" d="m3 3 18 18"/></svg></button></span></label>
+            <button id="auth-forgot" class="auth-text-button auth-forgot" type="button">Forgot your password?</button>
+            <div id="auth-register-fields" hidden>
+              <details class="auth-promo-code"><summary>Referral / Promo code <span>(Optional)</span></summary><label class="auth-field"><span class="visually-hidden">Referral or promo code</span><input id="auth-promo" class="auth-plain-input" name="promoCode" placeholder="Enter code" maxlength="40" autocomplete="off"></label><small>Preview only. No extra reward is applied.</small></details>
+              <label class="auth-accept"><input id="auth-accepted" name="accepted" type="checkbox"><span>I confirm I am 18+ and understand the <button id="auth-terms-toggle" class="auth-inline-link" type="button" aria-expanded="false" aria-controls="auth-terms">terms of service</button>.</span></label>
+              <p id="auth-terms" class="auth-terms" hidden>Coins have no cash value. Purchases and prize redemptions are not available.</p>
+            </div>
+            <p id="auth-feedback" class="auth-feedback" role="status" aria-live="polite"></p>
+            <button id="auth-submit" class="auth-button auth-button--primary auth-submit" type="submit">Login</button>
+          </form>
+          <div id="auth-recovery" class="auth-recovery" hidden><h3>Forgot your details?</h3><p>Return to your saved account without your email or password.</p><button id="auth-resume-demo" class="auth-button auth-button--primary" type="button" hidden>Enter saved account</button><button id="auth-recovery-back" class="auth-button auth-button--secondary" type="button">Back to Login</button></div>
+          <div class="auth-divider"><span>Or continue with</span></div>
+          <div class="auth-social-row">
+            <button class="auth-social" type="button" data-auth-social="Google"><span class="auth-google" aria-hidden="true">G</span>Google</button>
+            <button class="auth-social" type="button" data-auth-social="Facebook"><span class="auth-facebook" aria-hidden="true">f</span>Facebook</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </dialog>
   <script type="module" src="bootstrap.js"></script>
 </body>

@@ -11,12 +11,17 @@ import { initStoreView } from './store-view.js';
 import { initFeatureView } from './feature-view.js';
 import { initGameDetails } from './game-details-view.js';
 import { initHowToPlay } from './how-to-play.js';
+import { openDemoAccount } from './demo-account.js';
+import { GAMES } from './catalog.js';
+import { initAuthView } from './auth-view.js';
 
-export function initApplication() {
-  const router = initRouter();
+export async function initApplication() {
+  const account = await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
+  const auth = initAuthView({ account, router: initRouter() });
+  const router = auth.router;
   initGameView({ router });
-  const wallet = initWallet({ openStore: () => router.navigate({ type: 'store' }) });
-  const features = initFeatureView({ router, wallet });
+  const wallet = initWallet({ account, openStore: () => router.navigate({ type: 'store' }) });
+  const features = initFeatureView({ router, wallet, account, auth });
   const catalog = initCatalogView({ router, member: features.member });
   initStoreView({ router });
   initCatalogToolbar();

@@ -130,6 +130,11 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
   function syncDailyBonus() {
     if (!dailyButton || !dailyAmount || !dailyBadge || !member?.getDailyStatus) return;
     clearTimeout(dailyTimer);
+    if (member.isSignedIn && !member.isSignedIn()) {
+      dailyAmount.textContent = 'Join & collect';
+      dailyButton.setAttribute('aria-label', 'Join to collect your Daily Bonus');
+      return;
+    }
     const now = new Date();
     const daily = member.getDailyStatus(now);
     const next = daily.available ? daily : member.getDailyStatus(new Date(daily.nextAt));
