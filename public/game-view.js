@@ -44,7 +44,7 @@ export function initGameView({ router } = {}) {
     if (frame !== currentFrame || loading.hidden) return;
     stopLoadingWatch();
     view.dataset.loadState = reason === 'manual' ? 'revealed'
-      : reason === 'nlc-loader' ? 'provider' : 'ready';
+      : ['nlc-loader', 'hacksaw-loader'].includes(reason) ? 'provider' : 'ready';
     view.dataset.readySource = reason;
     host.removeAttribute('aria-busy');
     frame.inert = false;
@@ -116,14 +116,15 @@ export function initGameView({ router } = {}) {
       // user presses Continue, so never keep its intro behind our mask.
       frame.addEventListener('load', () => gameReady(frame, 'nlc-loader'));
     }
-    frame.addEventListener('error', () => {
+    const failed = () => {
       if (frame !== currentFrame || loading.hidden) return;
       stopLoadingWatch();
       host.removeAttribute('aria-busy');
       status.textContent = 'The game could not be loaded.';
       reveal.hidden = false;
       view.dataset.loadState = 'error';
-    });
+    };
+    frame.addEventListener('error', failed);
     status.textContent = 'Loading game…';
     loading.hidden = false;
     reveal.hidden = true;
@@ -135,7 +136,7 @@ export function initGameView({ router } = {}) {
     currentFrame = frame;
     frame.src = launchUrl;
     host.replaceChildren(frame);
-    stopReadiness = watchGameReady(frame, game, reason => gameReady(frame, reason));
+    stopReadiness = watchGameReady(frame, game, reason => gameReady(frame, reason), failed);
     fitFrame();
     slowTimer = window.setTimeout(() => {
       if (frame !== currentFrame || loading.hidden) return;

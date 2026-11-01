@@ -12,6 +12,7 @@ export function createGameArt(game, { document: doc = document, eager = false } 
   Object.assign(image, { className: 'game-cover', src: artwork.src, alt: '',
     width: artwork.width, height: artwork.height, loading: eager ? 'eager' : 'lazy', decoding: 'async' });
   image.dataset.optionalArtwork = 'true';
+  if (artwork.fit === 'contain') image.dataset.fit = 'contain';
   image.setAttribute('aria-hidden', 'true');
   title.hidden = true;
   art.dataset.artwork = 'true';

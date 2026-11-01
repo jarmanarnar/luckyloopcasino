@@ -1,27 +1,26 @@
-// Curated from the public Playin catalog; the original seed is preserved outside
-// this repository. Removals reflect user review and remain permanently excluded.
-import { isRemovedGame } from './removed-games.js';
-
+// Reviewed public Playin catalog, including all 33 games restored by user request.
+// Existing local game IDs and provider demo URLs are preserved.
+import { HACKSAW_GAMES } from './hacksaw-games.js';
 export const PROVIDERS = [
   {
     "id": "netent",
     "name": "NetEnt",
-    "count": 209
+    "count": 236
   },
   {
     "id": "red-tiger",
     "name": "Red Tiger",
-    "count": 354
+    "count": 355
   },
   {
     "id": "nolimit-city",
     "name": "Nolimit City",
-    "count": 137
+    "count": 141
   },
   {
     "id": "big-time-gaming",
     "name": "Big Time Gaming",
-    "count": 79
+    "count": 80
   },
   {
     "id": "taparoo",
@@ -32,6 +31,11 @@ export const PROVIDERS = [
     "id": "sneaky-slots",
     "name": "Sneaky Slots",
     "count": 3
+  },
+  {
+    "id": "hacksaw-gaming",
+    "name": "Hacksaw Gaming",
+    "count": HACKSAW_GAMES.length
   }
 ];
 
@@ -5565,11 +5569,249 @@ export const GAMES = [
     "url": "https://playin.com/embed/v1/demo/goldenlotus00000",
     "providerId": "red-tiger",
     "providerName": "Red Tiger"
+  },
+  {
+    "id": "demonbeatsr96f10",
+    "title": "Demon Beats",
+    "url": "https://playin.com/embed/v1/demo/demonbeatsr96f10",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "whatsupwitcr96f1",
+    "title": "What's Up? Witches",
+    "url": "https://playin.com/embed/v1/demo/whatsupwitcr96f1",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "deadalive3r96f10",
+    "title": "Dead or Alive™ 3: Wanted",
+    "url": "https://playin.com/embed/v1/demo/deadalive3r96f10",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "deadwestr96f1000",
+    "title": "Dead West",
+    "url": "https://playin.com/embed/v1/demo/deadwestr96f1000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "gonzosquestr96f1",
+    "title": "Gonzo's Quest II: Return to El Dorado",
+    "url": "https://playin.com/embed/v1/demo/gonzosquestr96f1",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "divinefortur96f1",
+    "title": "Divine Fortune Black",
+    "url": "https://playin.com/embed/v1/demo/divinefortur96f1",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "BloodAndShadow2",
+    "title": "Blood & Shadow 2",
+    "url": "https://playin.com/embed/v1/demo/BloodAndShadow2",
+    "providerId": "nolimit-city",
+    "providerName": "Nolimit City"
+  },
+  {
+    "id": "BloodAndShadow",
+    "title": "Blood & Shadow",
+    "url": "https://playin.com/embed/v1/demo/BloodAndShadow",
+    "providerId": "nolimit-city",
+    "providerName": "Nolimit City"
+  },
+  {
+    "id": "blackjack3ne0000",
+    "title": "Blackjack",
+    "url": "https://playin.com/embed/v1/demo/blackjack3ne0000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "ameriroulette3ne",
+    "title": "American Roulette",
+    "url": "https://playin.com/embed/v1/demo/ameriroulette3ne",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "Mental",
+    "title": "Mental",
+    "url": "https://playin.com/embed/v1/demo/Mental",
+    "providerId": "nolimit-city",
+    "providerName": "Nolimit City"
+  },
+  {
+    "id": "alohaxmas0000000",
+    "title": "Aloha! Christmas",
+    "url": "https://playin.com/embed/v1/demo/alohaxmas0000000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "divinemegaways00",
+    "title": "Divine Fortune Megaways",
+    "url": "https://playin.com/embed/v1/demo/divinemegaways00",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "discodanny000000",
+    "title": "Disco Danny",
+    "url": "https://playin.com/embed/v1/demo/discodanny000000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "BarbarianFury",
+    "title": "Barbarian Fury",
+    "url": "https://playin.com/embed/v1/demo/BarbarianFury",
+    "providerId": "nolimit-city",
+    "providerName": "Nolimit City"
+  },
+  {
+    "id": "casinoholdemne00",
+    "title": "Casino Hold'em Poker",
+    "url": "https://playin.com/embed/v1/demo/casinoholdemne00",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "deadoralive2fb00",
+    "title": "Dead or Alive 2",
+    "url": "https://playin.com/embed/v1/demo/deadoralive2fb00",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "halloweenjack000",
+    "title": "Halloween Jack™",
+    "url": "https://playin.com/embed/v1/demo/halloweenjack000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "doublestacks0000",
+    "title": "Double Stacks",
+    "url": "https://playin.com/embed/v1/demo/doublestacks0000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "bloodsuckers2000",
+    "title": "Blood Suckers 2",
+    "url": "https://playin.com/embed/v1/demo/bloodsuckers2000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "roulette2advne00",
+    "title": "Roulette Advanced",
+    "url": "https://playin.com/embed/v1/demo/roulette2advne00",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "godsoffortune000",
+    "title": "Divine Fortune",
+    "url": "https://playin.com/embed/v1/demo/godsoffortune000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "bonanza",
+    "title": "Bonanza",
+    "url": "https://playin.com/embed/v1/demo/bonanzav60000000",
+    "providerId": "big-time-gaming",
+    "providerName": "Big Time Gaming"
+  },
+  {
+    "id": "dragonsluck00000",
+    "title": "Dragon's Luck",
+    "url": "https://playin.com/embed/v1/demo/dragonsluck00000",
+    "providerId": "red-tiger",
+    "providerName": "Red Tiger"
+  },
+  {
+    "id": "baccarat2ne00000",
+    "title": "Baccarat professional series",
+    "url": "https://playin.com/embed/v1/demo/baccarat2ne00000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "jacksmultihandn1",
+    "title": "Jacks or Better Double Up",
+    "url": "https://playin.com/embed/v1/demo/jacksmultihandn1",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "roulettesne00000",
+    "title": "Roulette Touch",
+    "url": "https://playin.com/embed/v1/demo/roulettesne00000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "starburst",
+    "title": "Starburst™",
+    "url": "https://playin.com/embed/v1/demo/starburstr000000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "fruitshop0000000",
+    "title": "Fruit Shop",
+    "url": "https://playin.com/embed/v1/demo/fruitshop0000000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "ghostpirates0000",
+    "title": "Ghost Pirates™",
+    "url": "https://playin.com/embed/v1/demo/ghostpirates0000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "gonzo",
+    "title": "Gonzo's Quest",
+    "url": "https://playin.com/embed/v1/demo/eldorado00000000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "bloodsuckersj0r2",
+    "title": "Blood Suckers",
+    "url": "https://playin.com/embed/v1/demo/bloodsuckersj0r2",
+    "providerId": "netent",
+    "providerName": "NetEnt"
+  },
+  {
+    "id": "deadoralive00000",
+    "title": "Dead or Alive",
+    "url": "https://playin.com/embed/v1/demo/deadoralive00000",
+    "providerId": "netent",
+    "providerName": "NetEnt"
   }
-].filter(game => !isRemovedGame(game));
+].concat(HACKSAW_GAMES);
 
 for (const game of GAMES) {
   const url = new URL(game.url);
+  if (game.providerId === 'hacksaw-gaming') {
+    if (url.origin !== 'https://www.hacksawgaming.com' || url.username || url.password ||
+        !/^\d+$/.test(game.providerGameId) || game.id !== `hacksaw-${game.providerGameId}`) {
+      throw new Error('Unexpected official Hacksaw game record: ' + game.id);
+    }
+    continue;
+  }
   if (url.origin !== 'https://playin.com' || !url.pathname.startsWith('/embed/v1/demo/') || url.username || url.password) {
     throw new Error('Unexpected public demo URL for ' + game.id);
   }

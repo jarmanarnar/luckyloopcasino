@@ -18,3 +18,7 @@ SVG paths, view boxes, internal fills, clipping and geometry are retained. Only 
 Tap-A-Roo uses its source site's genuine dark-theme gray: `fill-gray-800` resolves through `--dark-gray-800: 218 218 218` to `#dadada`. This styling is documented in the source [fansite stylesheet](https://tap-a-roo.com/_next/static/css/3cc55c089c9d51e9.css). No arbitrary logo recoloring or CSS image filters are required.
 
 Each SVG was checked for active content and external references. The exported files contain local SVG shapes and internal definitions only.
+
+## Hacksaw Gaming
+
+`hacksaw-gaming.svg` was extracted from the official https://www.hacksawgaming.com/games navigation logo on 2026-11-01. SVG path geometry, transforms and the 1000×250 view box are retained. The source dark-navigation rule (`.Navigation--dark #Logo path { fill: #fff; }` in `/dist/bundle.min.css`) is made explicit on its paths for standalone use. The SVG contains no scripts, external references or embedded raster image.

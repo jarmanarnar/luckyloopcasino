@@ -32,6 +32,10 @@ export function getDemoUrl(baseUrl, device) {
 }
 
 export function getLaunchUrl(game, device) {
+  if (game.providerId === 'hacksaw-gaming') {
+    if (!/^\d+$/.test(game.providerGameId)) throw new Error('Invalid Hacksaw demo game ID');
+    return `hacksaw-demo.html?${new URLSearchParams({ game: game.providerGameId, device })}`;
+  }
   if (game.providerId === 'nolimit-city') {
     const code = getNolimitCatalogCode(game.url);
     if (code && nolimitCatalogCodes.has(code)) {

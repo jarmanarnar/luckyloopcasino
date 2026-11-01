@@ -22,3 +22,7 @@ Provider assets and embedding information: https://playin.com/affiliates-info
 | Extra Chilli More Chilli (Big Time Gaming) | extrachillliv396.webp | https://playin.com/games/extra-chilli-more-chilli | https://fan-cdn.nolimitcity.com/small_extra_chilli_more_chilli_logo_b21aa044d2.png |
 | Power Puff (Red Tiger) | powerpuff0000000.webp | https://playin.com/games/power-puff | https://fan-cdn.nolimitcity.com/small_power_puff_playin_rt_logo_thumbnail_512x512_60b9bda1ea.png |
 | Cocks and Robbers (Red Tiger) | cocksandrobbers0.webp | https://playin.com/games/cocks-and-robbers | https://fan-cdn.nolimitcity.com/small_cocks_and_robbers_playin_rt_logo_thumbnail_512x512_f0ccdfb490.png |
+
+## Additional provider artwork
+
+All 257 Hacksaw Gaming thumbnails and their original source URLs are documented in [hacksaw/README.md](hacksaw/README.md). These JPEG files preserve the original downloaded bytes; they are separate from the 15-image Playin WebP sample above.

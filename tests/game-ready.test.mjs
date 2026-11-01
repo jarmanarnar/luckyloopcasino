@@ -37,6 +37,7 @@ function harness() {
   const root = { length: 1, frames: [wrapper] };
   const frame = { contentWindow: root };
   const window = {
+    location: { origin: 'https://local.test' },
     setInterval(fn, delay) { const id = nextTimer++; timers.set(id, { fn, delay, interval: true }); return id; },
     setTimeout(fn, delay) { const id = nextTimer++; timers.set(id, { fn, delay, interval: false }); return id; },
     clearInterval(id) { timers.delete(id); },
@@ -59,6 +60,32 @@ function harness() {
     deadline() { return [...timers].find(([, timer]) => !timer.interval)?.[0]; },
   };
 }
+
+test('Hacksaw hands off to its own loader only from the active local wrapper and matching game', () => {
+  const h = harness();
+  const game = { id: 'hacksaw-1309', providerId: 'hacksaw-gaming', url: 'https://www.hacksawgaming.com/games/le-bandit' };
+  h.begin(game);
+  const data = { event: 'LOOP:HACKSAW_DOCUMENT_LOADED', gameId: game.id };
+  h.emit({ source: h.root, origin: 'https://unrelated.test', data });
+  h.emit({ source: {}, origin: 'https://local.test', data });
+  h.emit({ source: h.root, origin: 'https://local.test', data: { ...data, gameId: 'hacksaw-1067' } });
+  assert.deepEqual(h.ready, []);
+  assert.equal(h.channels.length, 0, 'Hacksaw does not use the unrelated OSS handshake');
+  h.emit({ source: h.root, origin: 'https://local.test', data });
+  assert.deepEqual(h.ready, ['hacksaw-loader']);
+  assert.equal(h.listeners.size, 0);
+});
+
+test('Hacksaw wrapper errors leave loading through the error path instead of reporting readiness', () => {
+  const h = harness();
+  let errors = 0;
+  const game = { id: 'hacksaw-1309', providerId: 'hacksaw-gaming', url: 'https://www.hacksawgaming.com/games/le-bandit' };
+  h.watch(h.frame, game, reason => h.ready.push(reason), () => errors++);
+  h.emit({ source: h.root, origin: 'https://local.test', data: { event: 'LOOP:HACKSAW_ERROR', gameId: game.id } });
+  assert.equal(errors, 1);
+  assert.deepEqual(h.ready, []);
+  assert.equal(h.listeners.size, 0);
+});
 
 const ossGame = { providerId: 'taparoo', url: 'https://playin.com/embed/v1/demo/bloodsuckerstapa' };
 const nlcGame = { providerId: 'nolimit-city', url: 'https://playin.com/embed/v1/demo/SanQuentin' };

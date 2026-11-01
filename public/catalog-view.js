@@ -1,5 +1,5 @@
 import { PROVIDERS } from './catalog.js';
-import { CATEGORIES, getGamesForCategory } from './collections.js';
+import { CATEGORIES, FILTER_CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
@@ -98,7 +98,7 @@ export function initCatalogView({ router, member } = {}) {
   let favoriteKey = JSON.stringify(member?.getState().favorites || []);
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
-  categorySelect.replaceChildren(option('all', 'All Games'), ...CATEGORIES.map(c => option(c.id, c.title)));
+  categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)));
   for (const category of CATEGORIES) {
     const button = node('button', 'catalog-category');
     button.type = 'button';

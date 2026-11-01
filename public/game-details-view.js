@@ -102,6 +102,7 @@ export function initGameDetails({ router, member } = {}) {
   }
 
   function detailsCard(game, formatName) {
+    const descriptionType = { Slots: 'slot', 'Tap Games': 'tap', Scratchcards: 'scratchcard' }[formatName] || formatName.toLowerCase();
     const card = node('details', 'game-details-card');
     const summary = node('summary', 'game-details-summary');
     const chevron = arrowIcon();
@@ -113,7 +114,7 @@ export function initGameDetails({ router, member } = {}) {
     tabs.setAttribute('aria-label', 'Game details');
     const panels = [createInformation(game, formatName), node('div', 'game-details-description')];
     panels[1].append(node('h3', '', `About ${game.title}`),
-      node('p', '', `${game.title} is a ${formatName === 'Tap Games' ? 'tap game' : 'slot game'} by ${game.providerName}.`),
+      node('p', '', `${game.title} is a ${descriptionType} game by ${game.providerName}.`),
       node('p', '', 'Play the provider’s demo from this page. The demo has its own balance and does not use your Gold Coins or Sweeps Coins balance.'));
     const buttons = ['Information', 'Description'].map((label, index) => {
       const button = node('button', 'game-details-tab', label);

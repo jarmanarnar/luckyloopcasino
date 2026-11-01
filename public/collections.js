@@ -1,5 +1,7 @@
 import { GAMES } from './catalog.js';
-import { GAME_TYPES, getGameTypeId } from './game-types.js';
+import { GAME_TYPES, getGameTypeId, isTableGame } from './game-types.js';
+import { GAME_RELEASES } from './game-releases.js';
+export { GAME_RELEASES, RELEASES_VERIFIED_ON } from './game-releases.js';
 
 // Game format and editorial collections are separate from the studio/provider.
 // Format mapping is documented in game-types.js. The lobby navigation is a
@@ -7,6 +9,12 @@ import { GAME_TYPES, getGameTypeId } from './game-types.js';
 export const CATEGORIES = [
   { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
   { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
+  { id: 'tap', title: 'Tap Games', description: 'Tap-and-reveal games and Tapcards.' },
+  { id: 'instant-win', title: 'Instant Win', description: 'Instant games from the provider catalog.' },
+  { id: 'scratchcards', title: 'Scratchcards', description: 'Reveal-and-scratch games.' },
+  { id: 'crash', title: 'Crash', description: 'Crash games from the provider catalog.' },
+  { id: 'table', title: 'Table Games', description: 'Blackjack, roulette, baccarat and casino poker.' },
+  { id: 'video-poker', title: 'Video Poker', description: 'Single-player video poker games.' },
   { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
 ];
 
@@ -21,114 +29,9 @@ export const LEGACY_CATEGORIES = [
 ];
 
 const allCategories = [...CATEGORIES, ...LEGACY_CATEGORIES.filter(category => !CATEGORIES.some(item => item.id === category.id))];
+export const FILTER_CATEGORIES = [...CATEGORIES, ...GAME_TYPES.filter(type => !CATEGORIES.some(category => category.id === type.id))];
 
-// The latest 100 active titles by general-release date, checked against the
-// provider's shared official game calendar on 2026-10-31. Removed games are
-// excluded before selecting this snapshot; dates are not inferred from IDs.
-// https://games.nolimitcity.com/
-export const GAME_RELEASES = Object.freeze(Object.fromEntries([
-  ['nunchucksr96f100', '2026-10-29'],
-  ['monopolymneyv196', '2026-10-28'],
-  ['ouija00000000000', '2026-10-27'],
-  ['stevelarryandgog', '2026-10-22'],
-  ['SixFeetUnder', '2026-10-20'],
-  ['powerpuff0000000', '2026-10-13'],
-  ['cocksandrobbers0', '2026-10-07'],
-  ['GatorHunters2', '2026-10-06'],
-  ['bloodsuckerstapa', '2026-10-01'],
-  ['gonzosquesttapar', '2026-10-01'],
-  ['stormfire0000000', '2026-09-30'],
-  ['thorsrage2000000', '2026-09-24'],
-  ['extrachillliv396', '2026-09-23'],
-  ['DingDongDeath', '2026-09-22'],
-  ['jackbeanstar96f1', '2026-09-17'],
-  ['discoinferno0000', '2026-09-15'],
-  ['DuckHunters2', '2026-09-10'],
-  ['aftermathr96f100', '2026-09-03'],
-  ['bountycove000000', '2026-09-01'],
-  ['777moneystrike00', '2026-08-25'],
-  ['happycappy000000', '2026-08-20'],
-  ['Outsourced2', '2026-08-18'],
-  ['judgementalr96f1', '2026-08-13'],
-  ['golddiggercluste', '2026-07-30'],
-  ['spicer96f1000000', '2026-07-23'],
-  ['diamondblitz3000', '2026-07-16'],
-  ['hitthejungle0000', '2026-07-09'],
-  ['AirportSecurity', '2026-07-07'],
-  ['fruitshopgrr96f1', '2026-07-02'],
-  ['pandagoesboom000', '2026-06-25'],
-  ['monsterquestv496', '2026-06-24'],
-  ['SoakedBySeamen', '2026-06-23'],
-  ['inandoutr96f1000', '2026-06-18'],
-  ['dynamiterichesth', '2026-06-16'],
-  ['Tanked3', '2026-06-09'],
-  ['worldfootballfor', '2026-05-28'],
-  ['fruitmergotsv496', '2026-05-27'],
-  ['TrueGrit2', '2026-05-26'],
-  ['jackpottrain0000', '2026-05-21'],
-  ['TombstoneBegins', '2026-05-12'],
-  ['lokisdescendants', '2026-05-07'],
-  ['divinegoldr96f10', '2026-04-30'],
-  ['SanQuentinManhunt', '2026-04-21'],
-  ['aztectribute0000', '2026-04-16'],
-  ['monopolymapotsv1', '2026-04-09'],
-  ['PunkRocker3', '2026-04-07'],
-  ['sharkboss0000000', '2026-04-02'],
-  ['archdragonking00', '2026-03-24'],
-  ['CatfishHunters', '2026-03-17'],
-  ['godbreakerr96f10', '2026-03-12'],
-  ['monopolymoneymag', '2026-03-10'],
-  ['millionaiapotsv1', '2026-03-04'],
-  ['TheCrypt2', '2026-03-03'],
-  ['monopolyrentrush', '2026-02-26'],
-  ['dragonboyz000000', '2026-02-19'],
-  ['rabidrandygr96f1', '2026-02-17'],
-  ['Supersized', '2026-02-10'],
-  ['diggingforwilds0', '2026-02-05'],
-  ['monopolyrhhourv1', '2026-02-03'],
-  ['monopolycashiski', '2026-01-29'],
-  ['GoldenShower', '2026-01-27'],
-  ['monopolymonr96f1', '2026-01-15'],
-  ['DuckHuntersHappyHour', '2026-01-13'],
-  ['revolvero0000000', '2026-01-08'],
-  ['monopolydeluxev1', '2026-01-06'],
-  ['monopolytsgen3v1', '2026-01-06'],
-  ['DasxBoot2', '2025-12-16'],
-  ['piggyrichesbegin', '2025-12-11'],
-  ['warlocksv1000000', '2025-12-10'],
-  ['piratesplentytre', '2025-12-09'],
-  ['jinglebellsbona2', '2025-12-04'],
-  ['CrazyExGirlfriend', '2025-12-02'],
-  ['christmasapotsv1', '2025-12-01'],
-  ['gopnik0000000000', '2025-11-26'],
-  ['whiterabbit2v100', '2025-11-25'],
-  ['flockmer96f10000', '2025-11-20'],
-  ['Bizarre', '2025-11-18'],
-  ['biggestvault0000', '2025-11-13'],
-  ['bigrichturkeys00', '2025-11-06'],
-  ['Disorder', '2025-11-04'],
-  ['cashvoltsupercha', '2025-10-30'],
-  ['freakshowrevelat', '2025-10-29'],
-  ['BangkokHilton', '2025-10-28'],
-  ['dragonduo0000000', '2025-10-23'],
-  ['bloodymurder0000', '2025-10-16'],
-  ['castleoftrror2v1', '2025-10-15'],
-  ['Breakout', '2025-10-14'],
-  ['rabidrandydr96f1', '2025-10-14'],
-  ['cashvolttaparoo0', '2025-09-25'],
-  ['starbursttaparoo', '2025-09-25'],
-  ['niptuck000000000', '2025-09-24'],
-  ['landofriches0000', '2025-09-18'],
-  ['cashlamps0000000', '2025-09-11'],
-  ['DeadMenWalking', '2025-09-09'],
-  ['takethemoney0000', '2025-09-04'],
-  ['dragonslucktapar', '2025-09-01'],
-  ['greatpyramidtapa', '2025-09-01'],
-  ['rainbowjackpotst', '2025-09-01'],
-  ['piggyriche3r96f1', '2025-08-26'],
-  ['playwiththedevmw', '2025-08-21'],
-].map(([id, date]) => [id, Object.freeze({ date, source: 'https://games.nolimitcity.com/' })])));
-
+// General release dates cover the entire active catalog, with per-game source provenance.
 export function getGameReleaseDate(gameOrId) {
   return GAME_RELEASES[typeof gameOrId === 'string' ? gameOrId : gameOrId?.id]?.date || '';
 }
@@ -208,8 +111,9 @@ const SPOOKY_IDS = new Set([
 // not on a claim that a public demo participates in a funded jackpot pool.
 const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
+  table: isTableGame,
   popular: game => popular.has(game.id),
-  'new-releases': game => Boolean(getGameReleaseDate(game)),
+  'new-releases': game => latestReleaseIds.has(game.id),
   picks: game => picks.has(game.id),
   megaways: game => /\bmegaways\b/i.test(game.title),
   jackpot: game => /\bjackpots?\b/i.test(game.title),
@@ -219,9 +123,13 @@ const rules = {
 };
 
 const gamesById = new Map(GAMES.map(game => [game.id, game]));
+const today = new Date().toISOString().slice(0, 10);
+const latestReleases = GAMES.filter(game => getGameReleaseDate(game) && getGameReleaseDate(game) <= today)
+  .sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a))).slice(0, 100);
+const latestReleaseIds = new Set(latestReleases.map(game => game.id));
 const orderedCollections = new Map([
   ['popular', POPULAR_IDS], ['picks', PICK_IDS],
-  ['new-releases', Object.keys(GAME_RELEASES).sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a)))],
+  ['new-releases', latestReleases.map(game => game.id)],
 ]);
 const collections = new Map(allCategories.map(category => [category.id,
   orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)

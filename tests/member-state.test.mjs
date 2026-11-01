@@ -137,12 +137,13 @@ test('achieved discovery rank survives the activity history retention limit and 
   assert.equal(taskEligible('first-game', { ...state, history: [] }), true, 'discovery survives a truncated activity log');
 });
 
-test('demo account removes retired games from history and favorites before recording a new visit', async () => {
+test('demo account retains restored games and removes unknown IDs before recording a new visit', async () => {
   const stored = JSON.stringify(createMemberState({
     favorites: ['gonzo', GAMES[0].id, 'not-in-catalog'],
     discoveredGameIds: ['gonzo', GAMES[0].id, 'not-in-catalog'],
     history: [
-      { id: 'retired', type: 'game', gameId: 'gonzo', title: 'Retired game', at: localDay(20).toISOString() },
+      { id: 'restored', type: 'game', gameId: 'gonzo', title: "Gonzo's Quest", at: localDay(20).toISOString() },
+      { id: 'unknown', type: 'game', gameId: 'not-in-catalog', title: 'Unknown game', at: localDay(20).toISOString() },
       { id: 'allowed', type: 'game', gameId: GAMES[0].id, title: GAMES[0].title, at: localDay(20).toISOString() },
       { id: 'reward', type: 'reward', title: 'Daily bonus', at: localDay(20).toISOString() },
     ],
@@ -153,11 +154,12 @@ test('demo account removes retired games from history and favorites before recor
     await account.register({ email: 'member-test@example.test', password: 'MemberDemo37!', accepted: true });
     await account.recordGameVisit(GAMES[1]);
     const saved = account.getSnapshot().member;
-    assert.deepEqual(saved.favorites, [GAMES[0].id]);
-    assert.deepEqual(saved.discoveredGameIds, [GAMES[0].id, GAMES[1].id]);
-    assert.equal(saved.history.some(entry => entry.gameId === 'gonzo'), false);
+    assert.deepEqual(saved.favorites, ['gonzo', GAMES[0].id]);
+    assert.deepEqual(saved.discoveredGameIds, ['gonzo', GAMES[0].id, GAMES[1].id]);
+    assert.equal(saved.history.some(entry => entry.gameId === 'gonzo'), true);
+    assert.equal(saved.history.some(entry => entry.gameId === 'not-in-catalog'), false);
     assert.equal(saved.history.some(entry => entry.type === 'reward'), true);
     assert.equal(saved.history.at(-1).gameId, GAMES[1].id);
-    assert.equal(getDemoRank(saved).games, 2);
+    assert.equal(getDemoRank(saved).games, 3);
   } finally { account.close(); }
 });

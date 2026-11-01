@@ -15,7 +15,7 @@ test('Favorites uses only saved, available games with its own search, provider f
   assert.equal(page.activeMenu, 'favorites');
   assert.equal(page.type, 'favorites');
   assert.equal(page.sort, 'saved');
-  assert.deepEqual(page.allowedSorts, ['saved', 'az', 'za']);
+  assert.deepEqual(page.allowedSorts, ['saved', 'az', 'za', 'newest']);
   assert.equal(page.savedCount, 3);
   assert.deepEqual(ids(page), ['ouija00000000000', 'SanQuentin', 'nunchucksr96f100']);
   assert.deepEqual(ids(getCatalogPage({ type: 'favorites', query: '  OuIjA ', providerId: 'red-tiger' }, { favoriteIds })), ['ouija00000000000']);
@@ -134,11 +134,27 @@ test('A–Z and Z–A change only order, leave source data intact, and do not ca
 });
 
 test('unsupported ranking choices fall back to real available ordering', () => {
-  const provider = getCatalogPage({ type: 'provider', providerId: 'netent', sort: 'newest' });
-  assert.equal(provider.sort, 'az', 'undated provider catalogs cannot claim newest ordering');
-  assert.deepEqual(provider.allowedSorts, ['az', 'za']);
+  const provider = getCatalogPage({ type: 'provider', providerId: 'netent', sort: 'unsupported' });
+  assert.equal(provider.sort, 'az');
+  assert.deepEqual(provider.allowedSorts, ['az', 'za', 'newest']);
   const popular = getCatalogPage({ type: 'category', categoryId: 'popular', sort: 'invalid' });
   assert.equal(popular.sort, 'featured');
+});
+
+test('newest ordering uses verified release days across providers, searches and formats', () => {
+  for (const route of [
+    { type: 'provider', providerId: 'netent' },
+    { type: 'search' },
+    { type: 'category', categoryId: 'table' },
+    { type: 'category', categoryId: 'tap' },
+  ]) {
+    const page = getCatalogPage({ ...route, sort: 'newest' });
+    assert.equal(page.sort, 'newest');
+    assert.ok(page.games.length > 0);
+    for (let i = 1; i < page.games.length; i++) {
+      assert.ok(getGameReleaseDate(page.games[i - 1]) >= getGameReleaseDate(page.games[i]));
+    }
+  }
 });
 
 test('Show more grows the same result set from 35 to 70 without duplicating or reordering games', () => {
@@ -148,13 +164,13 @@ test('Show more grows the same result set from 35 to 70 without duplicating or r
   const second = pageSlice(page.games, 70);
   assert.equal(first.visible.length, 35);
   assert.equal(second.visible.length, 70);
-  assert.equal(first.total, 209);
-  assert.equal(second.total, 209);
+  assert.equal(first.total, 236);
+  assert.equal(second.total, 236);
   assert.equal(first.hasMore, true);
   assert.equal(second.hasMore, true);
   assert.deepEqual(second.visible.slice(0, 35), first.visible);
   assert.equal(new Set(second.visible.map(game => game.id)).size, 70);
-  assert.deepEqual(pageSlice(page.games, 210), { visible: page.games, total: 209, hasMore: false });
+  assert.deepEqual(pageSlice(page.games, 250), { visible: page.games, total: 236, hasMore: false });
 });
 
 test('short or empty result sets never offer another page', () => {

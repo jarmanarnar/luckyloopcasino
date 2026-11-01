@@ -1,6 +1,8 @@
 // Official Playin game thumbnails, matched by the published game tableId.
 // Provenance: public/assets/games/README.md.
+import { HACKSAW_ARTWORK } from './hacksaw-games.js';
 export const GAME_ARTWORK = Object.freeze({
+  ...HACKSAW_ARTWORK,
   "nunchucksr96f100": {
     "src": "assets/games/nunchucksr96f100.webp",
     "width": 256,

@@ -32,8 +32,9 @@ export function getCatalogPage(route, { favoriteIds = [] } = {}) {
   const defaultSort = route.type === 'favorites' ? 'saved'
     : route.type === 'category' && category.id === 'popular' ? 'featured'
     : route.type === 'category' && category.id === 'new-releases' ? 'newest' : 'az';
-  const allowedSorts = [...(route.type === 'favorites' ? ['saved'] : []), 'az', 'za', ...(route.type === 'category' && category.id === 'popular' ? ['featured'] : []),
-    ...(route.type === 'category' && category.id === 'new-releases' ? ['newest'] : [])];
+  const hasReleaseDates = (route.type === 'category' && category.id === 'new-releases') ||
+    collection.some(game => (!route.providerId || game.providerId === route.providerId) && getGameReleaseDate(game));
+  const allowedSorts = [...(route.type === 'favorites' ? ['saved'] : []), 'az', 'za', ...(hasReleaseDates ? ['newest'] : []), ...(route.type === 'category' && category.id === 'popular' ? ['featured'] : [])];
   const sort = allowedSorts.includes(route.sort) ? route.sort : defaultSort;
   if (sort === 'az') games.sort(byName);
   if (sort === 'za') games.sort((a, b) => byName(b, a));

@@ -1,6 +1,10 @@
 // Authentic provider artwork exported from the official affiliate/fansite pages.
 // Provenance and the source dark-theme styling: assets/providers/README.md.
 export const PROVIDER_LOGOS = Object.freeze({
+  'hacksaw-gaming': {
+    src: './assets/providers/hacksaw-gaming.svg',
+    source: 'https://www.hacksawgaming.com/games',
+  },
   netent: {
     src: './assets/providers/netent.svg',
     source: 'https://playin.com/affiliates-info',

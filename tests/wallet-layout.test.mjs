@@ -13,7 +13,7 @@ afterEach(() => { accounts.splice(0).forEach(account => account.close()); });
 const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initWallet', 'function initWallet');
 
-async function walletPage({ font = 16, width = 320, saved, realCounter = false } = {}) {
+async function walletPage({ font = 16, width = 320, saved, realCounter = false, balanceInSwitch = false } = {}) {
   const events = {}, frames = [], observers = [], calls = [], storeCalls = [], storageWrites = [];
   const counterFrames = new Map();
   let counterTime = 0, counterFrameId = 0;
@@ -29,12 +29,14 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false }
     append() {}, focus() {}, dispatchEvent() {},
     addEventListener(key, callback) { this.events[key] = callback; },
     setAttribute(key, value) { this.attributes[key] = value; },
+    getAttribute(key) { return this.attributes[key] ?? null; },
     getBoundingClientRect() { return { width: this.width, height: this.height }; },
   });
   const selectors = ['.top-bar', '.header-context', '#coin-wallet', '#coin-wallet > .wallet-balance-copy',
     '#wallet-balance-value', '#wallet-currency-label', '#coin-type-switch', '#currency-coin',
     '#wallet-add', '#wallet-add-art'];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, node()]));
+  if (balanceInSwitch) nodes['#coin-type-switch > .wallet-balance-copy'] = nodes['#coin-wallet > .wallet-balance-copy'];
   const header = node();
   header.width = width - 1.5 * font;
   nodes['#coin-wallet'].parentElement = header;
@@ -114,6 +116,39 @@ async function walletPage({ font = 16, width = 320, saved, realCounter = false }
     get pendingCounterFrames() { return counterFrames.size; },
   };
 }
+
+test('the balance inside the switch uses the same counter and changes mode without changing balances or the ledger', async () => {
+  const page = await walletPage({ balanceInSwitch: true, realCounter: true,
+    saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  const before = page.account.getSnapshot();
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
+  assert.equal(page.nodes['#coin-type-switch'].dataset.balanceMotion, 'false');
+  await page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#coin-type-switch'].attributes['aria-checked'], 'true');
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'SC');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '0.00');
+  assert.equal(page.nodes['#coin-type-switch'].dataset.balanceMotion, 'true');
+  page.frame(720);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+  assert.match(page.nodes['#coin-type-switch'].attributes['aria-label'], /Sweeps Coins balance: 85.00 SC/);
+  await page.nodes['#coin-type-switch'].events.click();
+  page.frame(1440);
+  assert.equal(page.nodes['#coin-type-switch'].attributes['aria-checked'], 'false');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
+  assert.deepEqual(page.account.getSnapshot().wallet.balances, before.wallet.balances);
+  assert.deepEqual(page.account.getSnapshot().ledger, before.ledger);
+});
+
+test('balance-toggle presentation respects hidden balance and reduced-motion settings', async () => {
+  const page = await walletPage({ balanceInSwitch: true, saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  await page.account.saveSettings({ hideBalance: true, reducedMotion: true });
+  page.controller.setPreferences({ hideBalance: true, reducedMotion: true });
+  assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].attributes['aria-hidden'], 'true');
+  assert.match(page.nodes['#coin-type-switch'].attributes['aria-label'], /balance hidden/);
+  assert.doesNotMatch(page.nodes['#coin-type-switch'].attributes['aria-label'], /130,000/);
+  await page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#coin-type-switch'].dataset.balanceMotion, 'false');
+});
 
 test('wallet UI cannot grant arbitrary credit or write a separate legacy balance', async () => {
   const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });

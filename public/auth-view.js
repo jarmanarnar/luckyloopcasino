@@ -122,6 +122,7 @@ export function initAuthView({ account, router } = {}) {
     document.querySelector('#guest-welcome').hidden = next || router.getRoute().type !== 'home';
     document.querySelector('#coin-wallet').hidden = !next;
     document.querySelector('#coin-type-switch').hidden = !next;
+    document.querySelector('#header-profile').hidden = !next;
     const profileLabel = document.querySelector('#mobile-nav-profile .mobile-nav__label');
     if (profileLabel) profileLabel.textContent = next ? 'Profile' : 'Login';
     if (next && !signedIn) queueMicrotask(finish);

@@ -7,7 +7,8 @@ let walletController;
 export function initWallet({ openStore, account } = {}) {
   if (initialized) return walletController;
   const wallet = document.querySelector('#coin-wallet');
-  const balanceCopy = document.querySelector('#coin-wallet > .wallet-balance-copy');
+  const switchBalanceCopy = document.querySelector('#coin-type-switch > .wallet-balance-copy');
+  const balanceCopy = switchBalanceCopy || document.querySelector('#coin-wallet > .wallet-balance-copy');
   const balanceValue = document.querySelector('#wallet-balance-value');
   const currencyLabel = document.querySelector('#wallet-currency-label');
   const coinSwitch = document.querySelector('#coin-type-switch');
@@ -156,6 +157,8 @@ export function initWallet({ openStore, account } = {}) {
     const code = state.currency;
     wallet.dataset.currency = code;
     currencyLabel.textContent = code;
+    if (switchBalanceCopy) coinSwitch.dataset.balanceMotion = String(animate && renderedCurrency !== null && renderedCurrency !== code &&
+      !reducedMotion.matches && !preferences.reducedMotion && !document.hidden);
     applyLayout(readLayout());
     switchCoin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
     addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
@@ -168,6 +171,10 @@ export function initWallet({ openStore, account } = {}) {
     renderedCurrency = code;
     wallet.setAttribute('aria-label', preferences.hideBalance ? `${CURRENCIES[code].name} balance hidden`
       : `${CURRENCIES[code].name} balance: ${formatBalance(code, state.balances[code])} ${code}`);
+    if (switchBalanceCopy) {
+      balanceCopy.setAttribute('aria-hidden', 'true');
+      coinSwitch.setAttribute('aria-label', `${wallet.getAttribute('aria-label')}. Switch to ${CURRENCIES[code === 'GC' ? 'SC' : 'GC'].name}`);
+    }
     addButton.setAttribute('aria-label', 'Open store');
   }
 
@@ -220,7 +227,7 @@ export function initWallet({ openStore, account } = {}) {
     setPreferences(next) {
       preferences = { hideBalance: next.hideBalance === true, reducedMotion: next.reducedMotion === true };
       render({ animate: false });
-      balanceCopy.setAttribute('aria-hidden', String(preferences.hideBalance));
+      balanceCopy.setAttribute('aria-hidden', String(preferences.hideBalance || Boolean(switchBalanceCopy)));
     },
   };
   return walletController;

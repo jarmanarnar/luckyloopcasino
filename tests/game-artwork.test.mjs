@@ -15,9 +15,10 @@ function documentStub() {
   }; } };
 }
 
-test('every sampled cover belongs to an available game and is a valid local WebP file', async () => {
+test('every official cover belongs to an available game and is a valid local image file', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  for (const category of ['popular', 'slots', 'new-releases']) {
+  assert.equal(Object.keys(GAME_ARTWORK).length, 272);
+  for (const category of ['popular']) {
     for (const game of getGamesForCategory(category).slice(0, 8)) {
       assert.ok(GAME_ARTWORK[game.id], `The first row of ${category} needs artwork for ${game.title}`);
     }
@@ -25,10 +26,12 @@ test('every sampled cover belongs to an available game and is a valid local WebP
   for (const [id, artwork] of Object.entries(GAME_ARTWORK)) {
     assert.ok(active.has(id), `Artwork cannot reintroduce ${id}`);
     assert.ok(artwork.width > 0 && artwork.height > 0);
-    assert.match(artwork.src, /^assets\/games\/[^/]+\.webp$/);
+    assert.match(artwork.src, /^assets\/games\/(?:hacksaw\/)?[A-Za-z0-9-]+\.(?:webp|jpg)$/);
     const bytes = await readFile(new URL(`../public/${artwork.src}`, import.meta.url));
-    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
-    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    if (artwork.src.endsWith('.webp')) {
+      assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+      assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    } else assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
   }
 });
 

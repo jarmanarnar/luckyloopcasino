@@ -13,7 +13,7 @@ function catalogTableId(game) {
   }
 }
 
-export function watchGameReady(frame, game, onReady) {
+export function watchGameReady(frame, game, onReady, onError = () => {}) {
   const tableId = catalogTableId(game);
   let disposed = false;
   let channel = null;
@@ -52,6 +52,13 @@ export function watchGameReady(frame, game, onReady) {
   // The official direct NLC loader forwards api.on('ready') to its parent.
   // https://demo.nolimitcdn.com/loader/game-loader.html
   function onWindowMessage(event) {
+    if (!disposed && game.providerId === 'hacksaw-gaming' && event.source === frame.contentWindow &&
+        event.origin === window.location.origin && event.data && typeof event.data === 'object' &&
+        !Array.isArray(event.data) && event.data.gameId === game.id) {
+      if (event.data.event === 'LOOP:HACKSAW_DOCUMENT_LOADED') ready('hacksaw-loader');
+      else if (event.data.event === 'LOOP:HACKSAW_ERROR') { dispose(); onError(); }
+      return;
+    }
     if (!disposed && game.providerId === 'nolimit-city' &&
         event.origin === NLC_ORIGIN && event.source === frame.contentWindow &&
         event.data === 'ready') ready('nlc-ready');
