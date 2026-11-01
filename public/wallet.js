@@ -135,17 +135,20 @@ export function initWallet({ openStore, account } = {}) {
     counter.cancel();
     targetAmount = amount;
     formatAmount = formatter;
-    if (currencyChanged || !animate || reducedMotion.matches || preferences.reducedMotion || document.hidden || counter.value === amount) {
+    if (!animate || reducedMotion.matches || preferences.reducedMotion || document.hidden || (!currencyChanged && counter.value === amount)) {
       finishBalance();
       return;
     }
     const fromWidth = wallet.getBoundingClientRect().width;
     animation = {
-      deferDecimals: currencyChanged && state.currency === 'SC',
+      deferDecimals: false,
       fromWidth,
       toWidth: Math.min(measureWallet(formatter(amount)), layout.available),
       previousWidth: fromWidth,
     };
+    wallet.dataset.widthMotion = 'true';
+    // A new currency counts up from zero, never from the other currency's balance.
+    if (currencyChanged) counter.immediate(0, formatter);
     counter.animateTo(amount, formatter);
   }
 

@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { CURRENCIES, createWalletState, formatBalance, selectCurrency } from '../public/wallet-state.js';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDemoAccount } from '../public/demo-account.js';
+import { createWalletCounter, resolveWalletFrame } from '../public/wallet-counter.js';
 
 const accounts = [];
 afterEach(() => { accounts.splice(0).forEach(account => account.close()); });
@@ -12,8 +13,10 @@ afterEach(() => { accounts.splice(0).forEach(account => account.close()); });
 const source = (await readFile(new URL('../public/wallet.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initWallet', 'function initWallet');
 
-async function walletPage({ font = 16, width = 320, saved } = {}) {
+async function walletPage({ font = 16, width = 320, saved, realCounter = false } = {}) {
   const events = {}, frames = [], observers = [], calls = [], storeCalls = [], storageWrites = [];
+  const counterFrames = new Map();
+  let counterTime = 0, counterFrameId = 0;
   const rootProperties = new Map();
   const rootWrites = [];
   const rootStyle = {
@@ -60,13 +63,19 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
   accounts.push(account);
   await account.register({ email: 'wallet-test@example.test', password: 'WalletDemo37!', accepted: true });
   const context = {
-    CURRENCIES, createWalletState, formatBalance, selectCurrency, account,
+    CURRENCIES, createWalletState, formatBalance, selectCurrency, account, resolveWalletFrame,
     openStore: () => storeCalls.push('store'),
-    createWalletCounter({ onFrame }) {
+    createWalletCounter(options) {
+      if (realCounter) return createWalletCounter({ ...options, now: () => counterTime,
+        requestFrame(callback) { counterFrames.set(++counterFrameId, callback); return counterFrameId; },
+        cancelFrame(id) { counterFrames.delete(id); },
+      });
+      const { onFrame } = options;
       let value = 0;
       return {
         immediate(next, formatter) { value = next; calls.push('finish'); onFrame(formatter(next), next); },
-        cancel() { calls.push('cancel'); }, animateTo() { calls.push('animate'); },
+        cancel() { calls.push('cancel'); },
+        animateTo(next, formatter) { value = next; calls.push('animate'); onFrame(formatter(next), next); },
         get value() { return value; },
       };
     },
@@ -95,7 +104,15 @@ async function walletPage({ font = 16, width = 320, saved } = {}) {
   const controller = vm.runInNewContext(`${source}\ninitWallet({ openStore, account });`, context);
   await Promise.resolve();
   flush();
-  return { controller, account, nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, storeCalls, storageWrites, flush };
+  return { controller, account, nodes, header, events, calls, topBar, observers, rootStyle, rootWrites, storeCalls, storageWrites, flush,
+    frame(at) {
+      counterTime = at;
+      const callbacks = [...counterFrames.values()];
+      counterFrames.clear();
+      callbacks.forEach(callback => callback());
+    },
+    get pendingCounterFrames() { return counterFrames.size; },
+  };
 }
 
 test('wallet UI cannot grant arbitrary credit or write a separate legacy balance', async () => {
@@ -139,10 +156,53 @@ test('private balances have a hidden accessible name and reduced-motion preferen
   assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
   const restored = page.calls.length;
   await page.nodes['#coin-type-switch'].events.click();
-  assert.equal(page.calls.slice(restored).includes('animate'), false, 'different currencies never interpolate unrelated balances');
+  assert.equal(page.calls.slice(restored).includes('animate'), true, 'normal motion restores counting within the selected currency');
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
   await page.nodes['#coin-type-switch'].events.click();
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+});
+
+test('currency changes count from zero to the selected balance without mixing currencies or changing the ledger', async () => {
+  const page = await walletPage({ realCounter: true, saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  const before = page.account.getSnapshot();
+  await page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'SC');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '0.00');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+  assert.equal(page.pendingCounterFrames, 1);
+  page.frame(180);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '49.14');
+  page.frame(720);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
+  assert.equal(page.pendingCounterFrames, 0);
+  await page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'GC');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '0');
+  page.frame(900);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '75,156');
+  page.frame(1440);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
+  assert.deepEqual(page.account.getSnapshot().wallet.balances, before.wallet.balances);
+  assert.deepEqual(page.account.getSnapshot().ledger, before.ledger);
+});
+
+test('rapid currency changes cancel the previous count and a zero balance settles without a pending frame', async () => {
+  const page = await walletPage({ realCounter: true, saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  await page.nodes['#coin-type-switch'].events.click();
+  page.frame(180);
+  await page.nodes['#coin-type-switch'].events.click();
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '0');
+  page.frame(360);
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'GC');
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '75,156');
+  page.frame(900);
+  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
+  assert.equal(page.pendingCounterFrames, 0);
+
+  const empty = await walletPage({ realCounter: true, saved: { currency: 'GC', balances: { GC: 100, SC: 0 } } });
+  await empty.nodes['#coin-type-switch'].events.click();
+  assert.equal(empty.nodes['#wallet-balance-value'].textContent, '0.00');
+  assert.equal(empty.pendingCounterFrames, 0);
 });
 
 test('header plus opens the Store page without requiring a wallet dialog or adding credit', async () => {
