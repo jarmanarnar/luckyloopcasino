@@ -46,40 +46,59 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
   const items = new Map();
   const featureItems = new Map();
   const disclosures = new Map();
-  let selectedFeature = null;
-  function featureButton(id, title) {
+  let selectedDestination = null;
+
+  function menuButton(icon, title) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'site-menu__item';
-    button.dataset.menuFeature = id;
     button.dataset.tooltip = title;
     button.setAttribute('aria-label', title);
-    if (id === 'how-to-play') {
-      button.setAttribute('aria-haspopup', 'dialog');
-      button.setAttribute('aria-controls', 'how-to-play-dialog');
-    }
     const label = document.createElement('span');
     label.className = 'site-menu__label';
     label.textContent = title;
-    button.append(createShelfIcon(id), label);
+    button.append(createShelfIcon(icon), label);
+    return button;
+  }
+
+  function featureButton(id, title) {
+    const button = menuButton(id, title);
+    button.dataset.menuFeature = id;
+    if (id === 'how-to-play') {
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-controls', 'how-to-play-dialog');
+    } else if (id === 'notifications') {
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-controls', 'notifications-drawer');
+    }
     featureItems.set(id, button);
     return button;
   }
-  navigation.replaceChildren();
+
+  function createDisclosure(id, button) {
+    const list = document.createElement('div');
+    list.id = `menu-${id}-items`;
+    list.className = 'site-menu__subitems';
+    list.hidden = true;
+    const chevron = createShelfIcon('chevron-down');
+    chevron.setAttribute('class', 'site-menu__chevron');
+    button.append(chevron);
+    button.dataset.menuDisclosure = id;
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', list.id);
+    disclosures.set(id, { button, list });
+    return list;
+  }
+
+  const casinoButton = menuButton('table', 'Social Casino');
+  const casinoList = createDisclosure('social-casino', casinoButton);
+  navigation.replaceChildren(casinoButton, casinoList);
   const menuItems = [{ id: 'favorites', title: 'Favorites' }, ...CATEGORIES, { id: 'providers', title: 'Providers' }];
   for (const category of menuItems) {
     if (!['favorites', 'providers'].includes(category.id) && getGamesForCategory(category.id).length === 0) continue;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'site-menu__item';
+    const button = menuButton(category.id, category.title);
     button.dataset.menuCategory = category.id;
-    button.setAttribute('aria-label', category.title);
-    button.dataset.tooltip = category.title;
-    const label = document.createElement('span');
-    label.className = 'site-menu__label';
-    label.textContent = category.title;
-    button.append(createShelfIcon(category.id), label);
-    navigation.append(button);
+    casinoList.append(button);
     items.set(category.id, button);
   }
   function syncFavorites() {
@@ -110,17 +129,8 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
       const button = featureButton(id, title);
       list.append(button);
       if (id === group.disclosure) {
-        const chevron = createShelfIcon('chevron-down');
-        chevron.setAttribute('class', 'site-menu__chevron');
-        button.append(chevron);
-        button.setAttribute('aria-expanded', 'false');
-        button.setAttribute('aria-controls', `menu-${id}-items`);
-        list = document.createElement('div');
-        list.id = `menu-${id}-items`;
-        list.className = 'site-menu__subitems';
-        list.hidden = true;
+        list = createDisclosure(id, button);
         section.append(list);
-        disclosures.set(id, { button, list });
       }
     }
     menuContent.append(section);
@@ -172,12 +182,13 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
       if (id === selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     }
+    const activeItem = items.get(selected) ?? featureItems.get(selected);
     for (const [id, { button, list }] of disclosures) {
-      const activeChild = list.contains(featureItems.get(selected));
+      const activeChild = list.contains(activeItem);
       button.dataset.childActive = String(activeChild);
-      if (selected !== selectedFeature && activeChild && (!desktop || expanded)) setDisclosure(id, true);
+      if (selected !== selectedDestination && activeChild && (!desktop || expanded)) setDisclosure(id, true);
     }
-    selectedFeature = selected;
+    selectedDestination = selected;
     if (dailyButton) {
       if (selected === 'daily-bonus') dailyButton.setAttribute('aria-current', 'page');
       else dailyButton.removeAttribute('aria-current');
@@ -203,9 +214,11 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
     sidebar.dataset.expanded = String(value);
     trigger.setAttribute('aria-expanded', String(value));
     trigger.setAttribute('aria-label', value ? 'Collapse sidebar' : 'Expand sidebar');
+    const selected = categories.dataset.activeMenu;
+    const activeItem = items.get(selected) ?? featureItems.get(selected);
     for (const [id, { list }] of disclosures) {
       if (!value) setDisclosure(id, false);
-      else if (list.contains(featureItems.get(categories.dataset.activeMenu))) setDisclosure(id, true);
+      else if (list.contains(activeItem)) setDisclosure(id, true);
     }
   }
 
@@ -311,15 +324,18 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
   dailyButton?.addEventListener('click', () => closeMenu(() => openFeature?.('daily-bonus')));
   menuContent.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
+    const disclosure = event.target.closest('[data-menu-disclosure]');
+    if (disclosure && menuContent.contains(disclosure)) {
+      const id = disclosure.dataset.menuDisclosure;
+      const open = (desktop && !expanded) || disclosures.get(id).list.hidden;
+      hideTooltip();
+      if (desktop && !expanded) setExpanded(true);
+      setDisclosure(id, open);
+      return;
+    }
     const item = event.target.closest('[data-menu-feature]');
     if (item && menuContent.contains(item) && featureItems.has(item.dataset.menuFeature)) {
-      if (disclosures.has(item.dataset.menuFeature)) {
-        hideTooltip();
-        if (desktop && !expanded) {
-          setExpanded(true);
-          setDisclosure(item.dataset.menuFeature, true);
-        } else setDisclosure(item.dataset.menuFeature, disclosures.get(item.dataset.menuFeature).list.hidden);
-      } else if (item.dataset.menuFeature === 'how-to-play') {
+      if (item.dataset.menuFeature === 'how-to-play') {
         const returnFocusTo = desktop ? item : menuOpener;
         closeMenu(() => openHowToPlay?.({ returnFocusTo }));
       } else closeMenu(() => openFeature?.(item.dataset.menuFeature));

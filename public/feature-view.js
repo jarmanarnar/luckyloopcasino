@@ -12,7 +12,7 @@ function node(tag, className, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function initFeatureView({ router, wallet, account, auth } = {}) {
+export function initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications } = {}) {
   const root = document.querySelector('#feature-view');
   const content = document.querySelector('#feature-content');
   const header = document.querySelector('#feature-header');
@@ -47,7 +47,7 @@ export function initFeatureView({ router, wallet, account, auth } = {}) {
   }
   const ctx = {
     node, icon: createShelfIcon, router, games: GAMES, state: () => state, ui: { historyFilter: 'all' },
-    dailyStatus: () => dailyStatus(state), notify,
+    dailyStatus: () => dailyStatus(state), notify, verifyPhone,
     claimDaily: () => save(() => account.claimDaily()),
     claimTask: id => save(() => account.claimTask(id)),
     link(pageId, text, className = 'feature-button') {
@@ -129,7 +129,11 @@ export function initFeatureView({ router, wallet, account, auth } = {}) {
     if (!document.hidden && ['daily-bonus', 'free-money'].includes(currentPage)) renderContent();
   });
   return {
-    openFeature: pageId => { if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId }); },
+    openFeature(pageId) {
+      if (pageId === 'redeem' && verifyPhone) return verifyPhone();
+      if (pageId === 'notifications' && openNotifications) return openNotifications();
+      if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId });
+    },
     member: {
       getState: () => structuredClone(state),
       getDailyStatus: now => dailyStatus(state, now),

@@ -6,6 +6,12 @@ const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(val
 const boundedStrings = (value, max = 200) => Array.isArray(value)
   ? [...new Set(value.filter(item => typeof item === 'string' && item.length <= 100))].slice(-max) : [];
 
+export function normalizeNotificationReadIds(ids) {
+  if (!Array.isArray(ids)) return [];
+  return [...new Set(ids.filter(id => typeof id === 'string' && id.length <= 256
+    && /^(?:personal|platform):\S/u.test(id) && !/[\u0000-\u001f\u007f]/u.test(id)))].slice(-256);
+}
+
 export function createMemberState(saved = {}) {
   const displayName = typeof saved?.profile?.displayName === 'string' ? saved.profile.displayName.trim().slice(0, 24) : '';
   const discovered = Array.isArray(saved?.discoveredGameIds) ? saved.discoveredGameIds
@@ -18,6 +24,7 @@ export function createMemberState(saved = {}) {
       totalClaims: Number.isSafeInteger(saved?.daily?.totalClaims) && saved.daily.totalClaims >= 0 ? saved.daily.totalClaims : 0 },
     taskClaims: boundedStrings(saved?.taskClaims).filter(id => Object.hasOwn(TASK_REWARDS, id)),
     favorites: boundedStrings(saved?.favorites), visited: boundedStrings(saved?.visited),
+    notificationReadIds: normalizeNotificationReadIds(saved?.notificationReadIds),
     discoveredGameIds: boundedStrings(discovered, 1000),
     history: Array.isArray(saved?.history) ? saved.history.filter(item => item && ['game', 'reward'].includes(item.type)
       && iso(item.at) && typeof item.title === 'string').slice(-200).map(item => ({

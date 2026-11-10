@@ -1,6 +1,6 @@
 import { ACCOUNT_DATABASE, createDemoAccount, applyAccountCommand, accountMemberState } from './demo-account-state.js';
 import { openAccountStore } from './demo-account-store.js';
-import { MEMBER_STORAGE_KEY } from './member-state.js';
+import { MEMBER_STORAGE_KEY, normalizeNotificationReadIds } from './member-state.js';
 import { normalizeDemoEmail, validDemoEmail, createDemoCredential, matchesDemoCredential } from './demo-credentials.js';
 
 const WALLET_KEYS = ['luckyloopcasino-demo-wallet-v1', 'luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
@@ -43,7 +43,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
   scope?.document?.addEventListener('visibilitychange', onVisibility);
   async function command(action) {
     const outcome = await store.transact(account => {
-      if (['claim-daily', 'claim-task', 'profile', 'settings', 'favorite', 'game-visit'].includes(action.type)
+      if (['claim-daily', 'claim-task', 'profile', 'settings', 'favorite', 'game-visit', 'notifications-read'].includes(action.type)
         && !account.auth?.signedIn) return { account, result: { ok: false, amount: 0, reason: 'Log in to use your account.' } };
       return applyAccountCommand(account, action);
     });
@@ -82,6 +82,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
     // Explicit local-demo recovery; this is not a Google identity verification.
     resumeDemo: () => command({ type: 'resume-demo' }),
     getMemberState: () => accountMemberState(snapshot),
+    getNotificationReadIds: () => normalizeNotificationReadIds(snapshot.member.notificationReadIds),
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     refresh,
     claimDaily: () => command({ type: 'claim-daily' }),
@@ -89,6 +90,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
     selectCurrency: currency => command({ type: 'currency', currency }),
     saveProfile: patch => command({ type: 'profile', patch }),
     saveSettings: patch => command({ type: 'settings', patch }),
+    markNotificationsRead: ids => command({ type: 'notifications-read', ids }),
     toggleFavorite: gameId => command({ type: 'favorite', gameId, catalogIds }),
     recordGameVisit: game => command({ type: 'game-visit', game }),
     recordPageVisit: pageId => command({ type: 'page-visit', pageId }),

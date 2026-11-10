@@ -1,4 +1,4 @@
-import { createMemberState, claimDailyReward, claimTaskReward, recordGameVisit } from './member-state.js';
+import { createMemberState, claimDailyReward, claimTaskReward, recordGameVisit, normalizeNotificationReadIds } from './member-state.js';
 import { createWalletState, formatBalance } from './wallet-state.js';
 
 export const ACCOUNT_DATABASE = 'luckyloopcasino-demo-account-v1';
@@ -93,6 +93,12 @@ export function applyAccountCommand(current, command, now = new Date()) {
     for (const key of ['hideBalance', 'reducedMotion']) {
       if (Object.hasOwn(command.patch || {}, key)) next.member.settings[key] = command.patch[key] === true;
     }
+  } else if (command.type === 'notifications-read') {
+    const ids = normalizeNotificationReadIds(command.ids);
+    if (!ids.length) return unchanged(result);
+    next.member.notificationReadIds = normalizeNotificationReadIds([
+      ...normalizeNotificationReadIds(current.member.notificationReadIds), ...ids,
+    ]);
   } else if (command.type === 'favorite') {
     const id = command.gameId;
     if (typeof id !== 'string' || !command.catalogIds.includes(id)) return unchanged(failed('This game is unavailable.'));
@@ -121,6 +127,7 @@ export function applyAccountCommand(current, command, now = new Date()) {
 // of the 200-entry legacy browsing history and is never parsed from display text.
 export function accountMemberState(account) {
   const member = copy(account.member);
+  delete member.notificationReadIds;
   const transactions = account.ledger.map(item => ({ ...copy(item),
     type: item.type === 'bonus' ? 'reward' : 'transaction', transactionId: item.id,
     detail: `+${formatBalance(item.currency, item.amountUnits)} ${item.currency} · Balance after: ${formatBalance(item.currency, item.balanceAfterUnits)} ${item.currency}` }));

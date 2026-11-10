@@ -1,6 +1,6 @@
 import { STORE_PACKAGES, getStorePackage, formatPackagePrice } from './store-packages.js';
 
-let initialized = false;
+let controller;
 function node(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -14,64 +14,83 @@ function coin(code, size = 32) {
   img.setAttribute('aria-hidden', 'true');
   return img;
 }
-export function initStoreView({ router } = {}) {
-  if (initialized || !router) return;
-  const view = document.querySelector('#store-view');
-  const list = document.querySelector('#store-packages');
-  const dialog = document.querySelector('#store-package-dialog');
-  const title = document.querySelector('#store-package-title');
-  const details = document.querySelector('#store-package-details');
-  if (![view, list, dialog, title, details].every(Boolean)) return;
-  initialized = true;
+function renderPackages(list, headingTag) {
   for (const packageInfo of STORE_PACKAGES) {
-    const card = node('li', 'store-package');
+    const card = node('li', packageInfo.featured ? 'store-package store-package--featured' : 'store-package');
     card.dataset.packageId = packageInfo.id;
     if (packageInfo.badge) card.append(node('span', 'store-package__badge', packageInfo.badge));
-    const heading = node('h2', 'store-package__amount');
-    heading.append(coin('GC'), node('span', '', packageInfo.goldLabel), node('small', '', 'GC'));
+    const heading = node(headingTag, 'store-package__amount');
+    heading.append(coin('GC'), node('span', '', packageInfo.goldLabel), node('span', 'visually-hidden', 'Gold Coins'));
     const art = node('div', 'store-package__art');
     art.setAttribute('aria-hidden', 'true');
-    art.append(coin('GC', 64));
-    if (packageInfo.sweepsCoins) art.append(coin('SC', 44));
+    if (!packageInfo.featured) {
+      art.append(coin('GC', 64));
+      if (packageInfo.sweepsCoins) art.append(coin('SC', 44));
+    }
     const bonus = node('p', 'store-package__bonus');
-    if (packageInfo.sweepsCoins) {
-      bonus.append(node('span', '', '+ FREE'), coin('SC', 20), node('strong', '', String(packageInfo.sweepsCoins)), node('span', '', 'SC'));
-    } else bonus.setAttribute('aria-hidden', 'true');
+    bonus.append(coin('SC', 20), node('strong', '', String(packageInfo.sweepsCoins)), node('span', '', 'FREE'), node('span', 'visually-hidden', 'Sweeps Coins'));
     const price = node('button', 'store-package__price', formatPackagePrice(packageInfo));
     price.type = 'button';
     price.dataset.package = packageInfo.id;
     price.setAttribute('aria-haspopup', 'dialog');
-    price.setAttribute('aria-controls', 'store-package-dialog');
-    price.setAttribute('aria-label', `View ${packageInfo.goldLabel} GC${packageInfo.sweepsCoins ? ` plus ${packageInfo.sweepsCoins} free SC` : ''} package for ${formatPackagePrice(packageInfo)}`);
+    price.setAttribute('aria-controls', 'phone-verification-dialog');
+    price.setAttribute('aria-label', `Buy ${packageInfo.goldLabel} GC${packageInfo.sweepsCoins ? ` plus ${packageInfo.sweepsCoins} free SC` : ''} for ${formatPackagePrice(packageInfo)}`);
     card.append(heading, art, bonus, price);
     list.append(card);
   }
-  list.addEventListener('click', event => {
+}
+
+export function initStoreView({ router, account, auth, verifyPhone } = {}) {
+  if (controller || !router || !account || !auth || !verifyPhone) return controller;
+  const view = document.querySelector('#store-view');
+  const pageList = document.querySelector('#store-packages');
+  const storeDialog = document.querySelector('#store-dialog');
+  const dialogList = document.querySelector('#store-dialog-packages');
+  if (![view, pageList, storeDialog, dialogList].every(Boolean)) return;
+
+  renderPackages(pageList, 'h2');
+  renderPackages(dialogList, 'h3');
+
+  function buyPackage(event) {
     if (!(event.target instanceof Element)) return;
     const button = event.target.closest('[data-package]');
-    if (!button || document.querySelector('dialog[open]')) return;
-    const packageInfo = getStorePackage(button.dataset.package);
-    if (!packageInfo) return;
-    title.textContent = `${packageInfo.goldLabel} Gold Coins`;
-    const facts = node('dl', 'store-package-facts');
-    const values = [['Gold Coins', `${new Intl.NumberFormat('en-US').format(packageInfo.goldCoins)} GC`],
-      ...(packageInfo.sweepsCoins ? [['Free Sweeps Coins', `${packageInfo.sweepsCoins} SC`]] : []),
-      ['Price', `${formatPackagePrice(packageInfo)} USD`]];
-    for (const [label, value] of values) {
-      const row = node('div');
-      row.append(node('dt', '', label), node('dd', '', value));
-      facts.append(row);
+    if (button && getStorePackage(button.dataset.package)) verifyPhone();
+  }
+  pageList.addEventListener('click', buyPackage);
+  dialogList.addEventListener('click', buyPackage);
+
+  storeDialog.addEventListener('click', event => {
+    if (event.target !== storeDialog) return;
+    const rect = storeDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) storeDialog.close();
+  });
+
+  const desktop = window.matchMedia('(min-width: 45rem)');
+  const entryPoints = document.querySelectorAll('#header-buy-coins, #menu-buy, #wallet-add');
+  function syncEntryPoints() {
+    for (const button of entryPoints) {
+      button.setAttribute('aria-controls', desktop.matches ? storeDialog.id : view.id);
+      if (desktop.matches) button.setAttribute('aria-haspopup', 'dialog');
+      else button.removeAttribute('aria-haspopup');
     }
-    details.replaceChildren(facts);
-    dialog.showModal();
-  });
-  dialog.addEventListener('click', event => {
-    if (event.target !== dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
-  });
+  }
+  desktop.addEventListener('change', syncEntryPoints);
+  syncEntryPoints();
+
+  function openStore() {
+    if (!desktop.matches) return router.navigate({ type: 'store' });
+    return auth.require(() => {
+      if (!desktop.matches) return router.navigate({ type: 'store' });
+      if (document.querySelector('dialog[open]')) return;
+      storeDialog.showModal();
+      storeDialog.scrollTop = 0;
+    });
+  }
+
+  account.subscribe(() => { if (!account.isSignedIn()) storeDialog.close(); });
+
   function render(route, meta = {}) {
-    if (route.type !== 'store' && dialog.open) dialog.close();
+    storeDialog.close();
     view.hidden = route.type !== 'store';
     if (!view.hidden) {
       document.body.dataset.page = 'store';
@@ -81,4 +100,6 @@ export function initStoreView({ router } = {}) {
   }
   router.subscribe(render);
   render(router.getRoute());
+  controller = { openStore };
+  return controller;
 }

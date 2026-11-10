@@ -286,6 +286,14 @@ function redeem(ctx) {
     step.append(ctx.node('h3', 'feature-section-title', title), ctx.node('p', 'feature-muted', text));
     steps.append(step);
   }
+  if (ctx.verifyPhone) {
+    const action = ctx.node('button', 'feature-button', 'Redeem');
+    action.type = 'button';
+    action.setAttribute('aria-haspopup', 'dialog');
+    action.setAttribute('aria-controls', 'phone-verification-dialog');
+    action.addEventListener('click', ctx.verifyPhone);
+    panel.append(action);
+  }
   panel.append(ctx.link('history', 'View activity history'));
   root.append(panel, steps);
   return root;

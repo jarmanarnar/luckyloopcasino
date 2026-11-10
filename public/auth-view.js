@@ -19,12 +19,6 @@ export function initAuthView({ account, router } = {}) {
   let mode = 'login', pending = null, opener = null, completed = false, busy = false;
   let signedIn = account.isSignedIn();
 
-  for (const container of document.querySelectorAll('[data-loop-promo]')) {
-    container.innerHTML = '<span class="loop-promo__brand"><img src="assets/loop-wordmark.svg" alt="" width="1413" height="370"></span>'
-      + '<div class="loop-promo__copy"><span class="loop-promo__eyebrow">MAKE IT A LOOP</span><strong class="loop-promo__title">PLAY<br>YOUR WAY.</strong><p class="loop-promo__caption">Discover your next favorite.</p></div>'
-      + '<div class="loop-promo__coins"><img class="loop-promo__coin loop-promo__coin--gold" src="assets/coins/gold-coin.svg" width="220" height="220" alt=""><img class="loop-promo__coin loop-promo__coin--sweeps" src="assets/coins/sweeps-coin.svg" width="180" height="180" alt=""></div>'
-      + '<i class="loop-promo__spark loop-promo__spark--one"></i><i class="loop-promo__spark loop-promo__spark--two"></i><i class="loop-promo__spark loop-promo__spark--three"></i>';
-  }
   function message(text = '', error = false) {
     feedback.textContent = text;
     feedback.dataset.error = String(error);
@@ -86,7 +80,7 @@ export function initAuthView({ account, router } = {}) {
       tab.tabIndex = active ? 0 : -1;
     });
     message();
-    if (focus) email.focus({ preventScroll: true });
+    if (focus) tabs[mode === 'login' ? 0 : 1].focus({ preventScroll: true });
   }
   function open(next = 'login', action = null) {
     if (account.isSignedIn()) { action?.(); return; }
@@ -98,7 +92,6 @@ export function initAuthView({ account, router } = {}) {
       select(next);
       dialog.showModal();
       document.body.dataset.authDialog = 'open';
-      email.focus({ preventScroll: true });
     } else { if (action) pending = action; select(next, true); }
   }
   const guardedRouter = createAuthRouter(router, account, route => open('login', () => router.navigate(route)));

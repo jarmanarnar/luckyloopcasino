@@ -80,7 +80,12 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       for (let parent = this.parent; parent; parent = parent.parent) parent.emit('click', event);
     }
     closest(selector) {
-      const property = { '[data-menu-category]': 'menuCategory', '[data-menu-feature]': 'menuFeature', '[data-tooltip]': 'tooltip' }[selector];
+      const property = {
+        '[data-menu-category]': 'menuCategory',
+        '[data-menu-feature]': 'menuFeature',
+        '[data-menu-disclosure]': 'menuDisclosure',
+        '[data-tooltip]': 'tooltip',
+      }[selector];
       if (!property) throw new Error(`Unexpected selector ${selector}`);
       return this.dataset[property] ? this : this.parent?.closest(selector) || null;
     }
@@ -258,14 +263,16 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   };
   const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
-  const item = id => nodes['menu-content'].children.flatMap(group => group.children).find(node => node.dataset.menuCategory === id);
+  const item = id => nodes['menu-navigation'].descendants().find(node => node.dataset.menuCategory === id);
   const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
+  const socialCasino = nodes['menu-navigation'].children[0];
+  const casinoItems = socialCasino?.nextSibling;
   const resize = matches => {
     breakpoint.matches = matches;
     breakpoint.emit('change', { matches });
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
-    item, feature, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
+    item, feature, socialCasino, casinoItems, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     claimDaily() { memberState = claimDailyReward(memberState, clock).state; memberListeners.forEach(listener => listener()); },
     setFavorites(favorites) { memberState = createMemberState({ ...memberState, favorites }); memberListeners.forEach(listener => listener()); },
@@ -311,7 +318,7 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
   assert.equal(page.categoryButtons.has('all'), false);
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
-  assert.equal(page.nodes['menu-navigation'].children.at(-1), page.item('providers'));
+  assert.equal(page.casinoItems.children.at(-1), page.item('providers'));
   assert.equal(page.categoryButtons.has('providers'), false);
 });
 
@@ -320,6 +327,7 @@ test('sidebar keeps categories and Search without a Lobby destination', () => {
   const popular = page.item('popular');
   assert.equal(page.item('lobby'), undefined);
   assert.equal(page.item('all'), undefined);
+  page.socialCasino.click();
   popular.click();
   assert.equal(page.calls.at(-1), 'category:popular');
   assert.equal(page.document.body.dataset.page, 'category');
@@ -417,6 +425,7 @@ test('game navigation closes the menu and restores its visible shell opener', ()
 test('choosing a category from a caller-opened drawer keeps focus on that category', () => {
   const page = menuPage();
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  page.socialCasino.click();
   page.item('popular').click();
   page.flushClose();
   assert.equal(page.calls.at(-1), 'category:popular');
@@ -449,6 +458,8 @@ test('a quick reopen waits until the previous native close event finishes', () =
 test('category and Providers page navigation runs only after the drawer closes', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].click();
+  page.socialCasino.click();
+  assert.equal(page.nodes['site-menu'].open, true);
   page.item('slots').click();
   assert.equal(page.nodes['site-menu'].open, false);
   assert.ok(!page.calls.includes('category:slots'));
@@ -563,11 +574,12 @@ test('Favorites appears once above Popular and opens the catalog after closing t
     const page = menuPage({ desktop, favorites: ['nunchucksr96f100'] });
     const favorites = page.item('favorites');
     assert.equal(favorites.hidden, false);
-    assert.equal(page.nodes['menu-navigation'].children[0], favorites);
-    assert.equal(page.nodes['menu-navigation'].children[1], page.item('popular'));
+    assert.equal(page.casinoItems.children[0], favorites);
+    assert.equal(page.casinoItems.children[1], page.item('popular'));
     assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
     assert.equal(page.feature('favorites'), undefined, 'Favorites is a casino destination, separate from account tools');
     page.api.openMenu();
+    page.socialCasino.click();
     favorites.click();
     if (!desktop) {
       assert.equal(page.nodes['site-menu'].open, false);
@@ -586,6 +598,7 @@ test('Favorites is absent from desktop and mobile navigation until the first val
     const page = menuPage({ desktop });
     const favorites = page.item('favorites');
     page.api.openMenu();
+    page.socialCasino.click();
     assert.equal(favorites.getClientRects().length, 0);
     page.setFavorites(['removed-game']);
     assert.equal(favorites.hidden, true);
@@ -600,7 +613,7 @@ test('Favorites is absent from desktop and mobile navigation until the first val
     assert.equal(page.item('popular').hidden, false);
     page.setFavorites(['SanQuentin']);
     assert.equal(favorites.getClientRects().length, 1);
-    assert.equal(page.nodes['menu-navigation'].children.filter(node => node.dataset.menuCategory === 'favorites').length, 1);
+    assert.equal(page.casinoItems.children.filter(node => node.dataset.menuCategory === 'favorites').length, 1);
   }
 });
 
@@ -610,6 +623,50 @@ test('REDEEM opens a separate preview destination instead of performing a transa
   page.nodes['menu-redeem'].click();
   assert.equal(page.calls.at(-1), 'feature:redeem');
   assert.equal(page.calls.includes('store:open'), false);
+});
+
+test('Social Casino opens the desktop rail, toggles the categories in place and restores focus when closing', () => {
+  const page = menuPage({ desktop: true });
+  const { socialCasino, casinoItems } = page;
+  assert.equal(socialCasino.dataset.menuDisclosure, 'social-casino');
+  assert.equal(socialCasino.getAttribute('aria-label'), 'Social Casino');
+  assert.equal(socialCasino.getAttribute('aria-expanded'), 'false');
+  assert.equal(socialCasino.getAttribute('aria-controls'), casinoItems.id);
+  assert.equal(casinoItems.hidden, true);
+  assert.equal(page.item('popular').getClientRects().length, 0);
+
+  socialCasino.click();
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.equal(socialCasino.getAttribute('aria-expanded'), 'true');
+  assert.equal(page.item('popular').getClientRects().length, 1);
+  assert.equal(page.feature('partners').getAttribute('aria-expanded'), 'false');
+
+  page.item('popular').focus();
+  socialCasino.click();
+  assert.equal(casinoItems.hidden, true);
+  assert.equal(page.document.activeElement, socialCasino);
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.deepEqual(page.calls, []);
+});
+
+test('mobile Social Casino reveals the active category and respects a manual collapse', () => {
+  const page = menuPage();
+  const { socialCasino, casinoItems } = page;
+  page.api.openMenu();
+  assert.equal(casinoItems.hidden, true);
+  socialCasino.click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  page.item('slots').click();
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'category:slots');
+
+  page.api.openMenu();
+  assert.equal(socialCasino.dataset.childActive, 'true');
+  assert.equal(socialCasino.getAttribute('aria-expanded'), 'true');
+  assert.equal(page.item('slots').getAttribute('aria-current'), 'page');
+  socialCasino.click();
+  page.observers[0].callback();
+  assert.equal(casinoItems.hidden, true);
 });
 
 test('Partners unfolds in place with only Referral and Affiliate, and keeps hidden children out of focus', () => {
@@ -746,6 +803,7 @@ test('desktop sidebar toggles without creating a modal or moving its shared cont
 test('desktop collection, Providers and BUY actions run immediately without a drawer close event', () => {
   const page = menuPage({ desktop: true });
   page.nodes['menu-toggle'].click();
+  page.socialCasino.click();
   page.item('popular').click();
   assert.equal(page.calls.at(-1), 'category:popular');
   assert.equal(page.document.activeElement, page.pageHeading);
@@ -803,7 +861,7 @@ test('switching an expanded desktop sidebar to mobile restores the header and st
 
 test('collapsed desktop navigation shows one custom tooltip for pointer and keyboard interaction', () => {
   const page = menuPage({ desktop: true });
-  const item = page.item('slots');
+  const item = page.socialCasino;
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
   item.bounds = { left: 8, right: 52, top: 160, bottom: 204, width: 44, height: 44 };
@@ -812,7 +870,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
   assert.equal(tooltip.hidden, true);
   sidebar.emit('pointerover', { target: item.children[0] });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Slots');
+  assert.equal(tooltip.textContent, 'Social Casino');
   assert.equal(item.getAttribute('aria-describedby'), 'menu-tooltip');
   assert.ok(Number.parseFloat(tooltip.style.left) > item.bounds.right);
   sidebar.emit('pointerout', { target: item, relatedTarget: null });
@@ -821,14 +879,14 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
 
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Slots');
+  assert.equal(tooltip.textContent, 'Social Casino');
   sidebar.emit('focusout', { target: item, relatedTarget: null });
   assert.equal(tooltip.hidden, true);
 });
 
 test('expanded and mobile navigation never show collapsed-rail tooltips', () => {
   const page = menuPage({ desktop: true });
-  const item = page.item('slots');
+  const item = page.socialCasino;
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
   sidebar.emit('focusin', { target: item });
@@ -851,7 +909,7 @@ test('expanded and mobile navigation never show collapsed-rail tooltips', () => 
 
 test('collapsed tooltips are dismissed by navigation but remain available in the game shell', () => {
   const page = menuPage({ desktop: true });
-  const item = page.item('popular');
+  const item = page.socialCasino;
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
   sidebar.emit('pointerover', { target: item });
@@ -905,6 +963,7 @@ test('game shell category and provider navigation opens its own destination afte
     const page = menuPage({ routeFromGame: true });
     page.document.body.dataset.view = 'game';
     page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+    page.socialCasino.click();
     page.item(id).click();
     assert.equal(page.calls.includes('lobby:return'), false, 'the menu closes before game routing');
     page.flushClose();

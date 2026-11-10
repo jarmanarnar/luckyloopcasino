@@ -34,6 +34,7 @@
       --catalog-control-size: 2.5rem;
       --catalog-toolbar-height: 3.5rem;
       --catalog-toolbar-padding: .5rem;
+      --primary-accent: #a0f526;
       --gold-accent: #e8bf65;
       --catalog-accent: var(--gold-accent);
       --surface-control: #20212a;
@@ -211,6 +212,15 @@
     .icon-button:hover:not(:disabled),
     .icon-button[aria-expanded="true"] { background: var(--control-hover); }
     .icon-button:disabled { opacity: .3; cursor: default; }
+
+    button.primary-button {
+      border: 1px solid var(--primary-accent);
+      border-radius: .625rem;
+      background: linear-gradient(#78ed00, #c7ff3c);
+      box-shadow: inset 0 -3px 0 #70aa16;
+      color: #080d00;
+    }
+    button.primary-button:hover:not(:disabled) { filter: brightness(1.07); }
     .catalog-categories {
       display: flex;
       align-items: center;

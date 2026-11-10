@@ -189,3 +189,45 @@ test('a view listener failure cannot turn a committed credit into a failed accou
     reconcile(account.getSnapshot());
   } finally { account.close(); }
 });
+
+test('marking notifications read merges across tabs and persists without changing rewards or balances', async () => {
+  const indexedDB = new IDBFactory();
+  const oldStore = await openAccountStore({ indexedDB, create() {
+    const saved = createDemoAccount({}, { now, playerId: `demo-${'x'.repeat(120)}` });
+    delete saved.member.notificationReadIds;
+    return saved;
+  } });
+  oldStore.close();
+  const config = { indexedDB, scope: undefined };
+  const first = await openDemoAccount(config);
+  let second;
+  try {
+    assert.deepEqual(first.getNotificationReadIds(), []);
+    assert.equal((await first.markNotificationsRead(['platform:welcome'])).ok, false);
+    await first.register({ email: 'notifications@example.test', password: 'NotificationDemo37!', accepted: true });
+    const reward = await first.claimDaily();
+    assert.equal(reward.ok, true);
+    const personal = `personal:${reward.transactionId}`;
+    const before = first.getSnapshot();
+    const memberBefore = first.getMemberState();
+    second = await openDemoAccount(config);
+    const results = await Promise.all([
+      first.markNotificationsRead([personal, 'personal:', null, `personal:${'x'.repeat(256)}`]),
+      second.markNotificationsRead(['platform:welcome', 'platform:welcome', 'unknown:notice']),
+    ]);
+    assert.ok(results.every(result => result.ok));
+    await second.refresh();
+    const expected = new Set([personal, 'platform:welcome']);
+    assert.deepEqual(new Set(second.getNotificationReadIds()), expected);
+    assert.deepEqual(second.getMemberState(), memberBefore);
+    const after = second.getSnapshot();
+    assert.deepEqual(after.wallet, before.wallet);
+    assert.deepEqual(after.ledger, before.ledger);
+
+    await first.logout();
+    assert.equal((await second.markNotificationsRead(['platform:after-logout'])).ok, false);
+    const reopened = await openDemoAccount(config);
+    try { assert.deepEqual(new Set(reopened.getNotificationReadIds()), expected); }
+    finally { reopened.close(); }
+  } finally { first.close(); second?.close(); }
+});
