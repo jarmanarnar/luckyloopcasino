@@ -118,8 +118,6 @@ export function initAuthView({ account, router } = {}) {
     document.querySelector('#header-profile').hidden = !next;
     document.querySelector('#header-wallet-controls').hidden = !next;
     document.querySelector('#header-member-actions').hidden = !next;
-    const profileLabel = document.querySelector('#mobile-nav-profile .mobile-nav__label');
-    if (profileLabel) profileLabel.textContent = next ? 'Profile' : 'Login';
     if (next && !signedIn) queueMicrotask(finish);
     if (!next && signedIn) {
       pending = null;

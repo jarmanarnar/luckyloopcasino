@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
-const actions = ['menu', 'store', 'lobby', 'redeem', 'profile'];
+const actions = ['menu', 'lobby', 'store', 'redeem', 'chat'];
 
 function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
@@ -58,6 +58,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     openHome() { calls.push({ action: 'home' }); nodes['catalog-categories'].dataset.activeMenu = 'lobby'; body.dataset.page = 'home'; body.dataset.view = 'lobby'; },
     openStore() { calls.push({ action: 'store' }); nodes['catalog-categories'].dataset.activeMenu = 'store'; body.dataset.page = 'store'; body.dataset.view = 'lobby'; },
     openFeature(pageId) { calls.push({ action: 'feature', pageId }); nodes['catalog-categories'].dataset.activeMenu = pageId; body.dataset.page = 'feature'; body.dataset.view = 'lobby'; },
+    openChat(button) { calls.push({ action: 'chat', button }); body.dataset.chat = 'open'; },
   };
   if (routeFromGame) api.returnToLobby = action => {
     calls.push({ action: 'lobby:return' });
@@ -109,7 +110,7 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
 
-  for (const action of ['redeem', 'profile']) {
+  for (const action of ['redeem']) {
     page.button(action).click();
     assert.deepEqual(page.calls.at(-1), { action: 'feature', pageId: action });
     assert.deepEqual(active(page), [action]);
@@ -117,6 +118,15 @@ test('mobile actions reuse canonical destinations and preserve the originating d
     assert.equal(page.button(action).getAttribute('aria-expanded'), null);
     assert.equal(page.body.dataset.page, 'feature');
   }
+
+  page.button('chat').click();
+  assert.deepEqual(page.calls.at(-1), { action: 'chat', button: page.button('chat') });
+  assert.deepEqual(active(page), ['chat']);
+  assert.equal(page.button('chat').getAttribute('aria-current'), null);
+  assert.equal(page.body.dataset.page, 'feature', 'chat preserves the current page');
+  page.body.dataset.chat = 'closed';
+  page.flush();
+  assert.deepEqual(active(page), ['redeem']);
 });
 
 test('the mobile Menu button closes the menu instead of trying to open it again', () => {
@@ -131,7 +141,7 @@ test('the mobile Menu button closes the menu instead of trying to open it again'
 });
 
 test('menu destinations wait for the menu close handoff and update the active destination', () => {
-  const expected = { lobby: 'home', store: 'store', redeem: 'feature', profile: 'feature' };
+  const expected = { lobby: 'home', store: 'store', redeem: 'feature', chat: 'chat' };
   for (const action of Object.keys(expected)) {
     const page = navPage();
     page.button('menu').click();
@@ -164,12 +174,12 @@ test('desktop and other open dialogs prevent hidden or overlapping actions', () 
   const page = navPage({ desktop: true });
   page.media.matches = false;
   page.media.emit('change');
-  page.button('profile').click();
-  assert.equal(page.calls.at(-1).pageId, 'profile', 'mobile actions resume after the breakpoint changes');
+  page.button('chat').click();
+  assert.equal(page.calls.at(-1).action, 'chat', 'mobile actions resume after the breakpoint changes');
 });
 
 test('Menu preserves the current game while every page destination uses its router entry point', () => {
-  for (const action of ['menu']) {
+  for (const action of ['menu', 'chat']) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
@@ -177,7 +187,7 @@ test('Menu preserves the current game while every page destination uses its rout
     assert.equal(page.calls.some(call => call.action === 'lobby:return'), false);
     assert.equal(page.body.dataset.view, 'game');
   }
-  for (const [action, destination] of [['lobby', 'home'], ['store', 'store'], ['redeem', 'feature'], ['profile', 'feature']]) {
+  for (const [action, destination] of [['lobby', 'home'], ['store', 'store'], ['redeem', 'feature']]) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
@@ -195,7 +205,7 @@ test('game details and active games clear every bottom destination even when the
       page.nodes['catalog-categories'].dataset.activeMenu = previous;
       page.body.dataset.page = ['redeem', 'profile'].includes(previous) ? 'feature' : previous;
       page.flush();
-      assert.deepEqual(active(page), [previous === 'providers' ? 'menu' : previous]);
+      assert.deepEqual(active(page), [['providers', 'profile'].includes(previous) ? 'menu' : previous]);
 
       if (gamePage === 'game-details') page.body.dataset.page = 'game-details';
       else page.body.dataset.view = 'game';
@@ -294,7 +304,7 @@ test('state follows navigation from other surfaces and distinguishes destination
   assert.equal(page.button('store').getAttribute('aria-current'), 'page');
   assert.equal(page.button('store').getAttribute('aria-expanded'), null);
 
-  for (const destination of ['redeem', 'profile']) {
+  for (const destination of ['redeem']) {
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
     page.body.dataset.page = 'feature';
     page.flush();
@@ -304,6 +314,9 @@ test('state follows navigation from other surfaces and distinguishes destination
     assert.equal(page.button('menu').getAttribute('aria-current'), null);
     assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
   }
+  page.nodes['catalog-categories'].dataset.activeMenu = 'profile';
+  page.flush();
+  assert.deepEqual(active(page), ['menu']);
 });
 
 test('dialog state takes precedence and clears expanded/current attributes on dismissal', () => {
@@ -336,7 +349,7 @@ test('initialization is idempotent, requires a complete shell and watches only r
     assert.equal(observation.options.attributes, true);
     assert.equal(observation.options.childList, undefined);
     assert.equal(observation.options.subtree, undefined);
-    const expected = observation.target === page.body ? ['data-view', 'data-page']
+    const expected = observation.target === page.body ? ['data-view', 'data-page', 'data-chat']
       : observation.target === page.nodes['catalog-categories'] ? ['data-active-menu'] : ['open'];
     assert.deepEqual(Array.from(observation.options.attributeFilter), expected);
   }

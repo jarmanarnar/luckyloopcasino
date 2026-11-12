@@ -76,6 +76,8 @@ export function initCommunityChat({ account, auth }) {
     trigger.addEventListener('click', () => opened ? close() : open(trigger));
     document.querySelector(selector)?.append(trigger); triggers.push(trigger);
   }
+  const mobileTrigger = document.querySelector('#mobile-nav-chat');
+  if (mobileTrigger) triggers.push(mobileTrigger);
   function setBackgroundInert(value) {
     if (value) {
       for (const element of document.body.children) {

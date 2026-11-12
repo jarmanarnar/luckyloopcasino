@@ -39,9 +39,9 @@ export async function initApplication() {
   const search = initSiteSearch(catalog);
   const help = initHowToPlay({ router });
   const menu = initSiteMenu({ ...catalog, ...search, ...features, ...help, openStore: store.openStore });
-  initMobileNav({ ...catalog, ...search, ...features, ...menu });
+  const chat = initCommunityChat({ account, auth });
+  initMobileNav({ ...catalog, ...search, ...features, ...menu, openChat: chat.open });
   initHeroCarousel(catalog);
-  initCommunityChat({ account, auth });
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {
     event.preventDefault();

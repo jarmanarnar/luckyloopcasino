@@ -31,7 +31,6 @@ body[data-auth="guest"] #hero-carousel { display: none; }
 body[data-auth="member"] #guest-welcome { display: none; }
 body[data-auth="guest"] #menu-shortcuts, body[data-auth="guest"] nav[aria-label="My account"] { display: none !important; }
 body[data-auth="guest"] #menu-daily-badge { display: none; }
-body[data-auth="guest"] #mobile-nav-profile .mobile-nav__icon { color: var(--catalog-accent); }
 body[data-auth-dialog="open"] { overflow: hidden; }
 
 .auth-dialog { box-sizing: border-box; position: fixed; max-width: calc(100vw - 2rem); width: 46rem; max-height: calc(100dvh - 2rem); padding: 0; margin: auto; border: 1px solid #303034; border-radius: 1.25rem; color: #eeeef2; background: #111113; overflow: auto; overscroll-behavior: contain; }

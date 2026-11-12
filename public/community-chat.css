@@ -87,8 +87,7 @@ html:has(body[data-chat-modal="true"]) { overflow: hidden; }
 @media (width < 45rem) {
   .community-chat { width: 100%; border-left: 0; }
   .chat-header { padding-top: calc(.625rem + env(safe-area-inset-top,0px)); }
-  /* Profile remains available in the permanent mobile navigation. */
-  #header-member-actions .header-profile { display: none; }
+  .top-bar .header-chat { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .community-chat,body[data-chat],body[data-chat] .top-bar,.chat-room-button > svg { transition: none; }
