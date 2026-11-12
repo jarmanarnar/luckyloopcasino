@@ -549,7 +549,7 @@ test('member destinations navigate after the mobile drawer closes', () => {
   const page = menuPage();
   for (const id of ['vip-club', 'rank-system', 'free-money',
     'invite-friends', 'partners', 'affiliate-program',
-    'profile', 'history', 'notifications', 'support', 'blog', 'settings']) {
+    'support', 'blog', 'settings']) {
     assert.ok(page.feature(id), `${id} has a dedicated sidebar entry`);
     assert.equal(page.feature(id).dataset.tooltip, page.feature(id).getAttribute('aria-label'));
   }

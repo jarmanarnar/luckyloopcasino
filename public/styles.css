@@ -66,8 +66,9 @@
       --catalog-accent: #8bdfb3;
     }
     button, input, select { font: inherit; }
-    /* Focus keeps keyboard behavior without drawing selection frames. */
-    :focus { outline: none; }
+    /* App-wide design rule: focus never adds an outline or glowing frame.
+       Keep this shared rule when adding components; keyboard focus still works. */
+    :focus, :focus-visible { outline: none !important; outline-offset: 0 !important; }
     :where(button, a, input, select, textarea, summary, [tabindex]) {
       -webkit-tap-highlight-color: transparent;
     }

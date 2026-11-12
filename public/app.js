@@ -11,6 +11,8 @@ import { initStoreView } from './store-view.js';
 import { initPhoneVerification } from './phone-verification.js';
 import { initNotificationsDrawer } from './notifications-drawer.js';
 import { initRewardsPopover } from './rewards-popover.js';
+import { initProfileMenu } from './profile-menu.js';
+import { initCommunityChat } from './community-chat.js';
 import { initFeatureView } from './feature-view.js';
 import { initGameDetails } from './game-details-view.js';
 import { initHowToPlay } from './how-to-play.js';
@@ -26,6 +28,7 @@ export async function initApplication() {
   const notifications = initNotificationsDrawer({ router, account, auth });
   initRewardsPopover({ router, account });
   const verifyPhone = () => auth.require(phone.open);
+  initProfileMenu({ router, account, openNotifications: notifications.open, verifyPhone });
   initGameView({ router });
   const store = initStoreView({ router, account, auth, verifyPhone });
   const wallet = initWallet({ account, router, openStore: store.openStore });
@@ -34,10 +37,11 @@ export async function initApplication() {
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });
   const search = initSiteSearch(catalog);
-  const help = initHowToPlay({ router, openHome: catalog.openHome });
+  const help = initHowToPlay({ router });
   const menu = initSiteMenu({ ...catalog, ...search, ...features, ...help, openStore: store.openStore });
   initMobileNav({ ...catalog, ...search, ...features, ...menu });
   initHeroCarousel(catalog);
+  initCommunityChat({ account, auth });
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {
     event.preventDefault();

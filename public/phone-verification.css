@@ -83,7 +83,6 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
 }
 
 .phone-verification__field input::placeholder { color: var(--text-secondary); opacity: 1; }
-.phone-verification__field:focus-within { border-color: #a0f526; }
 
 .phone-verification__submit {
   min-height: var(--touch-target);
@@ -119,10 +118,6 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
 }
 
 .phone-verification__back:hover { color: var(--text-primary); }
-.phone-verification :is(.phone-verification__close, .phone-verification__submit, .phone-verification__back):focus-visible {
-  outline: 2px solid #c7ff3c;
-  outline-offset: 3px;
-}
 
 .phone-verification__status {
   margin: 0;

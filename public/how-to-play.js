@@ -15,7 +15,7 @@ const steps = [
 
 let controller;
 
-export function initHowToPlay({ router, openHome } = {}) {
+export function initHowToPlay({ router } = {}) {
   if (controller) return controller;
   const dialog = document.querySelector('#how-to-play-dialog');
   const mode = document.querySelector('#how-to-play-mode');
@@ -27,7 +27,7 @@ export function initHowToPlay({ router, openHome } = {}) {
   const close = document.querySelector('#how-to-play-close');
   const status = document.querySelector('#how-to-play-step');
   if (![dialog, mode, art, description, previous, next, finish, close, status].every(Boolean)) return;
-  let index = 0, opener = null, afterClose = null;
+  let index = 0, opener = null;
 
   function coin(currency, className) {
     const image = document.createElement('img');
@@ -62,7 +62,7 @@ export function initHowToPlay({ router, openHome } = {}) {
   previous.addEventListener('click', () => move(-1));
   next.addEventListener('click', () => move(1));
   close.addEventListener('click', () => dialog.close());
-  finish.addEventListener('click', () => { afterClose = openHome; dialog.close(); });
+  finish.addEventListener('click', () => dialog.close());
   dialog.addEventListener('keydown', event => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
@@ -75,9 +75,6 @@ export function initHowToPlay({ router, openHome } = {}) {
       || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
   });
   dialog.addEventListener('close', () => {
-    const action = afterClose;
-    afterClose = null;
-    if (action) { action(); return; }
     [opener, document.querySelector('#mobile-nav-menu'), document.querySelector('.site-logo')]
       .find(element => element?.getClientRects().length && !element.closest('[inert]'))?.focus({ preventScroll: true });
   });
@@ -87,7 +84,6 @@ export function initHowToPlay({ router, openHome } = {}) {
     openHowToPlay({ returnFocusTo = document.activeElement } = {}) {
       if (dialog.open || document.querySelector('dialog[open]')) return;
       opener = returnFocusTo;
-      afterClose = null;
       index = 0;
       render();
       dialog.showModal();

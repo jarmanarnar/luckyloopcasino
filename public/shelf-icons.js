@@ -53,6 +53,12 @@ export function createShelfIcon(id) {
     case 'notifications':
       svg.append(path('M10 3a2 2 0 1 1 4 0 7 7 0 0 1 5 6v5l3 4H2l3-4V9a7 7 0 0 1 5-6Zm-1 17h6a3 3 0 0 1-6 0Z'));
       break;
+    case 'messages':
+      svg.append(path('M21.8 2.8a1 1 0 0 1 1.2 1.2l-4 16a1 1 0 0 1-1.5.6l-5.9-4-3.1 3a.8.8 0 0 1-1.4-.6v-4.5l10.2-8.2-12.5 6.5-3.2-2a1 1 0 0 1 .2-1.8l20-6.2Z'));
+      break;
+    case 'logout':
+      svg.append(path('M4 3h10v4h-2V5H5v14h7v-2h2v4H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm13.3 4.3 4.7 4.7-4.7 4.7-1.4-1.4 2.3-2.3H8v-2h10.2l-2.3-2.3 1.4-1.4Z'));
+      break;
     case 'how-to-play':
       svg.append(shape('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }),
         shape('path', { d: 'M9.5 8a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1.1-1.5 3', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }),

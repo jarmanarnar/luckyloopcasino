@@ -67,9 +67,6 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
     if (id === 'how-to-play') {
       button.setAttribute('aria-haspopup', 'dialog');
       button.setAttribute('aria-controls', 'how-to-play-dialog');
-    } else if (id === 'notifications') {
-      button.setAttribute('aria-haspopup', 'dialog');
-      button.setAttribute('aria-controls', 'notifications-drawer');
     }
     featureItems.set(id, button);
     return button;
@@ -117,7 +114,6 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
     { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
     { label: 'Free Money', items: [['free-money', 'Free Money']] },
     { label: 'Partners', disclosure: 'partners', items: [['partners', 'Partners'], ['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
-    { label: 'My account', items: [['profile', 'My Profile'], ['history', 'History'], ['notifications', 'Notifications']] },
     { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
   ];
   for (const group of featureGroups) {

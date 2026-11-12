@@ -37,11 +37,13 @@
   <link rel="stylesheet" href="phone-verification.css">
   <link rel="stylesheet" href="notifications-drawer.css">
   <link rel="stylesheet" href="rewards-popover.css">
+  <link rel="stylesheet" href="profile-menu.css">
   <link rel="stylesheet" href="feature-pages.css">
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="wallet-header.css">
+  <link rel="stylesheet" href="community-chat.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -133,7 +135,7 @@
           <img class="header-rewards__gift" src="assets/rewards-gift.svg" width="32" height="32" alt="">
           <span>Rewards</span>
         </button>
-        <a id="header-profile" class="header-member-action header-profile" href="#/profile" aria-label="My Profile" hidden><span id="header-avatar" class="header-avatar" aria-hidden="true">L</span></a>
+        <button id="header-profile" class="header-member-action header-profile" type="button" popovertarget="profile-menu" aria-label="Profile menu" hidden><span id="header-avatar" class="header-avatar" aria-hidden="true">L</span></button>
         <button id="header-notifications" class="header-member-action header-member-shortcut" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-controls="notifications-drawer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 3a2 2 0 1 1 4 0 7 7 0 0 1 5 6v5l3 4H2l3-4V9a7 7 0 0 1 5-6Zm-1 17h6a3 3 0 0 1-6 0Z"/></svg></button>
       </nav>
       <div id="guest-header-actions" class="guest-header-actions">
@@ -143,6 +145,20 @@
       </div>
     </div>
   </header>
+  <nav id="profile-menu" class="profile-menu" popover="auto" aria-label="Profile shortcuts" lang="en" dir="ltr">
+    <ul class="profile-menu__list">
+      <li><button class="profile-menu__item" type="button" data-profile-icon="profile" data-profile-action="summary" aria-haspopup="dialog" aria-controls="profile-summary">My Profile</button></li>
+      <li><a class="profile-menu__item" href="#/history" data-profile-icon="history" data-profile-page="history" data-profile-transactions>Transaction History</a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="scratchcards" disabled>Promo Codes<span class="profile-menu__badge">Coming soon</span></button></li>
+      <li><a class="profile-menu__item" href="#/free-money" data-profile-icon="rank-system" data-profile-page="free-money">Achievements</a></li>
+      <li><a class="profile-menu__item" href="#/rank-system" data-profile-icon="jackpot" data-profile-page="rank-system">VIP Tiers<span id="profile-menu-rank" class="profile-menu__badge"></span></a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
+      <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="phone-verification-dialog">Redeem Coins</button></li>
+    </ul>
+    <p id="profile-menu-status" class="profile-menu__status" role="status"></p>
+  </nav>
   <section id="rewards-popover" class="rewards-popover" popover="auto" aria-labelledby="rewards-popover-title" lang="en" dir="ltr">
     <header class="rewards-popover__header">
       <h2 id="rewards-popover-title">My Rewards</h2>
@@ -312,6 +328,33 @@
       <p class="visually-hidden" role="status"></p>
     </footer>
   </dialog>
+  <dialog id="profile-summary" class="profile-summary" aria-labelledby="profile-summary-title" lang="en" dir="ltr">
+    <header class="profile-summary__header">
+      <h2 id="profile-summary-title" tabindex="-1" autofocus>My Profile</h2>
+      <button class="profile-summary__close icon-button" type="button" aria-label="Close profile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button>
+    </header>
+    <div class="profile-summary__body">
+      <div class="profile-summary__identity">
+        <span id="profile-summary-avatar" class="profile-summary__avatar" aria-hidden="true"></span>
+        <div><h3 id="profile-summary-name" class="profile-summary__name"></h3><p class="profile-summary__member-since">Member since <time id="profile-summary-since"></time></p></div>
+        <a class="profile-summary__edit icon-button" href="#/profile" data-profile-page="profile" aria-label="Edit profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5v14h14v-7M9 15l1-4 7-7 3 3-7 7-4 1Z"/></svg></a>
+      </div>
+      <section class="profile-summary__progress" aria-labelledby="profile-summary-progress-title">
+        <div class="profile-summary__progress-header"><h3 id="profile-summary-progress-title">Your progress</h3><span id="profile-summary-percent"></span></div>
+        <progress id="profile-summary-progress" max="1" value="0" aria-label="Progress to next rank"></progress>
+        <div class="profile-summary__ranks"><span id="profile-summary-rank"></span><span id="profile-summary-next-rank"></span></div>
+      </section>
+      <section aria-labelledby="profile-summary-stats-title">
+        <div class="profile-summary__stats-header"><h3 id="profile-summary-stats-title">Statistics</h3><a class="profile-summary__more" href="#/history" data-profile-page="history">Show More</a></div>
+        <dl class="profile-summary__stats">
+          <div><dt>Games discovered</dt><dd id="profile-summary-games"></dd></div>
+          <div><dt>Saved games</dt><dd id="profile-summary-favorites"></dd></div>
+          <div><dt>Rewards collected</dt><dd id="profile-summary-rewards"></dd></div>
+          <div><dt>Gold Coins credited</dt><dd id="profile-summary-coins"></dd></div>
+        </dl>
+      </section>
+    </div>
+  </dialog>
   <main id="feature-view" class="page-content feature-view" lang="en" dir="ltr" hidden>
     <header id="feature-header" class="feature-header">
       <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
@@ -330,7 +373,7 @@
       <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button>
     </div>
     <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
-    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>Back to Lobby</button>
+    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>OK</button>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
   </dialog>
   <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title" lang="en" dir="ltr">

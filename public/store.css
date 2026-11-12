@@ -200,10 +200,6 @@ html:has(.store-dialog[open]) { overflow: hidden; }
 }
 .store-dialog__close.icon-button:hover { background: var(--control-hover); color: var(--text-primary); }
 .store-dialog__close svg { width: 1rem; height: 1rem; }
-.store-dialog :is(.store-dialog__close, .store-package__price):focus-visible {
-  outline: 2px solid #c7ff3c;
-  outline-offset: 3px;
-}
 
 .store-dialog__body { padding: 1.125rem 1.5rem; }
 .store-dialog .store-packages { gap: .75rem; }
