@@ -1,20 +1,19 @@
-export function initPlayerDisplay({ view, document: doc = document, window: win = doc.defaultView,
-  onResize = () => {}, onClose = () => {}, onChooseCurrency = () => {} }) {
+export function initPlayerDisplay({ view, document: doc = document, window: win = doc.defaultView, onResize = () => {} }) {
   const theater = doc.querySelector('#game-theater');
   const fullscreen = doc.querySelector('#game-fullscreen');
+  const menuFullscreen = doc.querySelector('#profile-game-fullscreen');
+  const menuFullscreenLabel = doc.querySelector('#profile-game-fullscreen-label');
+  const profileMenu = doc.querySelector('#profile-menu');
   if (!theater || !fullscreen) return { reset() {}, setGame() {} };
-  const close = doc.querySelector('#game-close');
-  const title = doc.querySelector('#game-player-title');
-  const currency = doc.querySelector('#game-change-currency');
-  const currencyLabel = doc.querySelector('#game-player-currency');
-  const currencyArt = doc.querySelector('#game-player-coin');
   const sidebar = doc.querySelector('.site-sidebar');
-  // Keep the mobile player when a phone rotates beyond the desktop width breakpoint.
+  // The page, including its original header and popovers, enters fullscreen together.
+  const fullscreenTarget = doc.documentElement;
   const mobileMedia = win?.matchMedia('(max-width: 719px), (max-width: 1024px) and (max-height: 719px)');
   let opened = false, wide = false, fallback = false, busy = false, generation = 0;
-  let priorSidebar = null;
-  const isMobile = () => Boolean(mobileMedia?.matches);
-  const supportsFullscreen = () => Boolean(view.requestFullscreen) && doc.fullscreenEnabled !== false;
+  let priorSidebar = null, mobileSession = false;
+  const nativeFullscreen = () => Boolean(fullscreenTarget) && doc.fullscreenElement === fullscreenTarget;
+  const isMobile = () => Boolean(mobileMedia?.matches) || (mobileSession && (nativeFullscreen() || busy));
+  const supportsFullscreen = () => Boolean(fullscreenTarget?.requestFullscreen) && doc.fullscreenEnabled !== false;
 
   function setWide(value) {
     if (value && !wide) {
@@ -34,8 +33,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   }
 
   function render() {
-    const mobile = isMobile();
-    const full = doc.fullscreenElement === view || fallback;
+    const mobile = isMobile(), full = nativeFullscreen() || fallback;
     view.dataset.mobile = String(mobile);
     view.dataset.theater = String(wide);
     view.dataset.fullscreenFallback = String(fallback);
@@ -46,17 +44,24 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     theater.setAttribute('aria-pressed', String(wide));
     theater.setAttribute('aria-label', wide ? 'Exit theater mode' : 'Theater mode');
     theater.title = wide ? 'Exit theater mode' : 'Theater mode';
-    // Mobile fills the viewport already. Offer browser fullscreen only when supported.
+    const label = full ? 'Exit fullscreen' : 'Fullscreen';
     fullscreen.hidden = mobile && !supportsFullscreen();
     fullscreen.disabled = busy;
     fullscreen.setAttribute('aria-pressed', String(full));
-    fullscreen.setAttribute('aria-label', full ? 'Exit fullscreen' : 'Fullscreen');
-    fullscreen.title = full ? 'Exit fullscreen' : 'Fullscreen';
+    fullscreen.setAttribute('aria-label', label);
+    fullscreen.title = label;
+    if (menuFullscreen) {
+      menuFullscreen.hidden = !opened || (!supportsFullscreen() && mobile);
+      menuFullscreen.disabled = busy;
+      menuFullscreen.setAttribute('aria-label', label);
+      menuFullscreen.setAttribute('aria-pressed', String(full));
+    }
+    if (menuFullscreenLabel) menuFullscreenLabel.textContent = label;
     onResize();
   }
 
   async function leaveFullscreen() {
-    if (doc.fullscreenElement === view) {
+    if (nativeFullscreen()) {
       try { await doc.exitFullscreen?.(); } catch { /* The browser may already have exited. */ }
     }
   }
@@ -65,17 +70,19 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     if (busy) return;
     if (fallback) { fallback = false; render(); return; }
     const requestGeneration = generation;
+    mobileSession = isMobile();
     busy = true;
     render();
     try {
-      if (doc.fullscreenElement === view) await leaveFullscreen();
-      else if (supportsFullscreen()) await view.requestFullscreen();
+      if (nativeFullscreen()) await leaveFullscreen();
+      else if (supportsFullscreen()) await fullscreenTarget.requestFullscreen();
       else if (!isMobile()) fallback = true;
     } catch {
       if (requestGeneration === generation && !isMobile()) fallback = true;
     } finally {
       if (requestGeneration !== generation) await leaveFullscreen();
       busy = false;
+      if (!nativeFullscreen()) mobileSession = false;
       render();
     }
   }
@@ -88,22 +95,26 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     void leaveFullscreen();
     render();
   }
-
   theater.addEventListener('click', () => {
     if (isMobile()) return;
     setWide(!wide);
     render();
   });
   fullscreen.addEventListener('click', toggleFullscreen);
-  close?.addEventListener('click', () => { reset(); onClose(); });
-  currency?.addEventListener('click', onChooseCurrency);
+  menuFullscreen?.addEventListener('click', () => {
+    if (profileMenu?.matches(':popover-open')) profileMenu.hidePopover();
+    return toggleFullscreen();
+  });
   mobileMedia?.addEventListener('change', () => {
     if (isMobile()) { setWide(false); fallback = false; }
     render();
   });
-  doc.addEventListener('fullscreenchange', render);
+  doc.addEventListener('fullscreenchange', () => {
+    if (!nativeFullscreen() && !busy) mobileSession = false;
+    render();
+  });
   doc.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || (!fallback && !wide && doc.fullscreenElement !== view)) return;
+    if (event.key !== 'Escape' || (!fallback && !wide && !nativeFullscreen())) return;
     event.preventDefault();
     void leaveFullscreen();
     fallback = false;
@@ -111,13 +122,5 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     render();
   });
   render();
-  return { fullscreen: toggleFullscreen, reset, setGame(game) {
-    opened = true;
-    if (title) { title.textContent = game.title; title.title = game.title; }
-    const code = game.currency === 'SC' ? 'SC' : 'GC';
-    if (currencyLabel) currencyLabel.textContent = code;
-    if (currencyArt) currencyArt.src = code === 'SC' ? 'assets/coins/sweeps-coin.svg' : 'assets/coins/gold-coin.svg';
-    currency?.setAttribute('aria-label', 'Change play currency, ' + code + ' selected');
-    render();
-  } };
+  return { fullscreen: toggleFullscreen, reset, setGame() { opened = true; render(); } };
 }

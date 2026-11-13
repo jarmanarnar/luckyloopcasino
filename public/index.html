@@ -155,6 +155,7 @@
       <li><a class="profile-menu__item" href="#/rank-system" data-profile-icon="jackpot" data-profile-page="rank-system">VIP Tiers<span id="profile-menu-rank" class="profile-menu__badge"></span></a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
       <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
+      <li><button id="profile-game-fullscreen" class="profile-menu__item" type="button" aria-label="Fullscreen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span id="profile-game-fullscreen-label">Fullscreen</span></button></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="phone-verification-dialog">Redeem Coins</button></li>
     </ul>
@@ -255,9 +256,6 @@
       </div>
     </div>
     <div class="game-display-controls" role="group" aria-label="Player controls">
-      <button id="game-close" type="button" aria-label="Back to lobby" title="Back to lobby"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m14 5-7 7 7 7"/></svg></button>
-      <span id="game-player-title" class="game-player-title"></span>
-      <button id="game-change-currency" class="game-player-currency" type="button" aria-label="Change play currency"><img id="game-player-coin" src="assets/coins/gold-coin.svg" alt="" aria-hidden="true"><span id="game-player-currency">GC</span></button>
       <button id="game-theater" type="button" aria-label="Theater mode" title="Theater mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></button>
       <button id="game-fullscreen" type="button" aria-label="Fullscreen" title="Fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
     </div>
