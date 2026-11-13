@@ -1,3 +1,6 @@
+import { initCoinChooser } from './coin-chooser.js';
+import { createGameArt } from './game-artwork-view.js';
+import { initPlayerDisplay } from './player-display.js';
 import { GAMES } from './catalog.js';
 import { getLaunchDevice, getLaunchUrl, getFrameScale } from './game-presentation.js';
 import { watchGameReady } from './game-ready.js';
@@ -8,7 +11,7 @@ const games = new Map(GAMES.map(game => [game.id, game]));
 let initialized = false;
 let gameController = null;
 
-export function initGameView({ router } = {}) {
+export function initGameView({ router, account, verifyPhone } = {}) {
   if (initialized) return gameController;
 
   const lobby = document.querySelector('#lobby-view');
@@ -21,6 +24,15 @@ export function initGameView({ router } = {}) {
   if (![lobby, view, host, status, loading, reveal, shelves].every(Boolean)) return;
   initialized = true;
 
+  const preplay = document.querySelector('#game-preplay');
+  let chooser;
+  let awaitingPlay = false;
+  let pendingReady = null;
+  function activePlayer(value) {
+    document.body.dataset.playerActive = String(value);
+    if (document.dispatchEvent) document.dispatchEvent(new CustomEvent('player:active-change'));
+  }
+  let blockedTimer = 0;
   let currentGame = null;
   let hasRendered = false;
   let currentFrame = null;
@@ -42,6 +54,7 @@ export function initGameView({ router } = {}) {
 
   function revealGame(frame, reason) {
     if (frame !== currentFrame || loading.hidden) return;
+    if (awaitingPlay) { pendingReady = { frame, reason }; return; }
     stopLoadingWatch();
     view.dataset.loadState = reason === 'manual' ? 'revealed'
       : ['nlc-loader', 'hacksaw-loader'].includes(reason) ? 'provider' : 'ready';
@@ -90,9 +103,37 @@ export function initGameView({ router } = {}) {
   const frameResizeObserver = new ResizeObserver(fitFrame);
   frameResizeObserver.observe(host);
 
+  const display = initPlayerDisplay({ view, onResize: fitFrame });
+
+  function renderPreplayMetadata(game) {
+    if (preplay) {
+      let meta = preplay.querySelector('.game-preplay__meta');
+      if (!meta) {
+        meta = document.createElement('div');
+        meta.className = 'game-preplay__meta';
+        preplay.querySelector('.game-preplay__card').prepend(meta);
+      }
+      const title = document.createElement('h2'); title.textContent = game.title;
+      const provider = document.createElement('p'); provider.textContent = game.providerName;
+      meta.replaceChildren(createGameArt(game), title, provider);
+    }
+  }
+
   function mountFrame(key) {
+    // This integration supports public demos only. SC never reaches a launcher.
+    if (account?.getSnapshot().wallet.currency === 'SC') return;
     stopLoadingWatch();
+    currentFrame = null;
+    host.replaceChildren();
+    view.dataset.mode = 'GC';
+    view.dataset.sessionKind = 'public-demo';
+    activePlayer(false);
+    awaitingPlay = Boolean(preplay);
+    pendingReady = null;
+    if (preplay) preplay.hidden = false;
+    chooser?.reset(account?.getSnapshot().wallet.currency);
     const game = games.get(key);
+    renderPreplayMetadata(game);
     const frame = document.createElement('iframe');
     const touchCapable = window.matchMedia('(any-pointer: coarse)').matches
       || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
@@ -149,11 +190,52 @@ export function initGameView({ router } = {}) {
 
   function showFromHash({ restoreLobby = true } = {}) {
     const route = router?.getRoute();
-    const requested = router ? route.type === 'game' ? route.gameId : null
+    const requested = router ? ['game', 'game-details'].includes(route.type) ? route.gameId : null
       : new URLSearchParams(window.location.hash.slice(1)).get('game');
     const key = games.has(requested) ? requested : null;
     if (router && route.type === 'game' && key === null) {
       router.navigate({ type: 'home' }, { replace: true });
+      return;
+    }
+    window.clearTimeout(blockedTimer);
+    if (key !== null && account?.getSnapshot().wallet.currency === 'SC' && route?.type !== 'game-details') {
+      stopLoadingWatch();
+      display.reset();
+      if (preplay) preplay.hidden = true;
+      currentGame = null;
+      currentFrame = null;
+      host.replaceChildren();
+      view.hidden = true;
+      lobby.hidden = false;
+      document.body.dataset.view = 'lobby';
+      hasRendered = false;
+      // Defer until the current route notification finishes, then show the gate.
+      blockedTimer = window.setTimeout(() => {
+        if (router) router.navigate({ type: 'game-details', gameId: key, ...(route.from ? { from: route.from } : {}) }, { replace: true });
+        else window.location.hash = '';
+        verifyPhone?.();
+      }, 0);
+      return;
+    }
+    if (key !== null && account?.getSnapshot().wallet.currency === 'SC' && route?.type === 'game-details') {
+      stopLoadingWatch();
+      view.dataset.mode = 'SC';
+      view.dataset.sessionKind = 'verification-preview';
+      delete view.dataset.loadState;
+      delete view.dataset.readySource;
+      renderPreplayMetadata(games.get(key));
+      activePlayer(false);
+      currentFrame = null;
+      pendingReady = null;
+      host.removeAttribute('aria-busy');
+      status.textContent = '';
+      currentGame = key;
+      host.replaceChildren();
+      view.hidden = false;
+      loading.hidden = true;
+      if (preplay) preplay.hidden = false;
+      awaitingPlay = true;
+      chooser?.reset('SC');
       return;
     }
     if (hasRendered && key === currentGame) return;
@@ -179,6 +261,9 @@ export function initGameView({ router } = {}) {
     }
 
     stopLoadingWatch();
+    display.reset();
+    activePlayer(false);
+    if (preplay) preplay.hidden = true;
     currentGame = null;
     currentFrame = null;
     host.replaceChildren();
@@ -234,6 +319,22 @@ export function initGameView({ router } = {}) {
     } else window.location.hash = `game=${key}`;
   });
 
+  chooser = initCoinChooser({ document, onSelect: async currency => {
+    const result = await account?.selectCurrency(currency);
+    if (result?.ok === false) throw new Error('Currency change failed');
+  }, onPlay: async currency => {
+    if (currency === 'SC') {
+      if (account) await account.selectCurrency('SC');
+      verifyPhone?.();
+      return;
+    }
+    if (account?.getSnapshot().wallet.currency === 'SC') await account.selectCurrency('GC');
+    if (!currentFrame && currentGame) mountFrame(currentGame);
+    awaitingPlay = false;
+    activePlayer(true);
+    if (preplay) preplay.hidden = true;
+    if (pendingReady) revealGame(pendingReady.frame, pendingReady.reason);
+  } });
   reveal.addEventListener('click', () => {
     if (currentFrame) revealGame(currentFrame, 'manual');
   });
@@ -244,6 +345,15 @@ export function initGameView({ router } = {}) {
     if (document.querySelector('dialog[open]')) return;
     event.preventDefault();
     returnToLobby();
+  });
+  let observedCurrency = account?.getSnapshot().wallet.currency;
+  account?.subscribe(() => {
+    const currency = account.getSnapshot().wallet.currency;
+    const changed = currency !== observedCurrency;
+    observedCurrency = currency;
+    if (currentGame === null || !changed) return;
+    if (currency === 'SC') showFromHash();
+    else { hasRendered = true; mountFrame(currentGame); chooser?.reset('GC'); }
   });
   showFromHash();
   gameController = { returnToLobby };

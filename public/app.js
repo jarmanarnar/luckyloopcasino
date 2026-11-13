@@ -1,3 +1,4 @@
+import { initSiteMode } from './site-mode.js';
 import { initGameView } from './game-view.js';
 import { initCatalogView } from './catalog-view.js';
 import { initWallet } from './wallet.js';
@@ -11,6 +12,8 @@ import { initStoreView } from './store-view.js';
 import { initPhoneVerification } from './phone-verification.js';
 import { initNotificationsDrawer } from './notifications-drawer.js';
 import { initRewardsPopover } from './rewards-popover.js';
+import { initProfileMenu } from './profile-menu.js';
+import { initCommunityChat } from './community-chat.js';
 import { initFeatureView } from './feature-view.js';
 import { initGameDetails } from './game-details-view.js';
 import { initHowToPlay } from './how-to-play.js';
@@ -20,13 +23,15 @@ import { initAuthView } from './auth-view.js';
 
 export async function initApplication() {
   const account = await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
+  initSiteMode({ account });
   const auth = initAuthView({ account, router: initRouter() });
   const router = auth.router;
   const phone = initPhoneVerification({ router, account });
   const notifications = initNotificationsDrawer({ router, account, auth });
   initRewardsPopover({ router, account });
   const verifyPhone = () => auth.require(phone.open);
-  initGameView({ router });
+  initProfileMenu({ router, account, openNotifications: notifications.open, verifyPhone });
+  initGameView({ router, account, verifyPhone: phone.open });
   const store = initStoreView({ router, account, auth, verifyPhone });
   const wallet = initWallet({ account, router, openStore: store.openStore });
   const features = initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications: notifications.open });
@@ -34,9 +39,10 @@ export async function initApplication() {
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });
   const search = initSiteSearch(catalog);
-  const help = initHowToPlay({ router, openHome: catalog.openHome });
+  const help = initHowToPlay({ router });
   const menu = initSiteMenu({ ...catalog, ...search, ...features, ...help, openStore: store.openStore });
-  initMobileNav({ ...catalog, ...search, ...features, ...menu });
+  const chat = initCommunityChat({ account, auth });
+  initMobileNav({ ...catalog, ...search, ...features, ...menu, openChat: chat.open });
   initHeroCarousel(catalog);
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {

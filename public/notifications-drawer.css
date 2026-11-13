@@ -163,8 +163,6 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
 
 .notifications-drawer__read-all:hover:not(:disabled) { background: var(--control-hover); }
 .notifications-drawer__read-all:disabled { color: var(--text-secondary); opacity: .6; cursor: default; }
-.notifications-drawer :is(button, a, [role="tabpanel"]):focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 2px; }
-.notifications-drawer__panel:focus-visible { outline-offset: -2px; }
 
 @media (max-width: 32rem) {
   .notifications-drawer { width: 100%; border-left: 0; }

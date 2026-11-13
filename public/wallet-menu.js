@@ -30,7 +30,7 @@ export function initWalletMenu({ account, router, openStore, selectCurrency, doc
     trigger.removeAttribute('aria-checked');
     trigger.dataset.action = 'currencies';
     trigger.title = 'Choose currency';
-    trigger.setAttribute('aria-label', hidden ? `${code} balance hidden. Choose currency`
+    trigger.setAttribute('aria-label', (['game', 'game-details'].includes(router?.getRoute?.().type) || doc.body?.dataset.playerActive === 'true') ? `${code} In Play. Choose currency` : hidden ? `${code} balance hidden. Choose currency`
       : `${code} balance: ${formatBalance(code, wallet.balances[code])}. Choose currency`);
     coin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
     hide.setAttribute('aria-checked', String(hidden));

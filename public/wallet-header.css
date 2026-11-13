@@ -82,7 +82,6 @@ button.header-member-action { cursor: pointer; }
   white-space: nowrap;
 }
 .header-rewards__gift { display: block; flex: none; width: 2rem; height: 2rem; }
-.header-rewards:focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 2px; }
 .header-member-action.header-profile {
   border: 2px solid #393b40;
   border-radius: 50%;

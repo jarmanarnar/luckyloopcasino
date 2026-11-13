@@ -226,12 +226,15 @@ export function initGameDetails({ router, member } = {}) {
     title.tabIndex = -1;
     copy.append(byline, title, favoriteControl(game));
     const launch = node('div', 'game-details-launch');
-    const play = node('button', 'game-details-play', 'Play');
+    const play = node('button', 'game-details-play primary-button', 'Play');
     play.type = 'button';
     play.addEventListener('click', () => router.navigate({ type: 'game', gameId: game.id, from: formatRoute(router.getRoute()) }));
+    // Play mode selection lives inside the embedded player, not on another page.
+    play.hidden = true;
     launch.append(play);
     hero.append(art, copy, launch);
-    root.replaceChildren(back, hero, detailsCard(game, formatName));
+    const player = document.querySelector('#game-view');
+    root.replaceChildren(back, hero, ...(player ? [player] : []), detailsCard(game, formatName));
     const related = relatedGames(game);
     if (related) root.append(related);
     syncFavorite();

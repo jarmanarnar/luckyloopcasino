@@ -105,6 +105,7 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
     title.textContent = page.title;
     document.title = `${page.title} · LuckyLoop Casino`;
     notice.textContent = '';
+    if (currentPage === 'history' && meta.historyFilter === 'transaction') ctx.ui.historyFilter = 'transaction';
     void save(() => account.recordPageVisit(currentPage));
     renderContent();
     if (meta.source === 'navigate' && meta.focus !== false) title.focus({ preventScroll: true });

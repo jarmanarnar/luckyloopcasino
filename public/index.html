@@ -37,11 +37,14 @@
   <link rel="stylesheet" href="phone-verification.css">
   <link rel="stylesheet" href="notifications-drawer.css">
   <link rel="stylesheet" href="rewards-popover.css">
+  <link rel="stylesheet" href="profile-menu.css">
   <link rel="stylesheet" href="feature-pages.css">
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="wallet-header.css">
+  <link rel="stylesheet" href="community-chat.css">
+  <link rel="stylesheet" href="player-display.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -133,7 +136,7 @@
           <img class="header-rewards__gift" src="assets/rewards-gift.svg" width="32" height="32" alt="">
           <span>Rewards</span>
         </button>
-        <a id="header-profile" class="header-member-action header-profile" href="#/profile" aria-label="My Profile" hidden><span id="header-avatar" class="header-avatar" aria-hidden="true">L</span></a>
+        <button id="header-profile" class="header-member-action header-profile" type="button" popovertarget="profile-menu" aria-label="Profile menu" hidden><span id="header-avatar" class="header-avatar" aria-hidden="true">L</span></button>
         <button id="header-notifications" class="header-member-action header-member-shortcut" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-controls="notifications-drawer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 3a2 2 0 1 1 4 0 7 7 0 0 1 5 6v5l3 4H2l3-4V9a7 7 0 0 1 5-6Zm-1 17h6a3 3 0 0 1-6 0Z"/></svg></button>
       </nav>
       <div id="guest-header-actions" class="guest-header-actions">
@@ -143,6 +146,20 @@
       </div>
     </div>
   </header>
+  <nav id="profile-menu" class="profile-menu" popover="auto" aria-label="Profile shortcuts" lang="en" dir="ltr">
+    <ul class="profile-menu__list">
+      <li><button class="profile-menu__item" type="button" data-profile-icon="profile" data-profile-action="summary" aria-haspopup="dialog" aria-controls="profile-summary">My Profile</button></li>
+      <li><a class="profile-menu__item" href="#/history" data-profile-icon="history" data-profile-page="history" data-profile-transactions>Transaction History</a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="scratchcards" disabled>Promo Codes<span class="profile-menu__badge">Coming soon</span></button></li>
+      <li><a class="profile-menu__item" href="#/free-money" data-profile-icon="rank-system" data-profile-page="free-money">Achievements</a></li>
+      <li><a class="profile-menu__item" href="#/rank-system" data-profile-icon="jackpot" data-profile-page="rank-system">VIP Tiers<span id="profile-menu-rank" class="profile-menu__badge"></span></a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
+      <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="phone-verification-dialog">Redeem Coins</button></li>
+    </ul>
+    <p id="profile-menu-status" class="profile-menu__status" role="status"></p>
+  </nav>
   <section id="rewards-popover" class="rewards-popover" popover="auto" aria-labelledby="rewards-popover-title" lang="en" dir="ltr">
     <header class="rewards-popover__header">
       <h2 id="rewards-popover-title">My Rewards</h2>
@@ -228,6 +245,19 @@
   </main>
   <main class="game-view" id="game-view" aria-label="Game demo" tabindex="-1" lang="en" dir="ltr" hidden>
     <div class="game-frame-host" id="game-frame-host"></div>
+    <div id="game-preplay" class="game-preplay" hidden>
+      <div class="game-preplay__card">
+        <div class="game-preplay__actions" role="group" aria-label="Play currency">
+          <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" alt="" aria-hidden="true">Gold Coins</button>
+          <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/sweeps-coin.svg" alt="" aria-hidden="true">Sweep Coins</button>
+        </div>
+        <button id="game-play-confirm" type="button" class="primary-button">Play with Gold Coins</button>
+      </div>
+    </div>
+    <div class="game-display-controls" role="group" aria-label="Player display">
+      <button id="game-theater" type="button" aria-label="Theater mode" title="Theater mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></button>
+      <button id="game-fullscreen" type="button" aria-label="Fullscreen" title="Fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+    </div>
     <div class="game-loading" id="game-loading" hidden>
       <div class="game-loading__content">
         <p class="game-load-status" id="game-load-status" role="status" aria-live="polite">Loading game…</p>
@@ -238,10 +268,10 @@
   <main id="game-details-view" class="page-content game-details-view" lang="en" dir="ltr" hidden></main>
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" lang="en" dir="ltr" hidden>
     <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
+    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M9 2h11a2 2 0 0 1 2 2v15a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm5.5 5L18 11.5 14.5 16 11 11.5 14.5 7Z"/><path d="M5 4H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14v-2H3V6h2V4Z"/></svg><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-controls="store-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
-    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon mobile-nav__icon--loop" viewBox="0 0 782 373" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M178.04,2.5 194.5,1.59 216.5,2.22 234.5,4.33 248.5,7.35 259.5,10.21 265.5,12.26 280.5,18.44 297.43,27.5 309.5,35.29 322.5,45.19 339.99,60.5 356.54,76.5 373.76,94.5 404.65,129.5 457,193.5 473.94,213.5 490.5,231.31 504.5,244.64 511.5,250.63 526.5,261.68 536.5,267.65 544.5,271.75 554.5,275.87 564.5,278.8 574.5,280.76 585.5,281.8 593.5,281.75 604.5,280.93 615.5,278.79 622.5,276.79 630.5,273.8 645.5,265.72 656.28,257.5 664.5,249.36 672.5,238.98 677.62,230.5 679.5,226.5 683.75,214.5 685.69,206.5 686.69,199.5 686.87,183.5 685.68,173.5 683.56,164.5 680.7,155.5 677.83,148.5 674.68,142.5 667.8,131.5 663.01,125.5 656.5,118.47 646.5,110.14 637.5,104.35 626.5,99.03 614.5,94.92 599.5,92.07 589.5,91.66 578.5,92.12 562.5,95.03 547.5,100.06 532.5,107.1 520.5,114.11 508.5,122.12 500.5,128.1 483.5,142.26 457.5,167.15 436.04,140.5 419.74,121.5 399.17,99.5 399.15,98.5 416.5,81.21 434.5,65.05 450.5,52.18 464.5,42.29 480.5,32.26 498.96,22.5 515.5,15.37 529.5,10.43 545.5,6.34 561.5,3.38 572.5,2.26 592.5,1.62 606.5,2.32 623.5,4.31 645.5,9.41 662.5,15.32 677.5,22.43 692.5,31.14 708.5,42.96 720.5,54.01 733.85,68.5 743.86,81.5 751.78,93.5 755.82,100.5 759.66,107.5 764.79,118.5 771.77,137.5 776.72,156.5 778.93,171.5 779.97,189.5 778.92,209.5 776.87,222.5 774.9,231.5 771.72,242.5 765.78,258.5 757.89,274.5 750.66,286.5 742.93,297.5 728.5,313.92 712.39,328.5 702.5,335.96 688.5,345.05 672.5,353.27 657.5,359.57 641.5,364.62 628.5,367.63 606.5,370.67 591.5,371.13 574.5,370.62 553.5,367.75 536.5,363.74 523.5,359.73 513.5,355.83 498.5,348.77 489.5,343.85 479.5,337.71 466.5,328.7 454.5,319.58 439.5,306.75 428.5,296.56 414.46,282.5 393.27,259.5 370.21,232.5 341.88,197.5 306.85,155.5 292.99,140.5 284.5,132.17 274.5,123.22 265.5,116.03 255.5,109.22 244.5,103.12 235.5,99.17 222.5,95.04 212.5,93.02 202.5,91.93 188.5,91.93 178.5,93.17 166.5,96.07 153.5,101.01 140.5,108.06 129.5,116.14 120.5,124.71 111.33,136.5 104.18,148.5 98.18,163.5 95.13,176.5 93.95,189.5 94.16,197.5 95.14,205.5 97.23,214.5 102.18,227.5 107.24,236.5 111.3,242.5 115.38,247.5 124.5,256.57 135.5,264.94 143.5,269.53 157.5,275.73 168.5,278.98 179.5,280.87 192.5,281.71 204.5,280.8 219.5,277.86 231.5,273.8 244.5,268 252.5,263.84 268.5,253.67 275.5,248.78 291.5,235.86 309.38,219.5 323.5,205.02 324.5,204.61 347.28,232.5 360.88,248.5 381.75,271.5 381.99,272.5 365.5,288.85 345.5,306.8 329.5,319.67 315.5,329.87 301.5,338.93 285.5,347.99 269.49,355.5 249.5,362.75 229.5,367.66 216.5,369.67 198.5,371.04 175.5,370.91 154.5,368.63 144.5,366.67 130.5,362.77 111.5,355.69 94.5,346.91 83.5,339.94 72.5,331.84 59.5,320.67 45.87,306.5 39.22,298.5 31.18,287.5 23.14,274.5 15.25,258.5 10.5,246.26 6.3,232.5 3.32,218.5 1.39,203.5 1.02,190.5 1.36,178.5 3.4,162.5 6.31,148.5 10.43,134.5 15.71,120.5 23.83,103.5 31.45,90.5 42.25,75.5 55.43,60.5 65.5,50.97 78.5,40.32 88.5,33.36 101.74,25.5 118.5,17.36 134.5,11.33 148.5,7.41 164.5,4.22Z"/></svg><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="phone-verification-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
-    <button id="mobile-nav-profile" class="mobile-nav__item" data-mobile-action="profile" type="button" aria-controls="feature-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm-6 12a6 6 0 0 1 12 0H6Z"/></svg><span class="mobile-nav__label">Profile</span></button>
+    <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon mobile-nav__icon--chat" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M8 9h8M8 13h5"/></svg><span class="mobile-nav__label">Chat</span></button>
   </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
@@ -284,11 +314,11 @@
     </svg>
     <h2 id="phone-verification-title">Phone Verification</h2>
     <form id="phone-verification-number-form" class="phone-verification__form" method="dialog" autocomplete="off">
-      <label class="phone-verification__field"><span aria-hidden="true">+1</span><input id="phone-verification-number" type="tel" aria-label="US phone number" placeholder="(201) 555-0123" maxlength="18" autocomplete="off" required></label>
+      <label class="phone-verification__field"><span aria-hidden="true">+1</span><input id="phone-verification-number" disabled type="tel" aria-label="US phone number" placeholder="(201) 555-0123" maxlength="18" autocomplete="off" required></label>
       <button class="phone-verification__submit" type="submit" disabled>Send Code</button>
     </form>
     <form id="phone-verification-code-form" class="phone-verification__form" method="dialog" autocomplete="off" hidden>
-      <label class="phone-verification__field"><input id="phone-verification-code" type="text" inputmode="numeric" aria-label="Verification code" placeholder="6-digit code" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label>
+      <label class="phone-verification__field"><input id="phone-verification-code" disabled type="text" inputmode="numeric" aria-label="Verification code" placeholder="6-digit code" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label>
       <button class="phone-verification__submit" type="submit" disabled>Verify Code</button>
       <button class="phone-verification__back" type="button">Change number</button>
       <p class="phone-verification__status" role="status"></p>
@@ -312,6 +342,33 @@
       <p class="visually-hidden" role="status"></p>
     </footer>
   </dialog>
+  <dialog id="profile-summary" class="profile-summary" aria-labelledby="profile-summary-title" lang="en" dir="ltr">
+    <header class="profile-summary__header">
+      <h2 id="profile-summary-title" tabindex="-1" autofocus>My Profile</h2>
+      <button class="profile-summary__close icon-button" type="button" aria-label="Close profile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button>
+    </header>
+    <div class="profile-summary__body">
+      <div class="profile-summary__identity">
+        <span id="profile-summary-avatar" class="profile-summary__avatar" aria-hidden="true"></span>
+        <div><h3 id="profile-summary-name" class="profile-summary__name"></h3><p class="profile-summary__member-since">Member since <time id="profile-summary-since"></time></p></div>
+        <a class="profile-summary__edit icon-button" href="#/profile" data-profile-page="profile" aria-label="Edit profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5v14h14v-7M9 15l1-4 7-7 3 3-7 7-4 1Z"/></svg></a>
+      </div>
+      <section class="profile-summary__progress" aria-labelledby="profile-summary-progress-title">
+        <div class="profile-summary__progress-header"><h3 id="profile-summary-progress-title">Your progress</h3><span id="profile-summary-percent"></span></div>
+        <progress id="profile-summary-progress" max="1" value="0" aria-label="Progress to next rank"></progress>
+        <div class="profile-summary__ranks"><span id="profile-summary-rank"></span><span id="profile-summary-next-rank"></span></div>
+      </section>
+      <section aria-labelledby="profile-summary-stats-title">
+        <div class="profile-summary__stats-header"><h3 id="profile-summary-stats-title">Statistics</h3><a class="profile-summary__more" href="#/history" data-profile-page="history">Show More</a></div>
+        <dl class="profile-summary__stats">
+          <div><dt>Games discovered</dt><dd id="profile-summary-games"></dd></div>
+          <div><dt>Saved games</dt><dd id="profile-summary-favorites"></dd></div>
+          <div><dt>Rewards collected</dt><dd id="profile-summary-rewards"></dd></div>
+          <div><dt>Gold Coins credited</dt><dd id="profile-summary-coins"></dd></div>
+        </dl>
+      </section>
+    </div>
+  </dialog>
   <main id="feature-view" class="page-content feature-view" lang="en" dir="ltr" hidden>
     <header id="feature-header" class="feature-header">
       <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
@@ -330,7 +387,7 @@
       <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button>
     </div>
     <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
-    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>Back to Lobby</button>
+    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>OK</button>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
   </dialog>
   <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title" lang="en" dir="ltr">

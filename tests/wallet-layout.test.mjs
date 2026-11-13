@@ -406,3 +406,57 @@ test('startup explicitly finishes wallet layout before revealing the page', asyn
   page.flush();
   assert.equal(page.calls.length, before + 1, 'a queued measurement must not change the wallet after reveal');
 });
+
+test('active GC game replaces only header amount with In Play and restores unchanged balance on exit', async () => {
+  const page = await walletPage({ balanceInSwitch: true, currencyMenu: true, realCounter: true,
+    saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
+  const before = page.account.getSnapshot();
+  const value = page.nodes['#wallet-balance-value'];
+  const original = value.textContent;
+  page.navigate('game');
+  assert.equal(value.textContent, 'In Play');
+  assert.equal(page.nodes['#wallet-currency-label'].textContent, 'GC');
+  assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, false);
+  page.controller.refreshLayout();
+  page.frame(1000);
+  assert.equal(value.textContent, 'In Play');
+  assert.equal(page.pendingCounterFrames, 0);
+  page.navigate('game-details');
+  assert.equal(value.textContent, 'In Play');
+  page.navigate('home');
+  assert.equal(value.textContent, original);
+  assert.deepEqual(page.account.getSnapshot().wallet, before.wallet);
+  assert.deepEqual(page.account.getSnapshot().ledger, before.ledger);
+});
+
+
+test('GC game details entry shows In Play before play and restores balance on lobby exit', async () => {
+ const page = await walletPage({ balanceInSwitch: true, currencyMenu: true, realCounter: true });
+ const original = page.nodes['#wallet-balance-value'].textContent;
+ const before = page.account.getSnapshot();
+ page.navigate('game-details');
+ assert.equal(page.nodes['#wallet-balance-value'].textContent, 'In Play');
+ page.navigate('home');
+ assert.equal(page.nodes['#wallet-balance-value'].textContent, original);
+ assert.deepEqual(page.account.getSnapshot().wallet, before.wallet);
+ assert.deepEqual(page.account.getSnapshot().ledger, before.ledger);
+});
+
+
+test('SC game page masks amount with In Play and restores real selected balance outside', async () => {
+ const page=await walletPage({balanceInSwitch:true,currencyMenu:true,realCounter:true,
+ saved:{currency:'SC',balances:{GC:130000,SC:8500}}});
+ const before=page.account.getSnapshot();
+ const value=page.nodes['#wallet-balance-value'];
+ const amount=value.textContent;
+ page.navigate('game-details');
+ assert.equal(value.textContent,'In Play');
+ assert.equal(page.nodes['#wallet-currency-label'].textContent,'SC');
+ assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'],'SC In Play');
+ page.controller.refreshLayout();
+ assert.equal(value.textContent,'In Play');
+ page.navigate('home');
+ assert.equal(value.textContent,amount);
+ assert.deepEqual(page.account.getSnapshot().wallet,before.wallet);
+ assert.deepEqual(page.account.getSnapshot().ledger,before.ledger);
+});

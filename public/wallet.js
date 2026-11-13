@@ -157,7 +157,7 @@ export function initWallet({ openStore, account, router } = {}) {
     counter.animateTo(amount, formatter);
   }
 
-  const inGame = () => router?.getRoute().type === 'game';
+  const inGame = () => ['game', 'game-details'].includes(router?.getRoute().type) || document.body?.dataset.playerActive === 'true';
   function syncHeaderAction() {
     if (menu) { balanceCopy.hidden = false; menu.render(); return; }
     const purchasing = inGame();
@@ -184,11 +184,12 @@ export function initWallet({ openStore, account, router } = {}) {
     applyLayout(readLayout());
     addArt.src = code === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg';
     const precision = 10 ** CURRENCIES[code].decimals;
-    const formatter = value => formatBalance(code, value * precision);
+    const playing = inGame();
+    const formatter = value => playing ? 'In Play' : formatBalance(code, value * precision);
     const amount = state.balances[code] / precision;
-    updateBalance(amount, formatter, animate, renderedCurrency !== null && renderedCurrency !== code);
+    updateBalance(amount, formatter, animate && !playing, renderedCurrency !== null && renderedCurrency !== code);
     renderedCurrency = code;
-    wallet.setAttribute('aria-label', preferences.hideBalance ? `${CURRENCIES[code].name} balance hidden`
+    wallet.setAttribute('aria-label', playing ? `${code} In Play` : preferences.hideBalance ? `${CURRENCIES[code].name} balance hidden`
       : `${CURRENCIES[code].name} balance: ${formatBalance(code, state.balances[code])} ${code}`);
     if (switchBalanceCopy) {
       balanceCopy.setAttribute('aria-hidden', 'true');
@@ -231,7 +232,8 @@ export function initWallet({ openStore, account, router } = {}) {
     if (document.hidden) finishBalance();
   });
   render({ animate: false });
-  router?.subscribe(syncHeaderAction);
+  router?.subscribe(() => render({ animate: false }));
+  document.addEventListener('player:active-change', () => render({ animate: false }));
   const layoutObserver = new ResizeObserver(() => scheduleLayout());
   // The dropdown trigger follows its text width; counter frames must not
   // interrupt themselves when that width changes during currency counting.

@@ -1,3 +1,4 @@
+import { initCoinChooser } from '../public/coin-chooser.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -7,7 +8,7 @@ import { formatRoute, parseRoute } from '../public/routes.js';
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
-function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
+function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280 } = {}) {
   const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
@@ -22,6 +23,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
       this.isConnected = true;
       this.style = { removeProperty(name) { delete this[name]; } };
     }
+    querySelector() { return { replaceChildren() {}, prepend() {} }; }
     append(...children) {
       for (const child of children) { child.parent = this; this.children.push(child); }
     }
@@ -56,6 +58,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
   }
   const ids = ['lobby-view', 'game-view', 'game-frame-host', 'game-load-status',
     'game-loading', 'game-loading-reveal', 'catalog-shelves', 'results'];
+  if (preplay) ids.push('game-preplay', 'game-play-gc', 'game-play-sc', 'game-preplay-fullscreen', 'game-play-confirm');
   const nodes = Object.fromEntries(ids.map(id => [id, new Node(id)]));
   document.body = new Node('body');
   document.body.append(nodes['lobby-view'], nodes['game-view'], nodes.results);
@@ -68,14 +71,14 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
   document.querySelector = selector => selector === 'dialog[open]'
     ? modalOpen ? new Node('dialog') : null : nodes[selector.slice(1)] || null;
   document.createElement = tag => {
-    assert.equal(tag, 'iframe');
+    if (tag !== 'iframe') return new Node();
     const frame = new Node();
     frames.push(frame);
     return frame;
   };
   const windowEvents = new Node();
   const window = {
-    innerWidth: 1280, scrollX: 0, scrollY,
+    innerWidth: viewportWidth, scrollX: 0, scrollY,
     location: { get hash() { return currentHash; }, set hash(value) { currentHash = value && !value.startsWith('#') ? `#${value}` : value; } },
     addEventListener: windowEvents.addEventListener.bind(windowEvents),
     matchMedia(query) { assert.equal(query, '(any-pointer: coarse)'); return { matches: false }; },
@@ -98,7 +101,12 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
     subscribe(fn, { priority = 0 } = {}) { subscribers.push({ fn, priority }); },
     back(fallback) { this.navigate(fallback); },
   } : undefined;
+  const accountListeners = [];
+  let verificationOpens = 0;
+  const account = { getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
+  const verifyPhone = () => verificationOpens++;
   const context = {
+    initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: () => ({ reset() {} }),
     document, window, router, formatRoute, parseRoute, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
     GAMES: [
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
@@ -117,7 +125,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
       observe(node) { this.target = node; }
     },
   };
-  const api = vm.runInNewContext(`${source}\ninitGameView({ router });`, context);
+  const api = vm.runInNewContext(`${source}\ninitGameView({ router, account, verifyPhone });`, context);
   const flushHash = () => windowEvents.emit('hashchange');
   function launcher(id) {
     const button = new Node(`launcher-${id}`);
@@ -126,6 +134,9 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false } = {}) {
     return button;
   }
   return { nodes, document, window, frames, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
+    verificationOpens: () => verificationOpens,
+    setCurrency(value) { currency = value; accountListeners.forEach(fn => fn()); },
+    flushTimers() { const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); },
     reinitialize: () => context.initGameView(),
     setModal(value) { modalOpen = value; },
     flushHash,
@@ -262,13 +273,13 @@ test('invalid or removed links stay in the lobby and cannot create a frame', () 
 });
 
 
-test('catalog cards open details without a provider session and Play preserves the details origin', () => {
+test('catalog cards open one integrated details/player and preserve the details origin', () => {
   const page = gamePage({ hash: '#/providers/red-tiger?q=luck&sort=az', routerMode: true });
   assert.equal(page.document.body.dataset.view, 'lobby');
   page.launch('alpha');
   assert.equal(page.router.getRoute().type, 'game-details');
   assert.equal(page.router.getRoute().from, '#/providers/red-tiger?q=luck&sort=az');
-  assert.equal(page.frames.length, 0, 'viewing details must not allocate a provider session');
+  assert.equal(page.frames.length, 1, 'GC demo prepares inside the details view');
   page.router.navigate({ type: 'game', gameId: 'alpha', from: formatRoute(page.router.getRoute()) });
   assert.equal(parseRoute(page.router.getRoute().from).type, 'game-details');
   const frame = page.frames[0];
@@ -290,16 +301,12 @@ test('catalog cards open details without a provider session and Play preserves t
   assert.equal(page.timers.size, 0);
 });
 
-test('returning from play to details disposes the iframe and prevents stale readiness', () => {
-  const page = gamePage({ hash: '#game=alpha&from=%23%2Fgames%2Falpha', routerMode: true });
-  assert.equal(page.frames.length, 1);
-  page.escape();
-  assert.equal(page.router.getRoute().type, 'game-details');
-  assert.equal(page.router.getRoute().gameId, 'alpha');
-  assert.equal(page.nodes['game-frame-host'].children.length, 0);
-  assert.equal(page.readiness[0].stopped, true);
-  page.readiness[0].ready('stale-provider');
-  assert.equal(page.raf.size, 0);
+test('returning from legacy play to same details keeps the existing iframe', () => {
+ const page = gamePage({ hash: '#game=alpha&from=%23%2Fgames%2Falpha', routerMode: true });
+ const frame = page.frames[0]; page.escape();
+ assert.equal(page.router.getRoute().type, 'game-details');
+ assert.equal(page.nodes['game-frame-host'].children[0], frame);
+ assert.equal(page.frames.length, 1);
 });
 
 test('Escape from a refreshed game returns to the originating category route without resetting home', () => {
@@ -318,4 +325,81 @@ test('a removed game deep link canonicalizes to home without allocating a provid
   assert.equal(page.frames.length, 0);
   assert.equal(page.nodes['game-view'].hidden, true);
   assert.equal(page.nodes['lobby-view'].hidden, false);
+});
+
+
+test('SC direct game route blocks frame creation and opens phone preview on details', () => {
+  const page = gamePage({ hash: '#game=alpha', routerMode: true, currency: 'SC' });
+  assert.equal(page.frames.length, 0);
+  page.flushTimers();
+  assert.equal(page.verificationOpens(), 1);
+  assert.equal(page.router.getRoute().type, 'game-details');
+});
+
+test('SC play navigation is blocked; GC still mounts its independent demo', () => {
+  const page = gamePage({ routerMode: true, currency: 'SC' });
+  page.router.navigate({ type: 'game', gameId: 'alpha' });
+  page.flushTimers();
+  assert.equal(page.frames.length, 0);
+  assert.equal(page.verificationOpens(), 1);
+  page.setCurrency('GC');
+  page.router.navigate({ type: 'game', gameId: 'alpha' });
+  assert.equal(page.frames.length, 1);
+  page.setCurrency('SC');
+  assert.equal(page.nodes['game-frame-host'].children.length, 0);
+  page.flushTimers();
+  assert.equal(page.verificationOpens(), 2);
+  assert.equal(page.frames.length, 1);
+});
+
+
+test('GC preloads inert behind pre-play until Gold Coins is chosen', () => {
+ const page = gamePage({ hash: '#game=alpha', routerMode: true, preplay: true });
+ assert.equal(page.frames.length, 1);
+ assert.equal(page.frames[0].inert, true);
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
+ assert.equal(page.frames[0].inert, true);
+ page.nodes['game-play-confirm'].emit('click');
+ assert.equal(page.nodes['game-preplay'].hidden, true);
+ assert.equal(page.frames[0].inert, false);
+});
+
+
+test('Gold Coins reveals directly in details without route change or frame replacement', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true });
+ const frame = page.frames[0]; const route = page.router.getRoute();
+ page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
+ page.nodes['game-play-confirm'].emit('click');
+ assert.equal(page.router.getRoute(), route);
+ assert.equal(page.frames.length, 1);
+ assert.equal(page.nodes['game-frame-host'].children[0], frame);
+ assert.equal(frame.inert, false);
+ assert.equal(page.document.body.dataset.playerActive, 'true');
+});
+
+
+test('chooser currency selection syncs account, unloads SC and prewarms fresh GC without play', async () => {
+ for (const viewportWidth of [390, 1440]) {
+ const page=gamePage({hash:'#/games/alpha',routerMode:true,preplay:true,viewportWidth});
+ const first=page.frames[0], route=page.router.getRoute();
+ page.nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(page.frames.length,1);
+ assert.equal(page.nodes['game-frame-host'].children.length,0);
+ assert.equal(page.verificationOpens(),0);
+ assert.equal(page.nodes['game-preplay'].hidden,false);
+ assert.equal(page.nodes['game-play-confirm'].textContent,'Play with Sweep Coins');
+ assert.equal(page.nodes['game-view'].dataset.sessionKind,'verification-preview');
+ assert.equal(page.nodes['game-view'].dataset.mode,'SC');
+ assert.equal(page.nodes['game-view'].dataset.readySource,undefined);
+ page.nodes['game-play-gc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(page.frames.length,2);
+ assert.notEqual(page.frames[1],first);
+ assert.equal(page.nodes['game-view'].dataset.sessionKind,'public-demo');
+ assert.equal(page.nodes['game-view'].dataset.mode,'GC');
+ assert.equal(page.frames[1].inert,true);
+ assert.equal(page.nodes['game-preplay'].hidden,false);
+ assert.equal(page.router.getRoute(),route);
+ assert.equal(page.verificationOpens(),0);
+ }
 });
