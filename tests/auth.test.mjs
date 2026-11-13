@@ -107,10 +107,10 @@ test('credential-free demo entry is refused for a non-test account', async () =>
 
 test('public browsing stays open while account, purchase and game actions require login', () => {
   for (const route of [{ type: 'home' },{ type: 'category', categoryId: 'popular' },{ type: 'providers' },
-    { type: 'search' },{ type: 'game-details', gameId: 'alpha' },{ type: 'feature', pageId: 'support' }]) {
+    { type: 'search' },{ type: 'feature', pageId: 'support' }]) {
     assert.equal(requiresAccount(route), false);
   }
-  for (const route of [{ type: 'game', gameId: 'alpha' },{ type: 'favorites' },{ type: 'store' },
+  for (const route of [{ type: 'game', gameId: 'alpha' },{ type: 'game-details', gameId: 'alpha' },{ type: 'favorites' },{ type: 'store' },
     ...['profile','history','daily-bonus','free-money','redeem','notifications'].map(pageId=>({type:'feature',pageId}))]) {
     assert.equal(requiresAccount(route), true);
   }

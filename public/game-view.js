@@ -120,6 +120,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   }
 
   function mountFrame(key) {
+    if (account?.isSignedIn?.() === false) return;
     // This integration supports public demos only. SC never reaches a launcher.
     if (account?.getSnapshot().wallet.currency === 'SC') return;
     stopLoadingWatch();
@@ -192,7 +193,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     const route = router?.getRoute();
     const requested = router ? ['game', 'game-details'].includes(route.type) ? route.gameId : null
       : new URLSearchParams(window.location.hash.slice(1)).get('game');
-    const key = games.has(requested) ? requested : null;
+    const key = account?.isSignedIn?.() === false ? null : games.has(requested) ? requested : null;
     if (router && route.type === 'game' && key === null) {
       router.navigate({ type: 'home' }, { replace: true });
       return;
@@ -323,6 +324,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     const result = await account?.selectCurrency(currency);
     if (result?.ok === false) throw new Error('Currency change failed');
   }, onPlay: async currency => {
+    if (account?.isSignedIn?.() === false) return;
     if (currency === 'SC') {
       if (account) await account.selectCurrency('SC');
       verifyPhone?.();
@@ -348,6 +350,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   });
   let observedCurrency = account?.getSnapshot().wallet.currency;
   account?.subscribe(() => {
+    if (account.isSignedIn?.() === false) { showFromHash(); return; }
     const currency = account.getSnapshot().wallet.currency;
     const changed = currency !== observedCurrency;
     observedCurrency = currency;

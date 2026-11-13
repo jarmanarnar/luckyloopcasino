@@ -8,7 +8,7 @@ import { formatRoute, parseRoute } from '../public/routes.js';
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
-function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280 } = {}) {
+function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true } = {}) {
   const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
@@ -103,7 +103,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
   } : undefined;
   const accountListeners = [];
   let verificationOpens = 0;
-  const account = { getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
+  const account = { isSignedIn: () => signedIn, getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
   const verifyPhone = () => verificationOpens++;
   const context = {
     initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: () => ({ reset() {} }),
@@ -135,6 +135,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
   }
   return { nodes, document, window, frames, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
     verificationOpens: () => verificationOpens,
+    logout() { signedIn = false; accountListeners.forEach(fn => fn()); },
     setCurrency(value) { currency = value; accountListeners.forEach(fn => fn()); },
     flushTimers() { const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); },
     reinitialize: () => context.initGameView(),
@@ -402,4 +403,25 @@ test('chooser currency selection syncs account, unloads SC and prewarms fresh GC
  assert.equal(page.router.getRoute(),route);
  assert.equal(page.verificationOpens(),0);
  }
+});
+
+for (const hash of ['#/games/alpha', '#game=alpha']) {
+  test(`guest cannot mount a provider through ${hash}, even without the route guard`, () => {
+    const page = gamePage({ hash, routerMode: true, signedIn: false, preplay: true });
+    assert.equal(page.frames.length, 0);
+    assert.equal(page.nodes['game-view'].hidden, true);
+    page.setCurrency('SC');
+    page.setCurrency('GC');
+    assert.equal(page.frames.length, 0);
+  });
+}
+
+test('logging out removes the current provider frame and currency updates cannot reopen it', () => {
+  const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true });
+  assert.equal(page.frames.length, 1);
+  page.logout();
+  assert.equal(page.nodes['game-frame-host'].children.length, 0);
+  assert.equal(page.nodes['game-view'].hidden, true);
+  page.setCurrency('SC'); page.setCurrency('GC');
+  assert.equal(page.frames.length, 1);
 });
