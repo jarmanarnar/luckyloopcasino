@@ -103,9 +103,19 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   const frameResizeObserver = new ResizeObserver(fitFrame);
   frameResizeObserver.observe(host);
 
-  const display = initPlayerDisplay({ view, onResize: fitFrame });
+  const display = initPlayerDisplay({ view, onResize: fitFrame,
+    onClose: () => router ? router.navigate({ type: 'home' }) : returnToLobby(),
+    onChooseCurrency: () => {
+      if (!currentGame || !preplay) return;
+      chooser?.reset(account?.getSnapshot().wallet.currency);
+      awaitingPlay = true;
+      preplay.hidden = false;
+      document.querySelector('#game-play-confirm')?.focus({ preventScroll: true });
+    },
+  });
 
   function renderPreplayMetadata(game) {
+    display.setGame?.({ title: game.title, currency: account?.getSnapshot().wallet.currency });
     if (preplay) {
       let meta = preplay.querySelector('.game-preplay__meta');
       if (!meta) {

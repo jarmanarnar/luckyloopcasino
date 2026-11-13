@@ -137,3 +137,17 @@ test('guest deep links and browser navigation are guarded before views; successf
   assert.equal(router.getRoute().gameId, 'alpha');
   assert.equal(mounted.at(-1), 'game');
 });
+
+test('embedded game links prompt login before any game view, including refresh and browser history', () => {
+ let route={type:'game-details',gameId:'alpha'},signedIn=false;
+ const listeners=[],prompts=[],mounted=[];
+ const raw={getRoute:()=>route,subscribe(fn,{priority=0}={}){listeners.push({fn,priority});},navigate(next){route=next;for(const item of [...listeners].sort((a,b)=>a.priority-b.priority))item.fn(route);}};
+ const account={isSignedIn:()=>signedIn};
+ const router=createAuthRouter(raw,account,next=>prompts.push(next));
+ router.subscribe(()=>mounted.push(router.getRoute().type),{priority:-100});
+ assert.equal(router.getRoute().type,'home');assert.equal(prompts[0].type,'game-details');
+ raw.navigate({type:'game-details',gameId:'beta'});
+ assert.ok(mounted.every(type=>type==='home'));
+ signedIn=true;router.navigate(prompts.at(-1));
+ assert.equal(router.getRoute().gameId,'beta');assert.equal(mounted.at(-1),'game-details');
+});
