@@ -164,15 +164,15 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   padding: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  border: 1px solid #303137;
+  border: 1px solid var(--border-default);
   border-radius: 1.25rem;
-  background: #111113;
-  box-shadow: 0 1.5rem 4rem #0008;
+  background: var(--surface-panel);
+  box-shadow: 0 1.5rem 4rem var(--shadow-color);
   color: var(--text-primary);
   font-family: var(--header-font-family);
 }
 
-.store-dialog::backdrop { background: #000b; }
+.store-dialog::backdrop { background: var(--overlay-backdrop); }
 
 .store-dialog__header {
   position: sticky;
@@ -184,7 +184,7 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--top-bar-divider);
-  background: #111113;
+  background: var(--surface-panel);
 }
 
 .store-dialog__header form { margin: 0; }
@@ -206,7 +206,7 @@ html:has(.store-dialog[open]) { overflow: hidden; }
 .store-dialog .store-package {
   gap: .375rem;
   padding: .875rem .75rem .75rem;
-  border-color: #2d2e34;
+  border-color: var(--border-default);
   border-radius: .75rem;
 }
 .store-dialog .store-package__badge {
@@ -217,8 +217,8 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   transform: none;
   padding: .1875rem .375rem;
   border-radius: .25rem;
-  background: #323024;
-  color: #f4d783;
+  background: var(--accent-soft);
+  color: var(--primary-accent);
   font-size: .5625rem;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -239,16 +239,16 @@ html:has(.store-dialog[open]) { overflow: hidden; }
 .store-dialog .store-package__amount .coin-art,
 .store-dialog .store-package__bonus .coin-art { width: .875rem; height: .875rem; }
 .store-dialog .store-package__bonus { min-height: 1.25rem; font-size: .8125rem; }
-.store-dialog .store-package__bonus strong { color: #a7e6c7; }
+.store-dialog .store-package__bonus strong { color: var(--coin-sweeps); }
 .store-dialog .store-package__price {
   min-height: 2.5rem;
   margin-top: .375rem;
   padding: .5rem .375rem;
-  border: 1px solid #a0f526;
+  border: 1px solid var(--primary-accent);
   border-radius: .5rem;
-  background: linear-gradient(#78ed00, #c7ff3c);
-  box-shadow: inset 0 -3px 0 #70aa16;
-  color: #080d00;
+  background: linear-gradient(var(--primary-button-top), var(--primary-button-bottom));
+  box-shadow: inset 0 -3px 0 var(--primary-button-edge);
+  color: var(--on-accent);
   font-size: .875rem;
 }
 .store-dialog .store-package__price:hover { filter: brightness(1.07); }

@@ -1,0 +1,44 @@
+/* Shared UI palette. Components use semantic tokens, never their own shades.
+   Currency artwork, provider artwork, brand logos and SVG masks are exempt. */
+:root {
+  color-scheme: dark;
+  color: var(--text-primary);
+
+  /* Four surface levels, shared by every page, popover and dialog. */
+  --surface-page: #000;
+  --surface-panel: #141416;
+  --surface-control: #222226;
+  --surface-active: #303036;
+  --border-default: #333338;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+
+  /* One action color; currency colors never change the application theme. */
+  --primary-accent: #a0f526;
+  --coin-gold: #e8bf65;
+  --coin-sweeps: #8bdfb3;
+  --text-error: #f28b82;
+  --on-accent: var(--surface-page);
+  --accent-soft: color-mix(in srgb, var(--primary-accent) 10%, var(--surface-panel));
+  --gold-edge: color-mix(in srgb, var(--coin-gold) 60%, var(--surface-page));
+
+  --overlay-backdrop: color-mix(in srgb, var(--surface-page) 70%, transparent);
+  --shadow-color: color-mix(in srgb, var(--surface-page) 55%, transparent);
+  --primary-button-border: var(--primary-accent);
+  --primary-button-top: var(--primary-accent);
+  --primary-button-bottom: color-mix(in srgb, var(--primary-accent) 85%, var(--text-primary));
+  --primary-button-edge: color-mix(in srgb, var(--primary-accent) 65%, var(--surface-page));
+  --primary-button-ink: var(--on-accent);
+
+  /* Component aliases share these same roles. */
+  --surface-card: var(--surface-control);
+  --control-hover: var(--surface-active);
+  --top-bar-background: var(--surface-page);
+  --top-bar-divider: var(--border-default);
+  --sidebar-surface: var(--surface-page);
+  --sidebar-divider: var(--border-default);
+  --game-card-background: var(--surface-card);
+  --catalog-active-background: var(--surface-control);
+  --catalog-accent: var(--primary-accent);
+  --gold-accent: var(--coin-gold);
+}

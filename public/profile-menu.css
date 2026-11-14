@@ -14,7 +14,7 @@
   overscroll-behavior: contain;
   border: 1px solid var(--top-bar-divider);
   border-radius: .75rem;
-  background: #141416;
+  background: var(--surface-panel);
   color: var(--text-primary);
   font-family: var(--header-font-family);
 }
@@ -72,12 +72,12 @@ html:has(.profile-summary[open]) { overflow: hidden; }
   overscroll-behavior: contain;
   border: 1px solid var(--top-bar-divider);
   border-radius: .875rem;
-  background: #141416;
+  background: var(--surface-panel);
   color: var(--text-primary);
   font-family: var(--header-font-family);
 }
 
-.profile-summary::backdrop { background: #000a; }
+.profile-summary::backdrop { background: var(--overlay-backdrop); }
 
 .profile-summary__header {
   position: sticky;
@@ -88,7 +88,7 @@ html:has(.profile-summary[open]) { overflow: hidden; }
   justify-content: center;
   min-height: 3.25rem;
   padding-inline: 3.25rem;
-  background: #141416;
+  background: var(--surface-panel);
   text-align: center;
 }
 

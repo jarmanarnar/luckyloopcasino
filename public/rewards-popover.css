@@ -14,7 +14,7 @@
   overscroll-behavior: contain;
   border: 1px solid var(--top-bar-divider);
   border-radius: .75rem;
-  background: #141416;
+  background: var(--surface-panel);
   color: var(--text-primary);
   font-family: var(--header-font-family);
 }
@@ -30,7 +30,7 @@
   gap: 1rem;
   padding: .375rem .75rem .375rem 1rem;
   border-bottom: 1px solid var(--top-bar-divider);
-  background: #141416;
+  background: var(--surface-panel);
 }
 
 .rewards-popover__header h2 { margin: 0; font-size: 1.0625rem; line-height: 1.25; }

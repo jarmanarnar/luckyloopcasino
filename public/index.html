@@ -7,9 +7,10 @@
   <meta name="application-name" content="LuckyLoop Casino">
   <meta name="description" content="LuckyLoop Casino — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>LuckyLoop Casino</title>
+  <link rel="stylesheet" href="theme.css">
   <style id="app-loader-styles">
     body:is([data-app-state="loading"], [data-app-state="error"]) > :not(#app-loader) { visibility: hidden; }
-    .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: #000; color: #eeeef2; text-align: center; touch-action: none; }
+    .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: var(--surface-page); color: var(--text-primary); text-align: center; touch-action: none; }
     .app-loader[hidden] { display: none !important; }
     .app-loader__brand { --app-loader-duration: 1800ms; width: min(7.5rem, calc(100vw - 3rem)); aspect-ratio: 782 / 373; }
     .app-loader__brand > svg { display: block; width: 100%; height: 100%; }
@@ -18,8 +19,8 @@
     .app-loader__brand[data-paused="true"] .app-loader__orbit { animation-play-state: paused; }
     .app-loader__brand[data-reduced="true"] .app-loader__orbit { display: none; }
     .app-loader__brand[data-reduced="true"] .app-loader__base { opacity: 1; }
-    .app-loader__message { margin: 0; color: #9b9ba5; font: .875rem var(--app-font-family); }
-    .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: #20212a; color: #eeeef2; font-weight: 700; cursor: pointer; }
+    .app-loader__message { margin: 0; color: var(--text-secondary); font: .875rem var(--app-font-family); }
+    .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: var(--surface-control); color: var(--text-primary); font-weight: 700; cursor: pointer; }
     @keyframes app-loader-orbit { from { stroke-dashoffset: calc(var(--offset) * 1px); } to { stroke-dashoffset: calc(var(--offset) * 1px - 100px); } }
     @media (prefers-reduced-motion: reduce) {
       .app-loader__orbit { display: none; }
@@ -121,7 +122,6 @@
           <svg class="wallet-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
         </button>
         <section id="wallet-currency-menu" class="wallet-currency-menu" role="dialog" aria-label="Wallet currencies" hidden>
-          <p class="wallet-menu-heading">Coins</p>
           <div id="wallet-row-GC" class="wallet-currency-row" data-active="true">
             <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" width="18" height="18" alt=""><span>GC</span><strong id="wallet-amount-GC" class="wallet-currency-amount">125,000</strong></button>
           </div>

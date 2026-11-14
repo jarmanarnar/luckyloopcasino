@@ -27,7 +27,7 @@
 .header-context > .icon-button:hover,
 .header-context > .icon-button[aria-expanded="true"] { background: var(--wallet-surface); filter: brightness(1.08); }
 
-.coin-art { display: block; flex: none; width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 2px #0005); pointer-events: none; user-select: none; }
+.coin-art { display: block; flex: none; width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 2px var(--shadow-color)); pointer-events: none; user-select: none; }
 .coin-wallet {
   --wallet-height: var(--header-control-size);
   --wallet-plus-width: 2rem;
@@ -81,7 +81,7 @@
   border-radius: 50%;
   background: transparent;
   box-shadow: none;
-  color: #fff;
+  color: var(--text-primary);
 }
 #wallet-add::before { content: ''; position: absolute; top: 50%; left: 50%; width: max(100%, var(--touch-target)); height: max(100%, var(--touch-target)); transform: translate(-50%, -50%); }
 #wallet-add:hover { filter: brightness(1.08); }

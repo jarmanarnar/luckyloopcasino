@@ -21,8 +21,8 @@
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 1.75rem; margin-top: 0; }
 .hero-carousel__dots { display: flex; align-items: center; }
 .hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: 1.75rem; padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
-.hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: #62636c; transition: width 180ms ease; }
-.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: #fff; transform: scaleX(0); transform-origin: left center; }
+.hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--text-secondary); transition: width 180ms ease; }
+.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--text-primary); transform: scaleX(0); transform-origin: left center; }
 .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; }
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
