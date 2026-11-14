@@ -1,0 +1,3 @@
+/* Allow native scrolling and taps without page pinch or double-tap zoom.
+   Carousels can narrow this to pan-y so their own horizontal drag still works. */
+:root, body, body * { touch-action: pan-x pan-y; }

@@ -65,7 +65,6 @@
       top: 0;
       inset-inline: 0;
       z-index: 20;
-      touch-action: pinch-zoom;
     }
     .top-bar__inner {
       display: grid;
