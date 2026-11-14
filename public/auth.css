@@ -24,8 +24,8 @@ body[data-auth="guest"] .site-logo__image--mark { display: none; }
 .auth-social { flex: 1; min-width: 0; min-height: 2.5rem; padding: .5rem .625rem; border: 0; border-radius: .45rem; background: #2b2c30; font-size: .6875rem; white-space: nowrap; }
 .auth-social:hover { background: #34353a; }
 .auth-social:disabled { cursor: default; }
-.auth-facebook { display: inline-grid; place-items: center; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: #1877f2; color: white; font: 700 1.125rem/1 Arial,sans-serif; padding-top: .125rem; box-sizing: border-box; }
-.auth-google { font: 800 1.125rem/1 Arial,sans-serif; background: conic-gradient(#4285f4 0deg 95deg,#34a853 95deg 185deg,#fbbc05 185deg 240deg,#ea4335 240deg 290deg,#4285f4 290deg); background-clip: text; color: transparent; }
+.auth-facebook { display: inline-grid; place-items: center; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: #1877f2; color: white; font: 700 1.125rem/1 var(--app-font-family); padding-top: .125rem; box-sizing: border-box; }
+.auth-google { font: 800 1.125rem/1 var(--app-font-family); background: conic-gradient(#4285f4 0deg 95deg,#34a853 95deg 185deg,#fbbc05 185deg 240deg,#ea4335 240deg 290deg,#4285f4 290deg); background-clip: text; color: transparent; }
 
 body[data-auth="guest"] #hero-carousel { display: none; }
 body[data-auth="member"] #guest-welcome { display: none; }

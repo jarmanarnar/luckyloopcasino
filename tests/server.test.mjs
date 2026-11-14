@@ -44,7 +44,7 @@ test('legacy asset links point at the same current app', async () => {
 test('scripts, styles, fonts, provider marks and promotional artwork have correct types', async () => {
   for (const [file, type] of [['bootstrap.js', 'text/javascript'], ['app.js', 'text/javascript'], ['styles.css', 'text/css'],
     ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp'],
-    ['assets/fonts/arimo-bold-latin.woff2', 'font/woff2']]) {
+    ['assets/fonts/poppins-700-latin.woff2', 'font/woff2']]) {
     const response = await fetch(`${origin}/luckyloopcasino/${file}`);
     assert.equal(response.status, 200);
     assert.ok(response.headers.get('content-type').startsWith(type));

@@ -22,6 +22,8 @@ GitHub Pages publishes `dist/`. Each build versions stylesheet and module entry 
 
 ## Current behavior
 
+- Poppins is the shared app font, self-hosted in normal weights 400–800. `public/typography.css` defines the font assets and `--app-font-family`; headers, page text, controls, dialogs, chat and standalone loading screens use it. Startup waits for the font weights before measuring and revealing the layout.
+
 - Interaction styling uses existing hover/pressed surfaces and text colors. Do not add focus outlines, glow rings, focus-triggered border highlights or selection frames to new components. The shared focus rule applies across the app, including chat and dialogs.
 
 - Community Chat opens from the header and slides into a 360px right column on wide screens, resizing the lobby and header. On smaller screens it uses a modal drawer (full screen on mobile), with Escape, focus containment and background scroll locking. General/VIP demo rooms, quoted replies, emoji, per-player local message history and cross-tab updates work without a chat backend. Guests who select Chat see only the login dialog; the chat stays closed until opened by a signed-in user. Signing out closes the chat. The Rain card and its controls have been removed.

@@ -18,7 +18,7 @@ export async function bootApplication({ document: doc = document, window: scope 
   try {
     logo = createLogo({ document: doc, window: scope });
     const [application] = await deadline(Promise.all([
-      load(), doc.fonts?.load('700 16px Arimo'),
+      load(), Promise.all([400, 500, 600, 700, 800].map(weight => doc.fonts?.load(`${weight} 16px Poppins`))),
     ]), 15_000);
     const router = await deadline(application.initApplication(), 15_000);
     await deadline(waitForPageAssets(doc), 15_000);
