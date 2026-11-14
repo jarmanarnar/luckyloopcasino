@@ -12,10 +12,24 @@ body[data-view="game"] { display: block; height: auto; min-height: 100dvh; overf
 .game-display-controls button { box-sizing: border-box; display: grid; flex: none; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; color: var(--text-primary); cursor: pointer; }
 .game-display-controls button:hover, .game-display-controls button[aria-pressed="true"] { background: var(--control-hover); }
 .game-display-controls svg { width: 1.25rem; height: 1.25rem; }
+.game-favorite-slot--toolbar { margin-inline-end: auto; }
+.game-favorite-slot--compact { display: none; }
+.game-view[data-compact-preplay="true"] .game-favorite-slot--compact { display: block; position: absolute; inset: 1.25rem 1.25rem auto auto; }
+.game-view[data-compact-preplay="true"] .game-preplay__meta { padding-inline-end: calc(var(--touch-target) + .5rem); }
+.game-view .game-player-favorite { width: var(--touch-target); height: var(--touch-target); padding: 0; background: var(--surface-control); }
+.game-view .game-player-favorite:hover { background: var(--control-hover); }
 
 /* Theater expands the content lane, not the browser, so the page stays scrollable. */
 body[data-player-theater="true"] .game-details-view, body > .game-view[data-theater="true"] {
   width: calc(100% - 1rem);
+}
+
+/* Leave room for the fixed header and the in-page toolbar below the stage. */
+body:not([data-player-fullscreen="true"]) .game-view[data-theater="true"]:not([data-compact-preplay="true"]) .game-stage {
+  --theater-chrome-height: calc(var(--top-bar-height) + var(--hero-gap) + var(--player-toolbar-height) + 1rem);
+  aspect-ratio: auto;
+  height: max(40rem, calc(100vh - var(--theater-chrome-height)));
+  height: max(40rem, calc(100dvh - var(--theater-chrome-height)));
 }
 
 /* Fullscreen includes the original page header, wallet, store and account controls. */
@@ -53,15 +67,16 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-deta
 .game-preplay { position: absolute; z-index: 4; display: grid; place-items: center; overflow: auto; background: #0007; }
 .game-view[data-preview-ready="true"] .game-loading { visibility: hidden; }
 .game-view[data-mode="SC"] .game-frame-host { pointer-events: none; }
-.game-preplay__card { position: relative; z-index: 1; box-sizing: border-box; width: min(22rem, calc(100% - 2rem)); padding: 1.25rem 1.25rem .5rem; border: 1px solid #303036; border-radius: 1rem; background: #19191e; }
+.game-preplay__card { position: relative; z-index: 1; box-sizing: border-box; width: min(22rem, calc(100% - 2rem)); padding: 1.25rem; border: 1px solid #303036; border-radius: 1rem; background: #19191e; }
 .game-preplay__meta { display: none; }
 .game-preplay__actions { display: flex; gap: .25rem; padding: .25rem; border-radius: .75rem; background: var(--surface-control); }
 .game-preplay__actions button { display: flex; flex: 1; align-items: center; justify-content: center; gap: .375rem; min-width: 0; min-height: 3rem; padding: .75rem .5rem; border: 0; border-radius: .5rem; background: transparent; color: var(--text-secondary); box-shadow: none; font: 700 .875rem/1.2 var(--header-font-family); cursor: pointer; }
 .game-preplay__actions button[aria-pressed="true"] { background: var(--control-hover); color: var(--text-primary); }
 .game-preplay__actions button img { display: block; flex: 0 0 1.25rem; width: 1.25rem; height: 1.25rem; object-fit: contain; }
-.game-coin-info { font-size: .8125rem; line-height: 1.25rem; }
+.game-preplay__heading { margin: 0; text-align: center; color: var(--text-primary); font: 700 1.25rem/1.3 var(--header-font-family); }
+.game-coin-info { margin-bottom: .25rem; font-size: .8125rem; line-height: 1.25rem; }
 .game-coin-info[open] { margin-bottom: .5rem; }
-.game-coin-info summary { display: flex; min-height: var(--touch-target); align-items: center; justify-content: center; gap: .375rem; padding-inline: .5rem; color: var(--text-secondary); cursor: pointer; list-style: none; }
+.game-coin-info summary { display: flex; min-height: 2rem; align-items: center; justify-content: center; gap: .375rem; padding-inline: .5rem; color: var(--text-secondary); cursor: pointer; list-style: none; }
 .game-coin-info summary::-webkit-details-marker { display: none; }
 .game-coin-info summary:hover, .game-coin-info summary:focus-visible, .game-coin-info[open] summary { color: var(--text-primary); }
 .game-coin-info p { margin: 0; padding: .625rem .75rem; border-radius: .5rem; background: var(--surface-control); color: var(--text-primary); line-height: 1.45; }

@@ -247,15 +247,17 @@
       <div class="game-frame-host" id="game-frame-host"></div>
       <div id="game-preplay" class="game-preplay" hidden>
         <div class="game-preplay__card">
+          <div id="game-favorite-compact" class="game-favorite-slot game-favorite-slot--compact"></div>
+          <h2 class="game-preplay__heading">Lorem ipsum</h2>
+          <details id="game-coin-info" class="game-coin-info">
+            <summary><span id="game-coin-question">What are Gold Coins?</span></summary>
+            <p id="game-coin-answer" aria-live="polite">Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.</p>
+          </details>
           <div class="game-preplay__actions" role="group" aria-label="Play currency">
             <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" alt="" aria-hidden="true">Gold Coins</button>
             <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/sweeps-coin.svg" alt="" aria-hidden="true">Sweep Coins</button>
           </div>
           <button id="game-play-confirm" type="button" class="primary-button">Play with Gold Coins</button>
-          <details id="game-coin-info" class="game-coin-info">
-            <summary><span id="game-coin-question">What are Gold Coins?</span></summary>
-            <p id="game-coin-answer" aria-live="polite">Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.</p>
-          </details>
         </div>
       </div>
       <div class="game-loading" id="game-loading" hidden>
@@ -266,6 +268,7 @@
       </div>
     </div>
     <div class="game-display-controls" role="group" aria-label="Player controls">
+      <div id="game-favorite-toolbar" class="game-favorite-slot game-favorite-slot--toolbar"></div>
       <button id="game-theater" type="button" aria-label="Theater mode" title="Theater mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></button>
       <button id="game-fullscreen" type="button" aria-label="Fullscreen" title="Fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
     </div>

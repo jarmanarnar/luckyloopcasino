@@ -34,8 +34,9 @@ export function initGameDetails({ router, member } = {}) {
   const root = document.querySelector('#game-details-view');
   if (!router || !root) return;
   let currentGame = null;
-  let favoriteButton = null;
-  let favoriteLabel = null;
+  const favoriteSlots = ['#game-favorite-compact', '#game-favorite-toolbar']
+    .map(selector => document.querySelector(selector)).filter(Boolean);
+  let favoriteControls = [];
 
   function routeLink(text, route, className = 'game-details-link') {
     const link = node('a', className, text);
@@ -49,24 +50,30 @@ export function initGameDetails({ router, member } = {}) {
   }
 
   function syncFavorite() {
-    if (!currentGame || !favoriteButton) return;
+    if (!currentGame) return;
     const saved = member?.getState?.().favorites?.includes(currentGame.id) || false;
-    favoriteButton.setAttribute('aria-pressed', String(saved));
-    favoriteButton.setAttribute('aria-label', `${saved ? 'Remove' : 'Save'} ${currentGame.title} ${saved ? 'from' : 'to'} favorites`);
-    favoriteLabel.textContent = saved ? 'Saved' : 'Favorite';
+    for (const { button, label } of favoriteControls) {
+      button.setAttribute('aria-pressed', String(saved));
+      const accessibleLabel = `${saved ? 'Remove' : 'Save'} ${currentGame.title} ${saved ? 'from' : 'to'} favorites`;
+      button.setAttribute('aria-label', accessibleLabel);
+      if (label) label.textContent = saved ? 'Saved' : 'Favorite';
+      else button.title = accessibleLabel;
+    }
   }
 
-  function favoriteControl(game) {
-    favoriteButton = node('button', 'game-details-favorite');
-    favoriteButton.type = 'button';
-    favoriteLabel = node('span');
-    favoriteButton.append(createShelfIcon('favorites'), favoriteLabel);
-    favoriteButton.disabled = !member?.toggleFavorite;
-    favoriteButton.addEventListener('click', () => {
+  function favoriteControl(game, iconOnly = false) {
+    const button = node('button', iconOnly ? 'game-details-favorite game-player-favorite' : 'game-details-favorite');
+    button.type = 'button';
+    const label = iconOnly ? null : node('span');
+    button.append(createShelfIcon('favorites'));
+    if (label) button.append(label);
+    button.disabled = !member?.toggleFavorite;
+    button.addEventListener('click', () => {
       member?.toggleFavorite(game.id);
       syncFavorite();
     });
-    return favoriteButton;
+    favoriteControls.push({ button, label });
+    return button;
   }
 
   function createInformation(game, formatName) {
@@ -211,6 +218,8 @@ export function initGameDetails({ router, member } = {}) {
     const isDetails = route.type === 'game-details';
     root.hidden = !isDetails;
     currentGame = isDetails ? games.get(route.gameId) : null;
+    favoriteControls = [];
+    for (const slot of favoriteSlots) slot.replaceChildren();
     if (!isDetails) return;
     if (!currentGame) {
       router.navigate({ type: 'home' }, { replace: true });
@@ -241,7 +250,9 @@ export function initGameDetails({ router, member } = {}) {
     const title = node('h1', '', game.title);
     title.id = 'game-details-title';
     title.tabIndex = -1;
-    copy.append(byline, title, favoriteControl(game));
+    copy.append(byline, title);
+    if (!favoriteSlots.length) copy.append(favoriteControl(game));
+    for (const slot of favoriteSlots) slot.replaceChildren(favoriteControl(game, true));
     const launch = node('div', 'game-details-launch');
     const play = node('button', 'game-details-play primary-button', 'Play');
     play.type = 'button';

@@ -15,7 +15,7 @@ const games = [
   { id: 'gamma', title: 'Gamma', providerId: 'other', providerName: 'Other Studio' },
 ];
 
-function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', from: '#/popular' }) {
+function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', from: '#/popular' }, { playerSlots = false } = {}) {
   let route = initialRoute, favorites = [];
   const created = [], subscriptions = [], memberSubscriptions = new Set(), navigations = [], backs = [];
   const document = { activeElement: null, title: '' };
@@ -42,7 +42,9 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
   const root = new Node('main'), categories = new Node('nav');
   root.hidden = true;
   document.body = new Node('body');
-  document.querySelector = selector => selector === '#game-details-view' ? root : selector === '#catalog-categories' ? categories : null;
+  const slots = { '#game-favorite-compact': new Node(), '#game-favorite-toolbar': new Node() };
+  document.querySelector = selector => selector === '#game-details-view' ? root : selector === '#catalog-categories' ? categories
+    : (playerSlots && slots[selector]) || null;
   document.createElement = tag => {
     assert.notEqual(tag, 'iframe', 'browsing pre-game details must never start a provider session');
     const element = new Node(tag); created.push(element); return element;
@@ -79,7 +81,7 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
   const descendants = (element = root) => [element, ...element.children.flatMap(child => descendants(child))];
   const byText = (tag, text) => descendants().find(node => node.tagName === tag && node.textContent === text);
   const byRole = (role, label) => descendants().find(node => node.getAttribute('role') === role && node.textContent === label);
-  return { api, root, categories, document, created, router, member, navigations, backs,
+  return { api, root, categories, slots, document, created, router, member, navigations, backs,
     descendants, byText, byRole,
     byId: id => descendants().find(node => node.id === id),
     get route() { return route; },
@@ -215,4 +217,20 @@ test('collapsed game provider is independently navigable without opening the dis
   assert.equal(link.emit('click').defaultPrevented, true);
   assert.equal(page.route.type, 'provider');
   assert.equal(page.route.providerId, 'studio');
+});
+
+test('compact and toolbar hearts stay in sync and save the current game only', () => {
+  const page = detailsPage(undefined, { playerSlots: true });
+  const compact = () => page.slots['#game-favorite-compact'].children[0];
+  const toolbar = () => page.slots['#game-favorite-toolbar'].children[0];
+  assert.equal(compact().getAttribute('aria-label'), 'Save Alpha to favorites');
+  assert.equal(toolbar().getAttribute('aria-pressed'), 'false');
+  compact().emit('click');
+  assert.equal(toolbar().getAttribute('aria-pressed'), 'true');
+  assert.equal(toolbar().getAttribute('aria-label'), 'Remove Alpha from favorites');
+  page.router.navigate({ type: 'game-details', gameId: 'beta' });
+  assert.equal(compact().getAttribute('aria-pressed'), 'false');
+  toolbar().emit('click');
+  assert.deepEqual(page.member.getState().favorites, ['alpha', 'beta']);
+  assert.equal(compact().getAttribute('aria-pressed'), 'true');
 });
