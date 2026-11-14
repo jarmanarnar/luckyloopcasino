@@ -1,9 +1,6 @@
 export function initPlayerDisplay({ view, document: doc = document, window: win = doc.defaultView, onResize = () => {} }) {
   const theater = doc.querySelector('#game-theater');
   const fullscreen = doc.querySelector('#game-fullscreen');
-  const menuFullscreen = doc.querySelector('#profile-game-fullscreen');
-  const menuFullscreenLabel = doc.querySelector('#profile-game-fullscreen-label');
-  const profileMenu = doc.querySelector('#profile-menu');
   if (!theater || !fullscreen) return { reset() {}, setGame() {} };
   // The page, including its original header and popovers, enters fullscreen together.
   const fullscreenTarget = doc.documentElement;
@@ -34,13 +31,6 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     fullscreen.setAttribute('aria-pressed', String(full));
     fullscreen.setAttribute('aria-label', label);
     fullscreen.title = label;
-    if (menuFullscreen) {
-      menuFullscreen.hidden = !opened || (mobile && (!playing || !supportsFullscreen()));
-      menuFullscreen.disabled = busy;
-      menuFullscreen.setAttribute('aria-label', label);
-      menuFullscreen.setAttribute('aria-pressed', String(full));
-    }
-    if (menuFullscreenLabel) menuFullscreenLabel.textContent = label;
     onResize();
   }
 
@@ -86,10 +76,6 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     render();
   });
   fullscreen.addEventListener('click', toggleFullscreen);
-  menuFullscreen?.addEventListener('click', () => {
-    if (profileMenu?.matches(':popover-open')) profileMenu.hidePopover();
-    return toggleFullscreen();
-  });
   mobileMedia?.addEventListener('change', () => {
     if (isMobile()) { wide = false; fallback = false; }
     render();

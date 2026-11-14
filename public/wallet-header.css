@@ -14,7 +14,7 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
   background: var(--surface-panel);
 }
 .header-wallet-controls { position: relative; justify-self: center; min-width: 0; max-width: 100%; }
-.header-member-actions { justify-self: end; }
+.header-member-actions { justify-self: end; background: var(--surface-subtle); }
 .wallet-balance-trigger.wallet-switch {
   width: max-content;
   min-width: 0;
@@ -60,7 +60,7 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
 .header-member-action svg { width: 1.25rem; height: 1.25rem; }
 button.header-member-action { cursor: pointer; }
 .header-member-action:hover { background: var(--surface-active); color: var(--text-primary); }
-.header-rewards { width: auto; padding-inline: .625rem; border: 1px solid var(--border-default); }
+.header-rewards { width: auto; padding-inline: .625rem; border: 1px solid transparent; }
 .header-rewards__gift { display: block; width: 2rem; height: 2rem; }
 .header-rewards__label { display: none; color: var(--text-primary); font-size: .8125rem; font-weight: 700; line-height: 1.25; white-space: nowrap; }
 @media (min-width: 45rem) {

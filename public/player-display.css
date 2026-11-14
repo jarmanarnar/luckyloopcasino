@@ -74,12 +74,15 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-deta
 .game-preplay__actions button[aria-pressed="true"] { background: var(--control-hover); color: var(--text-primary); }
 .game-preplay__actions button img { display: block; flex: 0 0 1.25rem; width: 1.25rem; height: 1.25rem; object-fit: contain; }
 .game-preplay__heading { margin: 0; text-align: center; color: var(--text-primary); font: 700 1.25rem/1.3 var(--header-font-family); }
-.game-coin-info { margin-bottom: .25rem; font-size: .8125rem; line-height: 1.25rem; }
-.game-coin-info[open] { margin-bottom: .5rem; }
-.game-coin-info summary { display: flex; min-height: 2rem; align-items: center; justify-content: center; gap: .375rem; padding-inline: .5rem; color: var(--text-secondary); cursor: pointer; list-style: none; }
-.game-coin-info summary::-webkit-details-marker { display: none; }
-.game-coin-info summary:hover, .game-coin-info summary:focus-visible, .game-coin-info[open] summary { color: var(--text-primary); }
-.game-coin-info p { margin: 0; padding: .625rem .75rem; border-radius: .5rem; background: var(--surface-control); color: var(--text-primary); line-height: 1.45; }
+.game-coin-info { display: flex; min-height: 2rem; align-items: center; justify-content: center; gap: .25rem; margin-bottom: .25rem; color: var(--text-secondary); font-size: .8125rem; line-height: 1.25rem; }
+.game-coin-info__anchor { display: inline-flex; flex: none; }
+.game-coin-info__trigger { display: grid; place-items: center; width: 1.5rem; height: 2rem; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.game-coin-info__trigger svg { display: block; width: .875rem; height: .875rem; }
+.game-coin-info__trigger:hover, .game-coin-info__trigger[aria-expanded="true"] { color: var(--text-primary); }
+.game-coin-info__trigger:focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 2px; border-radius: .25rem; }
+.game-coin-info__tooltip { position: fixed; z-index: 30; box-sizing: border-box; width: min(16rem, calc(100vw - 2rem)); padding: .75rem; border: 1px solid var(--border-default); border-radius: .5rem; background: var(--surface-panel); color: var(--text-primary); box-shadow: 0 .5rem 1.5rem rgb(0 0 0 / 35%); font: 400 .75rem/1.45 var(--header-font-family); text-align: start; white-space: normal; }
+.game-coin-info__tooltip::after { content: ""; position: absolute; left: var(--tooltip-arrow-left, 50%); bottom: -.3125rem; width: .5rem; height: .5rem; background: var(--surface-panel); border-right: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); transform: translateX(-50%) rotate(45deg); }
+.game-coin-info__tooltip[data-placement="bottom"]::after { top: -.3125rem; bottom: auto; transform: translateX(-50%) rotate(225deg); }
 #game-play-confirm { width: 100%; min-height: 3rem; margin-top: .75rem; padding: .75rem; font: 700 .875rem/1.2 var(--header-font-family); cursor: pointer; }
 
 /* Compact preplay is a normal document card, not a tiny player with a modal.
@@ -96,21 +99,26 @@ body:not([data-player-mobile="true"]) .game-view[data-mobile="true"][data-compac
 .game-view[data-compact-preplay="true"] .game-preplay__card {
   width: 100%; background: var(--surface-card);
 }
-/* Keep the compact title beside the disclosure; its answer still spans the card. */
+/* Keep the compact title and help on one row; the tooltip never changes card height. */
 .game-view[data-compact-preplay="true"] .game-preplay__heading {
   float: inline-start; margin-inline-end: .75rem; text-align: start; line-height: 2rem;
 }
-.game-view[data-compact-preplay="true"] .game-coin-info summary {
+.game-view[data-compact-preplay="true"] .game-coin-info {
   justify-content: flex-end; padding-inline: 0; white-space: nowrap;
 }
-.game-view[data-compact-preplay="true"] .game-coin-info p,
 .game-view[data-compact-preplay="true"] .game-preplay__actions { clear: both; }
+@media (max-width: 400px) {
+  .game-view[data-compact-preplay="true"] .game-preplay__heading { margin-inline-end: .5rem; font-size: 1.125rem; }
+  .game-view[data-compact-preplay="true"] .game-coin-info { font-size: .75rem; }
+}
 @media (max-width: 374px) {
   .game-view[data-compact-preplay="true"] .game-preplay__heading { margin-inline-end: .5rem; font-size: 1rem; }
   .game-view[data-compact-preplay="true"] .game-coin-info { font-size: .75rem; }
 }
 @media (max-width: 339px) {
   .game-view[data-compact-preplay="true"] .game-preplay__heading { font-size: .875rem; }
+  .game-view[data-compact-preplay="true"] .game-coin-info { gap: .125rem; font-size: .6875rem; }
+  .game-view[data-compact-preplay="true"] .game-coin-info__trigger { width: 1.25rem; }
 }
 .game-view[data-compact-preplay="true"] .game-preplay__meta {
   display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr 1fr; column-gap: 1rem; row-gap: .375rem; min-width: 0;

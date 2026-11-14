@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <link rel="stylesheet" href="touch-controls.css">
   <script type="module" src="touch-controls.js"></script>
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#070708">
   <meta name="application-name" content="LuckyLoop Casino">
   <meta name="description" content="LuckyLoop Casino — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>LuckyLoop Casino</title>
@@ -158,7 +158,6 @@
       <li><a class="profile-menu__item" href="#/rank-system" data-profile-icon="jackpot" data-profile-page="rank-system">VIP Tiers<span id="profile-menu-rank" class="profile-menu__badge"></span></a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
       <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
-      <li><button id="profile-game-fullscreen" class="profile-menu__item" type="button" aria-label="Fullscreen" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span id="profile-game-fullscreen-label">Fullscreen</span></button></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="phone-verification-dialog">Redeem Coins</button></li>
     </ul>
@@ -254,10 +253,15 @@
         <div class="game-preplay__card">
           <div id="game-favorite-compact" class="game-favorite-slot game-favorite-slot--compact"></div>
           <h2 class="game-preplay__heading">Lorem ipsum</h2>
-          <details id="game-coin-info" class="game-coin-info">
-            <summary><span id="game-coin-question">What are Gold Coins?</span></summary>
-            <p id="game-coin-answer" aria-live="polite">Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.</p>
-          </details>
+          <div id="game-coin-info" class="game-coin-info">
+            <span id="game-coin-question">What are Gold Coins?</span>
+            <span class="game-coin-info__anchor" id="game-coin-info-anchor">
+              <button id="game-coin-info-trigger" class="game-coin-info__trigger" type="button" aria-label="About Gold Coins" aria-describedby="game-coin-answer" aria-expanded="false">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M8 7v4.5M8 4.5v.1" fill="none" stroke="var(--surface-panel)" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </button>
+              <span id="game-coin-answer" class="game-coin-info__tooltip" role="tooltip" hidden>Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.</span>
+            </span>
+          </div>
           <div class="game-preplay__actions" role="group" aria-label="Play currency">
             <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" alt="" aria-hidden="true">Gold Coins</button>
             <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/sweeps-coin.svg" alt="" aria-hidden="true">Sweep Coins</button>

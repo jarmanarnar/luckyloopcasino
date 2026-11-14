@@ -59,7 +59,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
   }
   const ids = ['lobby-view', 'game-view', 'game-frame-host', 'game-load-status',
     'game-loading', 'game-loading-reveal', 'catalog-shelves', 'results', 'game-theater', 'game-fullscreen'];
-  if (preplay) ids.push('game-preplay', 'game-play-gc', 'game-play-sc', 'game-preplay-fullscreen', 'game-play-confirm', 'game-coin-info', 'game-coin-question', 'game-coin-answer');
+  if (preplay) ids.push('game-preplay', 'game-play-gc', 'game-play-sc', 'game-preplay-fullscreen', 'game-play-confirm', 'game-coin-info', 'game-coin-question', 'game-coin-answer', 'game-coin-info-trigger', 'game-coin-info-anchor');
   const nodes = Object.fromEntries(ids.map(id => [id, new Node(id)]));
   document.body = new Node('body');
   document.body.append(nodes['lobby-view'], nodes['game-view'], nodes.results);
@@ -498,15 +498,36 @@ test('preplay explanation follows the selected currency without changing play be
  const { nodes } = page;
  assert.equal(nodes['game-coin-question'].textContent, 'What are Gold Coins?');
  assert.match(nodes['game-coin-answer'].textContent, /no cash value/);
- nodes['game-coin-info'].open = true;
+ nodes['game-coin-info-trigger'].emit('click');
+ assert.equal(nodes['game-coin-answer'].hidden, false);
  nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
  assert.equal(nodes['game-coin-question'].textContent, 'What are Sweep Coins?');
  assert.match(nodes['game-coin-answer'].textContent, /play is unavailable/);
- assert.equal(nodes['game-coin-info'].open, true);
+ assert.equal(nodes['game-coin-answer'].hidden, true);
+ nodes['game-coin-info-trigger'].emit('pointerenter', { pointerType: 'mouse' });
+ assert.equal(nodes['game-coin-answer'].hidden, false);
  nodes['game-play-confirm'].emit('click'); await new Promise(resolve => setImmediate(resolve));
- assert.equal(nodes['game-coin-info'].open, false);
+ assert.equal(nodes['game-coin-answer'].hidden, true);
  assert.equal(page.verificationOpens(), 1);
  assert.equal(page.frames.length, 0);
+});
+
+test('coin tooltip supports hover, keyboard dismissal and the first touch tap', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true });
+ const trigger = page.nodes['game-coin-info-trigger'], answer = page.nodes['game-coin-answer'];
+ assert.equal(answer.hidden, true);
+ trigger.emit('pointerenter', { pointerType: 'touch' });
+ assert.equal(answer.hidden, true);
+ trigger.emit('focus');
+ trigger.emit('click');
+ assert.equal(answer.hidden, false, 'focus preceding a touch click must not immediately close it');
+ trigger.emit('click');
+ assert.equal(answer.hidden, true);
+ trigger.emit('pointerenter', { pointerType: 'mouse' });
+ assert.equal(answer.hidden, false);
+ assert.equal(page.escape().defaultPrevented, true);
+ assert.equal(answer.hidden, true);
+ assert.equal(page.nodes['game-view'].hidden, false, 'Escape dismisses help before leaving the game');
 });
 
 test('mobile Sweep Coins shows only the card and opens verification, never a provider frame', async () => {

@@ -3,16 +3,16 @@ import test from 'node:test';
 import { initPlayerDisplay } from '../public/player-display.js';
 function fixture(native = true, mobile = false, standalone = false) {
  const node = () => ({dataset:{}, attrs:{}, handlers:{}, setAttribute(k,v){this.attrs[k]=v;}, addEventListener(k,fn){this.handlers[k]=fn;}});
- const view=node(), root=node(), header=node(), theater=node(), fullscreen=node(), sidebar=node(), menuFullscreen=node(), menuLabel=node();
+ const view=node(), root=node(), header=node(), theater=node(), fullscreen=node(), sidebar=node();
  root.children=[header,view];
  sidebar.dataset.expanded='true';
- const doc={body:node(),documentElement:root,handlers:{},fullscreenElement:null,querySelector:s=>({'#game-theater':theater,'#game-fullscreen':fullscreen,'.site-sidebar':sidebar,'#profile-game-fullscreen':menuFullscreen,'#profile-game-fullscreen-label':menuLabel}[s]),addEventListener(k,fn){this.handlers[k]=fn;}};
+ const doc={body:node(),documentElement:root,handlers:{},fullscreenElement:null,querySelector:s=>({'#game-theater':theater,'#game-fullscreen':fullscreen,'.site-sidebar':sidebar}[s]),addEventListener(k,fn){this.handlers[k]=fn;}};
  doc.body.dataset.sidebar='expanded';
  doc.exitFullscreen=async()=>{doc.fullscreenElement=null;doc.handlers.fullscreenchange();};
  if(native)root.requestFullscreen=async()=>{doc.fullscreenElement=root;doc.handlers.fullscreenchange();};
  const media={matches:mobile,addEventListener(type,fn){this.change=fn;}};
  const api=initPlayerDisplay({view,document:doc,window:{matchMedia:()=>media,navigator:{standalone}}});
- return {view,root,header,theater,fullscreen,sidebar,doc,api,media,menuFullscreen,menuLabel};
+ return {view,root,header,theater,fullscreen,sidebar,doc,api,media};
 }
 
 test('theater expands in-page without changing sidebar preference; fullscreen is separate',async()=>{
@@ -33,19 +33,19 @@ test('rejected fullscreen falls back; reset clears it',async()=>{
  assert.equal(p.view.dataset.fullscreenFallback,'true');p.api.reset();assert.equal(p.view.dataset.fullscreenFallback,'false');
 });
 
-test('mobile preserves the original header inside page fullscreen and exits through the profile menu', async () => {
+test('mobile preserves the original header inside page fullscreen and exits through the player control', async () => {
  const p=fixture(true,true);p.api.setGame({title:'Nunchucks',currency:'GC'}); p.api.setPlaying(true);
  assert.equal(p.doc.body.dataset.playerMobile,'true');assert.equal(p.theater.hidden,true);
- assert.equal(p.menuFullscreen.hidden,false);assert.ok(p.root.children.includes(p.header));
+ assert.equal(p.fullscreen.hidden,false);assert.ok(p.root.children.includes(p.header));
  p.theater.handlers.click();assert.equal(p.view.dataset.theater,'false');
  await p.api.fullscreen();assert.equal(p.doc.fullscreenElement,p.root);
  assert.equal(p.doc.body.dataset.playerMobile,'true');
  await p.api.fullscreen();assert.equal(p.doc.fullscreenElement,null);
  assert.equal(p.doc.body.dataset.playerMobile,'true','exiting native fullscreen keeps the viewport filled');
- await p.menuFullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,p.root);
- assert.equal(p.menuLabel.textContent,'Exit fullscreen');
- await p.menuFullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,null);
- p.api.reset();assert.equal(p.menuFullscreen.hidden,true);assert.equal(p.doc.body.dataset.playerMobile,'false');
+ await p.fullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,p.root);
+ assert.equal(p.fullscreen.attrs['aria-label'],'Exit fullscreen');
+ await p.fullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,null);
+ p.api.reset();assert.equal(p.fullscreen.hidden,true);assert.equal(p.doc.body.dataset.playerMobile,'false');
 });
 
 test('mobile without a fullscreen API or after a rejection stays immersive without a fake fullscreen state', async () => {
@@ -103,14 +103,14 @@ test('mobile preplay enters the full-height player only after Play and resets on
  p.api.setGame();
  assert.equal(p.doc.body.dataset.playerMobile, 'false');
  assert.equal(p.doc.body.dataset.playerStandalone, 'false');
- assert.equal(p.menuFullscreen.hidden, true);
+ assert.equal(p.fullscreen.hidden, true);
  await p.api.fullscreen();
  assert.equal(p.doc.fullscreenElement, null);
  p.api.setPlaying(true);
  assert.equal(p.doc.body.dataset.playerMobile, 'true');
  assert.equal(p.doc.body.dataset.playerStandalone, 'true');
- assert.equal(p.menuFullscreen.hidden, false);
+ assert.equal(p.fullscreen.hidden, false);
  p.api.setPlaying(false);
  assert.equal(p.doc.body.dataset.playerMobile, 'false');
- assert.equal(p.menuFullscreen.hidden, true);
+ assert.equal(p.fullscreen.hidden, true);
 });

@@ -4,14 +4,17 @@
   color-scheme: dark;
   color: var(--text-primary);
 
-  /* Four surface levels, shared by every page, popover and dialog. */
-  --surface-page: #000;
-  --surface-panel: #141416;
-  --surface-control: #222226;
-  --surface-active: #303036;
-  --border-default: #333338;
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
+  /* Neutral values sampled from https://qzino.com/casino on 2026-11-14.
+     Keep the source alpha values: controls and borders tint their own backdrop.
+     Floating panels stay opaque, as on the reference site. */
+  --surface-page: #070708;
+  --surface-panel: var(--surface-page);
+  --surface-subtle: rgb(220 227 244 / 4%);
+  --surface-control: rgb(220 227 244 / 12%);
+  --surface-active: rgb(220 227 244 / 20%);
+  --border-default: rgb(220 227 244 / 8%);
+  --text-primary: #fff;
+  --text-secondary: rgb(229 232 241 / 72%);
 
   /* One action color; currency colors never change the application theme. */
   --primary-accent: #a0f526;
@@ -22,7 +25,7 @@
   --accent-soft: color-mix(in srgb, var(--primary-accent) 10%, var(--surface-panel));
   --gold-edge: color-mix(in srgb, var(--coin-gold) 60%, var(--surface-page));
 
-  --overlay-backdrop: color-mix(in srgb, var(--surface-page) 70%, transparent);
+  --overlay-backdrop: rgb(7 7 8 / 72%);
   --shadow-color: color-mix(in srgb, var(--surface-page) 55%, transparent);
   --primary-button-border: var(--primary-accent);
   --primary-button-top: var(--primary-accent);

@@ -8,7 +8,64 @@ export function initCoinChooser({ document: doc = document, onPlay, onSelect = a
  if (!gc || !sc || !play) return { reset() {} };
  const info = doc.querySelector('#game-coin-info');
  const question = doc.querySelector('#game-coin-question'), answer = doc.querySelector('#game-coin-answer');
+ const trigger = doc.querySelector('#game-coin-info-trigger');
+ const anchor = doc.querySelector('#game-coin-info-anchor');
+ const view = doc.defaultView;
+ let pinned = false, closeTimer;
  let selected='GC', busy=false;
+ function hideInfo() {
+  clearTimeout(closeTimer);
+  pinned = false;
+  if (answer) answer.hidden = true;
+  trigger?.setAttribute('aria-expanded', 'false');
+ }
+ function positionInfo() {
+  if (!view || !trigger || !answer || answer.hidden) return;
+  const target = trigger.getBoundingClientRect();
+  if (!trigger.getClientRects().length || target.bottom < 0 || target.top > view.innerHeight) {
+   hideInfo();
+   return;
+  }
+  const bounds = answer.getBoundingClientRect(), inset = 16, gap = 8;
+  const center = target.left + target.width / 2;
+  const left = Math.max(inset, Math.min(center - bounds.width / 2, view.innerWidth - bounds.width - inset));
+  const above = target.top >= bounds.height + gap + inset;
+  answer.dataset.placement = above ? 'top' : 'bottom';
+  answer.style.left = `${left}px`;
+  answer.style.top = `${above ? target.top - bounds.height - gap : target.bottom + gap}px`;
+  answer.style.setProperty('--tooltip-arrow-left', `${Math.max(12, Math.min(center - left, bounds.width - 12))}px`);
+ }
+ function showInfo() {
+  if (!answer) return;
+  clearTimeout(closeTimer);
+  answer.hidden = false;
+  trigger?.setAttribute('aria-expanded', 'true');
+  positionInfo();
+ }
+ function leaveInfo() {
+  if (pinned || doc.activeElement === trigger) return;
+  clearTimeout(closeTimer);
+  // Keep the tooltip reachable across the small gap above the icon.
+  closeTimer = setTimeout(hideInfo, 120);
+ }
+ trigger?.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') showInfo(); });
+ trigger?.addEventListener('focus', showInfo);
+ trigger?.addEventListener('blur', event => { if (!pinned && !anchor?.contains(event.relatedTarget)) hideInfo(); });
+ trigger?.addEventListener('click', () => {
+  if (pinned) hideInfo();
+  else { pinned = true; showInfo(); }
+ });
+ anchor?.addEventListener('pointerleave', leaveInfo);
+ answer?.addEventListener('pointerenter', () => clearTimeout(closeTimer));
+ answer?.addEventListener('pointerleave', leaveInfo);
+ doc.addEventListener('pointerdown', event => { if (!info?.contains(event.target)) hideInfo(); });
+ doc.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !answer || answer.hidden) return;
+  event.preventDefault();
+  hideInfo();
+ }, true);
+ doc.addEventListener('scroll', positionInfo, true);
+ view?.addEventListener('resize', positionInfo);
  async function select(currency) {
   if (busy || selected === currency) return;
   const previous=selected; selected=currency; busy=true; render();
@@ -22,14 +79,17 @@ export function initCoinChooser({ document: doc = document, onPlay, onSelect = a
   play.textContent=selected==='SC'?'Play with Sweep Coins':'Play with Gold Coins';
   if (question) question.textContent = coinInfo[selected].question;
   if (answer) answer.textContent = coinInfo[selected].answer;
+  trigger?.setAttribute('aria-label', selected === 'SC' ? 'About Sweep Coins' : 'About Gold Coins');
+  positionInfo();
  }
  gc.addEventListener('click',()=>select('GC'));
  sc.addEventListener('click',()=>select('SC'));
  play.addEventListener('click', () => {
   if (busy) return;
-  if (info) info.open = false;
+  hideInfo();
   return onPlay(selected);
  });
+ hideInfo();
  render();
- return {reset(currency='GC'){selected=currency==='SC'?'SC':'GC';render();}};
+ return {reset(currency='GC'){hideInfo();selected=currency==='SC'?'SC':'GC';render();}};
 }
