@@ -1,5 +1,5 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, LEGACY_CATEGORIES, getGameCategoryIds, getGameReleaseDate } from './collections.js';
+import { CATEGORIES, LEGACY_CATEGORIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -107,7 +107,19 @@ export function initGameDetails({ router, member } = {}) {
     const summary = node('summary', 'game-details-summary');
     const chevron = arrowIcon();
     chevron.classList.add('game-details-chevron');
-    summary.append(node('span', '', 'Game details'), chevron);
+    const disclosure = node('span', 'game-details-disclosure');
+    disclosure.setAttribute('aria-hidden', 'true');
+    disclosure.append(chevron);
+    const identity = node('span', 'game-details-identity');
+    const provider = node('span', 'game-details-provider');
+    const providerLink = routeLink(providerNames.get(game.providerId) || game.providerName,
+      { type: 'provider', providerId: game.providerId }, 'game-details-link game-details-provider-link');
+    const providerArrow = arrowIcon();
+    providerArrow.classList.add('game-details-provider-arrow');
+    providerLink.append(providerArrow);
+    provider.append(document.createTextNode('By '), providerLink);
+    identity.append(node('span', 'game-details-name', game.title), provider);
+    summary.append(identity, disclosure);
     const body = node('div', 'game-details-body');
     const tabs = node('div', 'game-details-tabs');
     tabs.setAttribute('role', 'tablist');
@@ -115,7 +127,7 @@ export function initGameDetails({ router, member } = {}) {
     const panels = [createInformation(game, formatName), node('div', 'game-details-description')];
     panels[1].append(node('h3', '', `About ${game.title}`),
       node('p', '', `${game.title} is a ${descriptionType} game by ${game.providerName}.`),
-      node('p', '', 'Play the provider’s demo from this page. The demo has its own balance and does not use your Gold Coins or Sweeps Coins balance.'));
+      node('p', '', "Play the provider's demo from this page. The demo has its own balance and does not use your Gold Coins or Sweeps Coins balance."));
     const buttons = ['Information', 'Description'].map((label, index) => {
       const button = node('button', 'game-details-tab', label);
       button.type = 'button';
@@ -156,17 +168,22 @@ export function initGameDetails({ router, member } = {}) {
   }
 
   function relatedGames(game) {
-    const related = GAMES.filter(candidate => candidate.providerId === game.providerId && candidate.id !== game.id).slice(0, 12);
+    const related = getGamesForCategory('popular').filter(candidate => candidate.id !== game.id).slice(0, 24);
     if (!related.length) return null;
     const shelf = node('section', 'game-details-related game-shelf');
     shelf.setAttribute('aria-labelledby', 'game-details-related-title');
     const header = node('div', 'game-shelf__header');
     const title = node('h2', 'game-shelf__title');
     title.id = 'game-details-related-title';
-    title.append(routeLink(`More from ${game.providerName}`, { type: 'provider', providerId: game.providerId }, 'game-shelf__title-link'));
-    header.append(title, routeLink('All', { type: 'provider', providerId: game.providerId }, 'game-details-all shelf-see-all'));
+    const popularRoute = { type: 'category', categoryId: 'popular' };
+    title.append(routeLink('Popular', popularRoute, 'game-shelf__title-link'));
+    const all = routeLink('All', popularRoute, 'game-details-all shelf-see-all');
+    all.setAttribute('aria-label', 'See all Popular games');
+    header.append(title, all);
     const list = node('ul', 'game-track');
-    list.setAttribute('aria-label', `More games by ${game.providerName}`);
+    list.setAttribute('aria-label', 'Popular games');
+    list.dir = 'ltr';
+    list.tabIndex = 0;
     for (const candidate of related) {
       const card = node('li', 'game-card');
       const button = node('button', 'game-launch');

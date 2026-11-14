@@ -54,7 +54,14 @@ export function initGameView({ router, account, verifyPhone } = {}) {
 
   function revealGame(frame, reason) {
     if (frame !== currentFrame || loading.hidden) return;
-    if (awaitingPlay) { pendingReady = { frame, reason }; return; }
+    if (awaitingPlay || view.dataset.mode === 'SC' || account?.getSnapshot().wallet.currency === 'SC') {
+      // Show the painted game as a preview, but keep it inert until Play.
+      pendingReady = { frame, reason };
+      view.dataset.previewReady = 'true';
+      return;
+    }
+    pendingReady = null;
+    delete view.dataset.previewReady;
     stopLoadingWatch();
     view.dataset.loadState = reason === 'manual' ? 'revealed'
       : ['nlc-loader', 'hacksaw-loader'].includes(reason) ? 'provider' : 'ready';
@@ -120,18 +127,20 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     }
   }
 
-  function mountFrame(key) {
+  function mountFrame(key, { previewOnly = false } = {}) {
     if (account?.isSignedIn?.() === false) return;
-    // This integration supports public demos only. SC never reaches a launcher.
-    if (account?.getSnapshot().wallet.currency === 'SC') return;
+    // Use the same public demo URL, never a Sweep Coins game session.
+    const isSweep = account?.getSnapshot().wallet.currency === 'SC';
+    if (isSweep !== previewOnly || (previewOnly && !preplay)) return;
     stopLoadingWatch();
     currentFrame = null;
     host.replaceChildren();
-    view.dataset.mode = 'GC';
-    view.dataset.sessionKind = 'public-demo';
+    view.dataset.mode = previewOnly ? 'SC' : 'GC';
+    view.dataset.sessionKind = previewOnly ? 'verification-preview' : 'public-demo';
     activePlayer(false);
     awaitingPlay = Boolean(preplay);
     pendingReady = null;
+    delete view.dataset.previewReady;
     if (preplay) preplay.hidden = false;
     chooser?.reset(account?.getSnapshot().wallet.currency);
     const game = games.get(key);
@@ -145,13 +154,14 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     frame.dataset.presentationDevice = touchCapable ? 'mobile' : 'desktop';
     view.dataset.device = device;
     frame.title = `${game.title} demo`;
-    frame.allow = 'autoplay; fullscreen';
-    frame.allowFullscreen = true;
+    frame.allow = previewOnly ? "autoplay 'none'; fullscreen 'none'" : 'autoplay; fullscreen';
+    frame.allowFullscreen = !previewOnly;
     frame.inert = true;
     frame.tabIndex = -1;
     frame.setAttribute('aria-hidden', 'true');
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    frame.setAttribute('sandbox', previewOnly ? 'allow-scripts allow-same-origin'
+      : 'allow-scripts allow-same-origin allow-forms allow-popups');
     if (game.providerId === 'nolimit-city' &&
         new URL(launchUrl).origin === 'https://demo.nolimitcdn.com') {
       // This direct launcher has its own full-screen loading/intro scene and
@@ -165,6 +175,8 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       host.removeAttribute('aria-busy');
       status.textContent = 'The game could not be loaded.';
       reveal.hidden = false;
+      pendingReady = null;
+      delete view.dataset.previewReady;
       view.dataset.loadState = 'error';
     };
     frame.addEventListener('error', failed);
@@ -220,6 +232,15 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       return;
     }
     if (key !== null && account?.getSnapshot().wallet.currency === 'SC' && route?.type === 'game-details') {
+      if (preplay) {
+        const newGame = currentGame !== key;
+        if (!newGame && currentFrame && view.dataset.mode === 'SC') return;
+        currentGame = key;
+        view.hidden = false;
+        mountFrame(key, { previewOnly: true });
+        if (newGame) window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+        return;
+      }
       stopLoadingWatch();
       view.dataset.mode = 'SC';
       view.dataset.sessionKind = 'verification-preview';
@@ -229,6 +250,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       activePlayer(false);
       currentFrame = null;
       pendingReady = null;
+      delete view.dataset.previewReady;
       host.removeAttribute('aria-busy');
       status.textContent = '';
       currentGame = key;
@@ -273,6 +295,8 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     loading.hidden = true;
     delete view.dataset.loadState;
     delete view.dataset.readySource;
+    delete view.dataset.previewReady;
+    pendingReady = null;
     document.body.dataset.view = 'lobby';
     lobby.hidden = false;
     view.hidden = true;
@@ -332,7 +356,9 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       return;
     }
     if (account?.getSnapshot().wallet.currency === 'SC') await account.selectCurrency('GC');
-    if (!currentFrame && currentGame) mountFrame(currentGame);
+    if (account?.isSignedIn?.() === false || account?.getSnapshot().wallet.currency === 'SC' || !currentGame) return;
+    if (!currentFrame || view.dataset.mode !== 'GC') mountFrame(currentGame);
+    if (!currentFrame || view.dataset.mode !== 'GC') return;
     awaitingPlay = false;
     activePlayer(true);
     if (preplay) preplay.hidden = true;

@@ -361,7 +361,10 @@ test('GC preloads inert behind pre-play until Gold Coins is chosen', () => {
  assert.equal(page.nodes['game-preplay'].hidden, false);
  page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
  assert.equal(page.frames[0].inert, true);
+ assert.equal(page.nodes['game-view'].dataset.previewReady, 'true');
+ assert.equal(page.frames[0].getAttribute('aria-hidden'), 'true');
  page.nodes['game-play-confirm'].emit('click');
+ assert.equal(page.nodes['game-view'].dataset.previewReady, undefined);
  assert.equal(page.nodes['game-preplay'].hidden, true);
  assert.equal(page.frames[0].inert, false);
 });
@@ -380,29 +383,54 @@ test('Gold Coins reveals directly in details without route change or frame repla
 });
 
 
-test('chooser currency selection syncs account, unloads SC and prewarms fresh GC without play', async () => {
+test('Sweep Coins shows a strictly read-only public demo preview on mobile and desktop', async () => {
  for (const viewportWidth of [390, 1440]) {
- const page=gamePage({hash:'#/games/alpha',routerMode:true,preplay:true,viewportWidth});
- const first=page.frames[0], route=page.router.getRoute();
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth });
+ const first = page.frames[0], route = page.router.getRoute();
  page.nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
- assert.equal(page.frames.length,1);
- assert.equal(page.nodes['game-frame-host'].children.length,0);
- assert.equal(page.verificationOpens(),0);
- assert.equal(page.nodes['game-preplay'].hidden,false);
- assert.equal(page.nodes['game-play-confirm'].textContent,'Play with Sweep Coins');
- assert.equal(page.nodes['game-view'].dataset.sessionKind,'verification-preview');
- assert.equal(page.nodes['game-view'].dataset.mode,'SC');
- assert.equal(page.nodes['game-view'].dataset.readySource,undefined);
+ const preview = page.frames[1], view = page.nodes['game-view'];
+ assert.equal(page.frames.length, 2);
+ assert.equal(preview.src, first.src, 'SC uses only the public demo URL');
+ assert.equal(page.nodes['game-frame-host'].children[0], preview);
+ assert.equal(preview.allowFullscreen, false);
+ assert.match(preview.allow, /fullscreen 'none'/);
+ assert.equal(preview.getAttribute('sandbox'), 'allow-scripts allow-same-origin');
+ assert.equal(preview.inert, true);
+ assert.equal(preview.getAttribute('aria-hidden'), 'true');
+ assert.equal(page.verificationOpens(), 0);
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ assert.equal(page.nodes['game-play-confirm'].textContent, 'Play with Sweep Coins');
+ assert.equal(view.dataset.sessionKind, 'verification-preview');
+ assert.equal(view.dataset.mode, 'SC');
+ assert.equal(view.dataset.previewReady, undefined);
+ page.readiness[1].ready('test'); page.flushPaint(); page.flushPaint();
+ assert.equal(view.dataset.previewReady, 'true');
+ page.nodes['game-loading-reveal'].emit('click');
+ page.nodes['game-play-confirm'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(page.verificationOpens(), 1);
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ assert.equal(page.document.body.dataset.playerActive, 'false');
+ assert.equal(preview.inert, true);
+ assert.equal(preview.getAttribute('aria-hidden'), 'true');
  page.nodes['game-play-gc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
- assert.equal(page.frames.length,2);
- assert.notEqual(page.frames[1],first);
- assert.equal(page.nodes['game-view'].dataset.sessionKind,'public-demo');
- assert.equal(page.nodes['game-view'].dataset.mode,'GC');
- assert.equal(page.frames[1].inert,true);
- assert.equal(page.nodes['game-preplay'].hidden,false);
- assert.equal(page.router.getRoute(),route);
- assert.equal(page.verificationOpens(),0);
+ assert.equal(page.frames.length, 3);
+ assert.notEqual(page.frames[2], preview);
+ assert.equal(view.dataset.sessionKind, 'public-demo');
+ assert.equal(view.dataset.mode, 'GC');
+ assert.equal(view.dataset.previewReady, undefined);
+ assert.equal(page.frames[2].inert, true);
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ assert.equal(page.router.getRoute(), route);
  }
+});
+
+test('direct Sweep Coins details preloads a read-only demo without opening verification', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, currency: 'SC' });
+ assert.equal(page.frames.length, 1);
+ assert.equal(page.frames[0].inert, true);
+ assert.equal(page.nodes['game-view'].dataset.sessionKind, 'verification-preview');
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ assert.equal(page.verificationOpens(), 0);
 });
 
 for (const hash of ['#/games/alpha', '#game=alpha']) {

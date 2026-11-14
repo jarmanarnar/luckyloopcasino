@@ -199,6 +199,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       document.body.dataset.view = 'lobby'; document.body.dataset.page = 'home';
       pageHeading.focus();
     },
+    openRecentGames() { routeCategory('recent-games'); },
     openCategory(id) { routeCategory(id); },
     openFavorites() { routeCategory('favorites'); },
     openStore() {
@@ -263,7 +264,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   };
   const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
-  const item = id => nodes['menu-navigation'].descendants().find(node => node.dataset.menuCategory === id);
+  const item = id => nodes['menu-content'].descendants().find(node => node.dataset.menuCategory === id);
   const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
   const socialCasino = nodes['menu-navigation'].children[0];
   const casinoItems = socialCasino?.nextSibling;
@@ -314,18 +315,23 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
-  assert.equal(page.item('lobby'), undefined, 'Lobby must not appear in the menu');
+  assert.ok(page.item('lobby'));
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
   assert.equal(page.categoryButtons.has('all'), false);
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
-  assert.equal(page.casinoItems.children.at(-1), page.item('providers'));
+  assert.equal(page.feature('invite-friends').parentElement.nextSibling, page.nodes['menu-navigation']);
+  const providersGroup = page.nodes['menu-navigation'].nextSibling;
+  assert.equal(providersGroup.getAttribute('aria-label'), 'Game providers');
+  assert.deepEqual(providersGroup.children, [page.item('providers')]);
+  assert.equal(page.nodes['menu-navigation'].contains(page.item('providers')), false);
+  assert.equal(page.item('providers').getClientRects().length, 1, 'Providers stays visible with categories closed');
   assert.equal(page.categoryButtons.has('providers'), false);
 });
 
 test('sidebar keeps categories and Search without a Lobby destination', () => {
   const page = menuPage({ desktop: true });
   const popular = page.item('popular');
-  assert.equal(page.item('lobby'), undefined);
+  assert.ok(page.item('lobby'));
   assert.equal(page.item('all'), undefined);
   page.socialCasino.click();
   popular.click();
@@ -548,7 +554,7 @@ test('the mobile daily banner waits for menu closure before opening Daily Bonus'
 test('member destinations navigate after the mobile drawer closes', () => {
   const page = menuPage();
   for (const id of ['vip-club', 'rank-system', 'free-money',
-    'invite-friends', 'partners', 'affiliate-program',
+    'invite-friends', 'affiliate-program',
     'support', 'blog', 'settings']) {
     assert.ok(page.feature(id), `${id} has a dedicated sidebar entry`);
     assert.equal(page.feature(id).dataset.tooltip, page.feature(id).getAttribute('aria-label'));
@@ -566,54 +572,31 @@ test('member destinations navigate after the mobile drawer closes', () => {
   assert.equal(page.document.activeElement, page.pageHeading);
   page.nodes['menu-toggle'].click();
   assert.equal(page.feature('vip-club').getAttribute('aria-current'), 'page');
-  assert.equal(page.item('lobby'), undefined);
+  assert.ok(page.item('lobby'));
 });
 
-test('Favorites appears once above Popular and opens the catalog after closing the mobile drawer', () => {
-  for (const desktop of [true, false]) {
-    const page = menuPage({ desktop, favorites: ['nunchucksr96f100'] });
-    const favorites = page.item('favorites');
-    assert.equal(favorites.hidden, false);
-    assert.equal(page.casinoItems.children[0], favorites);
-    assert.equal(page.casinoItems.children[1], page.item('popular'));
-    assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
-    assert.equal(page.feature('favorites'), undefined, 'Favorites is a casino destination, separate from account tools');
-    page.api.openMenu();
-    page.socialCasino.click();
-    favorites.click();
-    if (!desktop) {
-      assert.equal(page.nodes['site-menu'].open, false);
-      assert.equal(page.calls.includes('category:favorites'), false);
-      page.flushClose();
-      page.api.openMenu();
-    } else page.observers[0].callback();
-    assert.ok(page.calls.includes('category:favorites'));
-    assert.equal(favorites.getAttribute('aria-current'), 'page');
-    assert.equal(page.item('popular').getAttribute('aria-current'), null);
-  }
-});
-
-test('Favorites is absent from desktop and mobile navigation until the first valid saved game and hides after the last removal', () => {
+test('Lobby, Recent Games and Favorite Games occupy one separate group above VIP Club', () => {
   for (const desktop of [true, false]) {
     const page = menuPage({ desktop });
-    const favorites = page.item('favorites');
+    const group = page.item('lobby').parentElement;
+    assert.equal(group.getAttribute('aria-label'), 'Games');
+    assert.equal(group.nextSibling, page.feature('vip-club').parentElement);
+    assert.deepEqual(group.children.map(button => button.getAttribute('aria-label')), ['Lobby', 'Recent Games', 'Favorite Games']);
+    assert.equal(page.casinoItems.contains(page.item('favorites')), false);
+    assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
     page.api.openMenu();
-    page.socialCasino.click();
-    assert.equal(favorites.getClientRects().length, 0);
-    page.setFavorites(['removed-game']);
-    assert.equal(favorites.hidden, true);
-    page.setFavorites(['nunchucksr96f100']);
-    assert.equal(favorites.hidden, false);
-    assert.equal(favorites.getClientRects().length, 1);
-    assert.equal(favorites.nextSibling, page.item('popular'));
-    favorites.focus();
-    page.setFavorites([]);
-    assert.equal(favorites.getClientRects().length, 0);
-    assert.equal(page.document.activeElement, page.item('popular'), 'focus must not remain in a hidden item');
-    assert.equal(page.item('popular').hidden, false);
-    page.setFavorites(['SanQuentin']);
-    assert.equal(favorites.getClientRects().length, 1);
-    assert.equal(page.casinoItems.children.filter(node => node.dataset.menuCategory === 'favorites').length, 1);
+    assert.equal(page.item('favorites').getClientRects().length, 1, 'visible even without saved games');
+    page.item('recent-games').click();
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'category:recent-games');
+    page.api.openMenu();
+    page.item('favorites').click();
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'category:favorites');
+    page.api.openMenu();
+    page.item('lobby').click();
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'home:open');
   }
 });
 
@@ -625,11 +608,11 @@ test('REDEEM opens a separate preview destination instead of performing a transa
   assert.equal(page.calls.includes('store:open'), false);
 });
 
-test('Social Casino opens the desktop rail, toggles the categories in place and restores focus when closing', () => {
+test('Top Categories opens the desktop rail, toggles the categories in place and restores focus when closing', () => {
   const page = menuPage({ desktop: true });
   const { socialCasino, casinoItems } = page;
   assert.equal(socialCasino.dataset.menuDisclosure, 'social-casino');
-  assert.equal(socialCasino.getAttribute('aria-label'), 'Social Casino');
+  assert.equal(socialCasino.getAttribute('aria-label'), 'Top Categories');
   assert.equal(socialCasino.getAttribute('aria-expanded'), 'false');
   assert.equal(socialCasino.getAttribute('aria-controls'), casinoItems.id);
   assert.equal(casinoItems.hidden, true);
@@ -639,7 +622,6 @@ test('Social Casino opens the desktop rail, toggles the categories in place and 
   assert.equal(page.document.body.dataset.sidebar, 'expanded');
   assert.equal(socialCasino.getAttribute('aria-expanded'), 'true');
   assert.equal(page.item('popular').getClientRects().length, 1);
-  assert.equal(page.feature('partners').getAttribute('aria-expanded'), 'false');
 
   page.item('popular').focus();
   socialCasino.click();
@@ -669,58 +651,29 @@ test('mobile Social Casino reveals the active category and respects a manual col
   assert.equal(casinoItems.hidden, true);
 });
 
-test('Partners unfolds in place with only Referral and Affiliate, and keeps hidden children out of focus', () => {
-  const page = menuPage({ desktop: true });
-  page.nodes['menu-toggle'].click();
-  const partners = page.feature('partners');
-  const list = partners.nextSibling;
-  assert.equal(partners.getAttribute('aria-expanded'), 'false');
-  assert.equal(partners.getAttribute('aria-controls'), list.id);
-  assert.equal(list.hidden, true);
-  assert.equal(page.feature('invite-friends').getClientRects().length, 0);
-  assert.deepEqual(list.children.map(item => item.getAttribute('aria-label')), ['Referral', 'Affiliate']);
-  partners.click();
-  assert.equal(list.hidden, false);
-  assert.equal(partners.getAttribute('aria-expanded'), 'true');
-  assert.equal(page.calls.some(call => call.startsWith('feature:')), false);
-  page.feature('invite-friends').focus();
-  partners.click();
-  assert.equal(list.hidden, true);
-  assert.equal(page.document.activeElement, partners);
-});
-
-test('Partners expands from the desktop icon rail and its children close when the rail collapses', () => {
-  const page = menuPage({ desktop: true });
-  const partners = page.feature('partners');
-  partners.click();
-  assert.equal(page.document.body.dataset.sidebar, 'expanded');
-  assert.equal(partners.nextSibling.hidden, false);
-  page.nodes['menu-toggle'].click();
-  assert.equal(page.document.body.dataset.sidebar, 'collapsed');
-  assert.equal(partners.getAttribute('aria-expanded'), 'false');
-  assert.equal(partners.nextSibling.hidden, true);
-});
-
-test('mobile Partners stays in the menu until a child is chosen and reveals the selected destination on return', () => {
-  const page = menuPage();
-  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
-  const partners = page.feature('partners');
-  partners.click();
-  assert.equal(page.nodes['site-menu'].open, true);
-  page.feature('invite-friends').click();
-  assert.equal(page.calls.includes('feature:invite-friends'), false);
-  page.flushClose();
-  assert.equal(page.calls.at(-1), 'feature:invite-friends');
-  page.api.openMenu();
-  assert.equal(partners.getAttribute('aria-expanded'), 'true');
-  assert.equal(page.feature('invite-friends').getAttribute('aria-current'), 'page');
-  partners.click();
-  page.observers[0].callback();
-  assert.equal(partners.nextSibling.hidden, true, 'unrelated state updates must not undo a manual collapse');
-  partners.click();
-  page.feature('affiliate-program').click();
-  page.flushClose();
-  assert.equal(page.calls.at(-1), 'feature:affiliate-program');
+test('Referral and Affiliate are direct rows without a Partners disclosure', () => {
+  for (const desktop of [true, false]) {
+    const page = menuPage({ desktop });
+    const referral = page.feature('invite-friends');
+    const affiliate = page.feature('affiliate-program');
+    assert.equal(page.feature('partners'), undefined);
+    assert.deepEqual(referral.parentElement.children, [referral, affiliate]);
+    assert.equal(referral.getAttribute('aria-expanded'), null);
+    assert.equal(affiliate.getAttribute('aria-expanded'), null);
+    page.api.openMenu();
+    assert.equal(referral.getClientRects().length, 1);
+    assert.equal(affiliate.getClientRects().length, 1);
+    referral.click();
+    if (!desktop) assert.equal(page.calls.includes('feature:invite-friends'), false);
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'feature:invite-friends');
+    page.api.openMenu();
+    if (desktop) page.observers[0].callback();
+    assert.equal(referral.getAttribute('aria-current'), 'page');
+    affiliate.click();
+    page.flushClose();
+    assert.equal(page.calls.at(-1), 'feature:affiliate-program');
+  }
 });
 
 test('How to Play appears immediately below Settings and opens help without changing pages', () => {
@@ -870,7 +823,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
   assert.equal(tooltip.hidden, true);
   sidebar.emit('pointerover', { target: item.children[0] });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Social Casino');
+  assert.equal(tooltip.textContent, 'Top Categories');
   assert.equal(item.getAttribute('aria-describedby'), 'menu-tooltip');
   assert.ok(Number.parseFloat(tooltip.style.left) > item.bounds.right);
   sidebar.emit('pointerout', { target: item, relatedTarget: null });
@@ -879,7 +832,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
 
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Social Casino');
+  assert.equal(tooltip.textContent, 'Top Categories');
   sidebar.emit('focusout', { target: item, relatedTarget: null });
   assert.equal(tooltip.hidden, true);
 });
@@ -1097,4 +1050,23 @@ test('switching to desktop releases mobile background inert state without moving
   assert.equal(page.nodes['site-menu'].open, false);
   page.flushClose();
   assert.equal(page.keydown('Tab').defaultPrevented, false);
+});
+
+test('Lobby loses its current-page highlight while viewing or playing a game', () => {
+  for (const desktop of [true, false]) {
+    const page = menuPage({ desktop });
+    const categories = page.nodes['catalog-categories'];
+    const lobby = page.item('lobby');
+    page.api.openMenu();
+    assert.equal(lobby.getAttribute('aria-current'), 'page');
+    for (const view of ['game-details', 'game']) {
+      page.document.body.dataset.page = view;
+      categories.dataset.activeMenu = '';
+      page.observers[0].callback();
+      assert.equal(lobby.getAttribute('aria-current'), null);
+    }
+    categories.dataset.activeMenu = 'lobby';
+    page.observers[0].callback();
+    assert.equal(lobby.getAttribute('aria-current'), 'page');
+  }
 });

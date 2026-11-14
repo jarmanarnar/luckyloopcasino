@@ -5,7 +5,6 @@ import { initWallet } from './wallet.js';
 import { initCatalogToolbar } from './catalog-toolbar.js';
 import { initSiteMenu } from './site-menu.js';
 import { initHeroCarousel } from './hero-carousel.js';
-import { initSiteSearch } from './site-search.js';
 import { initMobileNav } from './mobile-nav.js';
 import { initRouter } from './routes.js';
 import { initStoreView } from './store-view.js';
@@ -38,11 +37,10 @@ export async function initApplication() {
   const catalog = initCatalogView({ router, member: features.member });
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });
-  const search = initSiteSearch(catalog);
   const help = initHowToPlay({ router });
-  const menu = initSiteMenu({ ...catalog, ...search, ...features, ...help, openStore: store.openStore });
+  const menu = initSiteMenu({ ...catalog, ...features, ...help, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
-  initMobileNav({ ...catalog, ...search, ...features, ...menu, openChat: chat.open });
+  initMobileNav({ ...catalog, ...features, ...menu, openChat: chat.open });
   initHeroCarousel(catalog);
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {

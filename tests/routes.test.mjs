@@ -90,6 +90,7 @@ test('category, provider and search links retain their page and filters after re
   const routes = [
     { type: 'home' },
     { type: 'search', query: '' },
+    { type: 'recent-games', query: 'Dragon', sort: 'recent' },
     { type: 'favorites' },
     { type: 'favorites', query: 'Dragon & luck', providerId: 'netent', sort: 'saved' },
     { type: 'store' },
@@ -148,7 +149,7 @@ test('legacy All Games hash navigation canonicalizes in place and details return
 
 test('game details have their own refresh-safe address and retain a valid shell origin', () => {
   const origins = ['#/', '#/popular?provider=netent', '#/providers/netent?q=gold&sort=az',
-    '#/search?q=nip+%26+tuck&category=slots', '#/favorites?q=gold&provider=netent&sort=az', '#/store', '#/history'];
+    '#/search?q=nip+%26+tuck&category=slots', '#/favorites?q=gold&provider=netent&sort=az', '#/recent-games', '#/store', '#/history'];
   for (const from of origins) {
     const details = { type: 'game-details', gameId: 'niptuck000000000', from };
     const hash = formatRoute(details);
@@ -190,6 +191,23 @@ test('active game URLs remain compatible and may return to their pre-game detail
   const router = initRouter({ window: page.scope });
   router.back(parseRoute(router.getRoute().from)); page.flush();
   assert.deepEqual(router.getRoute(), details);
+});
+
+test('provider Back restores the source entry and falls back to the lobby on direct entry', () => {
+  const details = { type: 'game-details', gameId: 'nunchucksr96f100', from: '#/popular' };
+  const provider = { type: 'provider', providerId: 'netent' };
+  const home = { type: 'home' };
+  for (const source of [details, { type: 'providers' }]) {
+    const page = browser(formatRoute(source));
+    const router = initRouter({ window: page.scope });
+    router.navigate(provider);
+    router.navigate({ ...provider, query: 'gold' }, { replace: true });
+    router.back(home); page.flush();
+    assert.deepEqual(router.getRoute(), source);
+  }
+  const direct = initRouter({ window: browser(formatRoute(provider)).scope });
+  direct.back(home);
+  assert.deepEqual(direct.getRoute(), home);
 });
 
 test('Store has an independent refresh-safe address and returns through browser history', () => {

@@ -8,7 +8,7 @@ import { createGameArt } from './game-artwork-view.js';
 
 let controller;
 const SHELF_GAME_LIMIT = 24;
-const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved' };
+const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved', recent: 'Recently played' };
 
 export function getShelfScrollTarget(track, direction, position = track.scrollLeft) {
   const first = track.firstElementChild;
@@ -76,6 +76,7 @@ export function initCatalogView({ router, member } = {}) {
   const more = document.querySelector('#catalog-more');
   const empty = document.querySelector('#catalog-empty');
   const header = document.querySelector('#catalog-page-header');
+  const back = document.querySelector('#catalog-page-back');
   const title = document.querySelector('#catalog-page-title');
   const controls = document.querySelector('#catalog-page-controls');
   const input = document.querySelector('#catalog-page-search-input');
@@ -89,13 +90,14 @@ export function initCatalogView({ router, member } = {}) {
   const details = document.querySelector('#catalog-provider-details');
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
-  if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
+  if (!router || ![root, shelves, categories, more, empty, header, back, title, controls, input,
     providerSelect, categorySelect, sortSelect, pagination, count, details, lobbySearch, lobbyInput].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', lobbyQuery = '';
   const viewKey = route => JSON.stringify(route.type === 'home' ? { ...route, query: lobbyQuery } : route);
-  let favoriteKey = JSON.stringify(member?.getState().favorites || []);
+  const collectionKey = (type, state = member?.getState()) => JSON.stringify(type === 'favorites' ? state?.favorites || [] : state?.history || []);
+  const collectionKeys = new Map(['favorites', 'recent-games'].map(type => [type, collectionKey(type)]));
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
   categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)));
@@ -202,7 +204,10 @@ export function initCatalogView({ router, member } = {}) {
   }
   function render(route, meta = {}) {
     window.clearTimeout(inputTimer);
-    if (route.type === 'game') return;
+    if (route.type === 'game') {
+      categories.dataset.activeMenu = '';
+      return;
+    }
     if (['store', 'feature', 'game-details'].includes(route.type)) {
       root.hidden = true;
       hero.hidden = true;
@@ -214,15 +219,17 @@ export function initCatalogView({ router, member } = {}) {
     }
     const home = route.type === 'home';
     if (!home) { lobbyQuery = ''; lobbyInput.value = ''; }
-    const favoriteIds = member?.getState().favorites || [];
-    const model = getCatalogPage(home && lobbyQuery ? { type: 'search', query: lobbyQuery } : route, { favoriteIds });
+    const { favorites: favoriteIds, history } = member?.getState() || {};
+    const model = getCatalogPage(home && lobbyQuery ? { type: 'search', query: lobbyQuery } : route, { favoriteIds, history });
     const favorites = model.type === 'favorites';
+    if (collectionKeys.has(model.type)) collectionKeys.set(model.type, collectionKey(model.type));
     document.body.dataset.page = home ? 'home' : model.type;
     root.hidden = false;
     hero.hidden = toolbar.hidden = !home;
     lobbySearch.hidden = !home;
     header.hidden = home;
     controls.hidden = home || model.type === 'not-found';
+    back.setAttribute('aria-label', route.type === 'provider' ? 'Back' : 'Back to lobby');
     title.textContent = model.title;
     document.title = home ? 'LuckyLoop Casino' : `${model.title} · LuckyLoop Casino`;
     categories.dataset.activeMenu = home ? 'lobby' : model.activeMenu;
@@ -232,7 +239,7 @@ export function initCatalogView({ router, member } = {}) {
     if (input.value !== (route.query || '')) input.value = route.query || '';
     input.placeholder = model.type === 'providers' ? 'Search providers' : 'Search games';
     input.setAttribute('aria-label', input.placeholder);
-    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search', 'favorites'].includes(model.type);
+    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search', 'favorites', 'recent-games'].includes(model.type);
     categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
     sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
     providerSelect.value = route.providerId || '';
@@ -242,8 +249,9 @@ export function initCatalogView({ router, member } = {}) {
     providerDetails(model.type === 'provider' ? model.provider : null);
     renderedRoute = route;
     const key = viewKey(route);
-    if (key === renderedKey) return;
-    renderedKey = key;
+    const contentKey = JSON.stringify([key, collectionKeys.get(model.type)]);
+    if (contentKey === renderedKey) return;
+    renderedKey = contentKey;
     tracks.clear();
     empty.className = 'catalog-empty';
     empty.replaceChildren();
@@ -270,7 +278,7 @@ export function initCatalogView({ router, member } = {}) {
         section.append(heading);
       }
       const track = node('ul', `${providers ? 'provider-track' : 'game-track'} is-grid`);
-      track.setAttribute('aria-label', providers ? 'Game providers' : `${model.title} games`);
+      track.setAttribute('aria-label', providers ? 'Game providers' : model.title);
       track.dir = 'ltr';
       track.append(...slice.visible.map(item => providers ? providerCard(item) : gameCard(item, 'results')));
       section.append(track);
@@ -281,9 +289,17 @@ export function initCatalogView({ router, member } = {}) {
         empty.className = 'catalog-empty catalog-empty--favorites';
         const browse = node('button', 'text-control', noSavedGames ? 'Explore games' : 'Clear filters');
         browse.type = 'button';
-        browse.dataset.favoritesEmptyAction = noSavedGames ? 'browse' : 'clear';
+        browse.dataset.catalogEmptyAction = noSavedGames ? 'browse' : 'clear';
         empty.append(node('h2', '', noSavedGames ? 'Your favorites start here' : 'No matching favorites'),
           node('p', '', noSavedGames ? 'Save games with the heart to keep them all in one place.' : 'Try a different search or provider.'), browse);
+      } else if (model.type === 'recent-games' && !items.length) {
+        const noRecentGames = model.recentCount === 0;
+        empty.className = 'catalog-empty catalog-empty--favorites';
+        const browse = node('button', 'text-control', noRecentGames ? 'Explore games' : 'Clear filters');
+        browse.type = 'button';
+        browse.dataset.catalogEmptyAction = noRecentGames ? 'browse' : 'clear';
+        empty.append(node('h2', '', noRecentGames ? 'No recent games yet' : 'No matching recent games'),
+          node('p', '', noRecentGames ? 'Games you open while signed in will appear here.' : 'Try a different search or provider.'), browse);
       } else empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
       const noun = providers ? 'providers' : slice.total === 1 ? 'game' : 'games';
       count.textContent = slice.hasMore ? `Showing ${slice.visible.length} of ${slice.total} ${noun}` : `${slice.total} ${noun}`;
@@ -297,6 +313,7 @@ export function initCatalogView({ router, member } = {}) {
   }
   const openHome = () => router.navigate({ type: 'home' });
   const openCategory = id => router.navigate({ type: 'category', categoryId: id });
+  const openRecentGames = () => router.navigate({ type: 'recent-games' });
   const openFavorites = () => router.navigate({ type: 'favorites' });
   const openProviders = () => router.navigate({ type: 'providers' });
   const openProvider = id => router.navigate({ type: 'provider', providerId: id });
@@ -325,12 +342,15 @@ export function initCatalogView({ router, member } = {}) {
         behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     }
   });
-  document.querySelector('#catalog-page-back').addEventListener('click', openHome);
+  back.addEventListener('click', () => {
+    if (router.getRoute().type === 'provider') router.back({ type: 'home' });
+    else openHome();
+  });
   empty.addEventListener('click', event => {
-    const action = event.target.closest('[data-favorites-empty-action]');
+    const action = event.target.closest('[data-catalog-empty-action]');
     if (!action) return;
-    if (action.dataset.favoritesEmptyAction === 'browse') openSearch();
-    else router.navigate({ type: 'favorites' }, { replace: true });
+    if (action.dataset.catalogEmptyAction === 'browse') openSearch();
+    else router.navigate({ type: router.getRoute().type }, { replace: true });
   });
   more.addEventListener('click', () => {
     const key = viewKey(renderedRoute);
@@ -341,7 +361,7 @@ export function initCatalogView({ router, member } = {}) {
   });
   function updateFilters(changes) {
     const route = router.getRoute();
-    if (!['category', 'provider', 'providers', 'search', 'favorites'].includes(route.type)) return;
+    if (!['category', 'provider', 'providers', 'search', 'favorites', 'recent-games'].includes(route.type)) return;
     router.navigate({ ...route, ...changes }, { replace: true, preserveScroll: true, focus: false });
   }
   function searchLobby() {
@@ -377,15 +397,16 @@ export function initCatalogView({ router, member } = {}) {
     updateArrows(track);
   })).observe(shelves);
   member?.subscribe(() => {
-    const key = JSON.stringify(member.getState().favorites);
-    if (key === favoriteKey) return;
-    favoriteKey = key;
-    if (router.getRoute().type !== 'favorites') return;
+    const route = router.getRoute();
+    if (!collectionKeys.has(route.type)) return;
+    const key = collectionKey(route.type);
+    if (key === collectionKeys.get(route.type)) return;
+    collectionKeys.set(route.type, key);
     renderedKey = '';
-    render(router.getRoute(), { focus: false });
+    render(route, { focus: false });
   });
   router.subscribe(render);
   render(router.getRoute(), { source: 'initial', focus: false });
-  controller = { openHome, openCategory, openFavorites, openProviders, openProvider, openStore, openSearch, searchGames };
+  controller = { openHome, openRecentGames, openCategory, openFavorites, openProviders, openProvider, openStore, openSearch, searchGames };
   return controller;
 }

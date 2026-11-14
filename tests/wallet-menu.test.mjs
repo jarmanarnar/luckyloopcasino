@@ -8,7 +8,7 @@ async function menuPage() {
   const account = await openDemoAccount({ indexedDB: new IDBFactory(), scope: undefined });
   await account.register({ email: 'wallet-menu@example.test', password: 'WalletMenu37!', accepted: true });
   const ids = ['header-wallet-controls', 'wallet-currency-menu', 'coin-type-switch', 'currency-coin',
-    'wallet-hide-balance', 'wallet-menu-status', 'header-avatar', 'header-buy-coins',
+    'wallet-hide-balance', 'wallet-menu-status', 'header-avatar',
     ...['GC', 'SC'].flatMap(code => [`wallet-row-${code}`, `wallet-select-${code}`, `wallet-amount-${code}`])];
   const nodes = Object.fromEntries(ids.map(id => [id, {
     hidden: id === 'wallet-currency-menu', attributes: {}, dataset: {}, listeners: {}, textContent: '',
@@ -19,13 +19,13 @@ async function menuPage() {
     click() { return this.listeners.click?.(); },
   }]));
   nodes['header-wallet-controls'].contains = target => Object.values(nodes).includes(target);
-  const events = {}, routes = [], stores = [];
+  const events = {}, routes = [];
   const menu = initWalletMenu({ account,
     document: { querySelector: selector => nodes[selector.slice(1)], addEventListener: (key, callback) => { events[key] = callback; } },
     router: { subscribe: callback => routes.push(callback) },
-    selectCurrency: code => account.selectCurrency(code), openStore: () => stores.push('store'),
+    selectCurrency: code => account.selectCurrency(code),
   });
-  return { account, nodes, events, stores, menu, route: () => routes.forEach(callback => callback()) };
+  return { account, nodes, events, menu, route: () => routes.forEach(callback => callback()) };
 }
 
 test('currency menu uses real balances, masks both currencies and preserves the ledger and other settings', async () => {
@@ -51,12 +51,10 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     assert.equal(nodes['wallet-amount-SC'].textContent, '••••••');
     assert.equal(nodes['coin-type-switch'].attributes['aria-label'], 'SC balance hidden. Choose currency');
     assert.doesNotMatch(nodes['wallet-select-SC'].attributes['aria-label'], /15\.00/);
-    nodes['header-buy-coins'].click();
-    assert.deepEqual(page.stores, ['store']);
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
     assert.deepEqual(account.getSnapshot().wallet.balances, balances);
     assert.deepEqual(account.getSnapshot().ledger, ledger);
-    assert.equal(nodes['wallet-currency-menu'].hidden, true);
+    assert.equal(nodes['wallet-currency-menu'].hidden, false);
   } finally { page.account.close(); }
 });
 
@@ -77,10 +75,6 @@ test('wallet menu supports keyboard entry, Escape, outside dismissal, routing an
     assert.equal(nodes['wallet-currency-menu'].hidden, true);
     menu.toggle();
     page.route();
-    assert.equal(nodes['wallet-currency-menu'].hidden, true);
-    menu.toggle();
-    nodes['header-buy-coins'].click();
-    assert.deepEqual(page.stores, ['store']);
     assert.equal(nodes['wallet-currency-menu'].hidden, true);
     menu.toggle();
     await page.account.logout();

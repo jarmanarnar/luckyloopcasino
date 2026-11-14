@@ -130,8 +130,14 @@ html:has(#site-menu[open]) { overflow: hidden; }
   cursor: pointer;
 }
 .site-menu__shortcut svg { display: none; flex: none; width: 1.25rem; height: 1.25rem; }
-.site-menu__shortcut:enabled:hover { background: var(--control-hover); }
-.site-menu__shortcut:disabled { color: var(--text-secondary); cursor: default; }
+.site-menu__shortcut--redeem {
+  --primary-button-border: #6bb8ff;
+  --primary-button-top: #4b9cff;
+  --primary-button-bottom: #84caff;
+  --primary-button-edge: #2869bb;
+  --primary-button-ink: #061322;
+}
+.site-menu__shortcut:disabled { opacity: .5; cursor: default; }
 
 .site-menu__scroll {
   box-sizing: border-box;
@@ -223,12 +229,10 @@ html:has(#site-menu[open]) { overflow: hidden; }
 .site-menu__item .game-shelf__icon { flex: none; width: 1.25rem; height: 1.25rem; color: var(--text-secondary); }
 .site-menu__item:hover { background: var(--control-hover); color: var(--text-primary); }
 .site-menu__item[aria-current="page"] { background: var(--control-hover); color: var(--text-primary); }
-.site-menu__item:hover .game-shelf__icon,
+.site-menu__item:not([data-menu-disclosure]):hover .game-shelf__icon,
 .site-menu__item[aria-current="page"] .game-shelf__icon { color: var(--text-primary); }
 .site-menu__chevron { flex: none; width: 1rem; height: 1rem; margin-left: auto; color: var(--text-secondary); transition: transform 180ms ease; }
 .site-menu__item[aria-expanded="true"] .site-menu__chevron { transform: rotate(180deg); }
-.site-menu__item[aria-expanded="true"] > .game-shelf__icon,
-.site-menu__item[data-child-active="true"] > .game-shelf__icon { color: var(--catalog-accent); }
 .site-menu__subitems { margin: .25rem .5rem 0; padding-top: .25rem; border-top: 1px solid var(--control-hover); }
 .site-menu__subitems .site-menu__item { padding-inline: .25rem; }
 

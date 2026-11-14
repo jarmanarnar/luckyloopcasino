@@ -11,7 +11,7 @@ test('Favorites uses only saved, available games with its own search, provider f
   const favoriteIds = ['nunchucksr96f100', 'SanQuentin', 'ouija00000000000', 'removed-game', 'SanQuentin'];
   const before = [...favoriteIds];
   const page = getCatalogPage({ type: 'favorites' }, { favoriteIds });
-  assert.equal(page.title, 'Favorites');
+  assert.equal(page.title, 'Favorite Games');
   assert.equal(page.activeMenu, 'favorites');
   assert.equal(page.type, 'favorites');
   assert.equal(page.sort, 'saved');
@@ -48,7 +48,7 @@ test('home remains a lobby with Popular, Slots and New Releases in the requested
 test('Search is the complete searchable catalog distinct from the Lobby overview', () => {
   const page = getCatalogPage({ type: 'search', query: '' });
   assert.equal(page.type, 'search');
-  assert.equal(page.title, 'Search games');
+  assert.equal(page.title, 'Games');
   assert.equal(page.activeMenu, 'search');
   assert.equal(page.games.length, GAMES.length);
   assert.equal(pageSlice(page.games).visible.length, PAGE_SIZE);
@@ -106,7 +106,7 @@ test('provider directory search and individual provider pages have separate iden
 test('search is its own page and can find names across studios or restrict a category', () => {
   const page = getCatalogPage({ type: 'search', query: '  DRAGON  ', providerId: 'taparoo' });
   assert.equal(page.type, 'search');
-  assert.equal(page.title, 'Search games');
+  assert.equal(page.title, 'Games');
   assert.equal(page.activeMenu, 'search');
   assert.deepEqual(ids(page), ['dragonslucktapar']);
 
@@ -208,4 +208,23 @@ test('New Releases contains actual catalog entries with release dates and defaul
   assert.ok(page.games.every(game => GAMES.includes(game)));
   assert.equal(page.games.some(game => game.id === 'gonzosqumegaways'), false,
     'older games outside the latest 100 must not enter New Releases');
+});
+
+test('Recent Games uses actual play history, latest first, without duplicates', () => {
+  const history = [
+    { type: 'game', gameId: 'SanQuentin' },
+    { type: 'game', gameId: 'ouija00000000000' },
+    { type: 'reward', gameId: 'nunchucksr96f100' },
+    { type: 'game', gameId: 'removed-game' },
+    { type: 'game', gameId: 'SanQuentin' },
+  ];
+  const page = getCatalogPage({ type: 'recent-games' }, { history });
+  assert.equal(page.title, 'Recent Games');
+  assert.equal(page.activeMenu, 'recent-games');
+  assert.equal(page.sort, 'recent');
+  assert.deepEqual(ids(page), ['SanQuentin', 'ouija00000000000']);
+  const filtered = getCatalogPage({ type: 'recent-games', query: 'Ouija' }, { history });
+  assert.deepEqual(ids(filtered), ['ouija00000000000']);
+  assert.equal(filtered.recentCount, 2);
+  assert.deepEqual(ids(getCatalogPage({ type: 'recent-games' })), []);
 });

@@ -70,6 +70,7 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
     CATEGORIES: [{ id: 'all', title: 'All Games' }, { id: 'popular', title: 'Popular' }, { id: 'slots', title: 'Slots' }],
     LEGACY_CATEGORIES: [], GAME_TYPES: [{ id: 'slots', title: 'Slots' }],
     getGameTypeId: () => 'slots', getGameCategoryIds: () => ['all', 'popular', 'slots'],
+    getGamesForCategory: id => id === 'popular' ? [games[2], games[0], games[1]] : [],
     getGameReleaseDate: game => game.id === 'beta' ? '2026-01-15' : null,
     createShelfIcon: () => document.createElement('svg'),
     fetch() { throw Error('Pre-game details cannot load provider resources'); },
@@ -178,10 +179,40 @@ test('related games retain the originating collection and removed game links can
   assert.equal(page.route.gameId, 'beta');
   assert.equal(page.route.from, '#/popular');
   assert.ok(page.byText('h1', 'Beta'));
-  assert.equal(page.descendants().some(node => node.dataset.game === 'gamma'), false, 'related games stay within the provider');
+  assert.equal(page.descendants().some(node => node.dataset.game === 'gamma'), true, 'Popular spans providers');
   page.router.navigate({ type: 'game-details', gameId: 'removed' });
   assert.equal(page.route.type, 'home');
   assert.equal(page.navigations.at(-1).options.replace, true);
   assert.equal(page.root.hidden, true);
   assert.equal(page.created.some(node => node.tagName === 'iframe'), false);
+});
+
+test('collapsed details identify the game and Popular retains editorial order, excludes current game and has a working All link', () => {
+  const page = detailsPage();
+  const summary = page.descendants().find(node => node.tagName === 'summary');
+  assert.equal(summary.textContent, 'AlphaBy Studio');
+  const providerLink = page.descendants(summary).find(node => node.tagName === 'a');
+  assert.equal(providerLink.href, '#/providers/studio');
+  assert.equal(providerLink.textContent, 'Studio');
+  assert.ok(page.descendants(summary).some(node => node.className === 'game-details-disclosure'));
+  assert.equal(page.descendants().find(node => node.tagName === 'details').open, undefined);
+  const cards = page.descendants().filter(node => node.dataset.game).map(node => node.dataset.game);
+  assert.deepEqual(cards, ['gamma', 'beta']);
+  const list = page.descendants().find(node => node.getAttribute('aria-label') === 'Popular games');
+  assert.equal(list.tabIndex, 0);
+  const all = page.byText('a', 'All');
+  assert.equal(all.href, '#/popular');
+  all.emit('click');
+  assert.equal(page.route.type, 'category');
+  assert.equal(page.route.categoryId, 'popular');
+});
+
+test('collapsed game provider is independently navigable without opening the disclosure', () => {
+  const page = detailsPage();
+  const summary = page.descendants().find(node => node.tagName === 'summary');
+  const link = page.descendants(summary).find(node => node.tagName === 'a');
+  assert.equal(link.emit('click', { ctrlKey: true }).defaultPrevented, false);
+  assert.equal(link.emit('click').defaultPrevented, true);
+  assert.equal(page.route.type, 'provider');
+  assert.equal(page.route.providerId, 'studio');
 });

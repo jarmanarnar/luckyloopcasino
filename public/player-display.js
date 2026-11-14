@@ -5,32 +5,14 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   const menuFullscreenLabel = doc.querySelector('#profile-game-fullscreen-label');
   const profileMenu = doc.querySelector('#profile-menu');
   if (!theater || !fullscreen) return { reset() {}, setGame() {} };
-  const sidebar = doc.querySelector('.site-sidebar');
   // The page, including its original header and popovers, enters fullscreen together.
   const fullscreenTarget = doc.documentElement;
   const mobileMedia = win?.matchMedia('(max-width: 719px), (max-width: 1024px) and (max-height: 719px)');
   let opened = false, wide = false, fallback = false, busy = false, generation = 0;
-  let priorSidebar = null, mobileSession = false;
+  let mobileSession = false;
   const nativeFullscreen = () => Boolean(fullscreenTarget) && doc.fullscreenElement === fullscreenTarget;
   const isMobile = () => Boolean(mobileMedia?.matches) || (mobileSession && (nativeFullscreen() || busy));
   const supportsFullscreen = () => Boolean(fullscreenTarget?.requestFullscreen) && doc.fullscreenEnabled !== false;
-
-  function setWide(value) {
-    if (value && !wide) {
-      priorSidebar = { body: doc.body.dataset.sidebar, expanded: sidebar?.dataset.expanded };
-      doc.body.dataset.sidebar = 'collapsed';
-      if (sidebar) sidebar.dataset.expanded = 'false';
-    } else if (!value && wide && priorSidebar) {
-      if (priorSidebar.body === undefined) delete doc.body.dataset.sidebar;
-      else doc.body.dataset.sidebar = priorSidebar.body;
-      if (sidebar) {
-        if (priorSidebar.expanded === undefined) delete sidebar.dataset.expanded;
-        else sidebar.dataset.expanded = priorSidebar.expanded;
-      }
-      priorSidebar = null;
-    }
-    wide = value;
-  }
 
   function render() {
     const mobile = isMobile(), full = nativeFullscreen() || fallback;
@@ -90,14 +72,14 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   function reset() {
     generation++;
     opened = false;
-    setWide(false);
+    wide = false;
     fallback = false;
     void leaveFullscreen();
     render();
   }
   theater.addEventListener('click', () => {
     if (isMobile()) return;
-    setWide(!wide);
+    wide = !wide;
     render();
   });
   fullscreen.addEventListener('click', toggleFullscreen);
@@ -106,7 +88,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     return toggleFullscreen();
   });
   mobileMedia?.addEventListener('change', () => {
-    if (isMobile()) { setWide(false); fallback = false; }
+    if (isMobile()) { wide = false; fallback = false; }
     render();
   });
   doc.addEventListener('fullscreenchange', () => {
@@ -118,7 +100,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     event.preventDefault();
     void leaveFullscreen();
     fallback = false;
-    setWide(false);
+    wide = false;
     render();
   });
   render();

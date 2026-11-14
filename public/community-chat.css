@@ -82,7 +82,6 @@ html:has(body[data-chat-modal="true"]) { overflow: hidden; }
   body[data-chat="open"] { padding-right: var(--chat-width); }
   body[data-chat] .top-bar { transition: left var(--sidebar-duration) var(--sidebar-easing),right 240ms var(--sidebar-easing); }
   body[data-chat="open"] .top-bar { right: var(--chat-width); }
-  body[data-chat="open"] .header-rewards > span { display: none; }
 }
 @media (width < 45rem) {
   .community-chat { width: 100%; border-left: 0; }

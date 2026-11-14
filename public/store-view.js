@@ -66,7 +66,7 @@ export function initStoreView({ router, account, auth, verifyPhone } = {}) {
   });
 
   const desktop = window.matchMedia('(min-width: 45rem)');
-  const entryPoints = document.querySelectorAll('#header-buy-coins, #menu-buy, #wallet-add');
+  const entryPoints = document.querySelectorAll('#menu-buy, #wallet-add');
   function syncEntryPoints() {
     for (const button of entryPoints) {
       button.setAttribute('aria-controls', desktop.matches ? storeDialog.id : view.id);

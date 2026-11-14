@@ -15,9 +15,9 @@ function fixture(native = true, mobile = false) {
  return {view,root,header,theater,fullscreen,sidebar,doc,api,media,menuFullscreen,menuLabel};
 }
 
-test('theater collapses only sidebar and restores it; fullscreen is separate',async()=>{
+test('theater expands in-page without changing sidebar preference; fullscreen is separate',async()=>{
  const p=fixture();p.theater.handlers.click();
- assert.equal(p.view.dataset.theater,'true');assert.equal(p.sidebar.dataset.expanded,'false');assert.equal(p.doc.fullscreenElement,null);
+ assert.equal(p.view.dataset.theater,'true');assert.equal(p.sidebar.dataset.expanded,'true');assert.equal(p.doc.body.dataset.sidebar,'expanded');assert.equal(p.doc.fullscreenElement,null);
  await p.fullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,p.root);
  await p.fullscreen.handlers.click();assert.equal(p.doc.fullscreenElement,null);assert.equal(p.view.dataset.theater,'true');
  p.api.reset();assert.equal(p.doc.body.dataset.sidebar,'expanded');assert.equal(p.sidebar.dataset.expanded,'true');
@@ -58,7 +58,7 @@ test('mobile without a fullscreen API or after a rejection stays immersive witho
  }
 });
 
-test('resizing desktop theater into mobile restores sidebar preferences and closes immersive layout on exit', () => {
+test('resizing desktop theater into mobile clears theater without changing sidebar preference', () => {
  const p=fixture();p.api.setGame({title:'Game'});p.theater.handlers.click();
  p.media.matches=true;p.media.change();
  assert.equal(p.doc.body.dataset.playerMobile,'true');assert.equal(p.view.dataset.theater,'false');

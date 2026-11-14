@@ -1,6 +1,6 @@
 import { CURRENCIES, formatBalance } from './wallet-state.js';
 
-export function initWalletMenu({ account, router, openStore, selectCurrency, document: doc = document } = {}) {
+export function initWalletMenu({ account, router, selectCurrency, document: doc = document } = {}) {
   const shell = doc.querySelector('#header-wallet-controls');
   const panel = doc.querySelector('#wallet-currency-menu');
   const trigger = doc.querySelector('#coin-type-switch');
@@ -67,7 +67,6 @@ export function initWalletMenu({ account, router, openStore, selectCurrency, doc
   for (const [code, option] of options) {
     option.button.addEventListener('click', () => save(() => selectCurrency(code), true));
   }
-  doc.querySelector('#header-buy-coins').addEventListener('click', () => { close(); openStore?.(); });
   hide.addEventListener('click', () => save(() => account.saveSettings({ hideBalance: !account.getMemberState().settings.hideBalance })));
   trigger.addEventListener('keydown', event => {
     if (event.key !== 'ArrowDown') return;

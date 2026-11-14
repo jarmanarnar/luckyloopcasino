@@ -1,11 +1,10 @@
 import { CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
-import { getFavoriteGames } from './catalog-page-model.js';
 
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
+export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -87,49 +86,51 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
     return list;
   }
 
-  const casinoButton = menuButton('table', 'Social Casino');
+  const casinoButton = menuButton('table', 'Top Categories');
   const casinoList = createDisclosure('social-casino', casinoButton);
   navigation.replaceChildren(casinoButton, casinoList);
-  const menuItems = [{ id: 'favorites', title: 'Favorites' }, ...CATEGORIES, { id: 'providers', title: 'Providers' }];
-  for (const category of menuItems) {
-    if (!['favorites', 'providers'].includes(category.id) && getGamesForCategory(category.id).length === 0) continue;
+  for (const category of CATEGORIES) {
+    if (getGamesForCategory(category.id).length === 0) continue;
     const button = menuButton(category.id, category.title);
     button.dataset.menuCategory = category.id;
     casinoList.append(button);
     items.set(category.id, button);
   }
-  function syncFavorites() {
-    const button = items.get('favorites');
-    button.hidden = getFavoriteGames(member?.getState?.().favorites || []).length === 0;
-    if (button.hidden) {
-      if (tooltipTarget === button) hideTooltip();
-      if (document.activeElement === button) items.get('popular')?.focus({ preventScroll: true });
-    }
+  const providersButton = menuButton('providers', 'Providers');
+  providersButton.dataset.menuCategory = 'providers';
+  const providersNavigation = document.createElement('nav');
+  providersNavigation.className = 'site-menu__navigation site-menu__feature-group';
+  providersNavigation.setAttribute('aria-label', 'Game providers');
+  providersNavigation.append(providersButton);
+  items.set('providers', providersButton);
+
+  const gamesNavigation = document.createElement('nav');
+  gamesNavigation.className = 'site-menu__navigation site-menu__feature-group';
+  gamesNavigation.setAttribute('aria-label', 'Games');
+  for (const [id, title, icon] of [
+    ['lobby', 'Lobby', 'lobby'], ['recent-games', 'Recent Games', 'history'], ['favorites', 'Favorite Games', 'favorites'],
+  ]) {
+    const button = menuButton(icon, title);
+    button.dataset.menuCategory = id;
+    items.set(id, button);
+    gamesNavigation.append(button);
   }
-  member?.subscribe(syncFavorites);
-  syncFavorites();
+  menuContent.append(gamesNavigation);
 
   // Separate destinations keep rewards and account tools out of the casino catalog.
   const featureGroups = [
     { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
     { label: 'Free Money', items: [['free-money', 'Free Money']] },
-    { label: 'Partners', disclosure: 'partners', items: [['partners', 'Partners'], ['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
+    { label: 'Referral and affiliate', beforeCatalog: true, items: [['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
     { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
   ];
   for (const group of featureGroups) {
     const section = document.createElement('nav');
     section.className = `site-menu__navigation site-menu__feature-group${group.plain ? ' site-menu__navigation--plain' : ''}`;
     section.setAttribute('aria-label', group.label);
-    let list = section;
-    for (const [id, title] of group.items) {
-      const button = featureButton(id, title);
-      list.append(button);
-      if (id === group.disclosure) {
-        list = createDisclosure(id, button);
-        section.append(list);
-      }
-    }
+    for (const [id, title] of group.items) section.append(featureButton(id, title));
     menuContent.append(section);
+    if (group.beforeCatalog) menuContent.append(navigation, providersNavigation);
   }
   if (redeemButton) redeemButton.disabled = false;
   let dailyTimer;
@@ -169,7 +170,7 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
 
   function syncMenu() {
     const selected = categories.dataset.activeMenu
-      || categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category || 'lobby';
+      ?? categories.querySelector('[data-category][aria-pressed="true"]')?.dataset.category ?? 'lobby';
     for (const [id, button] of items) {
       if (id === selected) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
@@ -306,7 +307,9 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
   }
 
   function chooseCategory(id) {
-    if (id === 'favorites') closeMenu(() => openFavorites?.());
+    if (id === 'lobby') closeMenu(() => openHome?.());
+    else if (id === 'recent-games') closeMenu(() => openRecentGames?.());
+    else if (id === 'favorites') closeMenu(() => openFavorites?.());
     else if (id === 'providers') closeMenu(() => openProviders?.());
     else closeMenu(() => openCategory?.(id));
   }
@@ -337,10 +340,10 @@ export function initSiteMenu({ openCategory, openFavorites, openProviders, openS
       } else closeMenu(() => openFeature?.(item.dataset.menuFeature));
     }
   });
-  navigation.addEventListener('click', event => {
+  menuContent.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const item = event.target.closest('[data-menu-category]');
-    if (item && navigation.contains(item) && items.has(item.dataset.menuCategory)) chooseCategory(item.dataset.menuCategory);
+    if (item && items.get(item.dataset.menuCategory) === item) chooseCategory(item.dataset.menuCategory);
   });
   dialog.addEventListener('cancel', event => {
     event.preventDefault();

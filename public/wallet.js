@@ -38,7 +38,7 @@ export function initWallet({ openStore, account, router } = {}) {
   let layoutFrame = null;
   let fontsChanged = false;
   const menu = document.querySelector('#wallet-currency-menu')
-    ? initWalletMenu({ account, router, openStore, selectCurrency: changeCurrency }) : null;
+    ? initWalletMenu({ account, router, selectCurrency: changeCurrency }) : null;
 
   function readLayout() {
     const outer = getComputedStyle(wallet);
