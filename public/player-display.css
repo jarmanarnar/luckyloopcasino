@@ -96,6 +96,22 @@ body:not([data-player-mobile="true"]) .game-view[data-mobile="true"][data-compac
 .game-view[data-compact-preplay="true"] .game-preplay__card {
   width: 100%; background: var(--surface-card);
 }
+/* Keep the compact title beside the disclosure; its answer still spans the card. */
+.game-view[data-compact-preplay="true"] .game-preplay__heading {
+  float: inline-start; margin-inline-end: .75rem; text-align: start; line-height: 2rem;
+}
+.game-view[data-compact-preplay="true"] .game-coin-info summary {
+  justify-content: flex-end; padding-inline: 0; white-space: nowrap;
+}
+.game-view[data-compact-preplay="true"] .game-coin-info p,
+.game-view[data-compact-preplay="true"] .game-preplay__actions { clear: both; }
+@media (max-width: 374px) {
+  .game-view[data-compact-preplay="true"] .game-preplay__heading { margin-inline-end: .5rem; font-size: 1rem; }
+  .game-view[data-compact-preplay="true"] .game-coin-info { font-size: .75rem; }
+}
+@media (max-width: 339px) {
+  .game-view[data-compact-preplay="true"] .game-preplay__heading { font-size: .875rem; }
+}
 .game-view[data-compact-preplay="true"] .game-preplay__meta {
   display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr 1fr; column-gap: 1rem; row-gap: .375rem; min-width: 0;
   margin-bottom: 1.25rem; text-align: start;
