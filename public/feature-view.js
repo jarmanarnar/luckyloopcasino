@@ -93,9 +93,6 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
     const isFeature = route.type === 'feature' && isFeaturePage(route.pageId);
     root.hidden = !isFeature;
     currentPage = isFeature ? route.pageId : null;
-    if (route.type === 'game' && games.has(route.gameId)) {
-      if (account.isSignedIn()) void save(() => account.recordGameVisit(games.get(route.gameId)));
-    }
     if (!isFeature) return;
     const page = FEATURE_PAGES[currentPage];
     header.className = page.showHeader ? 'feature-header' : 'feature-header visually-hidden';

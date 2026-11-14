@@ -7,6 +7,7 @@ import { watchGameReady } from './game-ready.js';
 import { formatRoute, parseRoute } from './routes.js';
 
 const games = new Map(GAMES.map(game => [game.id, game]));
+const COMPACT_PREPLAY_WIDTH = 576;
 
 let initialized = false;
 let gameController = null;
@@ -61,6 +62,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       view.dataset.previewReady = 'true';
       return;
     }
+    const failed = view.dataset.loadState === 'error';
     pendingReady = null;
     delete view.dataset.previewReady;
     stopLoadingWatch();
@@ -74,6 +76,13 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     if (loading.contains(document.activeElement)) view.focus({ preventScroll: true });
     loading.hidden = true;
     status.textContent = '';
+    // The URL can stay on game-details. Only a revealed playable frame records a visit.
+    const game = games.get(currentGame);
+    if (!failed && game && account?.isSignedIn?.()) {
+      void account.recordGameVisit?.(game).catch(() => {
+        console.warn('Could not save the game in Recent Games.');
+      });
+    }
   }
 
   function gameReady(frame, reason) {
@@ -108,7 +117,19 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     }
   }
 
-  const frameResizeObserver = new ResizeObserver(fitFrame);
+  function useCompactPreview() {
+    if (view.dataset.mobile === 'true') return true;
+    const detailsLane = router?.getRoute().type === 'game-details' && document.querySelector('#game-details-view');
+    return (detailsLane || view).getBoundingClientRect().width < COMPACT_PREPLAY_WIDTH;
+  }
+
+  const frameResizeObserver = new ResizeObserver(() => {
+    if (awaitingPlay && currentGame && !view.hidden && view.dataset.compactPreplay !== String(useCompactPreview())) {
+      mountFrame(currentGame, { previewOnly: account?.getSnapshot().wallet.currency === 'SC' });
+    }
+    fitFrame();
+  });
+  frameResizeObserver.observe(view);
   frameResizeObserver.observe(host);
 
   const display = initPlayerDisplay({ view, onResize: fitFrame });
@@ -146,6 +167,17 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     chooser?.reset(account?.getSnapshot().wallet.currency);
     const game = games.get(key);
     renderPreplayMetadata(game);
+    const compact = awaitingPlay && useCompactPreview();
+    view.dataset.compactPreplay = String(compact);
+    if (compact) {
+      host.removeAttribute('aria-busy');
+      loading.hidden = true;
+      reveal.hidden = true;
+      status.textContent = '';
+      delete view.dataset.loadState;
+      delete view.dataset.readySource;
+      return;
+    }
     if (!awaitingPlay) activePlayer(true);
     const frame = document.createElement('iframe');
     const touchCapable = window.matchMedia('(any-pointer: coarse)').matches
@@ -236,7 +268,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     if (key !== null && account?.getSnapshot().wallet.currency === 'SC' && route?.type === 'game-details') {
       if (preplay) {
         const newGame = currentGame !== key;
-        if (!newGame && currentFrame && view.dataset.mode === 'SC') return;
+        if (!newGame && (currentFrame || view.dataset.compactPreplay === 'true') && view.dataset.mode === 'SC') return;
         currentGame = key;
         view.hidden = false;
         mountFrame(key, { previewOnly: true });
@@ -298,6 +330,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     delete view.dataset.loadState;
     delete view.dataset.readySource;
     delete view.dataset.previewReady;
+    delete view.dataset.compactPreplay;
     pendingReady = null;
     document.body.dataset.view = 'lobby';
     lobby.hidden = false;
@@ -360,8 +393,9 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     const gameOnClick = currentGame;
     if (account?.getSnapshot().wallet.currency === 'SC') await account.selectCurrency('GC');
     if (account?.isSignedIn?.() === false || account?.getSnapshot().wallet.currency === 'SC' || !currentGame || currentGame !== gameOnClick) return;
-    if (view.dataset.mobile === 'true') {
-      // Mount a new provider frame only after mobile has entered the full-height layout.
+    if (view.dataset.compactPreplay === 'true' || view.dataset.mobile === 'true') {
+      // Compact preplay has no provider frame; mount it in the final layout.
+      if (view.dataset.mobile === 'true') window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
       mountFrame(currentGame, { playImmediately: true });
       view.focus({ preventScroll: true });
       return;

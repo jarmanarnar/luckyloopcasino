@@ -1,4 +1,5 @@
 import { initCoinChooser } from '../public/coin-chooser.js';
+import { initPlayerDisplay } from '../public/player-display.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -57,8 +58,8 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     getBoundingClientRect() { return this.bounds || { width: 1000, height: 650 }; }
   }
   const ids = ['lobby-view', 'game-view', 'game-frame-host', 'game-load-status',
-    'game-loading', 'game-loading-reveal', 'catalog-shelves', 'results'];
-  if (preplay) ids.push('game-preplay', 'game-play-gc', 'game-play-sc', 'game-preplay-fullscreen', 'game-play-confirm');
+    'game-loading', 'game-loading-reveal', 'catalog-shelves', 'results', 'game-theater', 'game-fullscreen'];
+  if (preplay) ids.push('game-preplay', 'game-play-gc', 'game-play-sc', 'game-preplay-fullscreen', 'game-play-confirm', 'game-coin-info', 'game-coin-question', 'game-coin-answer');
   const nodes = Object.fromEntries(ids.map(id => [id, new Node(id)]));
   document.body = new Node('body');
   document.body.append(nodes['lobby-view'], nodes['game-view'], nodes.results);
@@ -81,7 +82,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     innerWidth: viewportWidth, scrollX: 0, scrollY,
     location: { get hash() { return currentHash; }, set hash(value) { currentHash = value && !value.startsWith('#') ? `#${value}` : value; } },
     addEventListener: windowEvents.addEventListener.bind(windowEvents),
-    matchMedia(query) { assert.equal(query, '(any-pointer: coarse)'); return { matches: false }; },
+    matchMedia(query) { return { matches: query.startsWith('(max-width: 719px)') && viewportWidth <= 719, addEventListener() {} }; },
     setTimeout(callback) { const id = nextId++; timers.set(id, callback); return id; },
     clearTimeout(id) { timers.delete(id); },
     requestAnimationFrame(callback) { const id = nextId++; raf.set(id, callback); return id; },
@@ -101,12 +102,12 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     subscribe(fn, { priority = 0 } = {}) { subscribers.push({ fn, priority }); },
     back(fallback) { this.navigate(fallback); },
   } : undefined;
-  const accountListeners = [];
+  const accountListeners = [], gameVisits = [];
   let verificationOpens = 0;
-  const account = { isSignedIn: () => signedIn, getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
+  const account = { async recordGameVisit(game) { gameVisits.push(game.id); }, isSignedIn: () => signedIn, getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
   const verifyPhone = () => verificationOpens++;
   const context = {
-    initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: ({ view }) => { view.dataset.mobile = String(viewportWidth <= 719); return { reset() {} }; },
+    initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: options => initPlayerDisplay({ ...options, document, window }),
     document, window, router, formatRoute, parseRoute, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
     GAMES: [
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
@@ -133,7 +134,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     nodes['catalog-shelves'].append(button);
     return button;
   }
-  return { nodes, document, window, frames, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
+  return { nodes, document, window, frames, gameVisits, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
     verificationOpens: () => verificationOpens,
     logout() { signedIn = false; accountListeners.forEach(fn => fn()); },
     setCurrency(value) { currency = value; accountListeners.forEach(fn => fn()); },
@@ -383,29 +384,76 @@ test('Gold Coins reveals directly in details without route change or frame repla
 });
 
 
-test('mobile Gold Coins replaces the preview and initializes a fresh game in the active layout', () => {
- const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
- const preview = page.frames[0], route = page.router.getRoute();
- assert.equal(page.document.body.dataset.playerActive, 'false');
- page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
+test('Recent Games records an opened game once, even without leaving its details route', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true });
+ const route = page.router.getRoute();
+ const watch = page.readiness[0];
+ watch.ready('test'); page.flushPaint(); page.flushPaint();
+ assert.deepEqual(page.gameVisits, [], 'an inert preview does not count');
  page.nodes['game-play-confirm'].emit('click');
- const play = page.frames[1];
- assert.equal(page.frames.length, 2);
- assert.notEqual(play, preview);
- assert.equal(page.readiness[0].stopped, true);
- assert.equal(play.src, preview.src);
+ assert.deepEqual(page.gameVisits, ['alpha']);
+ assert.equal(page.router.getRoute(), route);
+ watch.ready('test'); page.flushPaint(); page.flushPaint();
+ assert.deepEqual(page.gameVisits, ['alpha'], 'repeated provider callbacks do not duplicate history');
+});
+
+test('a legacy game route does not record until its player is revealed', () => {
+ const page = gamePage({ hash: '#game=alpha', routerMode: true });
+ assert.deepEqual(page.gameVisits, []);
+ page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
+ assert.deepEqual(page.gameVisits, ['alpha']);
+});
+
+test('opening a known failed frame manually does not add a visit', () => {
+ const page = gamePage({ hash: '#game=alpha', routerMode: true });
+ page.frames[0].emit('error');
+ page.nodes['game-loading-reveal'].emit('click');
+ assert.deepEqual(page.gameVisits, []);
+});
+
+test('mobile card does not load an iframe until Gold Coins enters immersive mode', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
+ const route = page.router.getRoute(), view = page.nodes['game-view'];
+ assert.equal(page.frames.length, 0);
+ assert.equal(view.dataset.compactPreplay, 'true');
+ assert.equal(page.document.body.dataset.playerMobile, 'false');
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ page.window.scrollY = 144;
+ page.nodes['game-play-confirm'].emit('click');
+ const play = page.frames[0];
+ assert.equal(page.frames.length, 1);
+ assert.equal(view.dataset.compactPreplay, 'false');
+ assert.equal(page.window.scrollY, 0);
  assert.equal(page.nodes['game-frame-host'].children[0], play);
- assert.equal(page.document.body.dataset.playerActive, 'true');
+ assert.equal(page.document.body.dataset.playerMobile, 'true');
  assert.equal(page.nodes['game-preplay'].hidden, true);
  assert.equal(page.nodes['game-loading'].hidden, false);
  assert.equal(play.inert, true);
- page.readiness[1].ready('test'); page.flushPaint(); page.flushPaint();
+ page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
  assert.equal(play.inert, false);
+ assert.deepEqual(page.gameVisits, ['alpha']);
  assert.equal(page.router.getRoute(), route);
 });
 
-test('Sweep Coins shows a strictly read-only public demo preview on mobile and desktop', async () => {
- for (const viewportWidth of [390, 1440]) {
+test('narrow content switches to a static card without disturbing a running desktop game', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true });
+ const view = page.nodes['game-view'], host = page.nodes['game-frame-host'];
+ assert.equal(view.dataset.compactPreplay, 'false');
+ view.bounds = { width: 550, height: 500 }; page.resizers[0].callback();
+ assert.equal(view.dataset.compactPreplay, 'true');
+ assert.equal(host.children.length, 0);
+ assert.equal(page.readiness[0].stopped, true);
+ view.bounds.width = 600; page.resizers[0].callback();
+ assert.equal(view.dataset.compactPreplay, 'false');
+ const mounted = page.frames.at(-1);
+ page.nodes['game-play-confirm'].emit('click');
+ view.bounds.width = 550; page.resizers[0].callback();
+ assert.equal(view.dataset.compactPreplay, 'false');
+ assert.equal(host.children[0], mounted);
+});
+
+test('desktop Sweep Coins shows a strictly read-only public demo preview', async () => {
+ const viewportWidth = 1440;
  const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth });
  const first = page.frames[0], route = page.router.getRoute();
  page.nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
@@ -433,6 +481,7 @@ test('Sweep Coins shows a strictly read-only public demo preview on mobile and d
  assert.equal(page.document.body.dataset.playerActive, 'false');
  assert.equal(preview.inert, true);
  assert.equal(preview.getAttribute('aria-hidden'), 'true');
+ assert.deepEqual(page.gameVisits, []);
  page.nodes['game-play-gc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
  assert.equal(page.frames.length, 3);
  assert.notEqual(page.frames[2], preview);
@@ -442,7 +491,32 @@ test('Sweep Coins shows a strictly read-only public demo preview on mobile and d
  assert.equal(page.frames[2].inert, true);
  assert.equal(page.nodes['game-preplay'].hidden, false);
  assert.equal(page.router.getRoute(), route);
- }
+});
+
+test('preplay explanation follows the selected currency without changing play behavior', async () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
+ const { nodes } = page;
+ assert.equal(nodes['game-coin-question'].textContent, 'What are Gold Coins?');
+ assert.match(nodes['game-coin-answer'].textContent, /no cash value/);
+ nodes['game-coin-info'].open = true;
+ nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(nodes['game-coin-question'].textContent, 'What are Sweep Coins?');
+ assert.match(nodes['game-coin-answer'].textContent, /play is unavailable/);
+ assert.equal(nodes['game-coin-info'].open, true);
+ nodes['game-play-confirm'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(nodes['game-coin-info'].open, false);
+ assert.equal(page.verificationOpens(), 1);
+ assert.equal(page.frames.length, 0);
+});
+
+test('mobile Sweep Coins shows only the card and opens verification, never a provider frame', async () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
+ page.nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ page.nodes['game-play-confirm'].emit('click'); await new Promise(resolve => setImmediate(resolve));
+ assert.equal(page.frames.length, 0);
+ assert.equal(page.verificationOpens(), 1);
+ assert.equal(page.nodes['game-preplay'].hidden, false);
+ assert.equal(page.document.body.dataset.playerMobile, 'false');
 });
 
 test('direct Sweep Coins details preloads a read-only demo without opening verification', () => {

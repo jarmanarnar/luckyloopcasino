@@ -123,6 +123,8 @@ test('account links open the Favorites catalog and browsing details does not rec
   assert.equal(page.api.member.getState().discoveredGameIds.length, 0);
   page.router.navigate({ type: 'game', gameId: 'alpha', from: '#/games/alpha?from=%23%2Ffavorites' });
   await page.account.refresh();
+  assert.equal(page.api.member.getState().history.filter(entry => entry.type === 'game').length, 0, 'navigation alone does not open a playable game');
+  await page.account.recordGameVisit({ id: 'alpha', title: 'Alpha', providerName: 'Studio' });
   const state = page.api.member.getState();
   assert.equal(state.history.filter(entry => entry.type === 'game').length, 1);
   assert.equal(state.history.find(entry => entry.type === 'game').gameId, 'alpha');
