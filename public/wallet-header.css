@@ -137,14 +137,15 @@ body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--
 body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--mark { display: none; }
 
 @container loop-header (width < 42rem) {
+  body[data-auth="member"][data-wallet-layout="currency-menu"] .top-bar__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  body[data-auth="member"][data-wallet-layout="currency-menu"] .header-wallet-controls { justify-self: end; }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo { width: 3.25rem; height: 1.75rem; }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--wordmark { display: none; }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--mark { display: block; }
 }
 @container loop-header (width < 36rem) {
-  body[data-auth="member"][data-wallet-layout="currency-menu"] .top-bar__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
   .wallet-currency-menu { left: 50%; transform: translateX(-50%); width: min(14.875rem, calc(100vw - 1.5rem)); }
 }
 @container loop-header (width <= 25rem) {

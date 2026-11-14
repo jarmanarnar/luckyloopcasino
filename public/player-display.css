@@ -31,6 +31,11 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-disp
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-view :is(.game-frame-host, .game-loading, .game-preplay) {
   inset: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
+/* Installed mobile apps paint the game through the home-indicator area. */
+@media (display-mode: standalone) {
+  body[data-player-mobile="true"] .game-view :is(.game-frame-host, .game-loading, .game-preplay) { bottom: 0; }
+  body[data-player-mobile="true"] .game-view :is(.game-loading, .game-preplay) { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
 html:has(body:is([data-player-mobile="true"], [data-player-fullscreen="true"])) { overflow: hidden; overscroll-behavior: none; }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) { height: 100dvh; min-height: 0; overflow: hidden; overscroll-behavior: none; padding: var(--top-bar-height) 0 0; }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .top-bar { left: 0; right: 0; width: 100%; }
