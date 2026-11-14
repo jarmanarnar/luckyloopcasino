@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { initPlayerDisplay } from '../public/player-display.js';
-function fixture(native = true, mobile = false) {
+function fixture(native = true, mobile = false, standalone = false) {
  const node = () => ({dataset:{}, attrs:{}, handlers:{}, setAttribute(k,v){this.attrs[k]=v;}, addEventListener(k,fn){this.handlers[k]=fn;}});
  const view=node(), root=node(), header=node(), theater=node(), fullscreen=node(), sidebar=node(), menuFullscreen=node(), menuLabel=node();
  root.children=[header,view];
@@ -11,7 +11,7 @@ function fixture(native = true, mobile = false) {
  doc.exitFullscreen=async()=>{doc.fullscreenElement=null;doc.handlers.fullscreenchange();};
  if(native)root.requestFullscreen=async()=>{doc.fullscreenElement=root;doc.handlers.fullscreenchange();};
  const media={matches:mobile,addEventListener(type,fn){this.change=fn;}};
- const api=initPlayerDisplay({view,document:doc,window:{matchMedia:()=>media}});
+ const api=initPlayerDisplay({view,document:doc,window:{matchMedia:()=>media,navigator:{standalone}}});
  return {view,root,header,theater,fullscreen,sidebar,doc,api,media,menuFullscreen,menuLabel};
 }
 
@@ -34,7 +34,7 @@ test('rejected fullscreen falls back; reset clears it',async()=>{
 });
 
 test('mobile preserves the original header inside page fullscreen and exits through the profile menu', async () => {
- const p=fixture(true,true);p.api.setGame({title:'Nunchucks',currency:'GC'});
+ const p=fixture(true,true);p.api.setGame({title:'Nunchucks',currency:'GC'}); p.api.setPlaying(true);
  assert.equal(p.doc.body.dataset.playerMobile,'true');assert.equal(p.theater.hidden,true);
  assert.equal(p.menuFullscreen.hidden,false);assert.ok(p.root.children.includes(p.header));
  p.theater.handlers.click();assert.equal(p.view.dataset.theater,'false');
@@ -50,7 +50,7 @@ test('mobile preserves the original header inside page fullscreen and exits thro
 
 test('mobile without a fullscreen API or after a rejection stays immersive without a fake fullscreen state', async () => {
  for (const native of [false,true]) {
-  const p=fixture(native,true);p.api.setGame({title:'Game',currency:'SC'});
+  const p=fixture(native,true);p.api.setGame({title:'Game',currency:'GC'}); p.api.setPlaying(true);
   if(native)p.root.requestFullscreen=async()=>{throw Error('unavailable');};
   await p.api.fullscreen();
   assert.equal(p.doc.body.dataset.playerMobile,'true');assert.equal(p.view.dataset.fullscreenFallback,'false');
@@ -59,7 +59,7 @@ test('mobile without a fullscreen API or after a rejection stays immersive witho
 });
 
 test('resizing desktop theater into mobile clears theater without changing sidebar preference', () => {
- const p=fixture();p.api.setGame({title:'Game'});p.theater.handlers.click();
+ const p=fixture();p.api.setGame({title:'Game'}); p.api.setPlaying(true);p.theater.handlers.click();
  p.media.matches=true;p.media.change();
  assert.equal(p.doc.body.dataset.playerMobile,'true');assert.equal(p.view.dataset.theater,'false');
  assert.equal(p.doc.body.dataset.sidebar,'expanded');
@@ -68,7 +68,7 @@ test('resizing desktop theater into mobile clears theater without changing sideb
 });
 
 test('leaving while fullscreen is pending cannot reopen the closed player', async () => {
- const p=fixture(true,true);p.api.setGame({title:'Game'});
+ const p=fixture(true,true);p.api.setGame({title:'Game'}); p.api.setPlaying(true);
  let finish;p.root.requestFullscreen=()=>new Promise(resolve=>{finish=()=>{p.doc.fullscreenElement=p.root;resolve();};});
  const entering=p.api.fullscreen();p.api.reset();finish();await entering;
  assert.equal(p.doc.fullscreenElement,null);assert.equal(p.doc.body.dataset.playerMobile,'false');
@@ -76,7 +76,7 @@ test('leaving while fullscreen is pending cannot reopen the closed player', asyn
 });
 
 test('native fullscreen resizing keeps the mobile layout until fullscreen exits', async () => {
- const p=fixture(true,true);p.api.setGame({title:'Game'});
+ const p=fixture(true,true);p.api.setGame({title:'Game'}); p.api.setPlaying(true);
  await p.api.fullscreen();
  p.media.matches=false;p.media.change();
  assert.equal(p.doc.body.dataset.playerMobile,'true');
@@ -84,4 +84,33 @@ test('native fullscreen resizing keeps the mobile layout until fullscreen exits'
  await p.api.fullscreen();
  assert.equal(p.doc.body.dataset.playerMobile,'false');
  assert.equal(p.doc.body.dataset.playerFullscreen,'false');
+});
+
+test('iOS standalone flag applies only while the mobile player is open', () => {
+ const p = fixture(false, true, true);
+ assert.equal(p.doc.body.dataset.playerStandalone, 'false');
+ p.api.setGame({title:'Game'}); p.api.setPlaying(true);
+ assert.equal(p.doc.body.dataset.playerStandalone, 'true');
+ p.api.reset();
+ assert.equal(p.doc.body.dataset.playerStandalone, 'false');
+ const tab = fixture(false, true);
+ tab.api.setGame({title:'Game'}); tab.api.setPlaying(true);
+ assert.equal(tab.doc.body.dataset.playerStandalone, 'false');
+});
+
+test('mobile preplay enters the full-height player only after Play and resets on currency switch', async () => {
+ const p = fixture(true, true, true);
+ p.api.setGame();
+ assert.equal(p.doc.body.dataset.playerMobile, 'false');
+ assert.equal(p.doc.body.dataset.playerStandalone, 'false');
+ assert.equal(p.menuFullscreen.hidden, true);
+ await p.api.fullscreen();
+ assert.equal(p.doc.fullscreenElement, null);
+ p.api.setPlaying(true);
+ assert.equal(p.doc.body.dataset.playerMobile, 'true');
+ assert.equal(p.doc.body.dataset.playerStandalone, 'true');
+ assert.equal(p.menuFullscreen.hidden, false);
+ p.api.setPlaying(false);
+ assert.equal(p.doc.body.dataset.playerMobile, 'false');
+ assert.equal(p.menuFullscreen.hidden, true);
 });

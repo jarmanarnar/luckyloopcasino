@@ -17,25 +17,30 @@ body[data-player-theater="true"] .game-details-view, body > .game-view[data-thea
 }
 
 /* Fullscreen includes the original page header, wallet, store and account controls. */
-.game-view[data-mobile="true"], .game-details-view > .game-view[data-mobile="true"],
+body[data-player-mobile="true"] .game-view,
 body[data-player-fullscreen="true"] .game-view {
   position: fixed; z-index: 19; inset: var(--top-bar-height) 0 0;
-  width: 100%; height: calc(100vh - var(--top-bar-height)); height: calc(100dvh - var(--top-bar-height));
+  width: 100%; height: var(--installed-game-height, calc(100vh - var(--top-bar-height)));
+  height: var(--installed-game-height, calc(100dvh - var(--top-bar-height)));
   min-height: 0; max-width: none; margin: 0; border: 0; border-radius: 0;
 }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-stage {
   position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; border: 0; border-radius: 0;
 }
 .game-preplay { inset: 0; }
-body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-display-controls { display: none; }
+/* The mobile chooser stays in-flow until Play expands the mounted frame. */
+body:not([data-player-mobile="true"]) .game-view[data-mobile="true"] .game-stage { min-height: 16rem; }
+.game-view[data-mobile="true"] .game-display-controls, body[data-player-fullscreen="true"] .game-display-controls { display: none; }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-view :is(.game-frame-host, .game-loading, .game-preplay) {
-  inset: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  inset: 0 env(safe-area-inset-right, 0px) var(--installed-game-bottom, env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px);
 }
-/* Installed mobile apps paint the game through the home-indicator area. */
+/* Pin installed games to the available viewport instead of combining inset and dvh.
+   Older iOS Home Screen web apps can report only navigator.standalone. */
+body[data-player-standalone="true"] { --installed-game-height: auto; --installed-game-bottom: 0px; --installed-game-overlay-pad: env(safe-area-inset-bottom, 0px); }
 @media (display-mode: standalone) {
-  body[data-player-mobile="true"] .game-view :is(.game-frame-host, .game-loading, .game-preplay) { bottom: 0; }
-  body[data-player-mobile="true"] .game-view :is(.game-loading, .game-preplay) { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body[data-player-mobile="true"] { --installed-game-height: auto; --installed-game-bottom: 0px; --installed-game-overlay-pad: env(safe-area-inset-bottom, 0px); }
 }
+body[data-player-mobile="true"] .game-view :is(.game-loading, .game-preplay) { padding-bottom: var(--installed-game-overlay-pad, 0px); }
 html:has(body:is([data-player-mobile="true"], [data-player-fullscreen="true"])) { overflow: hidden; overscroll-behavior: none; }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) { height: 100dvh; min-height: 0; overflow: hidden; overscroll-behavior: none; padding: var(--top-bar-height) 0 0; }
 body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .top-bar { left: 0; right: 0; width: 100%; }

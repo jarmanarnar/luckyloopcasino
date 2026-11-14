@@ -106,7 +106,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
   const account = { isSignedIn: () => signedIn, getSnapshot: () => ({ wallet: { currency } }), subscribe: fn => accountListeners.push(fn), async selectCurrency(value) { currency=value; accountListeners.forEach(fn=>fn()); return {ok:true}; } };
   const verifyPhone = () => verificationOpens++;
   const context = {
-    initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: () => ({ reset() {} }),
+    initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: ({ view }) => { view.dataset.mobile = String(viewportWidth <= 719); return { reset() {} }; },
     document, window, router, formatRoute, parseRoute, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
     GAMES: [
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
@@ -382,6 +382,27 @@ test('Gold Coins reveals directly in details without route change or frame repla
  assert.equal(page.document.body.dataset.playerActive, 'true');
 });
 
+
+test('mobile Gold Coins replaces the preview and initializes a fresh game in the active layout', () => {
+ const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
+ const preview = page.frames[0], route = page.router.getRoute();
+ assert.equal(page.document.body.dataset.playerActive, 'false');
+ page.readiness[0].ready('test'); page.flushPaint(); page.flushPaint();
+ page.nodes['game-play-confirm'].emit('click');
+ const play = page.frames[1];
+ assert.equal(page.frames.length, 2);
+ assert.notEqual(play, preview);
+ assert.equal(page.readiness[0].stopped, true);
+ assert.equal(play.src, preview.src);
+ assert.equal(page.nodes['game-frame-host'].children[0], play);
+ assert.equal(page.document.body.dataset.playerActive, 'true');
+ assert.equal(page.nodes['game-preplay'].hidden, true);
+ assert.equal(page.nodes['game-loading'].hidden, false);
+ assert.equal(play.inert, true);
+ page.readiness[1].ready('test'); page.flushPaint(); page.flushPaint();
+ assert.equal(play.inert, false);
+ assert.equal(page.router.getRoute(), route);
+});
 
 test('Sweep Coins shows a strictly read-only public demo preview on mobile and desktop', async () => {
  for (const viewportWidth of [390, 1440]) {

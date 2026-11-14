@@ -30,6 +30,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   let pendingReady = null;
   function activePlayer(value) {
     document.body.dataset.playerActive = String(value);
+    display.setPlaying?.(value);
     if (document.dispatchEvent) document.dispatchEvent(new CustomEvent('player:active-change'));
   }
   let blockedTimer = 0;
@@ -127,24 +128,25 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     }
   }
 
-  function mountFrame(key, { previewOnly = false } = {}) {
+  function mountFrame(key, { previewOnly = false, playImmediately = false } = {}) {
     if (account?.isSignedIn?.() === false) return;
     // Use the same public demo URL, never a Sweep Coins game session.
     const isSweep = account?.getSnapshot().wallet.currency === 'SC';
-    if (isSweep !== previewOnly || (previewOnly && !preplay)) return;
+    if (isSweep !== previewOnly || (previewOnly && (!preplay || playImmediately))) return;
     stopLoadingWatch();
     currentFrame = null;
     host.replaceChildren();
     view.dataset.mode = previewOnly ? 'SC' : 'GC';
     view.dataset.sessionKind = previewOnly ? 'verification-preview' : 'public-demo';
-    activePlayer(false);
-    awaitingPlay = Boolean(preplay);
+    awaitingPlay = Boolean(preplay) && !playImmediately;
+    if (awaitingPlay) activePlayer(false);
     pendingReady = null;
     delete view.dataset.previewReady;
-    if (preplay) preplay.hidden = false;
+    if (preplay) preplay.hidden = !awaitingPlay;
     chooser?.reset(account?.getSnapshot().wallet.currency);
     const game = games.get(key);
     renderPreplayMetadata(game);
+    if (!awaitingPlay) activePlayer(true);
     const frame = document.createElement('iframe');
     const touchCapable = window.matchMedia('(any-pointer: coarse)').matches
       || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
@@ -355,8 +357,15 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       verifyPhone?.();
       return;
     }
+    const gameOnClick = currentGame;
     if (account?.getSnapshot().wallet.currency === 'SC') await account.selectCurrency('GC');
-    if (account?.isSignedIn?.() === false || account?.getSnapshot().wallet.currency === 'SC' || !currentGame) return;
+    if (account?.isSignedIn?.() === false || account?.getSnapshot().wallet.currency === 'SC' || !currentGame || currentGame !== gameOnClick) return;
+    if (view.dataset.mobile === 'true') {
+      // Mount a new provider frame only after mobile has entered the full-height layout.
+      mountFrame(currentGame, { playImmediately: true });
+      view.focus({ preventScroll: true });
+      return;
+    }
     if (!currentFrame || view.dataset.mode !== 'GC') mountFrame(currentGame);
     if (!currentFrame || view.dataset.mode !== 'GC') return;
     awaitingPlay = false;

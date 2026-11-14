@@ -8,7 +8,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   // The page, including its original header and popovers, enters fullscreen together.
   const fullscreenTarget = doc.documentElement;
   const mobileMedia = win?.matchMedia('(max-width: 719px), (max-width: 1024px) and (max-height: 719px)');
-  let opened = false, wide = false, fallback = false, busy = false, generation = 0;
+  let opened = false, playing = false, wide = false, fallback = false, busy = false, generation = 0;
   let mobileSession = false;
   const nativeFullscreen = () => Boolean(fullscreenTarget) && doc.fullscreenElement === fullscreenTarget;
   const isMobile = () => Boolean(mobileMedia?.matches) || (mobileSession && (nativeFullscreen() || busy));
@@ -16,10 +16,12 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
 
   function render() {
     const mobile = isMobile(), full = nativeFullscreen() || fallback;
+    const immersiveMobile = opened && mobile && playing;
     view.dataset.mobile = String(mobile);
     view.dataset.theater = String(wide);
     view.dataset.fullscreenFallback = String(fallback);
-    doc.body.dataset.playerMobile = String(opened && mobile);
+    doc.body.dataset.playerMobile = String(immersiveMobile);
+    doc.body.dataset.playerStandalone = String(immersiveMobile && win?.navigator?.standalone === true);
     doc.body.dataset.playerTheater = String(wide);
     doc.body.dataset.playerFullscreen = String(full);
     theater.hidden = mobile || full;
@@ -27,13 +29,13 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     theater.setAttribute('aria-label', wide ? 'Exit theater mode' : 'Theater mode');
     theater.title = wide ? 'Exit theater mode' : 'Theater mode';
     const label = full ? 'Exit fullscreen' : 'Fullscreen';
-    fullscreen.hidden = mobile && !supportsFullscreen();
+    fullscreen.hidden = mobile && (!playing || !supportsFullscreen());
     fullscreen.disabled = busy;
     fullscreen.setAttribute('aria-pressed', String(full));
     fullscreen.setAttribute('aria-label', label);
     fullscreen.title = label;
     if (menuFullscreen) {
-      menuFullscreen.hidden = !opened || (!supportsFullscreen() && mobile);
+      menuFullscreen.hidden = !opened || (mobile && (!playing || !supportsFullscreen()));
       menuFullscreen.disabled = busy;
       menuFullscreen.setAttribute('aria-label', label);
       menuFullscreen.setAttribute('aria-pressed', String(full));
@@ -49,7 +51,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   }
 
   async function toggleFullscreen() {
-    if (busy) return;
+    if (busy || (isMobile() && !playing)) return;
     if (fallback) { fallback = false; render(); return; }
     const requestGeneration = generation;
     mobileSession = isMobile();
@@ -72,6 +74,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   function reset() {
     generation++;
     opened = false;
+    playing = false;
     wide = false;
     fallback = false;
     void leaveFullscreen();
@@ -104,5 +107,17 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
     render();
   });
   render();
-  return { fullscreen: toggleFullscreen, reset, setGame() { opened = true; render(); } };
+  return {
+    fullscreen: toggleFullscreen, reset,
+    setGame() { opened = true; render(); },
+    setPlaying(value) {
+      playing = value;
+      if (!playing && isMobile()) {
+        generation++;
+        fallback = false;
+        void leaveFullscreen();
+      }
+      render();
+    },
+  };
 }
