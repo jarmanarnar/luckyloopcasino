@@ -202,47 +202,56 @@ html:has(.store-dialog[open]) { overflow: hidden; }
 .store-dialog__close svg { width: 1rem; height: 1rem; }
 
 .store-dialog__body { padding: 1.125rem 1.5rem; }
-.store-dialog .store-packages { gap: .75rem; }
+.store-dialog .store-packages { grid-template-columns: minmax(0, 1fr); max-width: none; gap: .875rem; }
 .store-dialog .store-package {
-  gap: .375rem;
-  padding: .875rem .75rem .75rem;
+  display: grid;
+  grid-template-areas: 'amount bonus price';
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 6rem;
+  align-items: center;
+  justify-items: stretch;
+  gap: .75rem;
+  min-height: 4.25rem;
+  padding: .625rem .875rem;
   border-color: var(--border-default);
-  border-radius: .75rem;
+  border-radius: .5rem;
+  text-align: start;
 }
+.store-dialog .store-package--featured { border-color: var(--primary-accent); background: var(--accent-soft); }
+.store-dialog .store-package__art { display: none; }
 .store-dialog .store-package__badge {
-  top: .625rem;
-  right: .625rem;
-  left: auto;
+  top: -.4375rem;
+  right: auto;
+  left: .625rem;
   max-width: calc(100% - 1.25rem);
   transform: none;
-  padding: .1875rem .375rem;
+  padding: .125rem .375rem;
   border-radius: .25rem;
-  background: var(--accent-soft);
-  color: var(--primary-accent);
+  background: var(--primary-accent);
+  color: var(--on-accent);
   font-size: .5625rem;
+  font-weight: 700;
+  line-height: 1.25;
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.store-dialog .store-package__art {
-  order: -1;
-  min-height: 3.5rem;
-  padding: .5rem 0 .125rem;
+.store-dialog .store-package__amount,
+.store-dialog .store-package__bonus {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: .25rem;
+  min-height: 0;
+  white-space: nowrap;
 }
-.store-dialog .store-package__art .coin-art { width: 2.5rem; height: 2.5rem; }
-.store-dialog .store-package__art .coin-art + .coin-art {
-  width: 1.875rem;
-  height: 1.875rem;
-  margin-top: .75rem;
-  margin-left: -.5rem;
-}
-.store-dialog .store-package__amount { font-size: 1.125rem; }
+.store-dialog .store-package__amount { grid-area: amount; font-size: 1rem; }
+.store-dialog .store-package__bonus { grid-area: bonus; font-size: .875rem; }
 .store-dialog .store-package__amount .coin-art,
-.store-dialog .store-package__bonus .coin-art { width: .875rem; height: .875rem; }
-.store-dialog .store-package__bonus { min-height: 1.25rem; font-size: .8125rem; }
+.store-dialog .store-package__bonus .coin-art { flex: none; width: 1.25rem; height: 1.25rem; }
 .store-dialog .store-package__bonus strong { color: var(--coin-sweeps); }
+.store-dialog .store-package__bonus > span { font-size: .625rem; }
 .store-dialog .store-package__price {
-  min-height: 2.5rem;
-  margin-top: .375rem;
+  grid-area: price;
+  min-height: var(--touch-target);
+  margin: 0;
   padding: .5rem .375rem;
   border: 1px solid var(--primary-accent);
   border-radius: .5rem;
@@ -252,41 +261,10 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   font-size: .875rem;
 }
 .store-dialog .store-package__price:hover { filter: brightness(1.07); }
-
-.store-dialog .store-package--featured {
-  display: grid;
-  grid-template-areas: 'badge art' 'amount art' 'bonus art' 'price art';
-  grid-template-columns: minmax(0, 1fr) minmax(0, .9fr);
-  justify-items: start;
-  gap: .375rem 1rem;
-  padding: 1rem 1.125rem;
-  text-align: start;
-}
-.store-dialog .store-package--featured .store-package__badge {
-  position: static;
-  grid-area: badge;
-  max-width: 100%;
-  padding: .25rem .5rem;
-  background: var(--surface-control);
-  color: var(--text-secondary);
-  font-size: .625rem;
-}
-.store-dialog .store-package--featured .store-package__amount { grid-area: amount; font-size: 1.75rem; }
-.store-dialog .store-package--featured .store-package__bonus { grid-area: bonus; }
-.store-dialog .store-package--featured .store-package__art {
-  grid-area: art;
-  align-self: stretch;
-  justify-self: stretch;
-  padding: 0;
-}
-.store-dialog .store-package--featured .store-package__price { grid-area: price; max-width: 11rem; }
 .store-dialog .store-preview-note { margin-top: .875rem; }
 
 @media (max-height: 48rem) {
   .store-dialog__header, .store-dialog__body { padding-block: .875rem; }
-  .store-dialog .store-package { gap: .25rem; padding-block: .625rem; }
-  .store-dialog .store-package__art { min-height: 2.75rem; padding-block: .125rem; }
-  .store-dialog .store-package--featured { padding-block: .75rem; }
   .store-dialog .store-preview-note { margin-top: .625rem; }
 }
 
@@ -315,52 +293,8 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   .store-dialog__body {
     padding: .75rem max(1rem, env(safe-area-inset-right, 0px)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
   }
-  .store-dialog .store-packages { grid-template-columns: minmax(0, 1fr); max-width: none; gap: .875rem; }
-  .store-dialog .store-package {
-    display: grid;
-    grid-template-areas: 'amount bonus price';
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 5rem;
-    align-items: center;
-    justify-items: stretch;
-    gap: .5rem;
-    min-height: 4.25rem;
-    padding: .625rem;
-    border-radius: .5rem;
-    text-align: start;
-  }
-  .store-dialog .store-package--featured { border-color: var(--primary-accent); background: var(--accent-soft); }
-  .store-dialog .store-package .store-package__art { display: none; }
-  .store-dialog .store-package .store-package__badge {
-    position: absolute;
-    grid-area: auto;
-    top: -.4375rem;
-    right: auto;
-    left: .625rem;
-    max-width: calc(100% - 1.25rem);
-    padding: .125rem .375rem;
-    background: var(--primary-accent);
-    color: var(--on-accent);
-    font-size: .5625rem;
-    line-height: 1.25;
-  }
-  .store-dialog .store-package .store-package__amount,
-  .store-dialog .store-package .store-package__bonus {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: .25rem;
-    min-height: 0;
-    font-size: .875rem;
-    white-space: nowrap;
-  }
-  .store-dialog .store-package .store-package__amount { grid-area: amount; }
-  .store-dialog .store-package .store-package__bonus { grid-area: bonus; }
+  .store-dialog .store-package { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 5rem; gap: .5rem; padding: .625rem; }
+  .store-dialog .store-package__amount { font-size: .875rem; }
   .store-dialog .store-package__amount .coin-art,
-  .store-dialog .store-package__bonus .coin-art { flex: none; width: 1.125rem; height: 1.125rem; }
-  .store-dialog .store-package__bonus > span { font-size: .625rem; }
-  .store-dialog .store-package .store-package__price {
-    grid-area: price;
-    min-height: var(--touch-target);
-    margin: 0;
-    font-size: .875rem;
-  }
+  .store-dialog .store-package__bonus .coin-art { width: 1.125rem; height: 1.125rem; }
 }
