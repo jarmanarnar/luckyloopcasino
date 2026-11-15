@@ -71,7 +71,6 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
 .header-member-action svg { width: 1.25rem; height: 1.25rem; }
 button.header-member-action { cursor: pointer; }
 .header-member-action:is(:hover, :focus-visible, [aria-expanded="true"]),
-body:has(#rewards-popover:popover-open) #header-rewards,
 body:has(#profile-menu:popover-open) #header-profile,
 body:has(#notifications-drawer[open]) #header-notifications {
   background: var(--surface-subtle), var(--header-item-surface);
@@ -81,6 +80,7 @@ body:has(#notifications-drawer[open]) #header-notifications {
 .wallet-balance-trigger.wallet-switch:active,
 .header-member-action:active { box-shadow: inset 0 2px 4px var(--shadow-color); }
 .header-rewards { width: auto; min-width: var(--touch-target); padding-inline: .5rem; }
+.header-rewards__gift, .header-rewards__label { position: relative; z-index: 2; }
 .header-rewards__gift { display: block; width: 2rem; height: 2rem; }
 .header-rewards__label { display: none; color: var(--text-primary); font-size: .8125rem; font-weight: 700; line-height: 1.25; white-space: nowrap; }
 @media (width > 1024px) {
@@ -88,6 +88,70 @@ body:has(#notifications-drawer[open]) #header-notifications {
     .header-rewards { grid-auto-flow: column; column-gap: .375rem; }
     .header-rewards__label { display: block; }
   }
+}
+/* The luminous frame is clipped to the existing Rewards control. */
+#header-rewards {
+  --rewards-radius: .75rem;
+  --rewards-frame-width: 2px;
+  --rewards-orbit-animation: rewards-border-turn 1s linear infinite;
+  --rewards-shine-duration: 700ms;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: transparent;
+  border-radius: var(--rewards-radius);
+  background: var(--surface-page);
+  box-shadow: none;
+}
+.header-rewards__light {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  /* Center independently of the rotating transform. */
+  translate: -50% -50%;
+  width: 100%;
+  height: calc(100% + 2rem);
+  background: linear-gradient(90deg, var(--rewards-glow-start), var(--rewards-glow-end));
+  filter: blur(1rem);
+  opacity: .9;
+  pointer-events: none;
+}
+#header-rewards::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: var(--rewards-frame-width);
+  border-radius: calc(var(--rewards-radius) - 1px - var(--rewards-frame-width));
+  background: color-mix(in srgb, var(--surface-page) 90%, transparent);
+  pointer-events: none;
+}
+#header-rewards::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--text-primary) 42%, var(--surface-page)), color-mix(in srgb, var(--text-primary) 10%, transparent));
+  opacity: .3;
+  transform: translateX(-120%) skewX(-12deg);
+  transition: transform var(--rewards-shine-duration) ease-in;
+  pointer-events: none;
+}
+#header-rewards:is(:focus-visible, :active)::after,
+body:has(#rewards-popover:popover-open) #header-rewards::after { transform: translateX(280%) skewX(-12deg); }
+#header-rewards:is(:focus-visible, :active) .header-rewards__light,
+body:has(#rewards-popover:popover-open) .header-rewards__light { animation: var(--rewards-orbit-animation); }
+@media (hover: hover) and (pointer: fine) {
+  #header-rewards:hover::after { transform: translateX(280%) skewX(-12deg); }
+  #header-rewards:hover .header-rewards__light { animation: var(--rewards-orbit-animation); }
+}
+@keyframes rewards-border-turn { to { transform: rotate(360deg); } }
+body[data-reduce-motion="true"] #header-rewards { --rewards-orbit-animation: none; --rewards-shine-duration: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  #header-rewards { --rewards-orbit-animation: none; --rewards-shine-duration: 0s; }
 }
 .header-member-action.header-profile {
   padding: 3px;

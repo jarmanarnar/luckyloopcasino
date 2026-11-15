@@ -1,14 +1,14 @@
 const steps = [
   {
-    mode: 'both', label: '',
+    mode: 'both', label: 'Two ways to play',
     description: 'COP COIN offers two ways to play: Gold Coins (GC) and Super Coins (SC), each with its own balance.',
   },
   {
-    mode: 'gc', label: 'GC MODE',
+    mode: 'gc', label: 'Gold Coins',
     description: 'Gold Coins (GC) are virtual coins for social play. GC packages are available in the Store. Gold Coins have no cash value and cannot be exchanged or transferred for real money.',
   },
   {
-    mode: 'sc', label: 'SC MODE',
+    mode: 'sc', label: 'Super Coins',
     description: 'Super Coins (SC) are used for free play in SC mode and are not sold. They may be included as a complimentary gift with Gold Coin packages or offered through other free methods.',
   },
 ];

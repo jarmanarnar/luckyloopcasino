@@ -121,31 +121,11 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   position: sticky;
   z-index: 2;
   top: 0;
-  display: grid;
-  grid-template-columns: var(--touch-target) minmax(0, 1fr) var(--touch-target);
-  align-items: center;
-  gap: .5rem;
-  padding: .5rem .75rem;
-  background: linear-gradient(110deg, #080b0f 35%, #0a1821);
 }
-.store-dialog__header h2 { grid-area: 1 / 2; margin: 0; font-size: 1rem; line-height: 1.25; text-align: center; }
-.store-dialog__header form { grid-area: 1 / 3; margin: 0; }
-.store-dialog__close.icon-button {
-  width: var(--touch-target);
-  height: var(--touch-target);
-  min-height: 0;
-  border: 0;
-  border-radius: .5rem;
-  background: transparent;
-  color: var(--text-secondary);
-  transition: background-color 160ms ease, color 160ms ease;
-}
-.store-dialog__close.icon-button:hover { background: var(--surface-subtle); color: var(--text-primary); }
-.store-dialog__close svg { width: 1.125rem; height: 1.125rem; }
 .store-dialog__body { padding: .5rem 1rem 1.5rem; }
 @media (max-width: 599px) {
   .store-dialog { inset: 0; width: 100%; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
-  .store-dialog__header { padding: calc(.5rem + env(safe-area-inset-top, 0px)) max(.75rem, env(safe-area-inset-right, 0px)) .5rem max(.75rem, env(safe-area-inset-left, 0px)); }
+  .store-dialog__header.dialog-header { padding: calc(.75rem + env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) .75rem max(1rem, env(safe-area-inset-left, 0px)); }
   .store-dialog__body { padding: .5rem max(1rem, env(safe-area-inset-right, 0px)) calc(1.5rem + env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px)); }
   .store-package { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 5.25rem; padding-inline: .5rem; gap: .375rem; }
   .store-package__amount, .store-package__bonus { font-size: .875rem; }

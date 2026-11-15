@@ -1,0 +1,34 @@
+/* Shared header and close control for the centered account and help dialogs. */
+.dialog-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1.25rem;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-glow);
+  text-align: start;
+}
+.dialog-header > h2 { min-width: 0; margin: 0; color: var(--text-primary); font: 700 1.125rem/1.4 var(--header-font-family); }
+.dialog-header > form { display: flex; flex: none; margin: 0; }
+.dialog-close.icon-button {
+  box-sizing: border-box;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 1px solid var(--border-default);
+  border-radius: .625rem;
+  background: var(--surface-inset), var(--surface-glow);
+  box-shadow: inset 0 1px 0 var(--surface-subtle);
+  color: var(--text-secondary);
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.dialog-close.icon-button:is(:hover, :focus-visible) { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+.dialog-close.icon-button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px var(--shadow-color); }
+.dialog-close.icon-button svg { width: 1.125rem; height: 1.125rem; }
+@media (width <= 480px) {
+  .dialog-header { padding-inline: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog-close.icon-button { transition: none; }
+}

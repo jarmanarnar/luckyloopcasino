@@ -52,6 +52,7 @@
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
   <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="dialog-controls.css">
   <link rel="stylesheet" href="wallet-header.css">
   <link rel="stylesheet" href="community-chat.css">
   <link rel="stylesheet" href="player-display.css">
@@ -102,6 +103,7 @@
       <nav id="header-member-actions" class="header-member-actions" aria-label="Account shortcuts" hidden>
         <button id="header-profile" class="header-member-action header-profile" type="button" popovertarget="profile-menu" aria-label="Profile menu" hidden><span id="header-avatar" class="header-avatar" aria-hidden="true">L</span></button>
         <button id="header-rewards" class="header-member-action header-member-shortcut header-rewards" type="button" popovertarget="rewards-popover" aria-label="Rewards">
+          <span class="header-rewards__light" aria-hidden="true"></span>
           <img class="header-rewards__gift" src="assets/rewards-gift.svg" width="32" height="32" alt="">
           <span class="header-rewards__label" aria-hidden="true">Rewards</span>
         </button>
@@ -264,9 +266,9 @@
     <ul id="store-packages" class="store-packages" aria-label="Gold Coins packages"></ul>
   </main>
   <dialog id="store-dialog" class="store-dialog" aria-labelledby="store-dialog-title" lang="en" dir="ltr">
-    <header class="store-dialog__header">
+    <header class="store-dialog__header dialog-header">
       <h2 id="store-dialog-title">Get Packages</h2>
-      <form method="dialog"><button class="store-dialog__close icon-button" type="submit" aria-label="Close store" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></form>
+      <form method="dialog"><button class="store-dialog__close dialog-close icon-button" type="submit" aria-label="Close store" autofocus><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button></form>
     </header>
     <div class="store-dialog__body">
       <ul id="store-dialog-packages" class="store-packages" aria-label="Gold Coins packages"></ul>
@@ -274,23 +276,27 @@
     </div>
   </dialog>
   <dialog id="phone-verification-dialog" class="phone-verification" aria-labelledby="phone-verification-title" lang="en" dir="ltr">
-    <form method="dialog"><button class="phone-verification__close icon-button" type="submit" aria-label="Close phone verification"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></form>
-    <svg class="phone-verification__art" viewBox="0 0 104 104" fill="none" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="verification-phone-shade" x1="24" y1="14" x2="76" y2="89" gradientUnits="userSpaceOnUse"><stop stop-color="#565a67"/><stop offset="1" stop-color="#202129"/></linearGradient><linearGradient id="verification-check-shade" x1="63" y1="61" x2="88" y2="91" gradientUnits="userSpaceOnUse"><stop stop-color="var(--primary-accent)"/><stop offset="1" stop-color="color-mix(in srgb, var(--primary-accent) 88%, var(--surface-page))"/></linearGradient></defs>
-      <g transform="rotate(9 51 50)"><rect x="25" y="8" width="48" height="83" rx="12" fill="url(#verification-phone-shade)" stroke="#6b707e" stroke-width="2"/><rect x="30" y="13" width="38" height="73" rx="8" fill="#1d1f27" stroke="#3f424d"/><path d="M43 18h12" stroke="#666a78" stroke-width="3" stroke-linecap="round"/><g fill="#edeef3"><circle cx="39" cy="47" r="2.4"/><circle cx="49" cy="47" r="2.4"/><circle cx="59" cy="47" r="2.4"/></g></g>
-      <circle cx="73" cy="74" r="18" fill="url(#verification-check-shade)" stroke="var(--surface-panel)" stroke-width="3"/><path d="m66 74 5 5 9-10" stroke="var(--on-accent)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <h2 id="phone-verification-title">Phone Verification</h2>
-    <form id="phone-verification-number-form" class="phone-verification__form" method="dialog" autocomplete="off">
-      <label class="phone-verification__field"><span aria-hidden="true">+1</span><input id="phone-verification-number" disabled type="tel" aria-label="US phone number" placeholder="(201) 555-0123" maxlength="18" autocomplete="off" required></label>
-      <button class="phone-verification__submit" type="submit" disabled>Send Code</button>
-    </form>
-    <form id="phone-verification-code-form" class="phone-verification__form" method="dialog" autocomplete="off" hidden>
-      <label class="phone-verification__field"><input id="phone-verification-code" disabled type="text" inputmode="numeric" aria-label="Verification code" placeholder="6-digit code" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label>
-      <button class="phone-verification__submit" type="submit" disabled>Verify Code</button>
-      <button class="phone-verification__back" type="button">Change number</button>
-      <p class="phone-verification__status" role="status"></p>
-    </form>
+    <header class="phone-verification__header dialog-header">
+      <h2 id="phone-verification-title">Phone Verification</h2>
+      <form method="dialog"><button class="phone-verification__close dialog-close icon-button" type="submit" aria-label="Close phone verification"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button></form>
+    </header>
+    <div class="phone-verification__body">
+      <svg class="phone-verification__art" viewBox="0 0 104 104" fill="none" aria-hidden="true" focusable="false">
+        <defs><linearGradient id="verification-phone-shade" x1="24" y1="14" x2="76" y2="89" gradientUnits="userSpaceOnUse"><stop stop-color="#565a67"/><stop offset="1" stop-color="#202129"/></linearGradient><linearGradient id="verification-check-shade" x1="63" y1="61" x2="88" y2="91" gradientUnits="userSpaceOnUse"><stop stop-color="var(--primary-accent)"/><stop offset="1" stop-color="color-mix(in srgb, var(--primary-accent) 88%, var(--surface-page))"/></linearGradient></defs>
+        <g transform="rotate(9 51 50)"><rect x="25" y="8" width="48" height="83" rx="12" fill="url(#verification-phone-shade)" stroke="#6b707e" stroke-width="2"/><rect x="30" y="13" width="38" height="73" rx="8" fill="#1d1f27" stroke="#3f424d"/><path d="M43 18h12" stroke="#666a78" stroke-width="3" stroke-linecap="round"/><g fill="#edeef3"><circle cx="39" cy="47" r="2.4"/><circle cx="49" cy="47" r="2.4"/><circle cx="59" cy="47" r="2.4"/></g></g>
+        <circle cx="73" cy="74" r="18" fill="url(#verification-check-shade)" stroke="var(--surface-panel)" stroke-width="3"/><path d="m66 74 5 5 9-10" stroke="var(--on-accent)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <form id="phone-verification-number-form" class="phone-verification__form" method="dialog" autocomplete="off">
+        <label class="phone-verification__field"><span aria-hidden="true">+1</span><input id="phone-verification-number" disabled type="tel" aria-label="US phone number" placeholder="(201) 555-0123" maxlength="18" autocomplete="off" required></label>
+        <button class="phone-verification__submit" type="submit" disabled>Send Code</button>
+      </form>
+      <form id="phone-verification-code-form" class="phone-verification__form" method="dialog" autocomplete="off" hidden>
+        <label class="phone-verification__field"><input id="phone-verification-code" disabled type="text" inputmode="numeric" aria-label="Verification code" placeholder="6-digit code" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label>
+        <button class="phone-verification__submit" type="submit" disabled>Verify Code</button>
+        <button class="phone-verification__back" type="button">Change number</button>
+        <p class="phone-verification__status" role="status"></p>
+      </form>
+    </div>
   </dialog>
   <dialog id="notifications-drawer" class="notifications-drawer" aria-labelledby="notifications-title" lang="en" dir="ltr">
     <header class="notifications-drawer__header">
@@ -439,24 +445,33 @@
     </div>
   </footer>
   <dialog id="how-to-play-dialog" class="how-to-play-dialog" aria-labelledby="how-to-play-title" aria-describedby="how-to-play-description" lang="en" dir="ltr">
-    <button id="how-to-play-close" class="how-to-play-close icon-button" type="button" aria-label="Close How to Play" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m6.4 4.8 5.6 5.6 5.6-5.6 1.6 1.6-5.6 5.6 5.6 5.6-1.6 1.6-5.6-5.6-5.6 5.6-1.6-1.6 5.6-5.6-5.6-5.6Z"/></svg></button>
-    <h2 id="how-to-play-title">How to Play?</h2>
-    <p id="how-to-play-mode" class="how-to-play-mode"></p>
-    <div class="how-to-play-stage">
-      <button id="how-to-play-previous" class="how-to-play-arrow how-to-play-arrow--previous icon-button" type="button" aria-label="Previous explanation"><svg data-ui-icon="left" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
-      <div id="how-to-play-art" class="how-to-play-art" aria-hidden="true"></div>
-      <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg data-ui-icon="right" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+    <header class="how-to-play-header dialog-header">
+      <h2 id="how-to-play-title">How to Play</h2>
+      <button id="how-to-play-close" class="how-to-play-close dialog-close icon-button" type="button" aria-label="Close How to Play" autofocus><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+    </header>
+    <div class="how-to-play-body">
+      <p id="how-to-play-mode" class="how-to-play-mode"></p>
+      <div class="how-to-play-stage">
+        <button id="how-to-play-previous" class="how-to-play-arrow how-to-play-arrow--previous icon-button" type="button" aria-label="Previous explanation"><svg data-ui-icon="left" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+        <div id="how-to-play-art" class="how-to-play-art" aria-hidden="true"></div>
+        <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg data-ui-icon="right" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+      </div>
+      <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
     </div>
-    <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
-    <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>OK</button>
+    <footer class="how-to-play-footer">
+      <div class="how-to-play-progress" aria-hidden="true"><span></span><span></span><span></span></div>
+      <button id="how-to-play-finish" class="how-to-play-finish primary-button" type="button" hidden>Got it</button>
+    </footer>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
   </dialog>
   <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title" lang="en" dir="ltr">
-    <button id="auth-close" class="auth-close icon-button" type="button" aria-label="Close login and registration"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+    <header class="auth-dialog__header dialog-header">
+      <h2 id="auth-title" tabindex="-1" autofocus>Login</h2>
+      <button id="auth-close" class="auth-close dialog-close icon-button" type="button" aria-label="Close login and registration"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+    </header>
     <div class="auth-layout">
       <div class="auth-wireframe" aria-hidden="true"></div>
       <div class="auth-content">
-        <h2 id="auth-title" class="visually-hidden" tabindex="-1" autofocus>Login to COP COIN</h2>
         <div class="auth-tabs" role="tablist" aria-label="Account access">
           <button id="auth-tab-login" type="button" role="tab" aria-selected="true" aria-controls="auth-panel">Login</button>
           <button id="auth-tab-register" type="button" role="tab" aria-selected="false" aria-controls="auth-panel" tabindex="-1">Register</button>

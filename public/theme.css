@@ -20,6 +20,8 @@
   --primary-accent: #ffffff;
   --redeem-accent: #4da3ff;
   --button-accent: #d9dee7;
+  --rewards-glow-start: #22c55e;
+  --rewards-glow-end: #eab308;
   --buy-button-gradient-bottom: #ff0000;
   --buy-button-tonal: color-mix(in srgb, var(--buy-button-gradient-bottom) 16%, transparent);
   --buy-button-lower-edge: color-mix(in srgb, var(--buy-button-gradient-bottom) 43%, var(--surface-page));
