@@ -390,7 +390,7 @@
       position: absolute;
       width: 1.75rem;
       height: 1.25rem;
-      background: url('assets/brand/cop-coin-beacons.png') center / contain no-repeat;
+      background: url('assets/brand/cop-coin-cc.png') center / contain no-repeat;
     }
     .shelf-view-all::before { top: .75rem; left: .625rem; }
     .shelf-view-all::after { right: .625rem; bottom: .75rem; }

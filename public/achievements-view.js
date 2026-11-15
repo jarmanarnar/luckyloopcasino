@@ -31,7 +31,7 @@ export function renderAchievements(ctx, entries, collect) {
   total.append(ctx.icon('jackpot'), n('strong', '', `${completed.length}/${entries.length}`));
   copy.append(total);
   const artwork = n('img', 'achievements-hero__art');
-  artwork.src = 'assets/brand/cop-coin-beacons.png';
+  artwork.src = 'assets/brand/cop-coin-cc.png';
   artwork.alt = '';
   artwork.width = 1536;
   artwork.height = 1024;

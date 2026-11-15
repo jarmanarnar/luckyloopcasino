@@ -8,6 +8,9 @@
 .site-logo { display: flex; flex: none; align-items: center; justify-content: center; width: 3.25rem; height: 2.25rem; border-radius: .25rem; }
 .site-logo__image { display: block; width: 100%; height: 100%; object-fit: contain; }
 .site-logo__image--wordmark { display: none; }
+/* Allow for the CC artwork's transparent margins so its letters match the
+   wordmark's visible height (about 28px), within the existing logo slot. */
+.site-logo__image--mark { flex: none; width: 4.25rem; height: 3rem; max-width: none; }
 .header-context > .icon-button {
   box-sizing: border-box;
   flex: none;
