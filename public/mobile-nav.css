@@ -1,5 +1,5 @@
 :root {
-  --mobile-nav-height: 3.9375rem;
+  --mobile-nav-height: calc(3.9375rem + env(safe-area-inset-bottom, 0px));
 }
 
 .mobile-nav {
@@ -10,7 +10,7 @@
   display: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--mobile-nav-height);
-  padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) 0 max(.75rem, env(safe-area-inset-left, 0px));
+  padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(.75rem, env(safe-area-inset-left, 0px));
   border: 0;
   border-top: 1px solid var(--top-bar-divider);
   background: var(--surface-glow);
@@ -65,7 +65,7 @@
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) .mobile-nav__icon { color: var(--catalog-accent); }
 
-@media (width < 45rem) {
+@media (width <= 1024px) {
   body[data-mobile-nav="true"] { padding-bottom: var(--mobile-nav-height); }
   body[data-mobile-nav="true"] .mobile-nav { display: grid; }
   body[data-mobile-nav="true"][data-view="game"] { padding-bottom: 0; }

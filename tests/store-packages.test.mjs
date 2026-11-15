@@ -1,18 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { STORE_PACKAGES, formatPackagePrice, getStorePackage } from '../public/store-packages.js';
+import { STORE_PACKAGES, formatPackagePrice, formatOriginalPrice, formatPackageCoins, getStorePackage } from '../public/store-packages.js';
 
-test('Store matches the featured offer and six packages in the supplied reference', () => {
-  assert.deepEqual(STORE_PACKAGES.map(p => [p.goldCoins, p.goldLabel, p.sweepsCoins, formatPackagePrice(p), p.badge]), [
-    [250000, '250K', 50, '$24.99', 'Special Offer'],
-    [20000, '20K', 0, '$2.99', undefined],
-    [50000, '50K', 5, '$4.99', undefined],
-    [75000, '75K', 10, '$9.99', undefined],
-    [125000, '125K', 21, '$19.99', undefined],
-    [300000, '300K', 52, '$49.99', 'Popular'],
-    [625000, '625K', 105, '$99.99', 'Most Value'],
+test('Store includes all reference packages with accurate coin amounts and offer prices', () => {
+  assert.deepEqual(STORE_PACKAGES.map(p => [p.goldCoins, p.sweepsCoins, formatPackagePrice(p), formatOriginalPrice(p)]), [
+    [180000, 18, '$6.99', '$18'], [400000, 40, '$15.99', '$40'], [600000, 60, '$23.99', '$60'],
+    [150000, 15, '$9.99', '$15'], [50000, 5, '$4.99', ''], [500000, 50, '$49.99', ''],
+    [1000000, 101, '$99.99', '$101'], [2000000, 202, '$199.99', '$202'],
+    [5000000, 510, '$499.99', '$510'], [10000000, 1020, '$999.99', '$1,020'],
+    [100000, 10, '$9.99', ''], [200000, 20, '$19.99', ''], [300000, 30, '$29.99', ''],
+    [2500000, 253, '$249.99', '$253'], [22000, 0, '$1.99', ''], [55000, 0, '$4.99', ''], [110000, 0, '$9.99', ''],
   ]);
-  assert.deepEqual(STORE_PACKAGES.filter(p => p.featured), [STORE_PACKAGES[0]]);
+  assert.deepEqual(STORE_PACKAGES.filter(p => p.offer).map(p => p.badge), ['New', 'Popular', 'Sale', 'New']);
+  assert.equal(formatPackageCoins(10000000), '10\u00a0000\u00a0000');
+  assert.equal(formatPackageCoins(1020), '1\u00a0020');
 });
 
 test('Package selection resolves a unique immutable display package and rejects unknown IDs', () => {

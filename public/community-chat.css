@@ -84,7 +84,7 @@ html:has(body[data-chat-modal="true"]) { overflow: hidden; }
   body[data-chat] .top-bar { transition: left var(--sidebar-duration) var(--sidebar-easing),right 240ms var(--sidebar-easing); }
   body[data-chat="open"] .top-bar { right: var(--chat-width); }
 }
-@media (width < 45rem) {
+@media (width <= 1024px) {
   .community-chat { width: 100%; border-left: 0; }
   .chat-header { padding-top: calc(.875rem + env(safe-area-inset-top,0px)); }
   .top-bar .header-chat { display: none; }

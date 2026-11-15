@@ -2,7 +2,7 @@
 body[data-view="game"] { display: block; height: auto; min-height: 100dvh; overflow: auto; }
 .game-view { --player-toolbar-height: 3.5rem; width: var(--page-content-width); margin: 1rem auto; overflow: visible; background: transparent; }
 .game-details-view > .game-view { width: 100%; margin: 0; }
-@media (min-width: 45rem) {
+@media (width > 1024px) {
   .game-details-view { width: min(var(--page-max-width), calc(100% - 2 * max(3rem, var(--page-inset)))); }
   /* Keep a usable desktop stage as the content lane narrows. */
   .game-stage { min-height: 40rem; }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import * as packages from '../public/store-packages.js';
 
 const source = (await readFile(new URL('../public/store-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/, '')
@@ -44,6 +45,36 @@ function storePage({ desktop = false, signedIn = true } = {}) {
     login() { signedIn = true; while (pending.length) pending.shift()(); },
   };
 }
+
+test('Package rows expose full accessible amounts, real discounts and no empty free bonus', () => {
+  class Node {
+    constructor(tagName) { this.tagName = tagName; this.children = []; this.dataset = {}; this.attributes = new Map(); }
+    append(...children) { this.children.push(...children); }
+    setAttribute(name, value) { this.attributes.set(name, value); }
+  }
+  const list = new Node('ul');
+  vm.runInNewContext(`${source}\nrenderPackages(list, 'h3');`, {
+    ...packages, list, document: { createElement: tag => new Node(tag) },
+  });
+  assert.equal(list.children.length, 17);
+  for (const row of list.children) {
+    const entry = packages.getStorePackage(row.dataset.packageId);
+    const bonus = row.children.find(child => child.className === 'store-package__bonus');
+    assert.equal(Boolean(bonus), entry.sweepsCoins > 0);
+    if (bonus) {
+      assert.equal(bonus.children.find(child => child.tagName === 'strong').textContent, packages.formatPackageCoins(entry.sweepsCoins));
+      assert.equal(bonus.children.find(child => child.className === 'store-package__free').textContent, 'free');
+    }
+    const purchase = row.children.find(child => child.className === 'store-package__purchase');
+    const oldPrice = purchase.children.find(child => child.tagName === 's');
+    assert.equal(Boolean(oldPrice), Boolean(entry.originalPriceCents));
+    const price = purchase.children.find(child => child.tagName === 'button');
+    assert.equal(price.dataset.package, entry.id);
+    assert.equal(price.attributes.get('aria-controls'), 'phone-verification-dialog');
+    assert.match(price.attributes.get('aria-label'), /Gold Coins/);
+    assert.equal(price.attributes.get('aria-label').includes('Super Coins'), entry.sweepsCoins > 0);
+  }
+});
 
 for (const desktop of [false, true]) {
   const size = desktop ? 'desktop' : 'mobile';

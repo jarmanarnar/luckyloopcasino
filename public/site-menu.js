@@ -30,7 +30,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   const triggerHome = trigger.parentElement;
   const triggerSibling = trigger.nextSibling;
   const menuBackground = new Map();
-  const desktopMedia = window.matchMedia('(min-width: 45rem)');
+  const desktopMedia = window.matchMedia('(width > 1024px)');
   let desktop = false;
   let expanded = false;
   const sidebarStorageKey = 'luckyloop-sidebar-expanded-v1';

@@ -1,4 +1,4 @@
-import { STORE_PACKAGES, getStorePackage, formatPackagePrice } from './store-packages.js';
+import { STORE_PACKAGES, getStorePackage, formatPackagePrice, formatOriginalPrice, formatPackageCoins } from './store-packages.js';
 
 let controller;
 function node(tag, className, text) {
@@ -16,26 +16,32 @@ function coin(code, size = 32) {
 }
 function renderPackages(list, headingTag) {
   for (const packageInfo of STORE_PACKAGES) {
-    const card = node('li', packageInfo.featured ? 'store-package store-package--featured' : 'store-package');
+    const card = node('li', 'store-package');
     card.dataset.packageId = packageInfo.id;
+    if (packageInfo.offer) card.dataset.offer = packageInfo.offer;
     if (packageInfo.badge) card.append(node('span', 'store-package__badge', packageInfo.badge));
     const heading = node(headingTag, 'store-package__amount');
-    heading.append(coin('GC'), node('span', '', packageInfo.goldLabel), node('span', 'visually-hidden', 'Gold Coins'));
-    const art = node('div', 'store-package__art');
-    art.setAttribute('aria-hidden', 'true');
-    if (!packageInfo.featured) {
-      art.append(coin('GC', 64));
-      if (packageInfo.sweepsCoins) art.append(coin('SC', 44));
+    heading.append(coin('GC'), node('span', '', formatPackageCoins(packageInfo.goldCoins)), node('span', 'visually-hidden', ' Gold Coins'));
+    card.append(heading);
+    if (packageInfo.sweepsCoins > 0) {
+      const bonus = node('p', 'store-package__bonus');
+      bonus.append(coin('SC', 20), node('strong', '', formatPackageCoins(packageInfo.sweepsCoins)), node('span', 'store-package__free', 'free'), node('span', 'visually-hidden', ' Super Coins'));
+      card.append(bonus);
     }
-    const bonus = node('p', 'store-package__bonus');
-    bonus.append(coin('SC', 20), node('strong', '', String(packageInfo.sweepsCoins)), node('span', '', 'FREE'), node('span', 'visually-hidden', 'Super Coins'));
+    const purchase = node('div', 'store-package__purchase');
+    if (packageInfo.originalPriceCents > packageInfo.priceCents) {
+      const original = node('s', 'store-package__original-price', formatOriginalPrice(packageInfo));
+      original.setAttribute('aria-hidden', 'true');
+      purchase.append(original);
+    }
     const price = node('button', 'store-package__price', formatPackagePrice(packageInfo));
     price.type = 'button';
     price.dataset.package = packageInfo.id;
     price.setAttribute('aria-haspopup', 'dialog');
     price.setAttribute('aria-controls', 'phone-verification-dialog');
-    price.setAttribute('aria-label', `Buy ${packageInfo.goldLabel} GC${packageInfo.sweepsCoins ? ` plus ${packageInfo.sweepsCoins} free SC` : ''} for ${formatPackagePrice(packageInfo)}`);
-    card.append(heading, art, bonus, price);
+    price.setAttribute('aria-label', `Buy ${formatPackageCoins(packageInfo.goldCoins)} Gold Coins${packageInfo.sweepsCoins ? ` plus ${formatPackageCoins(packageInfo.sweepsCoins)} free Super Coins` : ''} for ${formatPackagePrice(packageInfo)}${packageInfo.originalPriceCents > packageInfo.priceCents ? `, previously ${formatOriginalPrice(packageInfo)}` : ''}`);
+    purchase.append(price);
+    card.append(purchase);
     list.append(card);
   }
 }

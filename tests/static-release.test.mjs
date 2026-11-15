@@ -15,6 +15,8 @@ test('a new deployment changes cache keys for entries, dynamic imports and depen
     const entry = '<head><meta charset="utf-8"><link href="styles.css" rel="stylesheet"><script type="module" src="bootstrap.js"></script><script src="https://example.test/sdk.js"></script></head>';
     for (const name of ['index.html', 'hacksaw-demo.html']) await writeFile(path.join(source, name), entry);
     await writeFile(path.join(source, 'styles.css'), 'body { margin: 0 }');
+    await writeFile(path.join(source, 'sw.js'), "const RELEASE = '__COP_COIN_RELEASE__';");
+    await writeFile(path.join(source, 'manifest.webmanifest'), '{"scope":"./","display":"standalone"}');
     await buildStatic(root, 'aaaaaaa');
     await writeFile(path.join(root, 'dist', 'obsolete.js'), 'old');
     await buildStatic(root, 'bbbbbbb');
@@ -35,6 +37,9 @@ test('a new deployment changes cache keys for entries, dynamic imports and depen
       assert.doesNotMatch(html, /aaaaaaa/);
     }
     await assert.rejects(access(path.join(root, 'dist', 'obsolete.js')));
+    assert.equal(await readFile(path.join(root, 'dist', 'sw.js'), 'utf8'), "const RELEASE = 'bbbbbbb';");
+    assert.equal(await readFile(path.join(source, 'sw.js'), 'utf8'), "const RELEASE = '__COP_COIN_RELEASE__';");
+    assert.deepEqual(JSON.parse(await readFile(path.join(root, 'dist', 'manifest.webmanifest'), 'utf8')), { scope: './', display: 'standalone' });
     await assert.rejects(buildStatic(root, '../invalid-version'));
   } finally {
     if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith('loop-static-release-')) throw new Error('Unexpected test cleanup path');

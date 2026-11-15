@@ -496,4 +496,4 @@
       :root { --page-gutter: 1.5rem; --game-card-gap: 1rem; --shelf-title-size: 1.5rem; --game-title-size: .875rem; }
       .game-shelf + .game-shelf { margin-block-start: 3rem; }
     }
-    @media (min-width: 64rem) { :root { --page-gutter: 3rem; } }
+    @media (width > 1024px) { :root { --page-gutter: 3rem; } }

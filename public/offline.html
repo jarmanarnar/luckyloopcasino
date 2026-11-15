@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070708">
+  <title>COP COIN — Offline</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, sans-serif; background: #070708; color: #fff; }
+    body { box-sizing: border-box; min-height: 100dvh; margin: 0; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+    main { max-width: 24rem; text-align: center; }
+    img { width: 112px; height: 112px; }
+    h1 { margin: 8px 0 12px; font-size: 24px; }
+    p { color: #b9becb; font-size: 15px; line-height: 1.6; }
+    button { margin-top: 12px; padding: 12px 24px; min-height: 44px; border: 1px solid #78808b; border-radius: 10px; background: linear-gradient(155deg, #e1e8ef, #c8cdd5); color: #071018; box-shadow: 0 2px 0 #78808b; font: 700 14px Arial, sans-serif; cursor: pointer; }
+    button:active { transform: translateY(2px); box-shadow: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="assets/brand/app-icons/icon-192.png" alt="COP COIN" width="192" height="192">
+    <h1>You’re offline</h1>
+    <p>Connect to the internet to open the lobby and games.</p>
+    <button id="retry" type="button">Try again</button>
+  </main>
+  <script>document.querySelector('#retry').addEventListener('click', () => location.reload());</script>
+</body>
+</html>

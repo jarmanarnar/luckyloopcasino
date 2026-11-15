@@ -122,7 +122,7 @@
 .wallet-switch[aria-checked="true"] .coin-art { transform: translateY(-50%) translateX(var(--switch-travel)); }
 
 
-@media (min-width: 45rem) {
+@media (width > 1024px) {
   .site-logo { width: 9rem; height: 3rem; }
   .site-logo__image--wordmark { display: block; }
   .site-logo__image--mark { display: none; }

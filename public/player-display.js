@@ -4,7 +4,7 @@ export function initPlayerDisplay({ view, document: doc = document, window: win 
   if (!theater || !fullscreen) return { reset() {}, setGame() {} };
   // The page, including its original header and popovers, enters fullscreen together.
   const fullscreenTarget = doc.documentElement;
-  const mobileMedia = win?.matchMedia('(max-width: 719px), (max-width: 1024px) and (max-height: 719px)');
+  const mobileMedia = win?.matchMedia('(width <= 1024px)');
   let opened = false, playing = false, wide = false, fallback = false, busy = false, generation = 0;
   let mobileSession = false;
   const nativeFullscreen = () => Boolean(fullscreenTarget) && doc.fullscreenElement === fullscreenTarget;

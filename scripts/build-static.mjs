@@ -22,6 +22,10 @@ export async function buildStatic(rootDirectory, version) {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await cp(source, output, { recursive: true });
+  if (files.includes('sw.js')) {
+    const worker = await readFile(path.join(source, 'sw.js'), 'utf8');
+    await writeFile(path.join(output, 'sw.js'), worker.replaceAll('__COP_COIN_RELEASE__', version));
+  }
   for (const file of files.filter(file => file.endsWith('.html'))) {
     let html = await readFile(path.join(source, file), 'utf8');
     if (!/<meta\s+charset=["']utf-8["'][^>]*>/i.test(html)) throw new Error(`Missing UTF-8 charset in ${file}`);

@@ -7,6 +7,12 @@
   <script type="module" src="touch-controls.js"></script>
   <meta name="theme-color" content="#070708">
   <meta name="application-name" content="COP COIN">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="COP COIN">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/app-icons/apple-touch-icon.png">
+  <script type="module" src="pwa.js"></script>
   <meta name="description" content="COP COIN — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>COP COIN</title>
   <link rel="icon" type="image/png" href="assets/brand/cop-coin-cc.png">
@@ -258,7 +264,7 @@
   </main>
   <dialog id="store-dialog" class="store-dialog" aria-labelledby="store-dialog-title" lang="en" dir="ltr">
     <header class="store-dialog__header">
-      <h2 id="store-dialog-title">Buy Coins</h2>
+      <h2 id="store-dialog-title">Get Packages</h2>
       <form method="dialog"><button class="store-dialog__close icon-button" type="submit" aria-label="Close store" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></form>
     </header>
     <div class="store-dialog__body">
