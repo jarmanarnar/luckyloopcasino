@@ -6,6 +6,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   const categories = document.querySelector('#catalog-categories');
   const dialogs = {
     menu: document.querySelector('#site-menu'),
+    store: document.querySelector('#store-dialog'),
   };
   const buttons = new Map(['menu', 'lobby', 'store', 'redeem', 'chat']
     .map(action => [action, document.querySelector(`#mobile-nav-${action}`)]));
@@ -16,6 +17,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
 
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
+      : dialogs.store.open ? 'store'
       : document.body.dataset.chat === 'open' ? 'chat'
       : document.body.dataset.view === 'game' || document.body.dataset.page === 'game-details' ? null
         : categories.dataset.activeMenu === 'redeem' ? 'redeem'
@@ -25,7 +27,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);
-      if (active && !['menu', 'chat'].includes(action)) button.setAttribute('aria-current', 'page');
+      if (active && !['menu', 'store', 'chat'].includes(action)) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
       if (dialogs[action]) button.setAttribute('aria-expanded', String(dialogs[action].open));
     }

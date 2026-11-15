@@ -65,22 +65,14 @@ export function initStoreView({ router, account, auth, verifyPhone } = {}) {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) storeDialog.close();
   });
 
-  const desktop = window.matchMedia('(min-width: 45rem)');
-  const entryPoints = document.querySelectorAll('#menu-buy, #wallet-add');
-  function syncEntryPoints() {
-    for (const button of entryPoints) {
-      button.setAttribute('aria-controls', desktop.matches ? storeDialog.id : view.id);
-      if (desktop.matches) button.setAttribute('aria-haspopup', 'dialog');
-      else button.removeAttribute('aria-haspopup');
-    }
+  const entryPoints = document.querySelectorAll('#menu-buy, #wallet-add, #mobile-nav-store');
+  for (const button of entryPoints) {
+    button.setAttribute('aria-controls', storeDialog.id);
+    button.setAttribute('aria-haspopup', 'dialog');
   }
-  desktop.addEventListener('change', syncEntryPoints);
-  syncEntryPoints();
 
   function openStore() {
-    if (!desktop.matches) return router.navigate({ type: 'store' });
     return auth.require(() => {
-      if (!desktop.matches) return router.navigate({ type: 'store' });
       if (document.querySelector('dialog[open]')) return;
       storeDialog.showModal();
       storeDialog.scrollTop = 0;

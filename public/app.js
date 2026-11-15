@@ -40,7 +40,7 @@ export async function initApplication() {
   const help = initHowToPlay({ router });
   const menu = initSiteMenu({ ...catalog, ...features, ...help, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
-  initMobileNav({ ...catalog, ...features, ...menu, openChat: chat.open });
+  initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
   initHeroCarousel(catalog);
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {

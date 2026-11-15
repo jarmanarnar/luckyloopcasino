@@ -293,7 +293,8 @@ html:has(.store-dialog[open]) { overflow: hidden; }
 @media (max-width: 32rem) {
   .store-dialog__header { padding: 1rem; }
   .store-dialog__body { padding: 1rem; }
-  .store-dialog .store-packages { gap: .5rem; }
+  .store-dialog .store-packages { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+  .store-dialog .store-package__price { min-height: var(--touch-target); }
   .store-dialog .store-package:not(.store-package--featured) { padding-inline: .375rem; }
   .store-dialog .store-package__amount { font-size: .875rem; }
   .store-dialog .store-package__bonus { font-size: .75rem; }
