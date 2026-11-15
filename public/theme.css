@@ -20,6 +20,13 @@
   --primary-accent: #a0f526;
   --redeem-accent: #4da3ff;
   --button-accent: var(--primary-accent);
+  --buy-button-gradient-bottom: #ff0000;
+  --buy-button-tonal: color-mix(in srgb, var(--buy-button-gradient-bottom) 16%, transparent);
+  --buy-button-lower-edge: color-mix(in srgb, var(--buy-button-gradient-bottom) 43%, var(--surface-page));
+  --redeem-button-gradient-bottom: #009dff;
+  --redeem-button-tonal: color-mix(in srgb, var(--redeem-button-gradient-bottom) 16%, transparent);
+  --redeem-button-lower-edge: color-mix(in srgb, var(--redeem-button-gradient-bottom) 43%, var(--surface-page));
+  --button-inner-highlight: rgb(220 227 244 / 32%);
   --coin-gold: #e8bf65;
   --coin-sweeps: #8bdfb3;
   --text-error: #f28b82;

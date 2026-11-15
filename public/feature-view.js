@@ -100,7 +100,7 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
     document.body.dataset.page = 'feature';
     document.querySelector('#catalog-categories').dataset.activeMenu = currentPage;
     title.textContent = page.title;
-    document.title = `${page.title} · LuckyLoop Casino`;
+    document.title = `${page.title} · COP COIN`;
     notice.textContent = '';
     if (currentPage === 'history' && meta.historyFilter === 'transaction') ctx.ui.historyFilter = 'transaction';
     void save(() => account.recordPageVisit(currentPage));

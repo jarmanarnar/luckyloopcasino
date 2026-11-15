@@ -139,7 +139,7 @@ button.header-member-action { cursor: pointer; }
 
 /* Switch the mark using usable header width, not viewport width.
    When the sidebar disappears, the wordmark can come back without resizing controls. */
-body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo { display: flex; width: 6.5rem; height: 2rem; }
+body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo { display: flex; width: 9rem; height: 3rem; }
 body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--wordmark { display: block; }
 body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--mark { display: none; }
 
@@ -148,7 +148,7 @@ body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .header-wallet-controls { justify-self: end; }
-  body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo { width: 3.25rem; height: 1.75rem; }
+  body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo { width: 3.25rem; height: 2.25rem; }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--wordmark { display: none; }
   body[data-auth="member"][data-wallet-layout="currency-menu"] .site-logo__image--mark { display: block; }
 }

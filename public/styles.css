@@ -189,7 +189,7 @@
     .icon-button:disabled { opacity: .3; cursor: default; }
 
     button.primary-button {
-      --button-depth: .375rem;
+      --button-depth: .25rem;
       --button-travel: 0rem;
       position: relative;
       border: 1px solid var(--primary-button-border);
@@ -215,7 +215,7 @@
     }
     @media (hover: hover) and (pointer: fine) {
       button.primary-button:hover:not(:disabled):not([aria-disabled="true"]) {
-        --button-travel: .125rem;
+        --button-travel: calc(var(--button-depth) / 3);
         background: var(--primary-button-bottom);
       }
     }
@@ -418,9 +418,8 @@
       content: '';
       position: absolute;
       width: 1.75rem;
-      height: .875rem;
-      background: var(--surface-active);
-      mask: url('assets/loop-infinity.svg') center / contain no-repeat;
+      height: 1.25rem;
+      background: url('assets/brand/cop-coin-beacons.png') center / contain no-repeat;
     }
     .shelf-view-all::before { top: .75rem; left: .625rem; }
     .shelf-view-all::after { right: .625rem; bottom: .75rem; }

@@ -5,7 +5,7 @@
 }
 
 .header-context { display: flex; align-items: center; gap: .5rem; min-width: 0; justify-self: start; }
-.site-logo { display: flex; flex: none; align-items: center; justify-content: center; width: 3.25rem; height: 1.75rem; border-radius: .25rem; }
+.site-logo { display: flex; flex: none; align-items: center; justify-content: center; width: 3.25rem; height: 2.25rem; border-radius: .25rem; }
 .site-logo__image { display: block; width: 100%; height: 100%; object-fit: contain; }
 .site-logo__image--wordmark { display: none; }
 .header-context > .icon-button {
@@ -120,7 +120,7 @@
 
 
 @media (min-width: 45rem) {
-  .site-logo { width: 6.5rem; height: 2rem; }
+  .site-logo { width: 9rem; height: 3rem; }
   .site-logo__image--wordmark { display: block; }
   .site-logo__image--mark { display: none; }
 }

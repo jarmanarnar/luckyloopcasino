@@ -111,6 +111,10 @@ html:has(#site-menu[open]) { overflow: hidden; }
   margin: 0;
 }
 .site-menu__shortcut {
+  --shortcut-tonal: var(--buy-button-tonal);
+  --shortcut-gradient-bottom: var(--buy-button-gradient-bottom);
+  --shortcut-lower-edge: var(--buy-button-lower-edge);
+  position: relative;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -118,20 +122,37 @@ html:has(#site-menu[open]) { overflow: hidden; }
   gap: .25rem;
   min-width: 0;
   height: var(--menu-control-size);
-  padding: .375rem;
+  padding: .75rem .625rem;
   border: 0;
-  border-radius: var(--menu-group-radius);
-  background: var(--surface-control);
+  border-radius: .625rem;
+  outline: 1px solid var(--surface-page);
+  background: linear-gradient(180deg, var(--shortcut-tonal) 6.25%, var(--shortcut-gradient-bottom) 100%), var(--surface-page);
+  box-shadow:
+    0 1px 0 0 var(--surface-page),
+    0 1px .8px 1px var(--shortcut-tonal) inset,
+    0 -3px .8px 2px var(--shortcut-lower-edge) inset,
+    0 -5px 1px 0 var(--button-inner-highlight) inset;
   color: var(--text-primary);
-  font-size: .8125rem;
-  font-weight: 700;
-  line-height: 1;
+  font: 700 .875rem/1.25rem var(--header-font-family);
   white-space: nowrap;
+  overflow: hidden;
+  transform: translateY(0);
+  transition: color .16s ease-in-out, background-color .16s ease-in-out, transform .16s ease-in-out, box-shadow .16s ease-in-out;
   cursor: pointer;
+}
+.site-menu__shortcut:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 0 var(--surface-page),
+    0 1px .8px 1px var(--shortcut-tonal) inset,
+    0 -2px .8px 1px var(--shortcut-lower-edge) inset,
+    0 -3px 1px 0 var(--button-inner-highlight) inset;
 }
 .site-menu__shortcut svg { display: none; flex: none; width: 1.25rem; height: 1.25rem; }
 .site-menu__shortcut--redeem {
-  --button-accent: var(--redeem-accent);
+  --shortcut-tonal: var(--redeem-button-tonal);
+  --shortcut-gradient-bottom: var(--redeem-button-gradient-bottom);
+  --shortcut-lower-edge: var(--redeem-button-lower-edge);
 }
 .site-menu__shortcut:disabled { opacity: .5; cursor: default; }
 
@@ -289,6 +310,6 @@ html:has(#site-menu[open]) { overflow: hidden; }
   body[data-sidebar="collapsed"] .site-menu__tooltip { display: block; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-menu, .site-menu::backdrop, .site-menu__chevron,
+  .site-menu, .site-menu::backdrop, .site-menu__chevron, .site-menu__shortcut,
   .site-sidebar, body[data-sidebar], body[data-sidebar] .top-bar { transition: none; }
 }

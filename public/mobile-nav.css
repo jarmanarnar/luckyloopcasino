@@ -39,6 +39,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
+.mobile-nav__icon--brand { width: 1.875rem; object-fit: contain; }
 .mobile-nav__icon--chat { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .mobile-nav__label { font-size: .6875rem; font-weight: 700; line-height: 1.2; white-space: nowrap; }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }

@@ -231,7 +231,7 @@ export function initCatalogView({ router, member } = {}) {
     controls.hidden = home || model.type === 'not-found';
     back.setAttribute('aria-label', route.type === 'provider' ? 'Back' : 'Back to lobby');
     title.textContent = model.title;
-    document.title = home ? 'LuckyLoop Casino' : `${model.title} · LuckyLoop Casino`;
+    document.title = home ? 'COP COIN' : `${model.title} · COP COIN`;
     categories.dataset.activeMenu = home ? 'lobby' : model.activeMenu;
     for (const button of categories.querySelectorAll('[data-category]')) {
       button.setAttribute('aria-pressed', String(button.dataset.category === model.activeMenu));
