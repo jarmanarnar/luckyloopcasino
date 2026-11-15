@@ -1,18 +1,22 @@
 /* The original plus component remains available in the document. */
 body[data-wallet-layout="currency-menu"] #coin-wallet { display: none !important; }
-body[data-wallet-layout="currency-menu"] .top-bar { container: loop-header / inline-size; background: var(--surface-glow); }
+body[data-wallet-layout="currency-menu"] .top-bar {
+  container: loop-header / inline-size;
+  background: var(--top-bar-background);
+  /* Keep the bar flat beside mobile browser chrome; light belongs to each control. */
+  --header-item-surface: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--redeem-button-gradient-bottom) 8%, transparent), transparent 72%), var(--surface-inset), var(--surface-panel);
+}
 body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: var(--header-control-size); }
 .header-wallet-controls, .header-member-actions {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: .25rem;
+  gap: .375rem;
   height: 2.75rem;
-  padding: .1875rem;
-  border: 1px solid var(--border-default);
-  border-radius: .875rem;
-  background: var(--surface-inset);
-  box-shadow: inset 0 1px 0 var(--surface-subtle);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .header-wallet-controls { position: relative; justify-self: center; min-width: 0; max-width: 100%; }
 .header-member-actions { justify-self: end; }
@@ -20,19 +24,24 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
   width: max-content;
   min-width: 0;
   max-width: min(9.25rem, 100%);
+  height: 100%;
   flex: none;
   display: flex;
   align-items: center;
   gap: .5rem;
   padding: 0 .625rem;
-  border: 0;
-  border-radius: .625rem;
-  background: var(--surface-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: .875rem;
+  background: var(--header-item-surface);
+  box-shadow: inset 0 1px 0 var(--surface-subtle);
   color: var(--text-primary);
   --wallet-value-size: .875rem;
   --wallet-line-height: 1.25rem;
 }
-.wallet-balance-trigger.wallet-switch:is(:hover, :focus-visible, [aria-expanded="true"]) { background: var(--surface-control); }
+.wallet-balance-trigger.wallet-switch:is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: var(--surface-subtle), var(--header-item-surface);
+  border-color: color-mix(in srgb, var(--redeem-accent) 22%, var(--border-default));
+}
 .wallet-balance-trigger.wallet-switch .coin-art {
   position: static;
   width: 1.25rem;
@@ -50,11 +59,12 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
   display: grid;
   flex: none;
   place-items: center;
-  width: var(--header-control-size);
-  height: var(--header-control-size);
-  border: 0;
-  border-radius: .5rem;
-  background: transparent;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 1px solid var(--border-default);
+  border-radius: .875rem;
+  background: var(--header-item-surface);
+  box-shadow: inset 0 1px 0 var(--surface-subtle);
   color: var(--text-secondary);
   text-decoration: none;
 }
@@ -63,11 +73,14 @@ button.header-member-action { cursor: pointer; }
 .header-member-action:is(:hover, :focus-visible, [aria-expanded="true"]),
 body:has(#rewards-popover:popover-open) #header-rewards,
 body:has(#profile-menu:popover-open) #header-profile,
-body:has(#notifications-drawer[open]) #header-notifications { background: var(--surface-control); color: var(--text-primary); }
-.header-rewards { width: auto; padding-inline: .625rem; border: 1px solid transparent; }
-.header-member-action.header-rewards { background: var(--surface-inset); border-color: var(--border-default); }
-.header-member-action.header-rewards:is(:hover, :focus-visible),
-body:has(#rewards-popover:popover-open) .header-member-action.header-rewards { background: var(--surface-control); }
+body:has(#notifications-drawer[open]) #header-notifications {
+  background: var(--surface-subtle), var(--header-item-surface);
+  border-color: color-mix(in srgb, var(--redeem-accent) 22%, var(--border-default));
+  color: var(--text-primary);
+}
+.wallet-balance-trigger.wallet-switch:active,
+.header-member-action:active { box-shadow: inset 0 2px 4px var(--shadow-color); }
+.header-rewards { width: auto; min-width: var(--touch-target); padding-inline: .5rem; }
 .header-rewards__gift { display: block; width: 2rem; height: 2rem; }
 .header-rewards__label { display: none; color: var(--text-primary); font-size: .8125rem; font-weight: 700; line-height: 1.25; white-space: nowrap; }
 @media (min-width: 45rem) {
@@ -77,13 +90,9 @@ body:has(#rewards-popover:popover-open) .header-member-action.header-rewards { b
   }
 }
 .header-member-action.header-profile {
-  border: 2px solid var(--border-default);
   border-radius: 50%;
-  background: var(--surface-inset);
-  box-shadow: inset 0 0 0 2px var(--surface-panel), inset 0 1px 0 var(--surface-subtle);
   color: var(--text-primary);
 }
-.header-member-action.header-profile:is(:hover, :focus-visible) { background: var(--surface-control); }
 .header-avatar { font: 700 1rem/1 var(--header-font-family); }
 .wallet-currency-menu {
   box-sizing: border-box;
