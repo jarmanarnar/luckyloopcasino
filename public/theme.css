@@ -17,9 +17,9 @@
   --text-secondary: rgb(229 232 241 / 72%);
 
   /* Action colors; currency colors never change the application theme. */
-  --primary-accent: #a0f526;
+  --primary-accent: #ffffff;
   --redeem-accent: #4da3ff;
-  --button-accent: var(--primary-accent);
+  --button-accent: #d9dee7;
   --buy-button-gradient-bottom: #ff0000;
   --buy-button-tonal: color-mix(in srgb, var(--buy-button-gradient-bottom) 16%, transparent);
   --buy-button-lower-edge: color-mix(in srgb, var(--buy-button-gradient-bottom) 43%, var(--surface-page));
@@ -39,6 +39,9 @@
 
   /* Component aliases share these same roles. */
   --surface-card: var(--surface-control);
+  --surface-glow: radial-gradient(ellipse 32rem 22rem at 100% 0%, var(--redeem-button-tonal), transparent 72%), var(--surface-panel);
+  --surface-inset: linear-gradient(125deg, var(--surface-subtle), transparent);
+  --action-surface: linear-gradient(160deg, var(--primary-accent), color-mix(in srgb, var(--primary-accent) 88%, var(--surface-page)));
   --control-hover: var(--surface-active);
   --top-bar-background: var(--surface-page);
   --top-bar-divider: var(--border-default);
@@ -53,8 +56,11 @@
 /* Recompute every shade on the shared button; variants change only its accent. */
 :root, .primary-button {
   --primary-button-border: var(--primary-button-edge);
-  --primary-button-top: var(--button-accent);
-  --primary-button-bottom: color-mix(in srgb, var(--button-accent) 85%, var(--text-primary));
-  --primary-button-edge: color-mix(in srgb, var(--button-accent) 65%, var(--surface-page));
-  --primary-button-ink: var(--on-accent);
+  --primary-button-top: color-mix(in srgb, var(--button-accent) 88%, var(--text-primary));
+  --primary-button-bottom: color-mix(in srgb, var(--button-accent) 92%, var(--surface-page));
+  --primary-button-edge: color-mix(in srgb, var(--button-accent) 55%, var(--surface-page));
+  --primary-button-ink: #071018;
+  --primary-button-surface: radial-gradient(ellipse at 80% 0%, color-mix(in srgb, var(--redeem-button-gradient-bottom) 12%, transparent), transparent 70%), linear-gradient(155deg, var(--primary-button-top), var(--button-accent) 55%, var(--primary-button-bottom));
+  --primary-button-shadow: inset 0 1px 0 rgb(255 255 255 / 26%), 0 2px 0 var(--primary-button-edge), 0 6px 14px rgb(0 0 0 / 20%);
+  --primary-button-pressed-shadow: inset 0 1px 2px rgb(0 0 0 / 16%), 0 2px 6px rgb(0 0 0 / 16%);
 }

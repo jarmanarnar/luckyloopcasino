@@ -1,5 +1,5 @@
-import { dailyStatus } from './member-state.js';
 import { DEMO_TASKS, taskComplete } from './rewards-pages.js';
+import { createShelfIcon } from './shelf-icons.js';
 
 const coins = new Intl.NumberFormat('en-US');
 
@@ -8,18 +8,18 @@ export function initRewardsPopover({ router, account }) {
   const panel = document.querySelector('#rewards-popover');
   if (!trigger || !panel) return;
   if (typeof panel.showPopover !== 'function') {
-    trigger.addEventListener('click', () => router.navigate({ type: 'feature', pageId: 'daily-bonus' }));
+    trigger.addEventListener('click', () => router.navigate({ type: 'feature', pageId: 'achievements' }));
     return;
   }
 
-  const dailyLabel = panel.querySelector('#rewards-daily-status');
   const missions = panel.querySelector('#rewards-missions');
   const missionLabels = DEMO_TASKS.map(task => {
     const row = document.createElement('li');
     row.className = 'reward-preview';
-    const placeholder = document.createElement('span');
-    placeholder.className = 'reward-preview__placeholder';
-    placeholder.setAttribute('aria-hidden', 'true');
+    const icon = document.createElement('span');
+    icon.className = 'reward-preview__icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.append(createShelfIcon(task.id === 'complete-profile' ? 'profile' : 'picks'));
     const copy = document.createElement('div');
     copy.className = 'reward-preview__copy';
     const title = document.createElement('strong');
@@ -27,12 +27,11 @@ export function initRewardsPopover({ router, account }) {
     const status = document.createElement('span');
     status.className = 'reward-preview__status';
     copy.append(title, status);
-    row.append(placeholder, copy);
+    row.append(icon, copy);
     missions.append(row);
     return { task, status };
   });
 
-  let midnightTimer;
   const isOpen = () => panel.matches(':popover-open');
   function close() {
     if (isOpen()) panel.hidePopover();
@@ -46,22 +45,15 @@ export function initRewardsPopover({ router, account }) {
   }
 
   function render() {
-    clearTimeout(midnightTimer);
     const state = account.getMemberState();
-    const daily = dailyStatus(state);
-    dailyLabel.textContent = `${coins.format(daily.amount)} GC · ${daily.available ? 'Ready to collect' : 'Collected today'}`;
     for (const { task, status } of missionLabels) {
       const label = state.taskClaims.includes(task.id) ? 'Collected' : taskComplete(task.id, state) ? 'Ready to collect' : 'In progress';
       status.textContent = `${coins.format(task.amount)} GC · ${label}`;
     }
-    midnightTimer = setTimeout(render, Math.max(1, Date.parse(daily.nextAt) - Date.now()));
   }
 
   panel.addEventListener('beforetoggle', event => {
-    if (event.newState === 'closed') {
-      clearTimeout(midnightTimer);
-      return;
-    }
+    if (event.newState === 'closed') return;
     if (!account.isSignedIn() || document.querySelector('dialog[open]') || !position()) {
       event.preventDefault();
       return;

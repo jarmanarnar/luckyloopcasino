@@ -13,12 +13,15 @@
   padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) 0 max(.75rem, env(safe-area-inset-left, 0px));
   border: 0;
   border-top: 1px solid var(--top-bar-divider);
-  background: var(--top-bar-background);
+  background: var(--surface-glow);
+  box-shadow: 0 -.5rem 1.5rem var(--shadow-color);
   color: var(--text-secondary);
   font-family: var(--header-font-family);
 }
 .mobile-nav__item {
   box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -37,6 +40,22 @@
   font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+/* Paint the active surface inside each existing touch target without changing its size. */
+.mobile-nav__item::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: .375rem .125rem;
+  border-radius: .75rem;
+  background: transparent;
+  pointer-events: none;
+}
+.mobile-nav__item:is(:hover, :focus-visible) { color: var(--text-primary); }
+.mobile-nav__item:is(:hover, :focus-visible)::before { background: var(--surface-subtle); }
+.mobile-nav__item:is([aria-current="page"], [data-active="true"])::before {
+  background: var(--surface-inset);
+  box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
 .mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
 .mobile-nav__icon--brand { width: 1.875rem; object-fit: contain; }

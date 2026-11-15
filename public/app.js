@@ -29,11 +29,11 @@ export async function initApplication() {
   const notifications = initNotificationsDrawer({ router, account, auth });
   initRewardsPopover({ router, account });
   const verifyPhone = () => auth.require(phone.open);
-  initProfileMenu({ router, account, openNotifications: notifications.open, verifyPhone });
+  const profile = initProfileMenu({ router, account, auth, openNotifications: notifications.open, verifyPhone });
   initGameView({ router, account, verifyPhone: phone.open });
   const store = initStoreView({ router, account, auth, verifyPhone });
   const wallet = initWallet({ account, router, openStore: store.openStore });
-  const features = initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications: notifications.open });
+  const features = initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications: notifications.open, openProfile: profile.open });
   const catalog = initCatalogView({ router, member: features.member });
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });

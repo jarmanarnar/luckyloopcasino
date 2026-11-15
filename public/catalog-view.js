@@ -76,7 +76,6 @@ export function initCatalogView({ router, member } = {}) {
   const more = document.querySelector('#catalog-more');
   const empty = document.querySelector('#catalog-empty');
   const header = document.querySelector('#catalog-page-header');
-  const back = document.querySelector('#catalog-page-back');
   const title = document.querySelector('#catalog-page-title');
   const controls = document.querySelector('#catalog-page-controls');
   const input = document.querySelector('#catalog-page-search-input');
@@ -86,12 +85,11 @@ export function initCatalogView({ router, member } = {}) {
   const categorySelect = document.querySelector('#catalog-page-category');
   const sortSelect = document.querySelector('#catalog-page-sort');
   const pagination = document.querySelector('#catalog-pagination');
-  const count = document.querySelector('#catalog-page-count');
   const details = document.querySelector('#catalog-provider-details');
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
-  if (!router || ![root, shelves, categories, more, empty, header, back, title, controls, input,
-    providerSelect, categorySelect, sortSelect, pagination, count, details, lobbySearch, lobbyInput].every(Boolean)) return;
+  if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
+    providerSelect, categorySelect, sortSelect, pagination, details, lobbySearch, lobbyInput].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', lobbyQuery = '';
@@ -229,7 +227,6 @@ export function initCatalogView({ router, member } = {}) {
     lobbySearch.hidden = !home;
     header.hidden = home;
     controls.hidden = home || model.type === 'not-found';
-    back.setAttribute('aria-label', route.type === 'provider' ? 'Back' : 'Back to lobby');
     title.textContent = model.title;
     document.title = home ? 'COP COIN' : `${model.title} · COP COIN`;
     categories.dataset.activeMenu = home ? 'lobby' : model.activeMenu;
@@ -301,9 +298,7 @@ export function initCatalogView({ router, member } = {}) {
         empty.append(node('h2', '', noRecentGames ? 'No recent games yet' : 'No matching recent games'),
           node('p', '', noRecentGames ? 'Games you open while signed in will appear here.' : 'Try a different search or provider.'), browse);
       } else empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
-      const noun = providers ? 'providers' : slice.total === 1 ? 'game' : 'games';
-      count.textContent = slice.hasMore ? `Showing ${slice.visible.length} of ${slice.total} ${noun}` : `${slice.total} ${noun}`;
-      pagination.hidden = items.length === 0;
+      pagination.hidden = !slice.hasMore;
       more.hidden = !slice.hasMore;
     }
     tracks.forEach(updateArrows);
@@ -341,10 +336,6 @@ export function initCatalogView({ router, member } = {}) {
       track.scrollTo({ left,
         behavior: reducedMotion.matches ? 'instant' : 'smooth' });
     }
-  });
-  back.addEventListener('click', () => {
-    if (router.getRoute().type === 'provider') router.back({ type: 'home' });
-    else openHome();
   });
   empty.addEventListener('click', event => {
     const action = event.target.closest('[data-catalog-empty-action]');

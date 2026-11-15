@@ -111,7 +111,7 @@ test('public browsing stays open while account, purchase and game actions requir
     assert.equal(requiresAccount(route), false);
   }
   for (const route of [{ type: 'game', gameId: 'alpha' },{ type: 'game-details', gameId: 'alpha' },{ type: 'favorites' },{ type: 'store' },
-    ...['profile','history','daily-bonus','free-money','redeem','notifications'].map(pageId=>({type:'feature',pageId}))]) {
+    ...['profile','history','settings','achievements','redeem','notifications'].map(pageId=>({type:'feature',pageId}))]) {
     assert.equal(requiresAccount(route), true);
   }
 });

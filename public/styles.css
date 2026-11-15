@@ -32,7 +32,7 @@
       --sidebar-easing: cubic-bezier(.22, 1, .36, 1);
       --game-card-width: 8rem;
       --game-card-gap: .625rem;
-      --game-card-radius: var(--radius-card);
+      --game-card-radius: .75rem;
       --shelf-title-size: 1.25rem;
       --game-title-size: .8125rem;
       --touch-target: 2.75rem;
@@ -189,44 +189,11 @@
     .icon-button:disabled { opacity: .3; cursor: default; }
 
     button.primary-button {
-      --button-depth: .25rem;
-      --button-travel: 0rem;
       position: relative;
       border: 1px solid var(--primary-button-border);
       border-radius: .625rem;
-      background: var(--primary-button-top);
-      box-shadow: none;
+      background: var(--primary-button-surface);
       color: var(--primary-button-ink);
-      transform-style: preserve-3d;
-      transform: translateY(var(--button-travel));
-      transition: transform 150ms cubic-bezier(0, 0, .58, 1), background 150ms cubic-bezier(0, 0, .58, 1);
-    }
-    /* One solid base, with no extra ground shadow. Counter-travel keeps it fixed. */
-    button.primary-button::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: var(--primary-button-edge);
-      box-shadow: 0 0 0 1px var(--primary-button-border);
-      transform: translate3d(0, calc(var(--button-depth) - var(--button-travel)), -1px);
-      transition: transform 150ms cubic-bezier(0, 0, .58, 1);
-      pointer-events: none;
-    }
-    @media (hover: hover) and (pointer: fine) {
-      button.primary-button:hover:not(:disabled):not([aria-disabled="true"]) {
-        --button-travel: calc(var(--button-depth) / 3);
-        background: var(--primary-button-bottom);
-      }
-    }
-    button.primary-button:active:not(:disabled):not([aria-disabled="true"]) {
-      --button-travel: var(--button-depth);
-      background: var(--primary-button-bottom);
-    }
-    button.primary-button:is(:disabled, [aria-disabled="true"])::before { display: none; }
-    @media (prefers-reduced-motion: reduce) {
-      button.primary-button,
-      button.primary-button::before { transition: none; }
     }
     .catalog-categories {
       display: flex;
@@ -258,10 +225,11 @@
       white-space: nowrap;
       cursor: pointer;
     }
-    .catalog-category:hover { background: var(--surface-active); color: var(--text-primary); }
+    .catalog-category:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
     .catalog-category .game-shelf__icon { width: 16px; height: 16px; color: currentColor; }
     .catalog-category[aria-pressed="true"] {
-      background: var(--catalog-active-background);
+      background: var(--surface-inset);
+      box-shadow: inset 0 0 0 1px var(--border-default);
       color: var(--text-primary);
     }
     .catalog-category[aria-pressed="true"] .game-shelf__icon { color: var(--catalog-accent); }
@@ -322,11 +290,13 @@
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 8px;
-      background: var(--surface-control);
+      background: var(--surface-inset), var(--surface-glow);
+      box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
       color: var(--text-secondary);
     }
     .game-shelf__arrow svg { width: 18px; height: 18px; }
-    .game-shelf__arrow:hover:not(:disabled) { background: var(--surface-active); color: var(--text-primary); }
+    .game-shelf__arrow:is(:hover, :focus-visible):not(:disabled) { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+    .game-shelf__arrow:active:not(:disabled) { background: var(--surface-active), var(--surface-glow); color: var(--text-primary); }
     .game-shelf__arrow:disabled { opacity: .45; }
     @media (max-width: 48rem), (hover: none) and (pointer: coarse) {
       .game-shelf__navigation, .catalog-category-arrow { display: none; }
@@ -408,12 +378,13 @@
       overflow: hidden;
       border: 0;
       border-radius: inherit;
-      background: linear-gradient(126deg, var(--surface-panel) 49.8%, var(--surface-control) 50%);
+      background: var(--surface-glow);
+      box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
       color: var(--text-primary);
       text-align: center;
       cursor: pointer;
     }
-    .shelf-view-all:hover { filter: brightness(1.3); }
+    .shelf-view-all:is(:hover, :focus-visible) { filter: brightness(1.12); }
     .shelf-view-all::before, .shelf-view-all::after {
       content: '';
       position: absolute;
@@ -438,12 +409,21 @@
       overflow: hidden;
       border: 0;
       border-radius: inherit;
-      background: var(--game-card-background);
+      background: var(--surface-glow);
       color: var(--text-primary);
       text-align: start;
       cursor: pointer;
     }
-    .game-launch:hover { background: var(--control-hover); }
+    .game-launch:is(:hover, :focus-visible) { background: var(--surface-inset), var(--surface-glow); }
+    /* The finish sits over the artwork without changing card size or spacing. */
+    .game-launch::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
+      pointer-events: none;
+    }
     @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
       /* Leave room above the scrolling rail without moving the resting cards. */
       .game-track { --game-card-lift: .25rem; }
@@ -500,10 +480,10 @@
     .provider-track { display: flex; gap: var(--game-card-gap); margin: 0; padding: 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; list-style: none; }
     .provider-track::-webkit-scrollbar { display: none; }
     .provider-card { flex: 0 0 9rem; min-width: 0; scroll-snap-align: start; }
-    .provider-launch { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 4.5rem; padding: .75rem 1rem; border: 1px solid transparent; border-radius: .625rem; background: var(--surface-card); cursor: pointer; }
-    .provider-launch:hover { border-color: var(--border-default); background: var(--control-hover); }
+    .provider-launch { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 4.5rem; padding: .75rem 1rem; border: 1px solid var(--border-default); border-radius: .75rem; background: var(--surface-inset), var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle); cursor: pointer; }
+    .provider-launch:is(:hover, :focus-visible) { background: var(--surface-glow); }
     .provider-logo { display: block; width: 100%; height: 2.25rem; object-fit: contain; opacity: .82; }
-    .provider-launch:hover .provider-logo { opacity: 1; }
+    .provider-launch:is(:hover, :focus-visible) .provider-logo { opacity: 1; }
     .provider-track.is-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));

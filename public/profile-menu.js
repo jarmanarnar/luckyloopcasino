@@ -1,27 +1,116 @@
-import { getDemoRank } from './rewards-pages.js';
+import { getDiscoveredGameCount } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
 
 const dateLabel = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 const number = new Intl.NumberFormat('en-US');
 
-export function initProfileMenu({ router, account, openNotifications, verifyPhone }) {
+export function initProfileMenu({ router, account, auth, openNotifications, verifyPhone }) {
   const trigger = document.querySelector('#header-profile');
   const menu = document.querySelector('#profile-menu');
   const summary = document.querySelector('#profile-summary');
   if (!trigger || !menu || !summary) return;
-  if (typeof menu.showPopover !== 'function') {
-    trigger.addEventListener('click', () => router.navigate({ type: 'feature', pageId: 'profile' }));
-    return;
-  }
+  const hasPopover = typeof menu.showPopover === 'function';
 
   for (const item of menu.querySelectorAll('[data-profile-icon]')) {
     item.prepend(createShelfIcon(item.dataset.profileIcon));
   }
-  const fields = Object.fromEntries(['avatar', 'name', 'since', 'percent', 'progress', 'rank', 'next-rank',
+  const fields = Object.fromEntries(['avatar', 'name', 'since',
     'games', 'favorites', 'rewards', 'coins'].map(id => [id, summary.querySelector(`#profile-summary-${id}`)]));
-  const rankBadge = menu.querySelector('#profile-menu-rank');
   const status = menu.querySelector('#profile-menu-status');
-  const isMenuOpen = () => menu.matches(':popover-open');
+  const isMenuOpen = () => hasPopover && menu.matches(':popover-open');
+  const title = summary.querySelector('#profile-summary-title');
+  const overview = summary.querySelector('#profile-summary-overview');
+  const edit = summary.querySelector('.profile-summary__edit');
+  const editor = summary.querySelector('#profile-editor');
+  const name = summary.querySelector('#profile-editor-name');
+  const avatars = summary.querySelector('#profile-editor-avatars');
+  const choices = [...avatars.querySelectorAll('[data-avatar]')];
+  const cancel = summary.querySelector('#profile-editor-cancel');
+  const save = summary.querySelector('#profile-editor-save');
+  const feedback = summary.querySelector('#profile-editor-status');
+  let originalProfile, selectedAvatar, saving = false, editSession = 0;
+
+  function setEditorVisible(visible) {
+    editSession++;
+    overview.hidden = visible;
+    editor.hidden = !visible;
+    title.textContent = visible ? 'Edit profile' : 'My Profile';
+    feedback.textContent = '';
+    summary.scrollTop = 0;
+  }
+
+  function startEditing() {
+    if (saving) return;
+    originalProfile = { ...account.getSnapshot().member.profile };
+    selectedAvatar = originalProfile.avatar;
+    name.value = originalProfile.displayName;
+    for (const choice of choices) choice.setAttribute('aria-pressed', String(choice.dataset.avatar === selectedAvatar));
+    setEditorVisible(true);
+    name.focus();
+  }
+
+  function showOverview() {
+    setEditorVisible(false);
+    renderSummary();
+    edit.focus({ preventScroll: true });
+  }
+
+  function open({ edit: editing = false } = {}) {
+    const show = () => {
+      if (document.querySelector('dialog[open]') && !summary.open) return;
+      closeMenu();
+      setEditorVisible(false);
+      renderSummary();
+      if (!summary.open) summary.showModal();
+      if (editing) startEditing();
+    };
+    if (auth) return auth.require(show);
+    if (account.isSignedIn()) show();
+  }
+
+  edit.addEventListener('click', startEditing);
+  cancel.addEventListener('click', showOverview);
+  for (const choice of choices) choice.addEventListener('click', () => {
+    if (saving) return;
+    selectedAvatar = choice.dataset.avatar;
+    for (const item of choices) item.setAttribute('aria-pressed', String(item === choice));
+  });
+  editor.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (saving || !editor.reportValidity()) return;
+    const displayName = name.value.trim();
+    if (displayName.length < 2 || displayName.length > 24) {
+      feedback.textContent = 'Use a display name with 2–24 characters.';
+      name.focus();
+      return;
+    }
+    const patch = {};
+    if (displayName !== originalProfile.displayName) patch.displayName = displayName;
+    if (selectedAvatar !== originalProfile.avatar) patch.avatar = selectedAvatar;
+    if (!Object.keys(patch).length) { showOverview(); return; }
+    const session = editSession;
+    saving = true;
+    save.disabled = cancel.disabled = name.disabled = avatars.disabled = edit.disabled = true;
+    save.textContent = 'Saving…';
+    feedback.textContent = '';
+    try {
+      const result = await account.saveProfile(patch);
+      if (!summary.open || session !== editSession) return;
+      if (result.ok) {
+        showOverview();
+        feedback.textContent = 'Profile saved.';
+      } else feedback.textContent = result.reason || 'Your profile could not be saved. Please try again.';
+    } catch {
+      if (summary.open && session === editSession) feedback.textContent = 'Your profile could not be saved. Please try again.';
+    } finally {
+      saving = false;
+      save.disabled = cancel.disabled = name.disabled = avatars.disabled = edit.disabled = false;
+      save.textContent = 'Save profile';
+      if (summary.open && !overview.hidden) edit.focus({ preventScroll: true });
+    }
+  });
+  summary.addEventListener('close', () => { if (!summary.open) setEditorVisible(false); });
+  if (!hasPopover) trigger.addEventListener('click', () => open());
 
   function positionMenu() {
     const anchor = trigger.getBoundingClientRect();
@@ -31,13 +120,8 @@ export function initProfileMenu({ router, account, openNotifications, verifyPhon
     return true;
   }
 
-  function renderRank() {
-    rankBadge.textContent = getDemoRank(account.getSnapshot().member).current.name;
-  }
-
   function renderSummary() {
     const { identity, createdAt, member, ledger } = account.getSnapshot();
-    const rank = getDemoRank(member);
     const registeredAt = identity?.registeredAt || createdAt;
     const rewards = ledger.filter(entry => entry.type === 'bonus');
     const goldCredited = rewards.reduce((sum, entry) => sum + (entry.currency === 'GC' ? entry.amountUnits : 0), 0);
@@ -45,12 +129,7 @@ export function initProfileMenu({ router, account, openNotifications, verifyPhon
     fields.name.textContent = member.profile.displayName;
     fields.since.dateTime = registeredAt;
     fields.since.textContent = dateLabel.format(new Date(registeredAt));
-    fields.percent.textContent = `${Math.round(rank.progress * 100)}%`;
-    fields.progress.value = rank.progress;
-    fields.progress.setAttribute('aria-label', rank.next ? `Progress to ${rank.next.name}` : 'Top rank reached');
-    fields.rank.textContent = rank.current.name;
-    fields['next-rank'].textContent = rank.next?.name || 'Top rank';
-    fields.games.textContent = number.format(rank.games);
+    fields.games.textContent = number.format(getDiscoveredGameCount(member));
     fields.favorites.textContent = number.format(member.favorites.length);
     fields.rewards.textContent = number.format(rewards.length);
     fields.coins.textContent = number.format(goldCredited);
@@ -73,7 +152,6 @@ export function initProfileMenu({ router, account, openNotifications, verifyPhon
       return;
     }
     status.textContent = '';
-    renderRank();
   });
 
   function navigate(event) {
@@ -96,11 +174,7 @@ export function initProfileMenu({ router, account, openNotifications, verifyPhon
   });
 
   const actions = {
-    summary() {
-      renderSummary();
-      summary.showModal();
-      summary.scrollTop = 0;
-    },
+    summary: () => open(),
     messages: openNotifications,
     redeem: verifyPhone,
   };
@@ -130,8 +204,8 @@ export function initProfileMenu({ router, account, openNotifications, verifyPhon
   account.subscribe(() => {
     if (!account.isSignedIn()) close();
     else {
-      if (isMenuOpen()) renderRank();
       if (summary.open) renderSummary();
     }
   });
+  return { open };
 }

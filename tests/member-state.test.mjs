@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GAMES } from '../public/catalog.js';
 import { createMemberState, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit, taskEligible, MEMBER_STORAGE_KEY } from '../public/member-state.js';
-import { getDemoRank } from '../public/rewards-pages.js';
+import { getDiscoveredGameCount } from '../public/rewards-pages.js';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDemoAccount } from '../public/demo-account.js';
 
@@ -105,35 +105,30 @@ test('corrupt storage falls back safely and cannot invent transactions or unrest
   assert.equal(state.history[0].detail.length, 300);
 });
 
-test('game history reflects actual opens and demo ranks count distinct games, excluding reward events', () => {
+test('game history reflects actual opens and discovery statistics exclude reward events', () => {
   let state = createMemberState();
-  assert.equal(getDemoRank(state).current.name, 'Starter');
+  assert.equal(getDiscoveredGameCount(state), 0);
   state = recordGameVisit(state, GAMES[0], localDay(20));
   state = recordGameVisit(state, GAMES[0], localDay(20, 13));
   state = claimDailyReward(state, localDay(20)).state;
   assert.equal(state.history.length, 3);
   assert.equal(state.history[0].title, GAMES[0].title);
   assert.equal(state.history[0].gameId, GAMES[0].id);
-  assert.equal(getDemoRank(state).games, 1);
+  assert.equal(getDiscoveredGameCount(state), 1);
   for (const game of GAMES.slice(1, 3)) state = recordGameVisit(state, game, localDay(20, 14));
-  const rank = getDemoRank(state);
-  assert.equal(rank.games, 3);
-  assert.equal(rank.current.name, 'Explorer');
-  assert.equal(rank.next.name, 'Regular');
-  assert.equal(rank.progress, 0);
+  assert.equal(getDiscoveredGameCount(state), 3);
   assert.equal(recordGameVisit(state, null), state);
 });
 
-test('achieved discovery rank survives the activity history retention limit and reload', () => {
+test('discovered game count survives the activity history retention limit and reload', () => {
   let state = createMemberState();
   for (const game of GAMES.slice(0, 10)) state = recordGameVisit(state, game, localDay(20));
-  assert.equal(getDemoRank(state).current.name, 'Regular');
+  assert.equal(getDiscoveredGameCount(state), 10);
   for (let index = 0; index < 205; index++) state = recordGameVisit(state, GAMES[0], localDay(21));
   assert.equal(state.history.length, 200);
   assert.equal(new Set(state.history.map(entry => entry.gameId)).size, 1);
   state = createMemberState(JSON.parse(JSON.stringify(state)));
-  assert.equal(getDemoRank(state).games, 10);
-  assert.equal(getDemoRank(state).current.name, 'Regular');
+  assert.equal(getDiscoveredGameCount(state), 10);
   assert.equal(taskEligible('first-game', { ...state, history: [] }), true, 'discovery survives a truncated activity log');
 });
 
@@ -160,6 +155,6 @@ test('demo account retains restored games and removes unknown IDs before recordi
     assert.equal(saved.history.some(entry => entry.gameId === 'not-in-catalog'), false);
     assert.equal(saved.history.some(entry => entry.type === 'reward'), true);
     assert.equal(saved.history.at(-1).gameId, GAMES[1].id);
-    assert.equal(getDemoRank(saved).games, 3);
+    assert.equal(getDiscoveredGameCount(saved), 3);
   } finally { account.close(); }
 });

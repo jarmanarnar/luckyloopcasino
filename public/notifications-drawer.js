@@ -1,10 +1,9 @@
 import { formatRoute } from './routes.js';
+import { createShelfIcon } from './shelf-icons.js';
 
 const platformNotices = [
   { id: 'platform:new-releases', title: 'Explore New Releases', detail: 'See the latest additions to the demo catalog.',
     action: 'Browse games', route: { type: 'category', categoryId: 'new-releases' } },
-  { id: 'platform:daily-bonus', title: 'Daily Bonus', detail: 'Check today’s demo reward and your seven-day streak.',
-    action: 'View Daily Bonus', route: { type: 'feature', pageId: 'daily-bonus' } },
   { id: 'platform:providers', title: 'Browse Game Providers', detail: 'Find games from your favorite studios.',
     action: 'View providers', route: { type: 'providers' } },
 ];
@@ -55,9 +54,10 @@ export function initNotificationsDrawer({ router, account, auth }) {
     const article = node('article', 'notification-card');
     article.dataset.unread = String(!read.has(notice.id));
     if (notice.route) {
-      const placeholder = node('div', 'notification-card__media');
-      placeholder.setAttribute('aria-hidden', 'true');
-      article.append(placeholder);
+      const icon = node('span', 'notification-card__icon');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.append(createShelfIcon(notice.route.categoryId || notice.route.type));
+      article.append(icon);
     }
     const header = node('header', 'notification-card__header');
     header.append(node('h3', '', notice.title));

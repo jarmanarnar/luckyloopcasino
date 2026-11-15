@@ -271,7 +271,7 @@ test('Store follows its popup opened elsewhere and restores the previous selecti
 test('member feature pages select Menu without claiming that its drawer is open', () => {
   const page = navPage();
   page.body.dataset.page = 'feature';
-  page.nodes['catalog-categories'].dataset.activeMenu = 'vip-club';
+  page.nodes['catalog-categories'].dataset.activeMenu = 'settings';
   page.flush();
   assert.deepEqual(active(page), ['menu']);
   assert.equal(page.nodes['site-menu'].open, false);

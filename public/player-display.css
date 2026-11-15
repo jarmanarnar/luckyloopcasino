@@ -8,15 +8,15 @@ body[data-view="game"] { display: block; height: auto; min-height: 100dvh; overf
   .game-stage { min-height: 40rem; }
 }
 .game-stage { position: relative; box-sizing: border-box; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--border-default); border-radius: 1rem; background: var(--surface-page); }
-.game-display-controls { box-sizing: border-box; min-height: var(--player-toolbar-height); margin-top: .5rem; display: flex; align-items: center; justify-content: flex-end; gap: .25rem; padding: .25rem .5rem; background: var(--surface-panel); border: 1px solid var(--border-default); border-radius: .75rem; }
+.game-display-controls { box-sizing: border-box; min-height: var(--player-toolbar-height); margin-top: .5rem; display: flex; align-items: center; justify-content: flex-end; gap: .25rem; padding: .25rem .5rem; background: var(--surface-inset), var(--surface-glow); border: 1px solid var(--border-default); border-radius: .75rem; box-shadow: inset 0 1px 0 var(--surface-subtle); }
 .game-display-controls button { box-sizing: border-box; display: grid; flex: none; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; color: var(--text-primary); cursor: pointer; }
-.game-display-controls button:hover, .game-display-controls button[aria-pressed="true"] { background: var(--control-hover); }
+.game-display-controls button:is(:hover, :focus-visible), .game-display-controls button[aria-pressed="true"] { background: var(--surface-control); }
 .game-display-controls svg { width: 1.25rem; height: 1.25rem; }
 .game-favorite-slot--toolbar { margin-inline-end: auto; }
 .game-favorite-slot--compact { display: none; }
 .game-view[data-compact-preplay="true"] .game-favorite-slot--compact { display: block; position: absolute; inset: 1.25rem 1.25rem auto auto; }
 .game-view[data-compact-preplay="true"] .game-preplay__meta { padding-inline-end: calc(var(--touch-target) + .5rem); }
-.game-view .game-player-favorite { width: var(--touch-target); height: var(--touch-target); padding: 0; background: var(--surface-control); }
+.game-view .game-player-favorite { width: var(--touch-target); height: var(--touch-target); padding: 0; background: var(--surface-inset); box-shadow: inset 0 0 0 1px var(--border-default); }
 .game-view .game-player-favorite:hover { background: var(--control-hover); }
 
 /* Theater expands the content lane, not the browser, so the page stays scrollable. */
@@ -67,11 +67,12 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-deta
 .game-preplay { position: absolute; z-index: 4; display: grid; place-items: center; overflow: auto; background: var(--overlay-backdrop); }
 .game-view[data-preview-ready="true"] .game-loading { visibility: hidden; }
 .game-view[data-mode="SC"] .game-frame-host { pointer-events: none; }
-.game-preplay__card { position: relative; z-index: 1; box-sizing: border-box; width: min(22rem, calc(100% - 2rem)); padding: 1.25rem; border: 1px solid var(--border-default); border-radius: 1rem; background: var(--surface-panel); }
+.game-preplay__card { position: relative; z-index: 1; box-sizing: border-box; width: min(22rem, calc(100% - 2rem)); padding: 1.25rem; border: 1px solid var(--border-default); border-radius: 1rem; background: var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle), 0 1rem 2.5rem var(--shadow-color); }
 .game-preplay__meta { display: none; }
-.game-preplay__actions { display: flex; gap: .25rem; padding: .25rem; border-radius: .75rem; background: var(--surface-control); }
+.game-preplay__actions { display: flex; gap: .25rem; padding: .25rem; border-radius: .75rem; background: var(--surface-inset), var(--surface-panel); box-shadow: inset 0 0 0 1px var(--border-default); }
 .game-preplay__actions button { display: flex; flex: 1; align-items: center; justify-content: center; gap: .375rem; min-width: 0; min-height: 3rem; padding: .75rem .5rem; border: 0; border-radius: .5rem; background: transparent; color: var(--text-secondary); box-shadow: none; font: 700 .875rem/1.2 var(--header-font-family); cursor: pointer; }
-.game-preplay__actions button[aria-pressed="true"] { background: var(--control-hover); color: var(--text-primary); }
+.game-preplay__actions button:is(:hover, :focus-visible) { background: var(--surface-control); color: var(--text-primary); }
+.game-preplay__actions button[aria-pressed="true"] { background: var(--action-surface); color: var(--on-accent); box-shadow: inset 0 1px 0 var(--button-inner-highlight); }
 .game-preplay__actions button img { display: block; flex: 0 0 1.25rem; width: 1.25rem; height: 1.25rem; object-fit: contain; }
 .game-preplay__heading { margin: 0; text-align: center; color: var(--text-primary); font: 700 1.25rem/1.3 var(--header-font-family); }
 .game-coin-info { display: flex; min-height: 2rem; align-items: center; justify-content: center; gap: .25rem; margin-bottom: .25rem; color: var(--text-secondary); font-size: .8125rem; line-height: 1.25rem; }
@@ -79,11 +80,11 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .game-deta
 .game-coin-info__trigger { display: grid; place-items: center; width: 1.5rem; height: 2rem; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .game-coin-info__trigger svg { display: block; width: .875rem; height: .875rem; }
 .game-coin-info__trigger:hover, .game-coin-info__trigger[aria-expanded="true"] { color: var(--text-primary); }
-.game-coin-info__trigger:focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 2px; border-radius: .25rem; }
-.game-coin-info__tooltip { position: fixed; z-index: 30; box-sizing: border-box; width: min(16rem, calc(100vw - 2rem)); padding: .75rem; border: 1px solid var(--border-default); border-radius: .5rem; background: var(--surface-panel); color: var(--text-primary); box-shadow: 0 .5rem 1.5rem rgb(0 0 0 / 35%); font: 400 .75rem/1.45 var(--header-font-family); text-align: start; white-space: normal; }
+.game-coin-info__trigger:focus-visible { color: var(--text-primary); }
+.game-coin-info__tooltip { position: fixed; z-index: 30; box-sizing: border-box; width: min(16rem, calc(100vw - 2rem)); padding: .75rem; border: 1px solid var(--border-default); border-radius: .5rem; background: var(--surface-glow); color: var(--text-primary); box-shadow: inset 0 1px 0 var(--surface-subtle), 0 .5rem 1.5rem var(--shadow-color); font: 400 .75rem/1.45 var(--header-font-family); text-align: start; white-space: normal; }
 .game-coin-info__tooltip::after { content: ""; position: absolute; left: var(--tooltip-arrow-left, 50%); bottom: -.3125rem; width: .5rem; height: .5rem; background: var(--surface-panel); border-right: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); transform: translateX(-50%) rotate(45deg); }
 .game-coin-info__tooltip[data-placement="bottom"]::after { top: -.3125rem; bottom: auto; transform: translateX(-50%) rotate(225deg); }
-#game-play-confirm { width: 100%; min-height: 3rem; margin-top: .75rem; padding: .75rem; font: 700 .875rem/1.2 var(--header-font-family); cursor: pointer; }
+#game-play-confirm { width: 100%; min-height: 3rem; margin-top: .75rem; padding: .75rem; background: var(--action-surface); font: 700 .875rem/1.2 var(--header-font-family); cursor: pointer; }
 
 /* Compact preplay is a normal document card, not a tiny player with a modal.
    The display controller removes this state before actual play begins. */
@@ -97,7 +98,7 @@ body:not([data-player-mobile="true"]) .game-view[data-mobile="true"][data-compac
   position: static; inset: auto; display: block; overflow: visible; background: transparent;
 }
 .game-view[data-compact-preplay="true"] .game-preplay__card {
-  width: 100%; background: var(--surface-card);
+  width: 100%; background: var(--surface-glow);
 }
 /* Keep the compact title and help on one row; the tooltip never changes card height. */
 .game-view[data-compact-preplay="true"] .game-preplay__heading {

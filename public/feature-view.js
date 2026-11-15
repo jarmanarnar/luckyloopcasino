@@ -1,5 +1,5 @@
 import { FEATURE_PAGES, isFeaturePage } from './feature-pages.js';
-import { dailyStatus, createMemberState } from './member-state.js';
+import { createMemberState } from './member-state.js';
 import { renderRewardsPage } from './rewards-pages.js';
 import { renderAccountPage } from './account-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -12,14 +12,13 @@ function node(tag, className, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications } = {}) {
+export function initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications, openProfile } = {}) {
   const root = document.querySelector('#feature-view');
   const content = document.querySelector('#feature-content');
   const header = document.querySelector('#feature-header');
-  const back = document.querySelector('#feature-back');
   const title = document.querySelector('#feature-title');
   const notice = document.querySelector('#feature-status');
-  if (!router || !root || !content || !title || !header || !back) return;
+  if (!router || !root || !content || !title || !header) return;
   const readState = () => account.isSignedIn() ? account.getMemberState() : createMemberState();
   let state = readState();
   let currentPage = null;
@@ -47,8 +46,13 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
   }
   const ctx = {
     node, icon: createShelfIcon, router, games: GAMES, state: () => state, ui: { historyFilter: 'all' },
-    dailyStatus: () => dailyStatus(state), notify, verifyPhone,
-    claimDaily: () => save(() => account.claimDaily()),
+    notify,
+    refresh(pageId, focusId) {
+      if (currentPage !== pageId) return false;
+      renderContent();
+      if (focusId) document.getElementById(focusId)?.focus({ preventScroll: true });
+      return true;
+    },
     claimTask: id => save(() => account.claimTask(id)),
     link(pageId, text, className = 'feature-button') {
       const a = node('a', className, text);
@@ -59,15 +63,11 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
       a.href = formatRoute(route);
       a.addEventListener('click', event => {
         if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        event.preventDefault(); router.navigate(route);
+        event.preventDefault();
+        if (pageId === 'profile') openProfile?.({ edit: true });
+        else router.navigate(route);
       });
       return a;
-    },
-    async saveProfile(profile) {
-      const result = await save(() => account.saveProfile(profile));
-      if (!result.ok) notify(result.reason);
-      else if (currentPage === 'profile') renderContent();
-      return result.ok;
     },
     async saveSettings(settings) {
       return (await save(() => account.saveSettings(settings))).ok;
@@ -79,24 +79,26 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
       const result = await save(() => account.toggleFavorite(id));
       if (result.ok) notify(exists ? 'Removed from favorites.' : 'Saved to favorites.');
     },
-    logout: () => save(() => account.logout()),
     openGame(id) {
       if (games.has(id)) router.navigate({ type: 'game-details', gameId: id, from: formatRoute(router.getRoute()) });
-    },
-    async copy(text) {
-      try { await navigator.clipboard.writeText(text); return true; }
-      catch { notify('Select and copy the link from the field.'); return false; }
     },
   };
 
   function render(route, meta = {}) {
+    // Old profile links open the shared dialog over the lobby, never a second account page.
+    if (route.type === 'feature' && route.pageId === 'profile') {
+      currentPage = null;
+      root.hidden = true;
+      router.navigate({ type: 'home' }, { replace: true, focus: false });
+      openProfile?.();
+      return;
+    }
     const isFeature = route.type === 'feature' && isFeaturePage(route.pageId);
     root.hidden = !isFeature;
     currentPage = isFeature ? route.pageId : null;
     if (!isFeature) return;
     const page = FEATURE_PAGES[currentPage];
     header.className = page.showHeader ? 'feature-header' : 'feature-header visually-hidden';
-    back.hidden = !page.showHeader || !page.showBack;
     document.body.dataset.page = 'feature';
     document.querySelector('#catalog-categories').dataset.activeMenu = currentPage;
     title.textContent = page.title;
@@ -107,7 +109,6 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
     renderContent();
     if (meta.source === 'navigate' && meta.focus !== false) title.focus({ preventScroll: true });
   }
-  back.addEventListener('click', () => router.navigate({ type: 'home' }));
   account.subscribe(() => {
     const next = readState();
     if (JSON.stringify(next) === JSON.stringify(state)) return;
@@ -122,19 +123,15 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
   router.subscribe(render);
   applyPreferences();
   render(router.getRoute());
-  // Re-evaluate daily availability when a sleeping tab becomes active, without timers.
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && ['daily-bonus', 'free-money'].includes(currentPage)) renderContent();
-  });
   return {
     openFeature(pageId) {
+      if (pageId === 'profile') return openProfile?.();
       if (pageId === 'redeem' && verifyPhone) return verifyPhone();
       if (pageId === 'notifications' && openNotifications) return openNotifications();
       if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId });
     },
     member: {
       getState: () => structuredClone(state),
-      getDailyStatus: now => dailyStatus(state, now),
       isSignedIn: () => account.isSignedIn(),
       toggleFavorite: id => ctx.toggleFavorite(id),
       subscribe(listener) {

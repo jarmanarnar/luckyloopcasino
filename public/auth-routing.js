@@ -1,4 +1,4 @@
-const publicFeatures = new Set(['support', 'blog', 'vip-club', 'partners', 'affiliate-program']);
+const publicFeatures = new Set(['support']);
 export function requiresAccount(route) {
   return ['game', 'game-details', 'favorites', 'store'].includes(route.type)
     || route.type === 'feature' && !publicFeatures.has(route.pageId);

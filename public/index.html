@@ -42,12 +42,14 @@
   <link rel="stylesheet" href="rewards-popover.css">
   <link rel="stylesheet" href="profile-menu.css">
   <link rel="stylesheet" href="feature-pages.css">
+  <link rel="stylesheet" href="achievements.css">
   <link rel="stylesheet" href="game-details.css">
   <link rel="stylesheet" href="how-to-play.css">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="wallet-header.css">
   <link rel="stylesheet" href="community-chat.css">
   <link rel="stylesheet" href="player-display.css">
+  <link rel="stylesheet" href="primary-button.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -110,8 +112,7 @@
       <li><button class="profile-menu__item" type="button" data-profile-icon="profile" data-profile-action="summary" aria-haspopup="dialog" aria-controls="profile-summary">My Profile</button></li>
       <li><a class="profile-menu__item" href="#/history" data-profile-icon="history" data-profile-page="history" data-profile-transactions>Transaction History</a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="scratchcards" disabled>Promo Codes<span class="profile-menu__badge">Coming soon</span></button></li>
-      <li><a class="profile-menu__item" href="#/free-money" data-profile-icon="rank-system" data-profile-page="free-money">Achievements</a></li>
-      <li><a class="profile-menu__item" href="#/rank-system" data-profile-icon="jackpot" data-profile-page="rank-system">VIP Tiers<span id="profile-menu-rank" class="profile-menu__badge"></span></a></li>
+      <li><a class="profile-menu__item" href="#/achievements" data-profile-icon="achievements" data-profile-page="achievements">Achievements</a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
       <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
@@ -124,17 +125,10 @@
       <h2 id="rewards-popover-title">My Rewards</h2>
       <button class="rewards-popover__close icon-button" type="button" popovertarget="rewards-popover" popovertargetaction="hide" aria-label="Close rewards"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button>
     </header>
-    <section class="rewards-popover__section" aria-label="Daily Bonus">
-      <div class="reward-preview">
-        <span class="reward-preview__placeholder" aria-hidden="true"></span>
-        <div class="reward-preview__copy"><strong>Daily Bonus</strong><span id="rewards-daily-status" class="reward-preview__status"></span></div>
-        <a class="reward-preview__action" href="#/daily-bonus" data-rewards-page="daily-bonus">View</a>
-      </div>
-    </section>
     <section class="rewards-popover__section" aria-labelledby="rewards-missions-title">
-      <h3 id="rewards-missions-title">Free Money</h3>
+      <h3 id="rewards-missions-title">Achievements</h3>
       <ul id="rewards-missions" class="rewards-popover__list"></ul>
-      <a class="reward-preview__action rewards-popover__more" href="#/free-money" data-rewards-page="free-money">View all missions</a>
+      <a class="reward-preview__action rewards-popover__more" href="#/achievements" data-rewards-page="achievements">View all achievements</a>
     </section>
   </section>
   <main class="page-content" id="lobby-view">
@@ -185,7 +179,6 @@
       <input id="lobby-search-input" type="search" placeholder="Enter at least 1 character" aria-label="Search games" autocomplete="off">
     </form>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
-      <button id="catalog-page-back" class="catalog-page-back icon-button" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
       <h1 id="catalog-page-title" tabindex="-1"></h1>
     </header>
     <div id="catalog-page-controls" class="catalog-page-controls" lang="en" dir="ltr" hidden>
@@ -199,7 +192,7 @@
     </div>
     <div id="catalog-shelves" class="catalog-shelves" lang="en" dir="ltr"></div>
     <div id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, category or provider.</div>
-    <div id="catalog-pagination" class="catalog-pagination" lang="en" dir="ltr" hidden><p id="catalog-page-count" role="status"></p><button id="catalog-more" class="text-control" type="button" hidden>Show more</button></div>
+    <div id="catalog-pagination" class="catalog-pagination" lang="en" dir="ltr" hidden><button id="catalog-more" class="text-control" type="button" hidden>Show more</button></div>
     <section id="catalog-provider-details" class="catalog-provider-details" lang="en" dir="ltr" hidden></section>
   </main>
   <main class="game-view" id="game-view" aria-label="Game demo" tabindex="-1" lang="en" dir="ltr" hidden>
@@ -255,11 +248,6 @@
     </div>
     <div id="menu-content" class="site-menu__scroll">
       <button id="menu-search" class="site-menu__search" type="button" aria-label="Search games" data-tooltip="Search" aria-controls="lobby-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="site-menu__label">Search</span></button>
-      <button id="menu-daily-bonus" class="site-menu__daily" type="button" aria-label="Daily Bonus" data-tooltip="Daily Bonus" aria-controls="feature-view">
-        <span class="site-menu__daily-art" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M8 24h32v18H8z" fill="currentColor" opacity=".3"/><path d="M5 17h38v10H5z" fill="currentColor"/><path d="M21 17h6v25h-6z" fill="currentColor"/><path d="M24 17C9 17 9 5 16 6c5 0 8 11 8 11Zm0 0C39 17 39 5 32 6c-5 0-8 11-8 11Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg></span>
-        <span class="site-menu__daily-copy"><strong id="menu-daily-amount">1,000 GC</strong><span>Daily Bonus</span></span>
-        <span id="menu-daily-badge" class="site-menu__daily-badge">Ready</span>
-      </button>
       <nav id="menu-navigation" class="site-menu__navigation" aria-label="Casino navigation"></nav>
     </div>
   </dialog>
@@ -281,9 +269,9 @@
   <dialog id="phone-verification-dialog" class="phone-verification" aria-labelledby="phone-verification-title" lang="en" dir="ltr">
     <form method="dialog"><button class="phone-verification__close icon-button" type="submit" aria-label="Close phone verification"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button></form>
     <svg class="phone-verification__art" viewBox="0 0 104 104" fill="none" aria-hidden="true" focusable="false">
-      <defs><linearGradient id="verification-phone-shade" x1="24" y1="14" x2="76" y2="89" gradientUnits="userSpaceOnUse"><stop stop-color="#565a67"/><stop offset="1" stop-color="#202129"/></linearGradient><linearGradient id="verification-check-shade" x1="63" y1="61" x2="88" y2="91" gradientUnits="userSpaceOnUse"><stop stop-color="#c7ff3c"/><stop offset="1" stop-color="#78ed00"/></linearGradient></defs>
+      <defs><linearGradient id="verification-phone-shade" x1="24" y1="14" x2="76" y2="89" gradientUnits="userSpaceOnUse"><stop stop-color="#565a67"/><stop offset="1" stop-color="#202129"/></linearGradient><linearGradient id="verification-check-shade" x1="63" y1="61" x2="88" y2="91" gradientUnits="userSpaceOnUse"><stop stop-color="var(--primary-accent)"/><stop offset="1" stop-color="color-mix(in srgb, var(--primary-accent) 88%, var(--surface-page))"/></linearGradient></defs>
       <g transform="rotate(9 51 50)"><rect x="25" y="8" width="48" height="83" rx="12" fill="url(#verification-phone-shade)" stroke="#6b707e" stroke-width="2"/><rect x="30" y="13" width="38" height="73" rx="8" fill="#1d1f27" stroke="#3f424d"/><path d="M43 18h12" stroke="#666a78" stroke-width="3" stroke-linecap="round"/><g fill="#edeef3"><circle cx="39" cy="47" r="2.4"/><circle cx="49" cy="47" r="2.4"/><circle cx="59" cy="47" r="2.4"/></g></g>
-      <circle cx="73" cy="74" r="18" fill="url(#verification-check-shade)" stroke="#252919" stroke-width="3"/><path d="m66 74 5 5 9-10" stroke="#172000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="73" cy="74" r="18" fill="url(#verification-check-shade)" stroke="var(--surface-panel)" stroke-width="3"/><path d="m66 74 5 5 9-10" stroke="var(--on-accent)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <h2 id="phone-verification-title">Phone Verification</h2>
     <form id="phone-verification-number-form" class="phone-verification__form" method="dialog" autocomplete="off">
@@ -320,17 +308,12 @@
       <h2 id="profile-summary-title" tabindex="-1" autofocus>My Profile</h2>
       <button class="profile-summary__close icon-button" type="button" aria-label="Close profile"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 4.8 12 10.4l5.6-5.6 1.6 1.6L13.6 12l5.6 5.6-1.6 1.6L12 13.6l-5.6 5.6-1.6-1.6L10.4 12 4.8 6.4Z"/></svg></button>
     </header>
-    <div class="profile-summary__body">
+    <div id="profile-summary-overview" class="profile-summary__body">
       <div class="profile-summary__identity">
         <span id="profile-summary-avatar" class="profile-summary__avatar" aria-hidden="true"></span>
         <div><h3 id="profile-summary-name" class="profile-summary__name"></h3><p class="profile-summary__member-since">Member since <time id="profile-summary-since"></time></p></div>
-        <a class="profile-summary__edit icon-button" href="#/profile" data-profile-page="profile" aria-label="Edit profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5v14h14v-7M9 15l1-4 7-7 3 3-7 7-4 1Z"/></svg></a>
+        <button class="profile-summary__edit icon-button" type="button" aria-controls="profile-editor" aria-label="Edit profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5v14h14v-7M9 15l1-4 7-7 3 3-7 7-4 1Z"/></svg></button>
       </div>
-      <section class="profile-summary__progress" aria-labelledby="profile-summary-progress-title">
-        <div class="profile-summary__progress-header"><h3 id="profile-summary-progress-title">Your progress</h3><span id="profile-summary-percent"></span></div>
-        <progress id="profile-summary-progress" max="1" value="0" aria-label="Progress to next rank"></progress>
-        <div class="profile-summary__ranks"><span id="profile-summary-rank"></span><span id="profile-summary-next-rank"></span></div>
-      </section>
       <section aria-labelledby="profile-summary-stats-title">
         <div class="profile-summary__stats-header"><h3 id="profile-summary-stats-title">Statistics</h3><a class="profile-summary__more" href="#/history" data-profile-page="history">Show More</a></div>
         <dl class="profile-summary__stats">
@@ -341,10 +324,30 @@
         </dl>
       </section>
     </div>
+    <form id="profile-editor" class="profile-summary__body" hidden>
+      <label class="feature-field" for="profile-editor-name">Display name
+        <input id="profile-editor-name" class="feature-input" name="displayName" type="text" minlength="2" maxlength="24" autocomplete="nickname" required>
+      </label>
+      <fieldset id="profile-editor-avatars" class="feature-field">
+        <legend>Choose an avatar</legend>
+        <div class="feature-actions">
+          <button class="profile-editor__avatar" type="button" data-avatar="L" aria-label="Avatar L" aria-pressed="false">L</button>
+          <button class="profile-editor__avatar" type="button" data-avatar="∞" aria-label="Avatar infinity" aria-pressed="false">∞</button>
+          <button class="profile-editor__avatar" type="button" data-avatar="★" aria-label="Avatar star" aria-pressed="false">★</button>
+          <button class="profile-editor__avatar" type="button" data-avatar="7" aria-label="Avatar 7" aria-pressed="false">7</button>
+          <button class="profile-editor__avatar" type="button" data-avatar="G" aria-label="Avatar G" aria-pressed="false">G</button>
+          <button class="profile-editor__avatar" type="button" data-avatar="S" aria-label="Avatar S" aria-pressed="false">S</button>
+        </div>
+      </fieldset>
+      <div class="profile-editor__actions">
+        <button id="profile-editor-cancel" class="feature-button" type="button">Cancel</button>
+        <button id="profile-editor-save" class="feature-button feature-button--primary" type="submit">Save profile</button>
+      </div>
+    </form>
+    <p id="profile-editor-status" class="profile-editor__status" role="status" aria-live="polite"></p>
   </dialog>
   <main id="feature-view" class="page-content feature-view" lang="en" dir="ltr" hidden>
     <header id="feature-header" class="feature-header">
-      <button id="feature-back" class="icon-button feature-back" type="button" aria-label="Back to lobby"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m15 4-8 8 8 8 1.4-1.4L9.8 12l6.6-6.6L15 4Z"/></svg></button>
       <div><h1 id="feature-title" tabindex="-1"></h1></div>
     </header>
     <div id="feature-content"></div>
@@ -379,7 +382,7 @@
             <label class="auth-field" for="auth-password"><span>Password</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 9V7a5 5 0 0 1 10 0v2h1a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1Zm2 0h6V7a3 3 0 0 0-6 0v2Zm3 5a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7Z"/></svg><input id="auth-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="8" maxlength="256" required><button id="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="auth-eye-slash" d="m3 3 18 18"/></svg></button></span></label>
             <button id="auth-forgot" class="auth-text-button auth-forgot" type="button">Forgot your password?</button>
             <div id="auth-register-fields" hidden>
-              <details class="auth-promo-code"><summary>Referral / Promo code <span>(Optional)</span></summary><label class="auth-field"><span class="visually-hidden">Referral or promo code</span><input id="auth-promo" class="auth-plain-input" name="promoCode" placeholder="Enter code" maxlength="40" autocomplete="off"></label><small>Preview only. No extra reward is applied.</small></details>
+              <details class="auth-promo-code"><summary>Promo code <span>(Optional)</span></summary><label class="auth-field"><span class="visually-hidden">Promo code</span><input id="auth-promo" class="auth-plain-input" name="promoCode" placeholder="Enter code" maxlength="40" autocomplete="off"></label><small>Preview only. No extra reward is applied.</small></details>
               <label class="auth-accept"><input id="auth-accepted" name="accepted" type="checkbox"><span>I confirm I am 18+ and understand the <button id="auth-terms-toggle" class="auth-inline-link" type="button" aria-expanded="false" aria-controls="auth-terms">terms of service</button>.</span></label>
               <p id="auth-terms" class="auth-terms" hidden>Coins have no cash value. Purchases and prize redemptions are not available.</p>
             </div>

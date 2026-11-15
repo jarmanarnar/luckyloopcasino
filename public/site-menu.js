@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay, member } = {}) {
+export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -20,9 +20,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   const shortcuts = document.querySelector('#menu-shortcuts');
   const mobileHeader = document.querySelector('#menu-mobile-header');
   const searchButton = document.querySelector('#menu-search');
-  const dailyButton = document.querySelector('#menu-daily-bonus');
-  const dailyAmount = document.querySelector('#menu-daily-amount');
-  const dailyBadge = document.querySelector('#menu-daily-badge');
   const tooltip = document.querySelector('#menu-tooltip');
   const bottomTrigger = document.querySelector('#mobile-nav-menu');
   const bottomNav = document.querySelector('#mobile-nav');
@@ -119,10 +116,8 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
 
   // Separate destinations keep rewards and account tools out of the casino catalog.
   const featureGroups = [
-    { label: 'Membership', items: [['vip-club', 'VIP Club'], ['rank-system', 'Rank System']] },
-    { label: 'Free Money', items: [['free-money', 'Free Money']] },
-    { label: 'Referral and affiliate', beforeCatalog: true, items: [['invite-friends', 'Referral'], ['affiliate-program', 'Affiliate']] },
-    { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['blog', 'Blog'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
+    { label: 'Achievements', beforeCatalog: true, items: [['achievements', 'Achievements']] },
+    { label: 'Help and preferences', plain: true, items: [['support', 'Live Support'], ['settings', 'Settings'], ['how-to-play', 'How to Play']] },
   ];
   for (const group of featureGroups) {
     const section = document.createElement('nav');
@@ -133,33 +128,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     if (group.beforeCatalog) menuContent.append(navigation, providersNavigation);
   }
   if (redeemButton) redeemButton.disabled = false;
-  let dailyTimer;
-  function syncDailyBonus() {
-    if (!dailyButton || !dailyAmount || !dailyBadge || !member?.getDailyStatus) return;
-    clearTimeout(dailyTimer);
-    if (member.isSignedIn && !member.isSignedIn()) {
-      dailyAmount.textContent = 'Join & collect';
-      dailyButton.setAttribute('aria-label', 'Join to collect your Daily Bonus');
-      return;
-    }
-    const now = new Date();
-    const daily = member.getDailyStatus(now);
-    const next = daily.available ? daily : member.getDailyStatus(new Date(daily.nextAt));
-    const remaining = Math.max(0, new Date(daily.nextAt).getTime() - now.getTime());
-    const badge = daily.available ? 'Ready' : remaining > 3_600_000
-      ? `${Math.ceil(remaining / 3_600_000)}h` : `${Math.max(1, Math.ceil(remaining / 60_000))}m`;
-    const amount = `${new Intl.NumberFormat('en-US').format(next.amount)} GC`;
-    dailyAmount.textContent = amount;
-    dailyBadge.textContent = badge;
-    dailyButton.dataset.available = String(daily.available);
-    dailyButton.setAttribute('aria-label', `Daily Bonus, ${amount}, ${daily.available ? 'ready to collect' : `available in ${badge}`}`);
-    dailyButton.dataset.tooltip = `Daily Bonus · ${amount} · ${badge}`;
-    if (!document.hidden) dailyTimer = setTimeout(syncDailyBonus,
-      daily.available ? Math.max(1, remaining) : Math.min(60_000, remaining || 60_000));
-  }
-  member?.subscribe(syncDailyBonus);
-  document.addEventListener('visibilitychange', syncDailyBonus);
-  syncDailyBonus();
 
   function setDisclosure(id, open) {
     const { button, list } = disclosures.get(id);
@@ -186,10 +154,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       if (selected !== selectedDestination && activeChild && (!desktop || expanded)) setDisclosure(id, true);
     }
     selectedDestination = selected;
-    if (dailyButton) {
-      if (selected === 'daily-bonus') dailyButton.setAttribute('aria-current', 'page');
-      else dailyButton.removeAttribute('aria-current');
-    }
     const code = wallet.dataset.currency === 'SC' ? 'SC' : 'GC';
     dialog.dataset.currency = code;
     sidebar.dataset.currency = code;
@@ -281,7 +245,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       return;
     }
     menuOpener = returnFocusTo;
-    syncDailyBonus();
     syncMenu();
     afterClose = null;
     // The mobile bar remains in the shell. A non-modal dialog lets that same
@@ -320,7 +283,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));
   });
-  dailyButton?.addEventListener('click', () => closeMenu(() => openFeature?.('daily-bonus')));
   menuContent.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const disclosure = event.target.closest('[data-menu-disclosure]');

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test, { afterEach } from 'node:test';
 import vm from 'node:vm';
 import { FEATURE_PAGES, isFeaturePage } from '../public/feature-pages.js';
-import { createMemberState, MEMBER_STORAGE_KEY, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit } from '../public/member-state.js';
+import { createMemberState, MEMBER_STORAGE_KEY } from '../public/member-state.js';
 import { formatRoute } from '../public/routes.js';
 import { IDBFactory } from 'fake-indexeddb';
 import { openDemoAccount } from '../public/demo-account.js';
@@ -16,7 +16,7 @@ const source = (await readFile(new URL('../public/feature-view.js', import.meta.
 
 async function memberPage(initialRoute, storage = new Map()) {
   let route = initialRoute, pageContext;
-  const subscribers = [], navigations = [];
+  const subscribers = [], navigations = [], profileOpens = [], dialogOpens = [];
   class Node {
     constructor(tag = 'div') { this.tagName = tag; this.dataset = {}; this.children = []; this.listeners = new Map(); }
     append(...children) { this.children.push(...children); }
@@ -25,7 +25,7 @@ async function memberPage(initialRoute, storage = new Map()) {
     focus() {}
   }
   const ids = ['feature-view', 'feature-content', 'feature-header', 'feature-title', 'feature-description',
-    'feature-status', 'feature-back', 'catalog-categories'];
+    'feature-status', 'catalog-categories'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
   const document = {
     body: new Node('body'), hidden: false,
@@ -40,7 +40,6 @@ async function memberPage(initialRoute, storage = new Map()) {
       subscribers.forEach(fn => fn(next, { source: 'navigate', ...meta }));
     },
     subscribe(fn) { subscribers.push(fn); },
-    back() { throw new Error('The internal Back button must navigate to the lobby directly'); },
   };
   if (!databases.has(storage)) databases.set(storage, new IDBFactory());
   const account = await openDemoAccount({ indexedDB: databases.get(storage), scope: undefined,
@@ -49,7 +48,10 @@ async function memberPage(initialRoute, storage = new Map()) {
   if (!account.isSignedIn()) await account.register({ email: 'feature-test@example.test', password: 'FeatureDemo37!', accepted: true });
   const context = {
     document, router, account, structuredClone, wallet: { setPreferences() {} }, FEATURE_PAGES, isFeaturePage,
-    createMemberState, MEMBER_STORAGE_KEY, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit,
+    openProfile: options => profileOpens.push(options),
+    verifyPhone: () => dialogOpens.push('redeem'),
+    openNotifications: () => dialogOpens.push('notifications'),
+    createMemberState, MEMBER_STORAGE_KEY,
     createShelfIcon: () => new Node('svg'), formatRoute,
     GAMES: [{ id: 'alpha', title: 'Alpha', providerId: 'studio', providerName: 'Studio' }],
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
@@ -57,35 +59,43 @@ async function memberPage(initialRoute, storage = new Map()) {
     renderRewardsPage: () => null,
     renderAccountPage(pageId, ctx) { pageContext = ctx; return new Node(); },
   };
-  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account });`, context);
+  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, openProfile, verifyPhone, openNotifications });`, context);
   await account.refresh();
-  return { api, account, router, storage, nodes, navigations, context: () => pageContext };
+  return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, context: () => pageContext };
 }
 
-test('visible member Back controls return to the lobby after visiting another internal page', async () => {
-  for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader && page.showBack)) {
+test('member pages render and remain navigable without a page Back control', async () => {
+  for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader)) {
     const page = await memberPage({ type: 'feature', pageId: 'profile' });
     page.router.navigate({ type: 'feature', pageId });
-    page.nodes['feature-back'].listeners.get('click')();
+    assert.equal(page.nodes['feature-view'].hidden, false, pageId);
+    assert.equal(page.nodes['feature-title'].textContent, FEATURE_PAGES[pageId].title);
+    page.router.navigate({ type: 'home' });
     assert.equal(page.navigations.at(-1).type, 'home', pageId);
     assert.equal(page.nodes['feature-view'].hidden, true);
   }
 });
 
-test('selected page headers are hidden while Notifications keeps its title without a Back button', async () => {
+test('selected page headers are hidden while Settings keeps its title', async () => {
   const page = await memberPage({ type: 'feature', pageId: 'settings' });
-  for (const pageId of ['invite-friends', 'affiliate-program', 'profile', 'history', 'redeem']) {
+  for (const pageId of ['history', 'achievements']) {
     page.router.navigate({ type: 'feature', pageId });
     assert.match(page.nodes['feature-header'].className, /visually-hidden/);
-    assert.equal(page.nodes['feature-back'].hidden, true);
     assert.equal(page.nodes['feature-view'].hidden, false, 'the page content remains available');
   }
-  page.router.navigate({ type: 'feature', pageId: 'notifications' });
-  assert.equal(page.nodes['feature-header'].className, 'feature-header');
-  assert.equal(page.nodes['feature-title'].textContent, 'Notifications');
-  assert.equal(page.nodes['feature-back'].hidden, true);
   page.router.navigate({ type: 'feature', pageId: 'settings' });
-  assert.equal(page.nodes['feature-back'].hidden, false, 'other pages restore their Back control');
+  assert.equal(page.nodes['feature-header'].className, 'feature-header');
+  assert.equal(page.nodes['feature-title'].textContent, 'Settings');
+});
+
+test('notifications and redeem shortcuts still open dialogs without navigating to removed pages', async () => {
+  const page = await memberPage({ type: 'home' });
+  page.api.openFeature('notifications');
+  page.api.openFeature('redeem');
+  page.api.openFeature('coinback');
+  assert.deepEqual(page.dialogOpens, ['notifications', 'redeem']);
+  assert.deepEqual(page.navigations, []);
+  assert.equal(page.nodes['feature-view'].hidden, true);
 });
 
 test('shared favorites persist and notify across views while returned snapshots cannot mutate member state', async () => {
@@ -110,7 +120,7 @@ test('shared favorites persist and notify across views while returned snapshots 
 });
 
 test('account links open the Favorites catalog and browsing details does not record game history', async () => {
-  const page = await memberPage({ type: 'feature', pageId: 'profile' });
+  const page = await memberPage({ type: 'feature', pageId: 'settings' });
   const link = page.context().link('favorites', 'Favorites');
   assert.equal(link.href, '#/favorites');
   link.listeners.get('click')({ preventDefault() {} });
@@ -134,4 +144,24 @@ test('account links open the Favorites catalog and browsing details does not rec
   const restored = await memberPage({ type: 'game-details', gameId: 'alpha' }, page.storage);
   assert.equal(restored.api.member.getState().history.find(entry => entry.type === 'game').gameId, 'alpha');
   assert.equal(restored.nodes['feature-view'].hidden, true);
+});
+
+test('old profile URLs open the dialog over the lobby without mounting a profile page', async () => {
+  const page = await memberPage({ type: 'feature', pageId: 'profile' });
+  assert.equal(page.router.getRoute().type, 'home');
+  assert.equal(page.nodes['feature-view'].hidden, true);
+  assert.equal(page.context(), undefined);
+  assert.equal(page.profileOpens.length, 1);
+});
+
+test('profile task links edit inside the dialog and keep the current page', async () => {
+  const page = await memberPage({ type: 'feature', pageId: 'achievements' });
+  const link = page.context().link('profile', 'Edit profile');
+  link.listeners.get('click')({ preventDefault() {} });
+  assert.equal(page.profileOpens.at(-1).edit, true);
+  assert.equal(page.router.getRoute().pageId, 'achievements');
+  assert.equal(page.navigations.length, 0);
+  page.api.openFeature('profile');
+  assert.equal(page.profileOpens.length, 2);
+  assert.equal(page.navigations.length, 0);
 });

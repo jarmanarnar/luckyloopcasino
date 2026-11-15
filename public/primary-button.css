@@ -1,0 +1,87 @@
+/* Shared smoked-silver action skin. Each component owns its geometry.
+   Selected tabs, toggles and the red/blue BUY/REDEEM controls keep their skins. */
+:is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim
+) {
+  --action-surface: var(--primary-button-surface);
+}
+
+:is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim
+):not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--primary-button-border);
+  background: var(--primary-button-surface);
+  color: var(--primary-button-ink);
+  box-shadow: var(--primary-button-shadow);
+  transform: translateY(0);
+  filter: none;
+  transition: transform 140ms ease-out, box-shadow 140ms ease-out, filter 140ms ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(
+    button.primary-button,
+    .store-dialog .store-package__price,
+    .profile-editor__actions .feature-button--primary,
+    .settings-panel > .feature-button,
+    .reward-preview__action,
+    .notifications-drawer__read-all,
+    .phone-verification__submit,
+    .chat-send,
+    .how-to-play-finish,
+    .achievement-claim
+  ):hover:not(:disabled):not([aria-disabled="true"]) {
+    filter: brightness(1.055);
+  }
+}
+
+:is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim
+):active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(2px);
+  box-shadow: var(--primary-button-pressed-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    button.primary-button,
+    .store-dialog .store-package__price,
+    .profile-editor__actions .feature-button--primary,
+    .settings-panel > .feature-button,
+    .reward-preview__action,
+    .notifications-drawer__read-all,
+    .phone-verification__submit,
+    .chat-send,
+    .how-to-play-finish,
+    .achievement-claim
+  ):not(:disabled):not([aria-disabled="true"]) {
+    transition: none;
+  }
+}
