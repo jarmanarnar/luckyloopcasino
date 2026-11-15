@@ -290,7 +290,7 @@ html:has(.store-dialog[open]) { overflow: hidden; }
   .store-dialog .store-preview-note { margin-top: .625rem; }
 }
 
-@media (width < 45rem), (height < 32rem) and (pointer: coarse) {
+@media (max-width: 599px) {
   .store-dialog {
     inset: 0;
     width: 100%;
