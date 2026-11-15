@@ -1,6 +1,7 @@
 import { createMemberState, claimDailyReward, claimTaskReward, recordGameVisit, normalizeNotificationReadIds } from './member-state.js';
 import { createWalletState, formatBalance } from './wallet-state.js';
 import { isProfilePhoto } from './profile-photo.js';
+import { SPIN_PRIZES, spinStatus } from './spin-wheel-state.js';
 
 export const ACCOUNT_DATABASE = 'luckyloopcasino-demo-account-v1';
 export const ACCOUNT_KEY = 'primary';
@@ -74,6 +75,17 @@ export function applyAccountCommand(current, command, now = new Date()) {
     next.ledger.push(entry(next, { key, type: 'bonus', source: daily ? 'daily-bonus' : 'task',
       sourceId: daily ? calendarKey(now) : command.taskId, title, currency: 'GC', amount, at }));
     result = { ...outcome.result, transactionId: next.ledger.at(-1).id };
+  } else if (command.type === 'spin-wheel') {
+    if (!current.auth?.signedIn) return unchanged(failed('Log in to spin the wheel.'));
+    if (!spinStatus(current, now).available) return unchanged(failed('Your next free spin is not ready yet.'));
+    const prize = Number.isInteger(command.index) && SPIN_PRIZES[command.index];
+    if (!prize || current.wallet.balances[prize.currency] + prize.amount > MAX_BALANCE) {
+      return unchanged(failed('The demo reward could not be added. Please try again later.'));
+    }
+    next.wallet.balances[prize.currency] += prize.amount;
+    next.ledger.push(entry(next, { key: `wheel:${at}`, type: 'bonus', source: 'spin-wheel', sourceId: prize.id,
+      title: 'Spin & Win', currency: prize.currency, amount: prize.amount, at }));
+    result = { ok: true, prizeId: prize.id, index: command.index, transactionId: next.ledger.at(-1).id };
   } else if (command.type === 'currency') {
     if (!['GC', 'SC'].includes(command.currency)) return unchanged(failed('Unknown currency.'));
     if (current.wallet.currency === command.currency) return unchanged(result);

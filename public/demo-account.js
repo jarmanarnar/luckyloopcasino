@@ -2,6 +2,7 @@ import { ACCOUNT_DATABASE, createDemoAccount, applyAccountCommand, accountMember
 import { openAccountStore } from './demo-account-store.js';
 import { MEMBER_STORAGE_KEY, normalizeNotificationReadIds } from './member-state.js';
 import { normalizeDemoEmail, validDemoEmail, createDemoCredential, matchesDemoCredential } from './demo-credentials.js';
+import { SPIN_PRIZES } from './spin-wheel-state.js';
 
 const WALLET_KEYS = ['luckyloopcasino-demo-wallet-v1', 'luckyloop-casino-demo-wallet-v1', 'atomic-design-demo-wallet-v1'];
 function legacyData(storage) {
@@ -87,6 +88,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
     refresh,
     claimDaily: () => command({ type: 'claim-daily' }),
     claimTask: taskId => command({ type: 'claim-task', taskId }),
+    spinWheel: () => command({ type: 'spin-wheel', index: Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 * SPIN_PRIZES.length) }),
     selectCurrency: currency => command({ type: 'currency', currency }),
     saveProfile: patch => command({ type: 'profile', patch }),
     saveSettings: patch => command({ type: 'settings', patch }),

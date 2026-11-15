@@ -4,7 +4,7 @@ import { createShelfIcon } from './shelf-icons.js';
 let initialized = false;
 let menuController = null;
 
-export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay } = {}) {
+export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavorites, openProviders, openSearch, openStore, openFeature, openHowToPlay, openSpinWheel } = {}) {
   if (initialized) return menuController;
   const trigger = document.querySelector('#menu-toggle');
   const dialog = document.querySelector('#site-menu');
@@ -279,6 +279,10 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
 
   trigger.addEventListener('click', openMenu);
   buyButton.addEventListener('click', () => closeMenu(() => openStore?.()));
+  document.querySelector('#menu-spin-wheel')?.addEventListener('click', event => {
+    const returnFocusTo = desktop ? event.currentTarget : menuOpener;
+    closeMenu(() => openSpinWheel?.({ returnFocusTo }));
+  });
   redeemButton?.addEventListener('click', () => closeMenu(() => openFeature?.('redeem')));
   searchButton?.addEventListener('click', () => {
     if (openSearch) closeMenu(() => openSearch({ returnFocusTo: searchButton }));

@@ -21,6 +21,7 @@ import { GAMES } from './catalog.js';
 import { initAuthView } from './auth-view.js';
 import { initSiteFooter } from './site-footer.js';
 import { initUiIcons } from './ui-icons.js';
+import { initSpinWheel } from './spin-wheel.js';
 
 export async function initApplication() {
   initUiIcons();
@@ -31,6 +32,7 @@ export async function initApplication() {
   const phone = initPhoneVerification({ router, account });
   const notifications = initNotificationsDrawer({ router, account, auth });
   initRewardsPopover({ router, account });
+  const wheel = initSpinWheel({ router, account, auth });
   const verifyPhone = () => auth.require(phone.open);
   const profile = initProfileMenu({ router, account, auth, openNotifications: notifications.open, verifyPhone });
   initGameView({ router, account, verifyPhone: phone.open });
@@ -42,7 +44,7 @@ export async function initApplication() {
   initGameDetails({ router, member: features.member });
   const help = initHowToPlay({ router });
   initSiteFooter({ router, openHowToPlay: help.openHowToPlay, openStore: store.openStore });
-  const menu = initSiteMenu({ ...catalog, ...features, ...help, openStore: store.openStore });
+  const menu = initSiteMenu({ ...catalog, ...features, ...help, ...wheel, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
   initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
   initHeroCarousel(catalog);
