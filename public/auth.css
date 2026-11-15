@@ -6,7 +6,7 @@ body[data-auth="guest"] .site-logo__image--wordmark { display: block; }
 body[data-auth="guest"] .site-logo__image--mark { display: none; }
 .auth-button, .auth-icon-button, .auth-social { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; border: 1px solid var(--border-default); border-radius: .6rem; padding: .625rem 1.25rem; font: 700 .875rem/1.25 var(--header-font-family); color: var(--text-primary); cursor: pointer; text-decoration: none; }
 .auth-button--secondary, .auth-icon-button { background: var(--surface-control); }
-.auth-button:hover, .auth-icon-button:hover { filter: brightness(1.08); }
+.auth-button:not(.primary-button):hover, .auth-icon-button:hover { filter: brightness(1.08); }
 .auth-button:disabled { cursor: wait; opacity: .7; }
 .auth-icon-button { width: 2.75rem; padding: .75rem; }
 .auth-icon-button svg { width: 1.125rem; height: 1.125rem; }

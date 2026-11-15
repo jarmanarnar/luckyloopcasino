@@ -16,8 +16,10 @@
   --text-primary: #fff;
   --text-secondary: rgb(229 232 241 / 72%);
 
-  /* One action color; currency colors never change the application theme. */
+  /* Action colors; currency colors never change the application theme. */
   --primary-accent: #a0f526;
+  --redeem-accent: #4da3ff;
+  --button-accent: var(--primary-accent);
   --coin-gold: #e8bf65;
   --coin-sweeps: #8bdfb3;
   --text-error: #f28b82;
@@ -27,11 +29,6 @@
 
   --overlay-backdrop: rgb(7 7 8 / 72%);
   --shadow-color: color-mix(in srgb, var(--surface-page) 55%, transparent);
-  --primary-button-border: var(--primary-accent);
-  --primary-button-top: var(--primary-accent);
-  --primary-button-bottom: color-mix(in srgb, var(--primary-accent) 85%, var(--text-primary));
-  --primary-button-edge: color-mix(in srgb, var(--primary-accent) 65%, var(--surface-page));
-  --primary-button-ink: var(--on-accent);
 
   /* Component aliases share these same roles. */
   --surface-card: var(--surface-control);
@@ -44,4 +41,13 @@
   --catalog-active-background: var(--surface-control);
   --catalog-accent: var(--primary-accent);
   --gold-accent: var(--coin-gold);
+}
+
+/* Recompute every shade on the shared button; variants change only its accent. */
+:root, .primary-button {
+  --primary-button-border: var(--primary-button-edge);
+  --primary-button-top: var(--button-accent);
+  --primary-button-bottom: color-mix(in srgb, var(--button-accent) 85%, var(--text-primary));
+  --primary-button-edge: color-mix(in srgb, var(--button-accent) 65%, var(--surface-page));
+  --primary-button-ink: var(--on-accent);
 }

@@ -131,11 +131,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
 }
 .site-menu__shortcut svg { display: none; flex: none; width: 1.25rem; height: 1.25rem; }
 .site-menu__shortcut--redeem {
-  --primary-button-border: var(--border-default);
-  --primary-button-top: var(--surface-control);
-  --primary-button-bottom: var(--surface-control);
-  --primary-button-edge: var(--surface-page);
-  --primary-button-ink: var(--text-primary);
+  --button-accent: var(--redeem-accent);
 }
 .site-menu__shortcut:disabled { opacity: .5; cursor: default; }
 
