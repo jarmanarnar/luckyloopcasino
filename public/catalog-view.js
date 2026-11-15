@@ -5,6 +5,7 @@ import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
 import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
 import { createGameArt } from './game-artwork-view.js';
+import { enhanceCatalogSelect } from './catalog-select.js';
 
 let controller;
 const SHELF_GAME_LIMIT = 24;
@@ -81,6 +82,9 @@ export function initCatalogView({ router, member } = {}) {
   const input = document.querySelector('#catalog-page-search-input');
   const lobbySearch = document.querySelector('#lobby-search-form');
   const lobbyInput = document.querySelector('#lobby-search-input');
+  const lobbySearchToggle = document.querySelector('#lobby-search-toggle');
+  const lobbySearchClose = document.querySelector('#lobby-search-close');
+  const categoryRail = categories?.closest('.catalog-category-rail');
   const providerSelect = document.querySelector('#catalog-page-provider');
   const categorySelect = document.querySelector('#catalog-page-category');
   const sortSelect = document.querySelector('#catalog-page-sort');
@@ -89,16 +93,26 @@ export function initCatalogView({ router, member } = {}) {
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
   if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
-    providerSelect, categorySelect, sortSelect, pagination, details, lobbySearch, lobbyInput].every(Boolean)) return;
+    providerSelect, categorySelect, sortSelect, pagination, details, lobbySearch, lobbyInput,
+    lobbySearchToggle, lobbySearchClose, categoryRail].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', lobbyQuery = '';
+  let lobbySearchOpen = false;
+  function setLobbySearchOpen(open) {
+    lobbySearchOpen = open;
+    lobbySearch.hidden = !open;
+    categoryRail.hidden = open;
+    lobbySearchToggle.hidden = open;
+    lobbySearchToggle.setAttribute('aria-expanded', String(open));
+  }
   const viewKey = route => JSON.stringify(route.type === 'home' ? { ...route, query: lobbyQuery } : route);
   const collectionKey = (type, state = member?.getState()) => JSON.stringify(type === 'favorites' ? state?.favorites || [] : state?.history || []);
   const collectionKeys = new Map(['favorites', 'recent-games'].map(type => [type, collectionKey(type)]));
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
   categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)));
+  const filterMenus = [providerSelect, sortSelect].map(enhanceCatalogSelect);
   for (const category of CATEGORIES) {
     const button = node('button', 'catalog-category');
     button.type = 'button';
@@ -202,6 +216,12 @@ export function initCatalogView({ router, member } = {}) {
   }
   function render(route, meta = {}) {
     window.clearTimeout(inputTimer);
+    filterMenus.forEach(menu => menu.close());
+    if (route.type !== 'home') {
+      lobbyQuery = '';
+      lobbyInput.value = '';
+      setLobbySearchOpen(false);
+    }
     if (route.type === 'game') {
       categories.dataset.activeMenu = '';
       return;
@@ -216,7 +236,6 @@ export function initCatalogView({ router, member } = {}) {
       return;
     }
     const home = route.type === 'home';
-    if (!home) { lobbyQuery = ''; lobbyInput.value = ''; }
     const { favorites: favoriteIds, history } = member?.getState() || {};
     const model = getCatalogPage(home && lobbyQuery ? { type: 'search', query: lobbyQuery } : route, { favoriteIds, history });
     const favorites = model.type === 'favorites';
@@ -224,7 +243,7 @@ export function initCatalogView({ router, member } = {}) {
     document.body.dataset.page = home ? 'home' : model.type;
     root.hidden = false;
     hero.hidden = toolbar.hidden = !home;
-    lobbySearch.hidden = !home;
+    lobbySearch.hidden = !home || !lobbySearchOpen;
     header.hidden = home;
     controls.hidden = home || model.type === 'not-found';
     title.textContent = model.title;
@@ -243,6 +262,7 @@ export function initCatalogView({ router, member } = {}) {
     categorySelect.value = route.categoryId || 'all';
     sortSelect.replaceChildren(...(model.allowedSorts || []).map(id => option(id, sortLabels[id])));
     sortSelect.value = model.sort || '';
+    filterMenus.forEach(menu => menu.refresh());
     providerDetails(model.type === 'provider' ? model.provider : null);
     renderedRoute = route;
     const key = viewKey(route);
@@ -361,7 +381,27 @@ export function initCatalogView({ router, member } = {}) {
     if (query === lobbyQuery) return;
     lobbyQuery = query;
     render(router.getRoute(), { focus: false });
+    if (lobbyQuery) shelves.scrollIntoView({ block: 'start', behavior: 'instant' });
   }
+  lobbySearchToggle.addEventListener('click', () => {
+    setLobbySearchOpen(true);
+    lobbyInput.focus({ preventScroll: true });
+  });
+  function closeLobbySearch() {
+    window.clearTimeout(inputTimer);
+    lobbyInput.value = '';
+    lobbyQuery = '';
+    setLobbySearchOpen(false);
+    render(router.getRoute(), { focus: false });
+    lobbySearchToggle.focus({ preventScroll: true });
+  }
+  lobbySearchClose.addEventListener('click', closeLobbySearch);
+  lobbySearch.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeLobbySearch();
+  });
   lobbyInput.addEventListener('input', () => {
     window.clearTimeout(inputTimer);
     inputTimer = window.setTimeout(searchLobby, 120);

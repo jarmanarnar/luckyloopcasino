@@ -177,16 +177,16 @@
       <p class="visually-hidden" id="hero-status" aria-live="polite" aria-atomic="true"></p>
     </section>
     <section class="catalog-toolbar" aria-label="Game filters" lang="en" dir="ltr">
+      <button id="lobby-search-toggle" class="catalog-search-toggle" type="button" aria-label="Search games" aria-controls="lobby-search-form" aria-expanded="false"><svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
       <div class="catalog-category-rail">
         <nav id="catalog-categories" class="catalog-categories" aria-label="Game types and categories"></nav>
-        <button id="catalog-category-previous" class="catalog-category-arrow catalog-category-arrow--previous" type="button" aria-label="Previous game categories" aria-controls="catalog-categories" disabled hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z"/></svg></button>
-        <button id="catalog-category-next" class="catalog-category-arrow catalog-category-arrow--next" type="button" aria-label="Next game categories" aria-controls="catalog-categories" disabled hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.7 4.3a1 1 0 0 1 0 1.4L9.4 12l6.3 6.3a1 1 0 0 1-1.4 1.4l-7-7a1 1 0 0 1 0-1.4l7-7a1 1 0 0 1 1.4 0Z" transform="translate(24 0) scale(-1 1)"/></svg></button>
       </div>
+      <form id="lobby-search-form" class="catalog-page-search lobby-search" role="search" aria-label="Search lobby games" hidden>
+        <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
+        <input id="lobby-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search">
+        <button id="lobby-search-close" class="catalog-search-close" type="button" aria-label="Close search"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+      </form>
     </section>
-    <form id="lobby-search-form" class="catalog-page-search lobby-search" role="search" aria-label="Search lobby games" lang="en" dir="ltr">
-      <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
-      <input id="lobby-search-input" type="search" placeholder="Enter at least 1 character" aria-label="Search games" autocomplete="off">
-    </form>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
       <h1 id="catalog-page-title" tabindex="-1"></h1>
     </header>
@@ -196,8 +196,8 @@
         <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
       </form>
       <label class="catalog-page-filter"><span class="visually-hidden">Game category</span><select id="catalog-page-category" aria-label="Game category"></select></label>
-      <label class="catalog-page-filter"><span class="visually-hidden">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></label>
-      <label class="catalog-page-filter"><span class="visually-hidden">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></label>
+      <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-provider-label">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
+      <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-sort-label">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></div>
     </div>
     <div id="catalog-shelves" class="catalog-shelves" lang="en" dir="ltr"></div>
     <div id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, category or provider.</div>

@@ -3,22 +3,20 @@ let initialized = false;
 export function initCatalogToolbar() {
   if (initialized) return;
   const nav = document.querySelector('#catalog-categories');
-  const previous = document.querySelector('#catalog-category-previous');
-  const next = document.querySelector('#catalog-category-next');
   const rail = nav?.closest('.catalog-category-rail');
-  if (!nav || !previous || !next || !rail) return;
+  if (!nav || !rail) return;
   initialized = true;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const behavior = () => reducedMotion.matches ? 'instant' : 'smooth';
+  const behavior = () => reducedMotion.matches || document.body.dataset.reduceMotion === 'true' ? 'instant' : 'smooth';
   const maximum = () => Math.max(0, nav.scrollWidth - nav.clientWidth);
+  let drag = null;
+  let suppressClickUntil = 0;
 
   function update() {
+    if (!rail.clientWidth) return;
     const max = maximum();
     const atStart = nav.scrollLeft <= 1;
     const atEnd = nav.scrollLeft >= max - 1;
-    previous.hidden = next.hidden = max <= 1;
-    previous.disabled = atStart;
-    next.disabled = atEnd;
     rail.dataset.overflow = String(max > 1);
     rail.dataset.atStart = String(atStart);
     rail.dataset.atEnd = String(atEnd);
@@ -29,8 +27,8 @@ export function initCatalogToolbar() {
     if (!active) return;
     const viewport = nav.getBoundingClientRect();
     const bounds = active.getBoundingClientRect();
-    const leftInset = !previous.hidden && !previous.disabled ? previous.getBoundingClientRect().width + 8 : 8;
-    const rightInset = !next.hidden && !next.disabled ? next.getBoundingClientRect().width + 8 : 8;
+    const leftInset = 0;
+    const rightInset = 0;
     let left = nav.scrollLeft;
     if (bounds.left < viewport.left + leftInset) left += bounds.left - viewport.left - leftInset;
     else if (bounds.right > viewport.right - rightInset) left += bounds.right - viewport.right + rightInset;
@@ -38,12 +36,40 @@ export function initCatalogToolbar() {
     if (Math.abs(left - nav.scrollLeft) > 1) nav.scrollTo({ left, behavior: behavior() });
   }
 
-  function page(direction) {
-    nav.scrollBy({ left: direction * Math.max(1, nav.clientWidth * .75), behavior: behavior() });
+  nav.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'mouse' || event.button !== 0 || maximum() <= 1) return;
+    suppressClickUntil = 0;
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: nav.scrollLeft, moved: false };
+  });
+  nav.addEventListener('pointermove', event => {
+    if (!drag || drag.id !== event.pointerId) return;
+    const distance = event.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(distance) < 6 || Math.abs(distance) < Math.abs(event.clientY - drag.y)) return;
+      drag.moved = true;
+      nav.setPointerCapture(event.pointerId);
+      nav.dataset.dragging = 'true';
+    }
+    event.preventDefault();
+    nav.scrollLeft = drag.left - distance;
+  });
+  function endDrag(event) {
+    if (!drag || drag.id !== event.pointerId) return;
+    if (drag.moved) suppressClickUntil = window.performance.now() + 300;
+    drag = null;
+    delete nav.dataset.dragging;
+    if (nav.hasPointerCapture(event.pointerId)) nav.releasePointerCapture(event.pointerId);
   }
-
-  previous.addEventListener('click', () => page(-1));
-  next.addEventListener('click', () => page(1));
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) nav.addEventListener(type, endDrag);
+  nav.addEventListener('pointerleave', event => {
+    if (drag && !drag.moved) endDrag(event);
+  });
+  // A mouse drag must never activate the category beneath its release point.
+  nav.addEventListener('click', event => {
+    if (event.detail === 0 || window.performance.now() >= suppressClickUntil) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
   nav.addEventListener('scroll', update, { passive: true });
   new ResizeObserver(() => { update(); revealActive(); }).observe(nav);
   new MutationObserver(records => {
