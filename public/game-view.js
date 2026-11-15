@@ -151,7 +151,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
 
   function mountFrame(key, { previewOnly = false, playImmediately = false } = {}) {
     if (account?.isSignedIn?.() === false) return;
-    // Use the same public demo URL, never a Sweep Coins game session.
+    // Use the same public demo URL, never a Super Coins game session.
     const isSweep = account?.getSnapshot().wallet.currency === 'SC';
     if (isSweep !== previewOnly || (previewOnly && (!preplay || playImmediately))) return;
     stopLoadingWatch();

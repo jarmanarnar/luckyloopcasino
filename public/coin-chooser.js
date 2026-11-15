@@ -1,6 +1,6 @@
 const coinInfo = {
  GC: { question: 'What are Gold Coins?', answer: 'Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.' },
- SC: { question: 'What are Sweep Coins?', answer: 'Sweep Coins have a separate balance. You can preview this mode here, but play is unavailable in this demo.' },
+ SC: { question: 'What are Super Coins?', answer: 'Super Coins have a separate balance. You can preview this mode here, but play is unavailable in this demo.' },
 };
 
 export function initCoinChooser({ document: doc = document, onPlay, onSelect = async () => {} }) {
@@ -76,10 +76,10 @@ export function initCoinChooser({ document: doc = document, onPlay, onSelect = a
   gc.disabled=busy; sc.disabled=busy; play.disabled=busy;
   gc.setAttribute('aria-pressed',String(selected==='GC'));
   sc.setAttribute('aria-pressed',String(selected==='SC'));
-  play.textContent=selected==='SC'?'Play with Sweep Coins':'Play with Gold Coins';
+  play.textContent=selected==='SC'?'Play with Super Coins':'Play with Gold Coins';
   if (question) question.textContent = coinInfo[selected].question;
   if (answer) answer.textContent = coinInfo[selected].answer;
-  trigger?.setAttribute('aria-label', selected === 'SC' ? 'About Sweep Coins' : 'About Gold Coins');
+  trigger?.setAttribute('aria-label', selected === 'SC' ? 'About Super Coins' : 'About Gold Coins');
   positionInfo();
  }
  gc.addEventListener('click',()=>select('GC'));

@@ -9,7 +9,7 @@ async function menuPage() {
   await account.register({ email: 'wallet-menu@example.test', password: 'WalletMenu37!', accepted: true });
   const ids = ['header-wallet-controls', 'wallet-currency-menu', 'coin-type-switch', 'currency-coin',
     'wallet-hide-balance', 'wallet-menu-status', 'header-avatar',
-    ...['GC', 'SC'].flatMap(code => [`wallet-row-${code}`, `wallet-select-${code}`, `wallet-amount-${code}`])];
+    ...['GC', 'SC'].flatMap(code => [`wallet-row-${code}`, `wallet-select-${code}`, `wallet-name-${code}`, `wallet-amount-${code}`])];
   const nodes = Object.fromEntries(ids.map(id => [id, {
     hidden: id === 'wallet-currency-menu', attributes: {}, dataset: {}, listeners: {}, textContent: '',
     setAttribute(key, value) { this.attributes[key] = value; },
@@ -35,13 +35,15 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     const ledger = account.getSnapshot().ledger;
     const balances = account.getSnapshot().wallet.balances;
     assert.equal(nodes['wallet-amount-GC'].textContent, '125,000');
+    assert.equal(nodes['wallet-name-GC'].textContent, 'Gold Coins');
+    assert.equal(nodes['wallet-name-SC'].textContent, 'Super Coins');
     assert.equal(nodes['wallet-amount-SC'].textContent, '15.00');
     menu.toggle();
     await nodes['wallet-select-SC'].click();
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
     assert.equal(nodes['wallet-select-SC'].attributes['aria-pressed'], 'true');
     assert.equal(nodes['wallet-currency-menu'].hidden, true);
-    assert.equal(nodes['currency-coin'].src, 'assets/coins/sweeps-coin.svg');
+    assert.equal(nodes['currency-coin'].src, 'assets/coins/super-coin-front.png');
     await account.saveSettings({ reducedMotion: true });
     menu.toggle();
     await nodes['wallet-hide-balance'].click();
@@ -49,7 +51,7 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     assert.equal(account.getMemberState().settings.reducedMotion, true);
     assert.equal(nodes['wallet-amount-GC'].textContent, '••••••');
     assert.equal(nodes['wallet-amount-SC'].textContent, '••••••');
-    assert.equal(nodes['coin-type-switch'].attributes['aria-label'], 'SC balance hidden. Choose currency');
+    assert.equal(nodes['coin-type-switch'].attributes['aria-label'], 'Super Coins balance hidden. Choose currency');
     assert.doesNotMatch(nodes['wallet-select-SC'].attributes['aria-label'], /15\.00/);
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
     assert.deepEqual(account.getSnapshot().wallet.balances, balances);

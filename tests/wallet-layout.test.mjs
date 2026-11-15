@@ -155,7 +155,7 @@ test('inside a game the wallet becomes Buy Coins, opens Store without changing c
     assert.equal(button.attributes['aria-checked'], undefined);
     assert.equal(page.nodes['#wallet-purchase-label'].hidden, false);
     assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, true);
-    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/add-gold.svg' : 'assets/coins/add-sweeps.svg');
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png');
     await button.events.click();
     assert.deepEqual(page.storeCalls, ['store']);
     assert.deepEqual(page.account.getSnapshot().wallet, before.wallet);
@@ -165,7 +165,7 @@ test('inside a game the wallet becomes Buy Coins, opens Store without changing c
     assert.equal(button.attributes['aria-checked'], String(currency === 'SC'));
     assert.equal(page.nodes['#wallet-purchase-label'].hidden, true);
     assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, false);
-    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg');
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png');
     await button.events.click();
     assert.notEqual(page.account.getSnapshot().wallet.currency, currency);
   }
@@ -195,7 +195,7 @@ test('the balance inside the switch uses the same counter and changes mode witho
   assert.equal(page.nodes['#coin-type-switch'].dataset.balanceMotion, 'true');
   page.frame(720);
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
-  assert.match(page.nodes['#coin-type-switch'].attributes['aria-label'], /Sweeps Coins balance: 85.00 SC/);
+  assert.match(page.nodes['#coin-type-switch'].attributes['aria-label'], /Super Coins balance: 85.00 SC/);
   await page.nodes['#coin-type-switch'].events.click();
   page.frame(1440);
   assert.equal(page.nodes['#coin-type-switch'].attributes['aria-checked'], 'false');
@@ -222,14 +222,14 @@ test('wallet UI cannot grant arbitrary credit or write a separate legacy balance
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
 });
 
-test('a valid local reward adds only Gold Coins and preserves the selected Sweeps balance', async () => {
+test('a valid local reward adds only Gold Coins and preserves the selected Super balance', async () => {
   const page = await walletPage({ saved: { currency: 'SC', balances: { GC: 130000, SC: 8500 } } });
   assert.equal((await page.account.claimDaily()).ok, true);
   const saved = page.account.getSnapshot().wallet;
   assert.deepEqual(saved, { currency: 'SC', balances: { GC: 131000, SC: 8500 } });
   assert.equal(page.nodes['#wallet-currency-label'].textContent, 'SC');
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
-  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Super Coins balance: 85.00 SC');
 
   await page.account.saveSettings({ reducedMotion: true });
   await page.nodes['#coin-type-switch'].events.click();
@@ -248,12 +248,12 @@ test('private balances have a hidden accessible name and reduced-motion preferen
   await page.nodes['#coin-type-switch'].events.click();
   assert.equal(page.calls.slice(before).includes('animate'), false);
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '85.00');
-  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance hidden');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Super Coins balance hidden');
 
   await page.account.saveSettings({ hideBalance: false, reducedMotion: false });
   page.controller.setPreferences({ hideBalance: false, reducedMotion: false });
   assert.equal(page.nodes['#coin-wallet > .wallet-balance-copy'].attributes['aria-hidden'], 'false');
-  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Super Coins balance: 85.00 SC');
   const restored = page.calls.length;
   await page.nodes['#coin-type-switch'].events.click();
   assert.equal(page.calls.slice(restored).includes('animate'), true, 'normal motion restores counting within the selected currency');
@@ -268,7 +268,7 @@ test('currency changes count from zero to the selected balance without mixing cu
   await page.nodes['#coin-type-switch'].events.click();
   assert.equal(page.nodes['#wallet-currency-label'].textContent, 'SC');
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '0.00');
-  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Sweeps Coins balance: 85.00 SC');
+  assert.equal(page.nodes['#coin-wallet'].attributes['aria-label'], 'Super Coins balance: 85.00 SC');
   assert.equal(page.pendingCounterFrames, 1);
   page.frame(180);
   assert.equal(page.nodes['#wallet-balance-value'].textContent, '49.14');

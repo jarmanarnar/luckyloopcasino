@@ -9,7 +9,7 @@ function node(tag, className, text) {
 }
 function coin(code, size = 32) {
   const img = node('img', 'coin-art');
-  Object.assign(img, { src: `assets/coins/${code === 'GC' ? 'gold' : 'sweeps'}-coin.svg`,
+  Object.assign(img, { src: `assets/coins/${code === 'GC' ? 'gold' : 'super'}-coin-front.png`,
     alt: '', width: size, height: size });
   img.setAttribute('aria-hidden', 'true');
   return img;
@@ -28,7 +28,7 @@ function renderPackages(list, headingTag) {
       if (packageInfo.sweepsCoins) art.append(coin('SC', 44));
     }
     const bonus = node('p', 'store-package__bonus');
-    bonus.append(coin('SC', 20), node('strong', '', String(packageInfo.sweepsCoins)), node('span', '', 'FREE'), node('span', 'visually-hidden', 'Sweeps Coins'));
+    bonus.append(coin('SC', 20), node('strong', '', String(packageInfo.sweepsCoins)), node('span', '', 'FREE'), node('span', 'visually-hidden', 'Super Coins'));
     const price = node('button', 'store-package__price', formatPackagePrice(packageInfo));
     price.type = 'button';
     price.dataset.package = packageInfo.id;

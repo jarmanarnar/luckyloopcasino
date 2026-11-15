@@ -12,6 +12,7 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
   const options = new Map(['GC', 'SC'].map(code => [code, {
     row: doc.querySelector(`#wallet-row-${code}`),
     button: doc.querySelector(`#wallet-select-${code}`),
+    name: doc.querySelector(`#wallet-name-${code}`),
     amount: doc.querySelector(`#wallet-amount-${code}`),
   }]));
   let busy = false;
@@ -30,15 +31,16 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     trigger.removeAttribute('aria-checked');
     trigger.dataset.action = 'currencies';
     trigger.title = 'Choose currency';
-    trigger.setAttribute('aria-label', (['game', 'game-details'].includes(router?.getRoute?.().type) || doc.body?.dataset.playerActive === 'true') ? `${code} In Play. Choose currency` : hidden ? `${code} balance hidden. Choose currency`
-      : `${code} balance: ${formatBalance(code, wallet.balances[code])}. Choose currency`);
-    coin.src = code === 'GC' ? 'assets/coins/gold-coin.svg' : 'assets/coins/sweeps-coin.svg';
+    trigger.setAttribute('aria-label', (['game', 'game-details'].includes(router?.getRoute?.().type) || doc.body?.dataset.playerActive === 'true') ? `${CURRENCIES[code].name} In Play. Choose currency` : hidden ? `${CURRENCIES[code].name} balance hidden. Choose currency`
+      : `${CURRENCIES[code].name} balance: ${formatBalance(code, wallet.balances[code])}. Choose currency`);
+    coin.src = code === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png';
     hide.setAttribute('aria-checked', String(hidden));
     hide.disabled = busy;
     for (const [currency, option] of options) {
       option.row.dataset.active = String(currency === code);
       option.button.setAttribute('aria-pressed', String(currency === code));
       option.button.setAttribute('aria-label', `${CURRENCIES[currency].name}, ${hidden ? 'balance hidden' : formatBalance(currency, wallet.balances[currency])}`);
+      option.name.textContent = CURRENCIES[currency].name;
       option.amount.textContent = hidden ? '••••••' : formatBalance(currency, wallet.balances[currency]);
       option.button.disabled = busy;
     }

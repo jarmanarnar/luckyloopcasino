@@ -452,7 +452,7 @@ test('narrow content switches to a static card without disturbing a running desk
  assert.equal(host.children[0], mounted);
 });
 
-test('desktop Sweep Coins shows a strictly read-only public demo preview', async () => {
+test('desktop Super Coins shows a strictly read-only public demo preview', async () => {
  const viewportWidth = 1440;
  const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth });
  const first = page.frames[0], route = page.router.getRoute();
@@ -468,7 +468,7 @@ test('desktop Sweep Coins shows a strictly read-only public demo preview', async
  assert.equal(preview.getAttribute('aria-hidden'), 'true');
  assert.equal(page.verificationOpens(), 0);
  assert.equal(page.nodes['game-preplay'].hidden, false);
- assert.equal(page.nodes['game-play-confirm'].textContent, 'Play with Sweep Coins');
+ assert.equal(page.nodes['game-play-confirm'].textContent, 'Play with Super Coins');
  assert.equal(view.dataset.sessionKind, 'verification-preview');
  assert.equal(view.dataset.mode, 'SC');
  assert.equal(view.dataset.previewReady, undefined);
@@ -501,7 +501,7 @@ test('preplay explanation follows the selected currency without changing play be
  nodes['game-coin-info-trigger'].emit('click');
  assert.equal(nodes['game-coin-answer'].hidden, false);
  nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
- assert.equal(nodes['game-coin-question'].textContent, 'What are Sweep Coins?');
+ assert.equal(nodes['game-coin-question'].textContent, 'What are Super Coins?');
  assert.match(nodes['game-coin-answer'].textContent, /play is unavailable/);
  assert.equal(nodes['game-coin-answer'].hidden, true);
  nodes['game-coin-info-trigger'].emit('pointerenter', { pointerType: 'mouse' });
@@ -530,7 +530,7 @@ test('coin tooltip supports hover, keyboard dismissal and the first touch tap', 
  assert.equal(page.nodes['game-view'].hidden, false, 'Escape dismisses help before leaving the game');
 });
 
-test('mobile Sweep Coins shows only the card and opens verification, never a provider frame', async () => {
+test('mobile Super Coins shows only the card and opens verification, never a provider frame', async () => {
  const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, viewportWidth: 390 });
  page.nodes['game-play-sc'].emit('click'); await new Promise(resolve => setImmediate(resolve));
  page.nodes['game-play-confirm'].emit('click'); await new Promise(resolve => setImmediate(resolve));
@@ -540,7 +540,7 @@ test('mobile Sweep Coins shows only the card and opens verification, never a pro
  assert.equal(page.document.body.dataset.playerMobile, 'false');
 });
 
-test('direct Sweep Coins details preloads a read-only demo without opening verification', () => {
+test('direct Super Coins details preloads a read-only demo without opening verification', () => {
  const page = gamePage({ hash: '#/games/alpha', routerMode: true, preplay: true, currency: 'SC' });
  assert.equal(page.frames.length, 1);
  assert.equal(page.frames[0].inert, true);

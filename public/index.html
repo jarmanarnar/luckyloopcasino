@@ -73,20 +73,20 @@
         <a class="site-logo" href="#" aria-label="COP COIN home"><img class="site-logo__image site-logo__image--wordmark" src="assets/brand/cop-coin-wordmark.png" width="2172" height="724" alt="COP COIN" fetchpriority="high"><img class="site-logo__image site-logo__image--mark" src="assets/brand/cop-coin-beacons.png" width="1536" height="1024" alt="COP COIN"></a>
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group" hidden>
-        <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/add-gold.svg" width="48" height="48" alt="" aria-hidden="true"></button>
+        <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/gold-coin-front.png" width="48" height="48" alt="" aria-hidden="true"></button>
       </div>
       <div id="header-wallet-controls" class="header-wallet-controls" hidden>
         <button id="coin-type-switch" class="wallet-switch wallet-balance-trigger" type="button" aria-label="Choose currency" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-currency-menu" hidden>
-          <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin.svg" width="20" height="20" alt="" aria-hidden="true">
+          <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin-front.png" width="20" height="20" alt="" aria-hidden="true">
           <span class="wallet-balance-copy" dir="ltr" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
           <svg class="wallet-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
         </button>
         <section id="wallet-currency-menu" class="wallet-currency-menu" role="dialog" aria-label="Wallet currencies" hidden>
           <div id="wallet-row-GC" class="wallet-currency-row" data-active="true">
-            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" width="18" height="18" alt=""><span>GC</span><strong id="wallet-amount-GC" class="wallet-currency-amount">125,000</strong></button>
+            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-GC" class="wallet-currency-name">Gold Coins</span><strong id="wallet-amount-GC" class="wallet-currency-amount">125,000</strong></button>
           </div>
           <div id="wallet-row-SC" class="wallet-currency-row" data-active="false">
-            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/sweeps-coin.svg" width="18" height="18" alt=""><span>SC</span><strong id="wallet-amount-SC" class="wallet-currency-amount">15.00</strong></button>
+            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-SC" class="wallet-currency-name">Super Coins</span><strong id="wallet-amount-SC" class="wallet-currency-amount">15.00</strong></button>
           </div>
           <button id="wallet-hide-balance" class="wallet-hide-balance" type="button" role="switch" aria-checked="false"><span>Hide Balance</span><span class="wallet-setting-switch" aria-hidden="true"></span></button>
           <p id="wallet-menu-status" class="wallet-menu-status" role="status"></p>
@@ -212,8 +212,8 @@
             </span>
           </div>
           <div class="game-preplay__actions" role="group" aria-label="Play currency">
-            <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin.svg" alt="" aria-hidden="true">Gold Coins</button>
-            <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/sweeps-coin.svg" alt="" aria-hidden="true">Sweep Coins</button>
+            <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" alt="" aria-hidden="true">Gold Coins</button>
+            <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" alt="" aria-hidden="true">Super Coins</button>
           </div>
           <button id="game-play-confirm" type="button" class="primary-button">Play with Gold Coins</button>
         </div>

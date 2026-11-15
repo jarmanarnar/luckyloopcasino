@@ -97,7 +97,7 @@ export function renderAchievements(ctx, entries, collect) {
     body.append(title, n('p', 'achievement-card__description', entry.description));
     const reward = n('div', 'achievement-card__reward');
     const coin = n('img');
-    coin.src = 'assets/coins/gold-coin.svg';
+    coin.src = 'assets/coins/gold-coin-front.png';
     coin.alt = '';
     coin.width = 18;
     coin.height = 18;

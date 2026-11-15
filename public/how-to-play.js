@@ -1,7 +1,7 @@
 const steps = [
   {
     mode: 'both', label: '',
-    description: 'COP COIN offers two ways to play: Gold Coins (GC) and Sweeps Coins (SC), each with its own balance.',
+    description: 'COP COIN offers two ways to play: Gold Coins (GC) and Super Coins (SC), each with its own balance.',
   },
   {
     mode: 'gc', label: 'GC MODE',
@@ -9,7 +9,7 @@ const steps = [
   },
   {
     mode: 'sc', label: 'SC MODE',
-    description: 'Sweeps Coins (SC) are used for free play in SC mode and are not sold. They may be included as a complimentary gift with Gold Coin packages or offered through other free methods.',
+    description: 'Super Coins (SC) are used for free play in SC mode and are not sold. They may be included as a complimentary gift with Gold Coin packages or offered through other free methods.',
   },
 ];
 
@@ -32,7 +32,7 @@ export function initHowToPlay({ router } = {}) {
   function coin(currency, className) {
     const image = document.createElement('img');
     image.className = `how-to-play-coin ${className}`;
-    image.src = `assets/coins/${currency === 'gc' ? 'gold' : 'sweeps'}-coin.svg`;
+    image.src = `assets/coins/${currency === 'gc' ? 'gold' : 'super'}-coin-front.png`;
     image.alt = '';
     image.width = image.height = 96;
     return image;
