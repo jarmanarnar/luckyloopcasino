@@ -1,4 +1,5 @@
 import { CHAT_LIMIT, CHAT_ROOMS, SAMPLE_MESSAGES, cleanChatText, normalizeChatMessages } from './chat-state.js';
+import { renderProfileAvatar } from './profile-photo.js';
 
 function icon(name) {
   const paths = {
@@ -107,6 +108,7 @@ export function initCommunityChat({ account, auth }) {
     const card = node('button', 'chat-message'); card.type = 'button'; card.dataset.rank = own ? 'own' : item.rank;
     card.setAttribute('aria-label', 'Reply to ' + item.name + ': ' + item.text);
     const avatar = node('span', 'chat-avatar', own ? account.getMemberState().profile.avatar : item.avatar);
+    if (own) renderProfileAvatar(avatar, account.getMemberState().profile);
     avatar.setAttribute('aria-hidden', 'true');
     avatar.append(node('span', 'chat-avatar__badge', item.rank === 'guide' ? '✓' : '◆'));
     const copy = node('span', 'chat-message__copy');
@@ -138,6 +140,7 @@ export function initCommunityChat({ account, auth }) {
       input.value = ''; clearReply(); emojiPicker.hidden = true; emojiButton.setAttribute('aria-expanded', 'false');
     }
     updateComposer();
+    if (opened) renderMessages();
   }
   function open(trigger = triggers.find(item => item.getClientRects().length)) {
     if (!account.isSignedIn()) { login(); return; }

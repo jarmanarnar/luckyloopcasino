@@ -325,11 +325,24 @@
       </section>
     </div>
     <form id="profile-editor" class="profile-summary__body" hidden>
+      <section class="profile-editor__photo" aria-labelledby="profile-photo-title">
+        <span id="profile-photo-preview" class="profile-summary__avatar profile-editor__photo-preview" aria-hidden="true"></span>
+        <div class="profile-editor__photo-controls">
+          <h3 id="profile-photo-title">Profile photo</h3>
+          <div class="profile-editor__photo-actions">
+            <button id="profile-photo-upload" class="feature-button" type="button">Upload photo</button>
+            <button id="profile-photo-remove" class="feature-button" type="button" hidden>Remove photo</button>
+          </div>
+          <input id="profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose profile photo" hidden>
+          <p class="profile-editor__photo-hint">JPG, PNG or WebP · Up to 5 MB</p>
+          <p id="profile-photo-status" class="profile-editor__photo-hint" role="status" aria-live="polite"></p>
+        </div>
+      </section>
       <label class="feature-field" for="profile-editor-name">Display name
         <input id="profile-editor-name" class="feature-input" name="displayName" type="text" minlength="2" maxlength="24" autocomplete="nickname" required>
       </label>
       <fieldset id="profile-editor-avatars" class="feature-field">
-        <legend>Choose an avatar</legend>
+        <legend>Or choose an avatar</legend>
         <div class="feature-actions">
           <button class="profile-editor__avatar" type="button" data-avatar="L" aria-label="Avatar L" aria-pressed="false">L</button>
           <button class="profile-editor__avatar" type="button" data-avatar="∞" aria-label="Avatar infinity" aria-pressed="false">∞</button>

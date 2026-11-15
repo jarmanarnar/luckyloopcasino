@@ -1,4 +1,6 @@
 // Local prototype state only: no authentication, provider rounds or real transactions.
+import { isProfilePhoto } from './profile-photo.js';
+
 export const MEMBER_STORAGE_KEY = 'luckyloopcasino-member-v1';
 const avatars = new Set(['L', '∞', '★', '7', 'G', 'S']);
 export const TASK_REWARDS = Object.freeze({ 'complete-profile': 500, 'first-game': 500, 'daily-check-in': 250 });
@@ -17,7 +19,8 @@ export function createMemberState(saved = {}) {
   const discovered = Array.isArray(saved?.discoveredGameIds) ? saved.discoveredGameIds
     : Array.isArray(saved?.history) ? saved.history.filter(entry => entry?.type === 'game').map(entry => entry.gameId) : [];
   return {
-    profile: { displayName: displayName.length >= 2 ? displayName : 'Loop Player', avatar: avatars.has(saved?.profile?.avatar) ? saved.profile.avatar : 'L' },
+    profile: { displayName: displayName.length >= 2 ? displayName : 'Loop Player', avatar: avatars.has(saved?.profile?.avatar) ? saved.profile.avatar : 'L',
+      ...(isProfilePhoto(saved?.profile?.photo) ? { photo: saved.profile.photo } : {}) },
     settings: { hideBalance: saved?.settings?.hideBalance === true, reducedMotion: saved?.settings?.reducedMotion === true },
     daily: { lastClaim: iso(saved?.daily?.lastClaim) ? saved.daily.lastClaim : null,
       streak: Number.isInteger(saved?.daily?.streak) && saved.daily.streak >= 0 && saved.daily.streak <= 7 ? saved.daily.streak : 0,

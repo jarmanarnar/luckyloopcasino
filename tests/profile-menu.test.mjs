@@ -8,7 +8,7 @@ import { getDiscoveredGameCount } from '../public/rewards-pages.js';
 const source = (await readFile(new URL('../public/profile-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initProfileMenu', 'function initProfileMenu');
 
-function profilePage() {
+function profilePage({ preparePhoto = async () => 'test-photo' } = {}) {
   let focused;
   class Node {
     constructor() { this.listeners = new Map(); this.attributes = new Map(); this.dataset = {}; this.open = false; this.hidden = false; }
@@ -28,6 +28,7 @@ function profilePage() {
   const selectors = ['#header-profile', '#profile-menu', '#profile-summary', '#profile-menu-status',
     '#profile-summary-title', '#profile-summary-overview', '.profile-summary__edit', '.profile-summary__close',
     '#profile-editor', '#profile-editor-name', '#profile-editor-avatars', '#profile-editor-cancel', '#profile-editor-save', '#profile-editor-status',
+    ...['preview', 'file', 'upload', 'remove', 'status'].map(id => `#profile-photo-${id}`),
     ...['avatar', 'name', 'since', 'games', 'favorites', 'rewards', 'coins'].map(id => `#profile-summary-${id}`),
     ...['summary', 'messages', 'redeem', 'logout'].map(action => `[data-profile-action="${action}"]`)];
   const nodes = Object.fromEntries(selectors.map(selector => [selector, new Node()]));
@@ -46,7 +47,9 @@ function profilePage() {
   };
   const document = { querySelector: selector => selector === 'dialog[open]' ? nodes['#profile-summary'].open ? nodes['#profile-summary'] : null : nodes[selector] };
   const router = { subscribe() {}, getRoute: () => ({ type: 'category', categoryId: 'popular' }), navigate: route => navigations.push(route) };
-  const context = { document, window: { addEventListener() {} }, router, account, getDiscoveredGameCount, createShelfIcon() {} };
+  const context = { document, window: { addEventListener() {} }, router, account, getDiscoveredGameCount, createShelfIcon() {},
+    prepareProfilePhoto: preparePhoto,
+    renderProfileAvatar(element, profile) { element.textContent = profile.avatar; element.photo = profile.photo || null; } };
   const api = vm.runInNewContext(`${source}\ninitProfileMenu({router, account});`, context);
   return { api, nodes, choices, snapshot, account, writes, navigations, subscribers, focused: () => focused };
 }
@@ -117,5 +120,93 @@ test('closing a pending save does not reopen the dialog or overwrite a new editi
   assert.equal(n['#profile-editor-status'].textContent, '');
   page.api.open({ edit: true });
   assert.equal(n['#profile-editor-name'].value, 'Alice');
+  assert.equal(n['#profile-editor-save'].disabled, false);
+});
+
+test('photo selection is previewed without persistence and Cancel discards it', async () => {
+  const page = profilePage(), n = page.nodes;
+  page.api.open({ edit: true });
+  n['#profile-photo-file'].files = [{}];
+  await n['#profile-photo-file'].fire('change');
+  assert.equal(n['#profile-photo-preview'].photo, 'test-photo');
+  assert.equal(n['#profile-photo-remove'].hidden, false);
+  assert.ok(page.choices.every(choice => choice.getAttribute('aria-pressed') === 'false'));
+  assert.deepEqual(page.writes, []);
+  await n['#profile-editor-cancel'].fire('click');
+  page.api.open({ edit: true });
+  assert.equal(n['#profile-photo-preview'].photo, null);
+  assert.equal(n['#profile-photo-remove'].hidden, true);
+});
+
+test('upload, replace and removal save only the photo field and restore the fallback avatar', async () => {
+  let photo = 'first-photo';
+  const page = profilePage({ preparePhoto: async () => photo }), n = page.nodes;
+  page.snapshot.member.profile.avatar = '★';
+  for (const next of ['first-photo', 'replacement-photo']) {
+    photo = next;
+    page.api.open({ edit: true });
+    n['#profile-photo-file'].files = [{}];
+    await n['#profile-photo-file'].fire('change');
+    await n['#profile-editor'].fire('submit');
+    assert.deepEqual(page.writes.at(-1), { photo });
+    assert.equal(n['#profile-summary-avatar'].photo, photo);
+  }
+  page.api.open({ edit: true });
+  await n['#profile-photo-remove'].fire('click');
+  assert.equal(n['#profile-photo-preview'].textContent, '★');
+  assert.equal(n['#profile-photo-preview'].photo, null);
+  assert.equal(page.snapshot.member.profile.photo, 'replacement-photo', 'removal is a draft until Save');
+  await n['#profile-editor'].fire('submit');
+  assert.deepEqual(page.writes.at(-1), { photo: null });
+  assert.equal(n['#profile-summary-avatar'].photo, null);
+  assert.equal(n['#profile-summary-avatar'].textContent, '★');
+});
+
+test('selecting a preset avatar replaces a photo; a name-only save preserves a concurrently updated photo', async () => {
+  const page = profilePage(), n = page.nodes;
+  page.snapshot.member.profile.photo = 'old-photo';
+  page.api.open({ edit: true });
+  await page.choices[2].fire('click');
+  await n['#profile-editor'].fire('submit');
+  assert.deepEqual(page.writes.at(-1), { avatar: '★', photo: null });
+  page.api.open({ edit: true });
+  n['#profile-editor-name'].value = 'Alice Updated';
+  page.snapshot.member.profile.photo = 'newer-photo';
+  await n['#profile-editor'].fire('submit');
+  assert.deepEqual(page.writes.at(-1), { displayName: 'Alice Updated' });
+  assert.equal(n['#profile-summary-avatar'].photo, 'newer-photo');
+});
+
+test('failed image decoding preserves the current photo and allows retry', async () => {
+  const page = profilePage({ preparePhoto: async () => { throw new Error('Choose a JPG, PNG or WebP image.'); } }), n = page.nodes;
+  page.snapshot.member.profile.photo = 'saved-photo';
+  page.api.open({ edit: true });
+  n['#profile-photo-file'].files = [{}];
+  await n['#profile-photo-file'].fire('change');
+  assert.equal(n['#profile-photo-preview'].photo, 'saved-photo');
+  assert.match(n['#profile-photo-status'].textContent, /JPG/);
+  assert.equal(n['#profile-editor-save'].disabled, false);
+  assert.equal(n['#profile-photo-upload'].disabled, false);
+  await n['#profile-editor'].fire('submit');
+  assert.deepEqual(page.writes, []);
+});
+
+test('a photo finishing after the editor is closed cannot overwrite a new draft', async () => {
+  let finish;
+  const page = profilePage({ preparePhoto: () => new Promise(resolve => { finish = resolve; }) }), n = page.nodes;
+  page.api.open({ edit: true });
+  n['#profile-photo-file'].files = [{}];
+  const pending = n['#profile-photo-file'].fire('change');
+  assert.equal(n['#profile-editor-save'].disabled, true);
+  await n['#profile-editor'].fire('submit');
+  assert.deepEqual(page.writes, []);
+  n['#profile-summary'].close();
+  page.api.open({ edit: true });
+  await page.choices[2].fire('click');
+  finish('late-photo');
+  await pending;
+  assert.equal(n['#profile-photo-preview'].photo, null);
+  assert.equal(n['#profile-photo-preview'].textContent, '★');
+  assert.equal(n['#profile-photo-status'].textContent, '');
   assert.equal(n['#profile-editor-save'].disabled, false);
 });

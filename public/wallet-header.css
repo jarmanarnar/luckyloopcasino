@@ -90,10 +90,11 @@ body:has(#notifications-drawer[open]) #header-notifications {
   }
 }
 .header-member-action.header-profile {
+  padding: 3px;
   border-radius: 50%;
   color: var(--text-primary);
 }
-.header-avatar { font: 700 1rem/1 var(--header-font-family); }
+.header-avatar { position: relative; display: grid; place-items: center; width: 100%; height: 100%; border-radius: inherit; font: 700 1rem/1 var(--header-font-family); }
 .wallet-currency-menu {
   box-sizing: border-box;
   position: absolute;

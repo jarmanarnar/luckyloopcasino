@@ -41,6 +41,7 @@
     html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
     body { box-sizing: border-box; min-height: 100dvh; padding-top: var(--top-bar-height); font-family: var(--app-font-family); }
     button, input, select, textarea { font: inherit; }
+    .profile-avatar-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
     /* App-wide design rule: focus never adds an outline or glowing frame.
        Keep this shared rule when adding components; keyboard focus still works. */
     :focus, :focus-visible { outline: none !important; outline-offset: 0 !important; }

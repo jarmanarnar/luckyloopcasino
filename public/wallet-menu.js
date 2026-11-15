@@ -1,4 +1,5 @@
 import { CURRENCIES, formatBalance } from './wallet-state.js';
+import { renderProfileAvatar } from './profile-photo.js';
 
 export function initWalletMenu({ account, router, selectCurrency, document: doc = document } = {}) {
   const shell = doc.querySelector('#header-wallet-controls');
@@ -44,7 +45,7 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
       option.amount.textContent = hidden ? '••••••' : formatBalance(currency, wallet.balances[currency]);
       option.button.disabled = busy;
     }
-    if (avatar) avatar.textContent = member.profile.avatar || 'L';
+    renderProfileAvatar(avatar, member.profile);
     if (!account.isSignedIn()) close();
   }
   function toggle() {

@@ -1,5 +1,6 @@
 import { createMemberState, claimDailyReward, claimTaskReward, recordGameVisit, normalizeNotificationReadIds } from './member-state.js';
 import { createWalletState, formatBalance } from './wallet-state.js';
+import { isProfilePhoto } from './profile-photo.js';
 
 export const ACCOUNT_DATABASE = 'luckyloopcasino-demo-account-v1';
 export const ACCOUNT_KEY = 'primary';
@@ -86,9 +87,16 @@ export function applyAccountCommand(current, command, now = new Date()) {
     if (Object.hasOwn(patch, 'avatar') && !['L', '∞', '★', '7', 'G', 'S'].includes(patch.avatar)) {
       return unchanged(failed('Choose one of the available avatars.'));
     }
+    if (Object.hasOwn(patch, 'photo') && patch.photo !== null && !isProfilePhoto(patch.photo)) {
+      return unchanged(failed('Choose a valid profile photo.'));
+    }
     next.member.profile = { ...current.member.profile,
       ...(Object.hasOwn(patch, 'displayName') ? { displayName: patch.displayName.trim() } : {}),
       ...(Object.hasOwn(patch, 'avatar') ? { avatar: patch.avatar } : {}) };
+    if (Object.hasOwn(patch, 'photo')) {
+      if (patch.photo === null) delete next.member.profile.photo;
+      else next.member.profile.photo = patch.photo;
+    }
   } else if (command.type === 'settings') {
     for (const key of ['hideBalance', 'reducedMotion']) {
       if (Object.hasOwn(command.patch || {}, key)) next.member.settings[key] = command.patch[key] === true;

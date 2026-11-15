@@ -1,7 +1,7 @@
 .hero-carousel {
   --banner-gap: 1rem;
   /* Keep banner height and indicator spacing stable across viewport sizes. */
-  --banner-height: 13rem;
+  --banner-height: 16rem;
   --banner-radius: var(--radius-card);
   min-width: 0;
   container: hero-banner / inline-size;
