@@ -9,10 +9,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
   --menu-group-radius: .625rem;
   box-sizing: border-box;
   color: var(--text-primary);
-  background:
-    radial-gradient(ellipse 18rem 24rem at 100% 0%, var(--redeem-button-tonal), transparent 75%),
-    linear-gradient(180deg, var(--surface-subtle), transparent 28rem),
-    var(--sidebar-surface);
+  background: var(--sidebar-surface);
 }
 
 .site-sidebar {
@@ -26,16 +23,6 @@ html:has(#site-menu[open]) { overflow: hidden; }
   overflow: hidden;
   border-right: 1px solid var(--sidebar-divider);
   transition: width var(--sidebar-duration) var(--sidebar-easing);
-}
-/* A soft edge catches the same blue light as the Achievements overview. */
-.site-sidebar::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset: 0 0 0 auto;
-  width: 1px;
-  background: linear-gradient(180deg, var(--redeem-button-tonal), transparent 55%);
-  pointer-events: none;
 }
 /* Continue the header divider through both sidebar layouts without changing their height. */
 .site-sidebar::after {

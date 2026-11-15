@@ -1,18 +1,7 @@
 import { CHAT_LIMIT, CHAT_ROOMS, SAMPLE_MESSAGES, cleanChatText, normalizeChatMessages } from './chat-state.js';
 import { renderProfileAvatar } from './profile-photo.js';
+import { uiIconMarkup as icon } from './ui-icons.js';
 
-function icon(name) {
-  const paths = {
-    chat: '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M8 9h8M8 13h5"/>',
-    close: '<path d="m6 6 12 12M6 18 18 6"/>',
-    down: '<path d="m7 10 5 5 5-5"/>',
-    rules: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/>',
-    send: '<path d="m22 2-7 20-4-9-9-4Z M22 2 11 13"/>',
-    smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8h.01M16 8h.01"/>',
-    check: '<path d="m5 12 4 4L19 6"/>',
-  };
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[name] || paths.chat) + '</svg>';
-}
 function node(tag, className, text) {
   const element = document.createElement(tag);
   if (className) element.className = className;

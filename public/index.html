@@ -56,6 +56,7 @@
   <link rel="stylesheet" href="community-chat.css">
   <link rel="stylesheet" href="player-display.css">
   <link rel="stylesheet" href="primary-button.css">
+  <link rel="stylesheet" href="site-footer.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -85,7 +86,7 @@
         <button id="coin-type-switch" class="wallet-switch wallet-balance-trigger" type="button" aria-label="Choose currency" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-currency-menu" hidden>
           <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin-front.png" width="20" height="20" alt="" aria-hidden="true">
           <span class="wallet-balance-copy" dir="ltr" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
-          <svg class="wallet-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
+          <svg class="wallet-chevron" data-ui-icon="down" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
         </button>
         <section id="wallet-currency-menu" class="wallet-currency-menu" role="dialog" aria-label="Wallet currencies" hidden>
           <div id="wallet-row-GC" class="wallet-currency-row" data-active="true">
@@ -109,7 +110,7 @@
       <div id="guest-header-actions" class="guest-header-actions">
         <button class="auth-icon-button guest-extra" type="button" data-auth-open="register" aria-label="Join to collect bonuses"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11h8v10H4a1 1 0 0 1-1-1v-9Zm10 0h8v9a1 1 0 0 1-1 1h-7V11ZM2 6h20v4H2V6Zm10-1C6 5 4 3 6 1c3-2 6 4 6 4Zm0 0c6 0 8-2 6-4-3-2-6 4-6 4Z"/></svg></button>
         <button class="auth-button auth-button--secondary" type="button" data-auth-open="login">Login</button>
-        <button class="auth-button primary-button" type="button" data-auth-open="register">Register</button>
+        <button class="auth-button" type="button" data-auth-open="register">Register</button>
       </div>
     </div>
   </header>
@@ -181,7 +182,7 @@
       </div>
     </section>
     <form id="lobby-search-form" class="catalog-page-search lobby-search" role="search" aria-label="Search lobby games" lang="en" dir="ltr">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.26 15.17l4.53 4.54 1.42-1.42-4.54-4.53A8.5 8.5 0 0 0 10.5 2Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
+      <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
       <input id="lobby-search-input" type="search" placeholder="Enter at least 1 character" aria-label="Search games" autocomplete="off">
     </form>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
@@ -189,7 +190,7 @@
     </header>
     <div id="catalog-page-controls" class="catalog-page-controls" lang="en" dir="ltr" hidden>
       <form id="catalog-page-search-form" class="catalog-page-search" role="search">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 2a8.5 8.5 0 1 0 5.26 15.17l4.53 4.54 1.42-1.42-4.54-4.53A8.5 8.5 0 0 0 10.5 2Zm0 2a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/></svg>
+        <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
         <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
       </form>
       <label class="catalog-page-filter"><span class="visually-hidden">Game category</span><select id="catalog-page-category" aria-label="Game category"></select></label>
@@ -212,7 +213,7 @@
             <span id="game-coin-question">What are Gold Coins?</span>
             <span class="game-coin-info__anchor" id="game-coin-info-anchor">
               <button id="game-coin-info-trigger" class="game-coin-info__trigger" type="button" aria-label="About Gold Coins" aria-describedby="game-coin-answer" aria-expanded="false">
-                <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M8 7v4.5M8 4.5v.1" fill="none" stroke="var(--surface-panel)" stroke-width="1.7" stroke-linecap="round"/></svg>
+                <svg data-ui-icon="info" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
               </button>
               <span id="game-coin-answer" class="game-coin-info__tooltip" role="tooltip" hidden>Gold Coins are virtual coins for social play. They have no cash value. The game demo uses its own balance.</span>
             </span>
@@ -233,8 +234,8 @@
     </div>
     <div class="game-display-controls" role="group" aria-label="Player controls">
       <div id="game-favorite-toolbar" class="game-favorite-slot game-favorite-slot--toolbar"></div>
-      <button id="game-theater" type="button" aria-label="Theater mode" title="Theater mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/></svg></button>
-      <button id="game-fullscreen" type="button" aria-label="Fullscreen" title="Fullscreen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+      <button id="game-theater" type="button" aria-label="Theater mode" title="Theater mode" aria-pressed="false"><svg data-ui-icon="theater" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+      <button id="game-fullscreen" type="button" aria-label="Fullscreen" title="Fullscreen" aria-pressed="false"><svg data-ui-icon="fullscreen" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
     </div>
   </main>
   <main id="game-details-view" class="page-content game-details-view" lang="en" dir="ltr" hidden></main>
@@ -243,7 +244,7 @@
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-haspopup="dialog" aria-controls="store-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
     <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><img class="mobile-nav__icon mobile-nav__icon--brand" src="assets/brand/cop-coin-cc.png" width="1536" height="1024" alt=""><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="phone-verification-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
-    <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon mobile-nav__icon--chat" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/><path d="M8 9h8M8 13h5"/></svg><span class="mobile-nav__label">Chat</span></button>
+    <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon" data-ui-icon="chat" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span class="mobile-nav__label">Chat</span></button>
   </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
@@ -253,7 +254,7 @@
       </div>
     </div>
     <div id="menu-content" class="site-menu__scroll">
-      <button id="menu-search" class="site-menu__search" type="button" aria-label="Search games" data-tooltip="Search" aria-controls="lobby-view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="site-menu__label">Search</span></button>
+      <button id="menu-search" class="site-menu__search" type="button" aria-label="Search games" data-tooltip="Search" aria-controls="lobby-view"><svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span class="site-menu__label">Search</span></button>
       <nav id="menu-navigation" class="site-menu__navigation" aria-label="Casino navigation"></nav>
     </div>
   </dialog>
@@ -318,7 +319,7 @@
       <div class="profile-summary__identity">
         <span id="profile-summary-avatar" class="profile-summary__avatar" aria-hidden="true"></span>
         <div><h3 id="profile-summary-name" class="profile-summary__name"></h3><p class="profile-summary__member-since">Member since <time id="profile-summary-since"></time></p></div>
-        <button class="profile-summary__edit icon-button" type="button" aria-controls="profile-editor" aria-label="Edit profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5H5v14h14v-7M9 15l1-4 7-7 3 3-7 7-4 1Z"/></svg></button>
+        <button class="profile-summary__edit icon-button" type="button" aria-controls="profile-editor" aria-label="Edit profile"><svg data-ui-icon="edit" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
       </div>
       <section aria-labelledby="profile-summary-stats-title">
         <div class="profile-summary__stats-header"><h3 id="profile-summary-stats-title">Statistics</h3><a class="profile-summary__more" href="#/history" data-profile-page="history">Show More</a></div>
@@ -372,21 +373,86 @@
     <div id="feature-content"></div>
     <p id="feature-status" class="feature-status" role="status" aria-live="polite" aria-atomic="true"></p>
   </main>
+  <footer id="site-footer" class="site-footer" lang="en" dir="ltr">
+    <div class="site-footer__inner">
+      <div class="site-footer__main">
+        <div class="site-footer__brand">
+          <a class="site-footer__logo" href="#/" aria-label="COP COIN home">
+            <img src="assets/brand/cop-coin-wordmark.png" width="2172" height="724" alt="COP COIN" loading="lazy">
+          </a>
+          <p>Discover your next favorite game.</p>
+          <p class="site-footer__intro">Explore the lobby, collect achievements and keep your favorites in one place.</p>
+        </div>
+        <nav class="site-footer__links" aria-labelledby="footer-explore-title">
+          <h2 id="footer-explore-title">Explore</h2>
+          <a href="#/">Lobby</a>
+          <a href="#/popular">Popular Games</a>
+          <a href="#/slots">Slots</a>
+          <a href="#/new-releases">New Releases</a>
+          <a href="#/providers">Game Providers</a>
+        </nav>
+        <nav class="site-footer__links" aria-labelledby="footer-account-title">
+          <h2 id="footer-account-title">Your space</h2>
+          <a href="#/achievements">Achievements</a>
+          <a href="#/favorites">Favorite Games</a>
+          <a href="#/recent-games">Recent Games</a>
+          <a href="#/history">Activity History</a>
+          <a href="#/settings">Settings</a>
+        </nav>
+        <nav class="site-footer__links site-footer__help" aria-labelledby="footer-help-title">
+          <h2 id="footer-help-title">Help &amp; more</h2>
+          <button type="button" data-footer-help>How to Play</button>
+          <a href="#/support">Live Support</a>
+          <button type="button" data-footer-store aria-haspopup="dialog" aria-controls="store-dialog">Coin Store</button>
+        </nav>
+      </div>
+      <div class="site-footer__services">
+        <section class="site-footer__payments" aria-labelledby="footer-payments-title">
+          <div class="site-footer__payment-copy">
+            <h2 id="footer-payments-title">Payment methods</h2>
+            <p>Preview only · payments are not enabled.</p>
+          </div>
+          <ul class="site-footer__cards" aria-label="Payment brands shown in this preview">
+            <li><img src="assets/payments/visa.svg" width="60" height="40" alt="Visa" loading="lazy"></li>
+            <li><img src="assets/payments/mastercard.svg" width="60" height="40" alt="Mastercard" loading="lazy"></li>
+            <li><img src="assets/payments/amex.svg" width="60" height="40" alt="American Express" loading="lazy"></li>
+            <li><img src="assets/payments/discover.svg" width="60" height="40" alt="Discover" loading="lazy"></li>
+          </ul>
+        </section>
+        <a class="site-footer__support" href="#/support">
+          <span class="site-footer__support-icon" aria-hidden="true"><svg data-ui-icon="support" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></span>
+          <span><strong>Need a hand?</strong><span>Visit our support center</span></span>
+          <svg class="site-footer__arrow" data-ui-icon="arrow-right" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
+        </a>
+      </div>
+      <div class="site-footer__notice">
+        <span class="site-footer__age" aria-label="For ages 18 and over">18+</span>
+        <div>
+          <h2>Play for the fun of it.</h2>
+          <p>COP COIN is currently a demo. Gold Coins and Super Coins have no cash value. Purchases and prize redemptions are not available.</p>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <small>© <span data-footer-year>2026</span> COP COIN</small>
+        <button class="site-footer__back" type="button" data-footer-top>Back to top <svg data-ui-icon="arrow-up" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+      </div>
+    </div>
+  </footer>
   <dialog id="how-to-play-dialog" class="how-to-play-dialog" aria-labelledby="how-to-play-title" aria-describedby="how-to-play-description" lang="en" dir="ltr">
     <button id="how-to-play-close" class="how-to-play-close icon-button" type="button" aria-label="Close How to Play" autofocus><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m6.4 4.8 5.6 5.6 5.6-5.6 1.6 1.6-5.6 5.6 5.6 5.6-1.6 1.6-5.6-5.6-5.6 5.6-1.6-1.6 5.6-5.6-5.6-5.6Z"/></svg></button>
     <h2 id="how-to-play-title">How to Play?</h2>
     <p id="how-to-play-mode" class="how-to-play-mode"></p>
     <div class="how-to-play-stage">
-      <button id="how-to-play-previous" class="how-to-play-arrow how-to-play-arrow--previous icon-button" type="button" aria-label="Previous explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 4-8 8 8 8"/></svg></button>
+      <button id="how-to-play-previous" class="how-to-play-arrow how-to-play-arrow--previous icon-button" type="button" aria-label="Previous explanation"><svg data-ui-icon="left" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
       <div id="how-to-play-art" class="how-to-play-art" aria-hidden="true"></div>
-      <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 4 8 8-8 8"/></svg></button>
+      <button id="how-to-play-next" class="how-to-play-arrow how-to-play-arrow--next icon-button" type="button" aria-label="Next explanation"><svg data-ui-icon="right" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
     </div>
     <p id="how-to-play-description" class="how-to-play-description" aria-live="polite" aria-atomic="true"></p>
     <button id="how-to-play-finish" class="how-to-play-finish" type="button" hidden>OK</button>
     <p id="how-to-play-step" class="visually-hidden" role="status"></p>
   </dialog>
   <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title" lang="en" dir="ltr">
-    <button id="auth-close" class="auth-close icon-button" type="button" aria-label="Close login and registration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <button id="auth-close" class="auth-close icon-button" type="button" aria-label="Close login and registration"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
     <div class="auth-layout">
       <div class="auth-wireframe" aria-hidden="true"></div>
       <div class="auth-content">
@@ -398,7 +464,7 @@
         <div id="auth-panel" role="tabpanel" aria-labelledby="auth-tab-login">
           <form id="auth-form" class="auth-form">
             <label class="auth-field" for="auth-email"><span>Email</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm8 8 8-5V7l-8 5-8-5v1l8 5Z"/></svg><input id="auth-email" name="email" type="email" placeholder="Enter your email" autocomplete="email" maxlength="254" required></span></label>
-            <label class="auth-field" for="auth-password"><span>Password</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 9V7a5 5 0 0 1 10 0v2h1a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1Zm2 0h6V7a3 3 0 0 0-6 0v2Zm3 5a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7Z"/></svg><input id="auth-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="8" maxlength="256" required><button id="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="auth-eye-slash" d="m3 3 18 18"/></svg></button></span></label>
+            <label class="auth-field" for="auth-password"><span>Password</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 9V7a5 5 0 0 1 10 0v2h1a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1Zm2 0h6V7a3 3 0 0 0-6 0v2Zm3 5a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7Z"/></svg><input id="auth-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="8" maxlength="256" required><button id="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg data-ui-icon="eye-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><svg data-ui-icon="eye" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button></span></label>
             <button id="auth-forgot" class="auth-text-button auth-forgot" type="button">Forgot your password?</button>
             <div id="auth-register-fields" hidden>
               <details class="auth-promo-code"><summary>Promo code <span>(Optional)</span></summary><label class="auth-field"><span class="visually-hidden">Promo code</span><input id="auth-promo" class="auth-plain-input" name="promoCode" placeholder="Enter code" maxlength="40" autocomplete="off"></label><small>Preview only. No extra reward is applied.</small></details>

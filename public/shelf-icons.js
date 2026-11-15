@@ -1,4 +1,7 @@
+import { createUiIcon } from './ui-icons.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const sharedIcons = { history: 'history', logout: 'logout', 'how-to-play': 'help', support: 'support', scratchcards: 'cards', 'video-poker': 'cards' };
 
 function shape(tag, attributes) {
   const node = document.createElementNS(SVG_NS, tag);
@@ -7,6 +10,7 @@ function shape(tag, attributes) {
 }
 
 export function createShelfIcon(id) {
+  if (Object.hasOwn(sharedIcons, id)) return createUiIcon(sharedIcons[id], 'game-shelf__icon');
   const svg = shape('svg', {
     class: 'game-shelf__icon', 'aria-hidden': 'true', focusable: 'false',
     viewBox: '0 0 24 24', width: '24', height: '24', fill: 'currentColor',
@@ -25,9 +29,6 @@ export function createShelfIcon(id) {
     case 'profile':
       svg.append(path('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm-6 12a6 6 0 0 1 12 0H6Z'));
       break;
-    case 'history':
-      svg.append(path('M12 2a10 10 0 1 1-9.5 13h2.2A8 8 0 1 0 6 6.7L9 10H1V2l3.5 3.3A10 10 0 0 1 12 2Zm-1 5h2v5.1l3.5 2.1-1 1.7-4.5-2.7V7Z'));
-      break;
     case 'favorites':
       svg.append(path('M12 21C7 17 2 13.5 2 8a5.5 5.5 0 0 1 10-3.2A5.5 5.5 0 0 1 22 8c0 5.5-5 9-10 13Z'));
       break;
@@ -36,17 +37,6 @@ export function createShelfIcon(id) {
       break;
     case 'messages':
       svg.append(path('M21.8 2.8a1 1 0 0 1 1.2 1.2l-4 16a1 1 0 0 1-1.5.6l-5.9-4-3.1 3a.8.8 0 0 1-1.4-.6v-4.5l10.2-8.2-12.5 6.5-3.2-2a1 1 0 0 1 .2-1.8l20-6.2Z'));
-      break;
-    case 'logout':
-      svg.append(path('M4 3h10v4h-2V5H5v14h7v-2h2v4H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm13.3 4.3 4.7 4.7-4.7 4.7-1.4-1.4 2.3-2.3H8v-2h10.2l-2.3-2.3 1.4-1.4Z'));
-      break;
-    case 'how-to-play':
-      svg.append(shape('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }),
-        shape('path', { d: 'M9.5 8a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1.1-1.5 3', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }),
-        shape('circle', { cx: '12', cy: '17', r: '1' }));
-      break;
-    case 'support':
-      svg.append(path('M12 2a9 9 0 0 1 9 9v1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2v1a3 3 0 0 1-3 3h-5v-3h5a1 1 0 0 0 1-1v-8a5 5 0 0 0-10 0v8H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2v-1a9 9 0 0 1 9-9Z'));
       break;
     case 'settings':
       svg.append(path('m9.2 2-.5 3-2.1 1.2L3.8 5 1 9.8l2.3 2.1v2.2L1 16.2 3.8 21l2.8-1.2L8.7 21l.5 3h5.6l.5-3 2.1-1.2 2.8 1.2 2.8-4.8-2.3-2.1v-2.2L23 9.8 20.2 5l-2.8 1.2L15.3 5l-.5-3H9.2ZM12 8a5 5 0 1 1 0 10 5 5 0 0 1 0-10Z'));
@@ -67,12 +57,6 @@ export function createShelfIcon(id) {
     case 'baccarat':
     case 'poker':
       svg.append(path('M12 3c-2 4-8 7-8 11a4 4 0 0 0 7 2l-2 5h6l-2-5a4 4 0 0 0 7-2c0-4-6-7-8-11Z'));
-      break;
-    case 'scratchcards':
-    case 'video-poker':
-      svg.append(shape('rect', { x: '6', y: '3', width: '13', height: '17', rx: '2', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
-        shape('path', { d: 'M3 7v13a2 2 0 0 0 2 2h10', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
-        path('m12 7 4 5-4 5-4-5 4-5Z'));
       break;
     case 'instant-win':
     case 'tap':

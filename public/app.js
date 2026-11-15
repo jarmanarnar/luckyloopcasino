@@ -19,8 +19,11 @@ import { initHowToPlay } from './how-to-play.js';
 import { openDemoAccount } from './demo-account.js';
 import { GAMES } from './catalog.js';
 import { initAuthView } from './auth-view.js';
+import { initSiteFooter } from './site-footer.js';
+import { initUiIcons } from './ui-icons.js';
 
 export async function initApplication() {
+  initUiIcons();
   const account = await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
   initSiteMode({ account });
   const auth = initAuthView({ account, router: initRouter() });
@@ -38,6 +41,7 @@ export async function initApplication() {
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });
   const help = initHowToPlay({ router });
+  initSiteFooter({ router, openHowToPlay: help.openHowToPlay, openStore: store.openStore });
   const menu = initSiteMenu({ ...catalog, ...features, ...help, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
   initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
