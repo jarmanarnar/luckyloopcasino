@@ -22,6 +22,7 @@ import { initAuthView } from './auth-view.js';
 import { initSiteFooter } from './site-footer.js';
 import { initUiIcons } from './ui-icons.js';
 import { initSpinWheel } from './spin-wheel.js';
+import { initRedeemView } from './redeem-view.js';
 
 export async function initApplication() {
   initUiIcons();
@@ -34,11 +35,12 @@ export async function initApplication() {
   initRewardsPopover({ router, account });
   const wheel = initSpinWheel({ router, account, auth });
   const verifyPhone = () => auth.require(phone.open);
-  const profile = initProfileMenu({ router, account, auth, openNotifications: notifications.open, verifyPhone });
+  const redeem = initRedeemView({ router, account, auth });
+  const profile = initProfileMenu({ router, account, auth, openNotifications: notifications.open, openRedeem: redeem.open });
   initGameView({ router, account, verifyPhone: phone.open });
   const store = initStoreView({ router, account, auth, verifyPhone });
   const wallet = initWallet({ account, router, openStore: store.openStore });
-  const features = initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications: notifications.open, openProfile: profile.open });
+  const features = initFeatureView({ router, wallet, account, auth, openRedeem: redeem.open, openNotifications: notifications.open, openProfile: profile.open });
   const catalog = initCatalogView({ router, member: features.member });
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });

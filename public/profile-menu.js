@@ -5,7 +5,7 @@ import { prepareProfilePhoto, renderProfileAvatar } from './profile-photo.js';
 const dateLabel = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 const number = new Intl.NumberFormat('en-US');
 
-export function initProfileMenu({ router, account, auth, openNotifications, verifyPhone, preparePhoto = prepareProfilePhoto }) {
+export function initProfileMenu({ router, account, auth, openNotifications, openRedeem, preparePhoto = prepareProfilePhoto }) {
   const trigger = document.querySelector('#header-profile');
   const menu = document.querySelector('#profile-menu');
   const summary = document.querySelector('#profile-summary');
@@ -241,7 +241,7 @@ export function initProfileMenu({ router, account, auth, openNotifications, veri
   const actions = {
     summary: () => open(),
     messages: openNotifications,
-    redeem: verifyPhone,
+    redeem: openRedeem,
   };
   for (const [name, action] of Object.entries(actions)) {
     menu.querySelector(`[data-profile-action="${name}"]`).addEventListener('click', () => {

@@ -12,7 +12,7 @@ function node(tag, className, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function initFeatureView({ router, wallet, account, auth, verifyPhone, openNotifications, openProfile } = {}) {
+export function initFeatureView({ router, wallet, account, auth, openRedeem, openNotifications, openProfile } = {}) {
   const root = document.querySelector('#feature-view');
   const content = document.querySelector('#feature-content');
   const header = document.querySelector('#feature-header');
@@ -126,7 +126,7 @@ export function initFeatureView({ router, wallet, account, auth, verifyPhone, op
   return {
     openFeature(pageId) {
       if (pageId === 'profile') return openProfile?.();
-      if (pageId === 'redeem' && verifyPhone) return verifyPhone();
+      if (pageId === 'redeem' && openRedeem) return openRedeem();
       if (pageId === 'notifications' && openNotifications) return openNotifications();
       if (isFeaturePage(pageId)) router.navigate({ type: 'feature', pageId });
     },

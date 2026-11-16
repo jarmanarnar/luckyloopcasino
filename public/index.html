@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="catalog-pages.css">
   <link rel="stylesheet" href="store.css">
   <link rel="stylesheet" href="phone-verification.css">
+  <link rel="stylesheet" href="redeem.css">
   <link rel="stylesheet" href="notifications-drawer.css">
   <link rel="stylesheet" href="rewards-popover.css">
   <link rel="stylesheet" href="profile-menu.css">
@@ -126,7 +127,7 @@
       <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
       <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="logout" data-profile-action="logout">Logout</button></li>
-      <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="phone-verification-dialog">Redeem Coins</button></li>
+      <li><button class="profile-menu__item" type="button" data-profile-icon="redeem" data-profile-action="redeem" aria-haspopup="dialog" aria-controls="redeem-dialog">Redeem Coins</button></li>
     </ul>
     <p id="profile-menu-status" class="profile-menu__status" role="status"></p>
   </nav>
@@ -246,14 +247,14 @@
     <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-haspopup="dialog" aria-controls="store-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
     <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><img class="mobile-nav__icon mobile-nav__icon--brand" src="assets/brand/cop-coin-cc.png" width="1536" height="1024" alt=""><span class="mobile-nav__label">Lobby</span></button>
-    <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="phone-verification-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
+    <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="redeem-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
     <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon" data-ui-icon="chat" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span class="mobile-nav__label">Chat</span></button>
   </nav>
   <dialog id="site-menu" class="site-menu" aria-label="Casino menu" lang="en" dir="ltr">
     <div id="menu-mobile-header" class="site-menu__mobile-header">
       <div id="menu-shortcuts" class="site-menu__shortcuts">
         <button id="menu-buy" class="site-menu__shortcut" type="button" aria-label="BUY" data-tooltip="BUY"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="site-menu__shortcut-label">BUY</span></button>
-        <button id="menu-redeem" class="site-menu__shortcut site-menu__shortcut--redeem" type="button" aria-label="REDEEM" aria-haspopup="dialog" aria-controls="phone-verification-dialog" data-tooltip="REDEEM" disabled><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v13H3V6a2 2 0 0 1 2-2Zm1 3v3h12V7H6Zm2 6H6v3h2v-3Zm5 0h-2v3h2v-3Zm5 0h-2v3h2v-3Z"/></svg><span class="site-menu__shortcut-label">REDEEM</span></button>
+        <button id="menu-redeem" class="site-menu__shortcut site-menu__shortcut--redeem" type="button" aria-label="REDEEM" aria-haspopup="dialog" aria-controls="redeem-dialog" data-tooltip="REDEEM" disabled><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v13H3V6a2 2 0 0 1 2-2Zm1 3v3h12V7H6Zm2 6H6v3h2v-3Zm5 0h-2v3h2v-3Zm5 0h-2v3h2v-3Z"/></svg><span class="site-menu__shortcut-label">REDEEM</span></button>
       </div>
     </div>
     <div id="menu-content" class="site-menu__scroll">
@@ -274,6 +275,54 @@
     <div class="store-dialog__body">
       <ul id="store-dialog-packages" class="store-packages" aria-label="Gold Coins packages"></ul>
       <p class="store-preview-note">Package previews only. All prices in USD.</p>
+    </div>
+  </dialog>
+  <dialog id="redeem-dialog" class="redeem-dialog" aria-labelledby="redeem-title" lang="en" dir="ltr">
+    <header class="redeem-dialog__header dialog-header">
+      <h2 id="redeem-title">Redeem prize</h2>
+      <form method="dialog"><button class="dialog-close icon-button" type="submit" aria-label="Close redemption" autofocus><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"></svg></button></form>
+    </header>
+    <div class="redeem-dialog__body">
+      <section id="redeem-methods" aria-label="Redemption methods">
+        <p class="redeem-intro">Choose how you'd like to redeem.</p>
+        <div class="redeem-methods">
+          <button type="button" class="redeem-method" data-redeem-method="bank">
+            <span class="redeem-method__icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 10 5v2H2V7l10-5ZM4 11h3v8H4v-8Zm6.5 0h3v8h-3v-8Zm6.5 0h3v8h-3v-8ZM2 20h20v2H2v-2Z"/></svg></span>
+            <span class="redeem-method__copy"><strong>Bank Transfer</strong><small>Redeem to your bank account</small></span>
+            <svg class="redeem-method__arrow" data-ui-icon="right" aria-hidden="true"></svg>
+          </button>
+          <button type="button" class="redeem-method" data-redeem-method="card">
+            <span class="redeem-method__icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM2 8v3h20V8H2Zm4 6v2h5v-2H6Z"/></svg></span>
+            <span class="redeem-method__copy"><strong>Card Redemption</strong><small>Redeem to your payment card</small></span>
+            <svg class="redeem-method__arrow" data-ui-icon="right" aria-hidden="true"></svg>
+          </button>
+        </div>
+        <p class="redeem-preview-note">Preview only · No transfers are made.</p>
+      </section>
+      <section id="redeem-details" hidden aria-label="Redemption details">
+        <div class="redeem-selected"><strong id="redeem-method-name">Bank Transfer</strong><button id="redeem-change" class="redeem-change" type="button">Change method</button></div>
+        <div class="redeem-balance">
+          <div class="redeem-balance__total"><span>Your Super Coins</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.png" width="24" height="24" alt=""><span data-redeem-balance>0.00</span></strong></div>
+          <div class="redeem-balance__line"><span>Available in preview</span><strong data-redeem-balance>0.00</strong></div>
+          <div class="redeem-balance__line redeem-balance__line--playthrough"><span>Playthrough required</span><span>Not connected</span></div>
+          <div class="redeem-playthrough-track" aria-hidden="true"></div>
+        </div>
+        <p class="redeem-explanation">Use your demo balance to preview a redemption. Playthrough and cash payouts aren't available yet.</p>
+        <div class="redeem-rate"><span>Preview exchange rate</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt="">1 SC = $1.00</strong></div>
+        <form id="redeem-form" class="redeem-form" novalidate>
+          <label class="redeem-amount-label" for="redeem-amount">Redemption amount</label>
+          <div class="redeem-amount-box">
+            <img src="assets/coins/super-coin-front.png" width="32" height="32" alt="">
+            <div class="redeem-amount-copy"><span>Super Coins</span><input id="redeem-amount" name="amount" type="text" inputmode="decimal" maxlength="16" placeholder="0.00" autocomplete="off" aria-describedby="redeem-error" aria-invalid="false"></div>
+            <button id="redeem-max" class="redeem-max" type="button" aria-label="Use maximum preview amount">Max</button>
+          </div>
+          <p id="redeem-error" class="redeem-error" role="alert" hidden></p>
+          <div class="redeem-output"><span class="redeem-output__symbol" aria-hidden="true">$</span><div><label for="redeem-receive">You would receive</label><output id="redeem-receive" for="redeem-amount">$0.00</output></div></div>
+          <p id="redeem-status" class="redeem-status" role="status" hidden></p>
+          <button id="redeem-submit" class="redeem-submit primary-button" type="submit">Redeem</button>
+        </form>
+        <p class="redeem-preview-note">Preview only · No transfers are made.</p>
+      </section>
     </div>
   </dialog>
   <dialog id="phone-verification-dialog" class="phone-verification" aria-labelledby="phone-verification-title" lang="en" dir="ltr">

@@ -49,7 +49,7 @@ async function memberPage(initialRoute, storage = new Map()) {
   const context = {
     document, router, account, structuredClone, wallet: { setPreferences() {} }, FEATURE_PAGES, isFeaturePage,
     openProfile: options => profileOpens.push(options),
-    verifyPhone: () => dialogOpens.push('redeem'),
+    openRedeem: () => dialogOpens.push('redeem'),
     openNotifications: () => dialogOpens.push('notifications'),
     createMemberState, MEMBER_STORAGE_KEY,
     createShelfIcon: () => new Node('svg'), formatRoute,
@@ -59,7 +59,7 @@ async function memberPage(initialRoute, storage = new Map()) {
     renderRewardsPage: () => null,
     renderAccountPage(pageId, ctx) { pageContext = ctx; return new Node(); },
   };
-  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, openProfile, verifyPhone, openNotifications });`, context);
+  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, openProfile, openRedeem, openNotifications });`, context);
   await account.refresh();
   return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, context: () => pageContext };
 }
