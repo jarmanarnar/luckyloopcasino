@@ -40,8 +40,9 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-wheel__art {
   position: absolute;
   z-index: 1;
-  top: 2rem;
-  right: .25rem;
+  /* Float above the inset panel, while keeping the full artwork inside the slide. */
+  top: .5rem;
+  right: 0;
   width: 13rem;
   height: auto;
   pointer-events: none;
@@ -65,7 +66,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-wheel__button, .hero-promo__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .hero-promo__title { white-space: nowrap; }
 @container wheel-banner (max-width: 20rem) {
-  .hero-wheel__art { top: 3rem; width: 11rem; }
+  .hero-wheel__art { width: 11rem; }
   .hero-wheel__copy { width: 7rem; padding-left: .75rem; }
 }
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }

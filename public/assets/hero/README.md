@@ -2,7 +2,7 @@
 
 ## COP COIN wheel banner
 
-`cop-coin-wheel-v1.png` is an original 1254 × 1254 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. The existing G and S coins and chrome wordmark were supplied as style references. Its alpha channel is preserved. The complete illustration is displayed at 208px square, inset 32px from the top and 4px from the right of the slide. Frames no wider than 320px use a compact 176px illustration with a 48px top inset. The larger background is inset 24px from the top and 8px from the right, with the original illustration size and position retained and no clipping at the slide edge. Copy and the interactive silver button are HTML. Full generation prompt: `cop-coin-wheel-v1.prompt.txt`.
+`cop-coin-wheel-v1.png` is an original 1254 × 1254 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. The existing G and S coins and chrome wordmark were supplied as style references. Its alpha channel is preserved. The complete illustration is displayed at 208px square, inset 8px from the top and flush with the right edge of the slide. Frames no wider than 320px use a compact 176px illustration at the same position. The background is inset 24px from the top and 8px from the right, so the coins extend above and beside the panel while the complete artwork stays within the slide. Copy and the interactive silver button are HTML. Full generation prompt: `cop-coin-wheel-v1.prompt.txt`.
 
 ## COP COIN officer banner
 
