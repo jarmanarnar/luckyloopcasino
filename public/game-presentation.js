@@ -64,3 +64,25 @@ export function getFrameScale(providerId, device, width, height) {
   return providerId === 'red-tiger' && device === 'desktop'
     ? Math.min(width / 1280, height / 776) : 1;
 }
+
+export function needsLandscapeViewport(game, { userAgent = '', platform = '', maxTouchPoints = 0 } = {}) {
+  // iPadOS can use either the iPad UA or Safari's desktop Mac identity.
+  const isIPad = /iPad/i.test(userAgent) || (platform === 'MacIntel' && maxTouchPoints > 1);
+  return isIPad && game.providerId === 'netent' && game.id === 'nunchucksr96f100';
+}
+
+export function getFrameLayout(game, device, width, height, landscapeViewport = false) {
+  if (width <= 0 || height <= 0) return null;
+  if (landscapeViewport && height >= width) {
+    // The tablet player blocks portrait viewports. Give the embedded document
+    // a genuine landscape viewport, upright and fully visible inside the iPad.
+    // CSS rotation or changing the launch hint does not change its media queries.
+    // Keep the same iframe/session when the available space changes.
+    const frameHeight = width * 9 / 16;
+    return { width, height: frameHeight, top: (height - frameHeight) / 2,
+      scale: 1, presentation: 'landscape-contained' };
+  }
+  const scale = getFrameScale(game.providerId, device, width, height);
+  return scale === 1 ? null : { width: width / scale, height: height / scale,
+    top: 0, scale, presentation: 'scaled' };
+}

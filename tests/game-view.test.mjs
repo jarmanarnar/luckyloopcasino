@@ -1,5 +1,6 @@
 import { initCoinChooser } from '../public/coin-chooser.js';
 import { initPlayerDisplay } from '../public/player-display.js';
+import { getFrameLayout, needsLandscapeViewport } from '../public/game-presentation.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -9,7 +10,7 @@ import { formatRoute, parseRoute } from '../public/routes.js';
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
-function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true } = {}) {
+function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true, navigatorInfo = { maxTouchPoints: 0 } } = {}) {
   const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
@@ -22,7 +23,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
       this.children = [];
       this.hidden = false;
       this.isConnected = true;
-      this.style = { removeProperty(name) { delete this[name]; } };
+      this.style = { removeProperty(name) { delete this[name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())]; } };
     }
     querySelector() { return { replaceChildren() {}, prepend() {} }; }
     append(...children) {
@@ -108,14 +109,15 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
   const verifyPhone = () => verificationOpens++;
   const context = {
     initCoinChooser, createGameArt: () => new Node(), account, verifyPhone, initPlayerDisplay: options => initPlayerDisplay({ ...options, document, window }),
-    document, window, router, formatRoute, parseRoute, navigator: { maxTouchPoints: 0 }, Element: Node, URL, URLSearchParams,
+    document, window, router, formatRoute, parseRoute, navigator: navigatorInfo, Element: Node, URL, URLSearchParams,
     GAMES: [
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
       { id: 'beta', title: 'Beta', providerId: 'netent' },
+      { id: 'nunchucksr96f100', title: 'Nunchucks', providerId: 'netent' },
     ],
     getLaunchDevice(width) { return width <= 1024 ? 'mobile' : 'desktop'; },
     getLaunchUrl(game, device) { return `https://demo.example/${game.id}?device=${device}`; },
-    getFrameScale() { return 1; },
+    getFrameLayout, needsLandscapeViewport,
     watchGameReady(frame, game, ready) {
       const watch = { frame, game, ready, stopped: false };
       readiness.push(watch);
@@ -245,6 +247,36 @@ test('resize and shell overlays keep the same iframe session and original device
   assert.equal(frame.src, originalUrl);
   assert.equal(frame.dataset.device, 'desktop');
   assert.equal(page.readiness[0].stopped, false);
+});
+
+test('Nunchucks keeps a landscape viewport on portrait iPad without restarting on rotation', () => {
+  const page = gamePage({ viewportWidth: 820, navigatorInfo: { platform: 'MacIntel', maxTouchPoints: 5 } });
+  page.nodes['game-frame-host'].bounds = { width: 820, height: 1116 };
+  page.launch('nunchucksr96f100');
+  const frame = page.frames[0], originalUrl = frame.src;
+  assert.equal(frame.style.width, '820px');
+  assert.equal(frame.style.height, '461.25px');
+  assert.equal(frame.style.top, '327.375px');
+  assert.equal(page.nodes['game-view'].dataset.presentation, 'landscape-contained');
+  assert.equal(frame.allowFullscreen, false, 'the provider cannot expand itself back into portrait');
+  assert.equal(frame.allow, "autoplay; fullscreen 'none'");
+
+  page.nodes['game-frame-host'].bounds = { width: 1180, height: 756 };
+  page.resizers[0].callback();
+  for (const property of ['width', 'height', 'top', 'transform', 'transformOrigin']) {
+    assert.equal(frame.style[property], undefined, `reset ${property} in landscape`);
+  }
+  assert.equal(page.nodes['game-view'].dataset.presentation, 'native');
+  page.nodes['game-frame-host'].bounds = { width: 820, height: 1116 };
+  page.resizers[0].callback();
+  assert.equal(frame.style.height, '461.25px');
+  assert.equal(page.frames.length, 1);
+  assert.equal(frame.src, originalUrl);
+  assert.equal(page.readiness[0].stopped, false);
+
+  page.launch('beta');
+  assert.equal(page.frames[1].allowFullscreen, true, 'other games keep fullscreen');
+  assert.equal(page.frames[1].style.height, undefined, 'other games keep portrait sizing');
 });
 
 test('game-to-game and native history changes clean up replaced frames and ignore stale readiness', () => {

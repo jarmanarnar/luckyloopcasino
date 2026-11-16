@@ -2,7 +2,7 @@ import { initCoinChooser } from './coin-chooser.js';
 import { createGameArt } from './game-artwork-view.js';
 import { initPlayerDisplay } from './player-display.js';
 import { GAMES } from './catalog.js';
-import { getLaunchDevice, getLaunchUrl, getFrameScale } from './game-presentation.js';
+import { getLaunchDevice, getLaunchUrl, getFrameLayout, needsLandscapeViewport } from './game-presentation.js';
 import { watchGameReady } from './game-ready.js';
 import { formatRoute, parseRoute } from './routes.js';
 
@@ -98,19 +98,18 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     if (!currentFrame || currentGame === null) return;
     const bounds = host.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0) return;
-    // Red Tiger's desktop demo caps its game stage at 1280 CSS pixels.
-    // Keep its minimum stage visible on shallow windows too. The launch hint
-    // is separate: a narrow desktop window can still receive a desktop engine.
-    const scale = getFrameScale(games.get(currentGame).providerId,
-      currentFrame.dataset.presentationDevice, bounds.width, bounds.height);
-    if (scale !== 1) {
-      currentFrame.style.width = `${bounds.width / scale}px`;
-      currentFrame.style.height = `${bounds.height / scale}px`;
+    const layout = getFrameLayout(games.get(currentGame),
+      currentFrame.dataset.presentationDevice, bounds.width, bounds.height,
+      currentFrame.dataset.landscapeViewport === 'true');
+    if (layout) {
+      currentFrame.style.width = `${layout.width}px`;
+      currentFrame.style.height = `${layout.height}px`;
+      currentFrame.style.top = `${layout.top}px`;
       currentFrame.style.transformOrigin = '0 0';
-      currentFrame.style.transform = `scale(${scale})`;
-      view.dataset.presentation = 'scaled';
+      currentFrame.style.transform = `scale(${layout.scale})`;
+      view.dataset.presentation = layout.presentation;
     } else {
-      for (const property of ['width', 'height', 'transform-origin', 'transform']) {
+      for (const property of ['width', 'height', 'top', 'transform-origin', 'transform']) {
         currentFrame.style.removeProperty(property);
       }
       view.dataset.presentation = 'native';
@@ -184,12 +183,17 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       || navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
     const device = getLaunchDevice(window.innerWidth, touchCapable);
     const launchUrl = getLaunchUrl(game, device);
+    const landscapeViewport = needsLandscapeViewport(game, navigator);
     frame.dataset.device = device;
     frame.dataset.presentationDevice = touchCapable ? 'mobile' : 'desktop';
+    frame.dataset.landscapeViewport = String(landscapeViewport);
     view.dataset.device = device;
     frame.title = `${game.title} demo`;
-    frame.allow = previewOnly ? "autoplay 'none'; fullscreen 'none'" : 'autoplay; fullscreen';
-    frame.allowFullscreen = !previewOnly;
+    // Keep the compatibility viewport inside our player. Native fullscreen of
+    // the provider iframe would expand it to the iPad's portrait screen again.
+    frame.allow = previewOnly ? "autoplay 'none'; fullscreen 'none'"
+      : landscapeViewport ? "autoplay; fullscreen 'none'" : 'autoplay; fullscreen';
+    frame.allowFullscreen = !previewOnly && !landscapeViewport;
     frame.inert = true;
     frame.tabIndex = -1;
     frame.setAttribute('aria-hidden', 'true');
