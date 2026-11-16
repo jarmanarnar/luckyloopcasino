@@ -118,7 +118,16 @@ textarea.feature-input { resize: vertical; }
 }
 .settings-panel > .feature-button:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.04); }
 .settings-panel > .feature-button:disabled { background: var(--surface-subtle); border-color: var(--border-default); box-shadow: none; color: var(--text-secondary); }
-.feature-view:has(.settings-panel) .feature-status { border: 1px solid var(--border-default); border-radius: .75rem; background: var(--surface-glow); box-shadow: 0 .5rem 1.5rem var(--shadow-color); }
+.feature-view:has(.settings-panel) .feature-status { border: 1px solid var(--border-default); border-radius: .75rem; background: var(--surface-glow); box-shadow: 0 .5rem 1.5rem var(--shadow-color); font-size: .875rem; }
+/* Keep the lighter, larger type scoped to Settings; shared feature pages retain their own scale. */
+.feature-view:has(.settings-panel) .feature-header h1 { font-size: 1.375rem; font-weight: 600; }
+:is(.settings-panel, .settings-account) .feature-section-title { font-size: 1.125rem; font-weight: 500; }
+.settings-panel .feature-setting strong { font-size: 1rem; font-weight: 500; }
+:is(.settings-panel, .settings-account) .feature-muted { font-size: .9375rem; }
+:is(.settings-panel, .settings-account) .feature-button { font-size: .9375rem; font-weight: 500; }
+@media (min-width: 48rem) {
+  .feature-view:has(.settings-panel) .feature-header h1 { font-size: 1.625rem; }
+}
 @media (width < 45rem) {
   .settings-panel .feature-setting { padding: 1rem; gap: .75rem; }
   .settings-panel > .feature-button { width: 100%; }
@@ -131,6 +140,14 @@ textarea.feature-input { resize: vertical; }
 .feature-history-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
 .feature-history-row > .feature-stack { gap: .375rem; }
 .feature-history-row > .feature-actions { flex-shrink: 0; }
+/* Activity typography stays local to this page, including its empty and transaction states. */
+.activity-history .feature-tab { font-size: .9375rem; font-weight: 400; }
+.activity-history .feature-section-title { font-size: 1.125rem; font-weight: 500; }
+.activity-history .feature-kicker { font-size: .8125rem; font-weight: 500; }
+.activity-history .feature-muted { font-size: .9375rem; }
+.activity-history time.feature-muted { font-size: .875rem; }
+.activity-history .feature-button { font-size: .9375rem; font-weight: 500; }
+.activity-history .feature-disclosure > summary { font-size: .9375rem; font-weight: 500; }
 /* History changes surfaces only; inset borders preserve the existing row geometry. */
 .activity-history :is(.feature-history-row, .feature-empty) {
   border-radius: 1rem;
@@ -155,29 +172,41 @@ textarea.feature-input { resize: vertical; }
 .feature-view:has(.activity-history) .feature-status {
   background: var(--surface-glow);
   box-shadow: inset 0 0 0 1px var(--border-default), 0 .5rem 1.5rem var(--shadow-color);
+  font-size: .875rem;
 }
 /* Support keeps its existing columns, fields and disclosure spacing. */
+.feature-view:has(.support-page) .feature-header h1 { font-size: 1.375rem; font-weight: 600; }
+.support-page .feature-section-title { font-size: 1.125rem; font-weight: 500; }
+.support-page .feature-field { font-size: .9375rem; font-weight: 400; }
+.support-page .feature-muted { font-size: .9375rem; }
+.feature-view:has(.support-page) .feature-status { font-size: .875rem; }
+@media (min-width: 48rem) {
+  .feature-view:has(.support-page) .feature-header h1 { font-size: 1.625rem; }
+}
 .support-page > .feature-card {
   border-radius: 1rem;
   background: var(--surface-glow);
   box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
 .support-page .feature-input {
+  font-weight: 400;
   background: var(--surface-inset), var(--surface-panel);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
 }
 .support-page .feature-input::placeholder { color: var(--text-secondary); opacity: 1; }
 .support-page select.feature-input option { background: var(--surface-panel); color: var(--text-primary); }
-.support-page .feature-disclosure > summary { color: var(--text-secondary); }
+.support-page .feature-disclosure > summary { color: var(--text-secondary); font-size: .9375rem; font-weight: 500; }
 .support-page .feature-disclosure > summary:is(:hover, :focus-visible),
 .support-page .feature-disclosure[open] > summary { color: var(--text-primary); }
 .support-page .feature-button {
+  font-size: .9375rem;
+  font-weight: 500;
   background: var(--action-surface);
   box-shadow: inset 0 1px 0 var(--button-inner-highlight);
   color: var(--on-accent);
 }
 .support-page .feature-button:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.04); }
-.support-page [role="status"] .feature-message { color: var(--text-secondary); }
+.support-page [role="status"] .feature-message { color: var(--text-secondary); font-size: 1rem; }
 .feature-message { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; font-size: .875rem; }
 .feature-status { position: sticky; bottom: 1rem; width: fit-content; max-width: 100%; box-sizing: border-box; padding: .75rem 1rem; border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font-size: .8125rem; line-height: 1.5; z-index: 5; }
 .feature-status:empty { display: none; }

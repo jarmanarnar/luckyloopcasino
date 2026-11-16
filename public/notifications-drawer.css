@@ -40,7 +40,7 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
   padding: calc(.875rem + env(safe-area-inset-top, 0px)) 1rem .875rem;
 }
 
-.notifications-drawer__header h2 { margin: 0; font-size: 1.125rem; line-height: 1.25; }
+.notifications-drawer__header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.25; }
 
 .notifications-drawer__close.icon-button {
   flex: none;
@@ -75,8 +75,8 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
   border-radius: var(--radius-card);
   background: transparent;
   color: var(--text-secondary);
-  font-size: .875rem;
-  font-weight: 700;
+  font-size: .9375rem;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -137,13 +137,13 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
   gap: .375rem .75rem;
 }
 
-.notification-card__header h3 { margin: 0; font-size: .875rem; line-height: 1.35; }
-.notification-card__header time { flex: none; color: var(--text-secondary); font-size: .6875rem; }
+.notification-card__header h3 { margin: 0; font-size: 1rem; font-weight: 500; line-height: 1.35; }
+.notification-card__header time { flex: none; color: var(--text-secondary); font-size: .75rem; }
 
 .notification-card__description {
   margin: .375rem 0 0;
   color: var(--text-secondary);
-  font-size: .8125rem;
+  font-size: .9375rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -159,14 +159,14 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
   border-radius: .5rem;
   background: var(--surface-subtle);
   color: var(--text-primary);
-  font-size: .8125rem;
-  font-weight: 700;
+  font-size: .875rem;
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
 }
 
 .notification-card__action:is(:hover, :focus-visible) { background: var(--surface-control); }
-.notifications-drawer__empty { margin: 0; padding: 2.5rem 1rem; border: 1px solid var(--border-default); border-radius: .875rem; background: var(--surface-inset); color: var(--text-secondary); font-size: .875rem; text-align: center; }
+.notifications-drawer__empty { margin: 0; padding: 2.5rem 1rem; border: 1px solid var(--border-default); border-radius: .875rem; background: var(--surface-inset); color: var(--text-secondary); font-size: .9375rem; text-align: center; }
 
 .notifications-drawer__footer { flex: none; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-default); }
 
@@ -179,8 +179,8 @@ html:has(.notifications-drawer[open]) { overflow: hidden; }
   background: var(--action-surface);
   box-shadow: inset 0 1px 0 var(--text-primary), 0 2px 0 var(--primary-button-edge);
   color: var(--on-accent);
-  font-size: .875rem;
-  font-weight: 700;
+  font-size: .9375rem;
+  font-weight: 500;
   cursor: pointer;
 }
 

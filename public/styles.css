@@ -523,3 +523,19 @@
       .game-shelf + .game-shelf { margin-block-start: 3rem; }
     }
     @media (width > 1024px) { :root { --page-gutter: 3rem; } }
+
+    /* Lobby typography uses the existing 48rem title breakpoint. */
+    body[data-page="home"] #lobby-view {
+      --shelf-title-size: 1.375rem;
+      --game-title-size: .9375rem;
+    }
+    body[data-page="home"] #lobby-view .catalog-category { font-size: .9375rem; font-weight: 400; }
+    body[data-page="home"] #lobby-view .game-shelf__title { font-weight: 600; }
+    body[data-page="home"] #lobby-view .shelf-see-all { font-size: .875rem; font-weight: 400; }
+    body[data-page="home"] #lobby-view :is(.game-launch__art, .shelf-view-all__title) { font-weight: 500; }
+    body[data-page="home"] #lobby-view .shelf-view-all__count { font-size: .8125rem; font-weight: 400; }
+    body[data-page="home"] #lobby-view .game-provider-badge { font-size: .75rem; }
+    body[data-page="home"] #lobby-view .catalog-empty { font-size: .9375rem; }
+    @media (min-width: 48rem) {
+      body[data-page="home"] #lobby-view { --shelf-title-size: 1.625rem; }
+    }

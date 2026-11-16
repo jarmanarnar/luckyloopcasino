@@ -78,7 +78,7 @@
   border-radius: .625rem;
   box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
-.catalog-toolbar .lobby-search input { height: 100%; min-height: 0; }
+.catalog-toolbar .lobby-search input { height: 100%; min-height: 0; font-size: 1rem; font-weight: 400; }
 .catalog-toolbar .lobby-search input::-webkit-search-cancel-button { display: none; }
 .catalog-toolbar:has(.lobby-search:not([hidden])) ~ .catalog-shelves { min-height: 0; }
 .catalog-search-close {
@@ -97,10 +97,6 @@
 .catalog-search-close svg { width: 18px; height: 18px; }
 .catalog-search-close:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
 .catalog-search-close:active { background: var(--surface-control); }
-@media (max-width: 64rem), (pointer: coarse) {
-  .catalog-toolbar .lobby-search input { font-size: 1rem; }
-}
-
 .lobby-search-results-heading { margin-block: 1.5rem .875rem; }
 
 .catalog-page-filter {
@@ -303,4 +299,35 @@ body:not([data-page="home"]) #catalog-empty {
 @media (max-width: 24rem) {
   /* Provider marks stay in pairs even on compact phones. */
   .catalog-result-shelf .provider-track.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Collections and provider pages follow the lobby's lighter typography.
+   Retain the existing 48rem title and 32rem compact-filter breakpoints. */
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #lobby-view {
+  --shelf-title-size: 1.375rem;
+  --game-title-size: .9375rem;
+}
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #catalog-page-title { font-weight: 600; }
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .catalog-page-search input {
+  font-size: 1rem;
+  font-weight: 400;
+}
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-page-filter select, .catalog-select-trigger, .catalog-select-option) {
+  font-size: .9375rem;
+  font-weight: 400;
+}
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-empty, .catalog-empty--favorites p, .catalog-provider-details) { font-size: 1rem; }
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .catalog-empty--favorites h2 {
+  font-size: 1.375rem;
+  font-weight: 500;
+}
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #lobby-view .text-control { font-size: .9375rem; }
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-pagination .text-control, #provider-details-toggle, .catalog-provider-details h2, .provider-facts dd, .game-launch__art) { font-weight: 500; }
+body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .game-provider-badge { font-size: .75rem; }
+
+@media (max-width: 32rem) {
+  body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-page-filter select, .catalog-select-trigger) { font-size: .875rem; }
+}
+@media (min-width: 48rem) {
+  body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #lobby-view { --shelf-title-size: 1.625rem; }
 }

@@ -22,6 +22,7 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
 .phone-verification::backdrop { background: var(--overlay-backdrop); backdrop-filter: blur(.25rem); }
 
 .phone-verification__header { position: sticky; z-index: 1; top: 0; }
+.phone-verification .dialog-header > h2 { font-size: 1.25rem; font-weight: 600; }
 .phone-verification__body { padding: 2rem clamp(1rem, 5vw, 1.75rem) 1.5rem; }
 
 .phone-verification__art {
@@ -56,7 +57,7 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
   padding-inline-end: .75rem;
   border-inline-end: 1px solid var(--border-default);
   color: var(--text-secondary);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .phone-verification__field input {
@@ -81,7 +82,7 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
   background: var(--action-surface);
   box-shadow: inset 0 1px 0 var(--button-inner-highlight), inset 0 -3px 0 var(--primary-button-edge);
   color: var(--on-accent);
-  font: 700 .875rem/1.25 var(--header-font-family);
+  font: 500 .9375rem/1.25 var(--header-font-family);
   cursor: pointer;
 }
 
@@ -102,7 +103,7 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
   border-radius: var(--radius-card);
   background: transparent;
   color: var(--text-secondary);
-  font: 700 .8125rem/1.25 var(--header-font-family);
+  font: 400 .9375rem/1.25 var(--header-font-family);
   cursor: pointer;
 }
 
@@ -111,7 +112,7 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
 .phone-verification__status {
   margin: 0;
   color: var(--text-secondary);
-  font-size: .8125rem;
+  font-size: .875rem;
   line-height: 1.4;
 }
 
