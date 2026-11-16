@@ -43,6 +43,7 @@ test('deleting a demo account clears its data and allows a new registration with
     assert.equal(fresh.identity, null);
     assert.deepEqual(fresh.member, create().member);
     assert.deepEqual(fresh.wallet, create().wallet);
+    assert.deepEqual(fresh.wallet.balances, { GC: 0, SC: 0 });
     assert.equal(fresh.ledger.length, 2);
     assert.ok(fresh.ledger.every(item => item.type === 'opening' && item.playerId === fresh.playerId));
     assert.equal(spinStatus(fresh).available, true);
@@ -56,6 +57,7 @@ test('deleting a demo account clears its data and allows a new registration with
     reopened = await openDemoAccount(config);
     assert.equal(reopened.getSnapshot().playerId, fresh.playerId);
     assert.equal((await reopened.register({ email: 'after@example.test', password: 'AfterDemo37!', accepted: true })).ok, true);
+    assert.deepEqual(reopened.getSnapshot().wallet.balances, { GC: 0, SC: 0 });
     assert.equal((await reopened.spinWheel()).ok, true);
     assert.equal((await reopened.spinWheel()).ok, false, 'the new account still has the normal cooldown');
   } finally { account.close(); reopened?.close(); }
@@ -118,7 +120,7 @@ test('concurrent first opens create one stable account and two opening records',
     const [a, b] = await Promise.all(stores.map(store => store.read()));
     assert.equal(a.playerId, b.playerId);
     assert.equal(a.ledger.length, 2);
-    assert.deepEqual(a.wallet.balances, { GC: 125000, SC: 1500 });
+    assert.deepEqual(a.wallet.balances, { GC: 0, SC: 0 });
     reconcile(a);
   } finally { stores.forEach(store => store.close()); }
 });
@@ -131,8 +133,8 @@ test('simultaneous daily claims from independent connections commit one credit a
     const results = await Promise.all(Array.from({ length: 12 }, (_, i) => command(i % 2 ? a : b, { type: 'claim-daily' })));
     assert.equal(results.filter(result => result.result.ok).length, 1);
     const saved = await a.read();
-    assert.equal(saved.wallet.balances.GC, 126000);
-    assert.equal(saved.wallet.balances.SC, 1500);
+    assert.equal(saved.wallet.balances.GC, 1000);
+    assert.equal(saved.wallet.balances.SC, 0);
     assert.equal(saved.member.daily.totalClaims, 1);
     assert.equal(saved.ledger.filter(entry => entry.type === 'bonus').length, 1);
     assert.equal(accountMemberState(saved).history.filter(entry => entry.type === 'reward').length, 1);
@@ -141,7 +143,7 @@ test('simultaneous daily claims from independent connections commit one credit a
     const reopened = await openAccountStore(options(indexedDB));
     try {
       assert.equal((await command(reopened, { type: 'claim-daily' })).result.ok, false);
-      assert.equal((await reopened.read()).wallet.balances.GC, 126000);
+      assert.equal((await reopened.read()).wallet.balances.GC, 1000);
     } finally { reopened.close(); }
   } finally { a.close(); b.close(); }
 });
@@ -156,7 +158,7 @@ test('failed persistence rolls back balance, reward eligibility and journal toge
       return outcome;
     }), { name: 'DataCloneError' });
     const unchanged = await store.read();
-    assert.equal(unchanged.wallet.balances.GC, 125000);
+    assert.equal(unchanged.wallet.balances.GC, 0);
     assert.equal(unchanged.member.daily.totalClaims, 0);
     assert.equal(unchanged.ledger.length, 2);
     assert.equal((await command(store, { type: 'claim-daily' })).result.ok, true);
@@ -185,7 +187,7 @@ test('stale navigation, currency, favorites and profile patches preserve unrelat
     assert.deepEqual(saved.member.settings, { hideBalance: true, reducedMotion: true });
     assert.ok(saved.member.visited.includes('history'));
     assert.equal(saved.wallet.currency, 'SC');
-    assert.equal(saved.wallet.balances.GC, 126000);
+    assert.equal(saved.wallet.balances.GC, 1000);
     reconcile(saved);
   } finally { a.close(); b.close(); }
 });
@@ -202,7 +204,7 @@ test('task and daily retries keep independent operation keys and cannot over-cre
     ]);
     assert.equal(results.filter(result => result.result.ok).length, 2);
     const saved = await store.read();
-    assert.equal(saved.wallet.balances.GC, 126500);
+    assert.equal(saved.wallet.balances.GC, 1500);
     assert.equal(saved.ledger.filter(entry => entry.type === 'bonus').length, 2);
     // Even if eligibility metadata is damaged, the committed operation stays unique.
     const damaged = structuredClone(saved);
@@ -243,6 +245,27 @@ test('migration carries balances and member data once without inventing historic
   } finally { account.close(); }
 });
 
+test('zero starting balances do not reset a previously registered account or its ledger', async () => {
+  const indexedDB = new IDBFactory();
+  const saved = createDemoAccount({ wallet: { currency: 'SC', balances: { GC: 125000, SC: 1500 } } }, { now });
+  saved.auth = { email: 'existing@example.test', registeredAt: now.toISOString(), signedIn: true };
+  const store = await openAccountStore({ indexedDB, create: () => saved });
+  store.close();
+  let account = await openDemoAccount({ indexedDB, scope: undefined });
+  try {
+    assert.deepEqual(account.getSnapshot().wallet, saved.wallet);
+    assert.deepEqual(account.getSnapshot().ledger, saved.ledger);
+    await account.logout();
+    account.close();
+    account = await openDemoAccount({ indexedDB, scope: undefined });
+    assert.equal((await account.resumeDemo()).ok, true);
+    assert.equal(account.getSnapshot().playerId, saved.playerId);
+    assert.deepEqual(account.getSnapshot().wallet, saved.wallet);
+    assert.deepEqual(account.getSnapshot().ledger, saved.ledger);
+    reconcile(account.getSnapshot());
+  } finally { account.close(); }
+});
+
 test('ledger survives browsing history retention and balance-limit rejection changes nothing', () => {
   let saved = create();
   for (let index = 0; index < 210; index++) {
@@ -270,7 +293,7 @@ test('a view listener failure cannot turn a committed credit into a failed accou
     const result = await account.claimDaily();
     assert.equal(result.ok, true);
     assert.equal(refreshed, 1);
-    assert.equal(account.getSnapshot().wallet.balances.GC, 126000);
+    assert.equal(account.getSnapshot().wallet.balances.GC, 1000);
     assert.equal((await account.claimDaily()).ok, false);
     reconcile(account.getSnapshot());
   } finally { account.close(); }

@@ -60,6 +60,7 @@
   <link rel="stylesheet" href="primary-button.css">
   <link rel="stylesheet" href="site-footer.css">
   <link rel="stylesheet" href="spin-wheel.css">
+  <link rel="stylesheet" href="lobby-promotions.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -88,15 +89,15 @@
       <div id="header-wallet-controls" class="header-wallet-controls" hidden>
         <button id="coin-type-switch" class="wallet-switch wallet-balance-trigger" type="button" aria-label="Choose currency" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-currency-menu" hidden>
           <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin-front.png" width="20" height="20" alt="" aria-hidden="true">
-          <span class="wallet-balance-copy" dir="ltr" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">125,000</strong></span>
+          <span class="wallet-balance-copy" dir="ltr" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">0</strong></span>
           <svg class="wallet-chevron" data-ui-icon="down" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
         </button>
         <section id="wallet-currency-menu" class="wallet-currency-menu" role="dialog" aria-label="Wallet currencies" hidden>
           <div id="wallet-row-GC" class="wallet-currency-row" data-active="true">
-            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-GC" class="wallet-currency-name">Gold Coins</span><strong id="wallet-amount-GC" class="wallet-currency-amount">125,000</strong></button>
+            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-GC" class="wallet-currency-name">Gold Coins</span><strong id="wallet-amount-GC" class="wallet-currency-amount">0</strong></button>
           </div>
           <div id="wallet-row-SC" class="wallet-currency-row" data-active="false">
-            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-SC" class="wallet-currency-name">Super Coins</span><strong id="wallet-amount-SC" class="wallet-currency-amount">15.00</strong></button>
+            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-SC" class="wallet-currency-name">Super Coins</span><strong id="wallet-amount-SC" class="wallet-currency-amount">0.00</strong></button>
           </div>
           <button id="wallet-hide-balance" class="wallet-hide-balance" type="button" role="switch" aria-checked="false"><span>Hide Balance</span><span class="wallet-setting-switch" aria-hidden="true"></span></button>
           <p id="wallet-menu-status" class="wallet-menu-status" role="status"></p>
@@ -112,9 +113,8 @@
         <button id="header-notifications" class="header-member-action header-member-shortcut" type="button" aria-label="Notifications" aria-haspopup="dialog" aria-controls="notifications-drawer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 3a2 2 0 1 1 4 0 7 7 0 0 1 5 6v5l3 4H2l3-4V9a7 7 0 0 1 5-6Zm-1 17h6a3 3 0 0 1-6 0Z"/></svg></button>
       </nav>
       <div id="guest-header-actions" class="guest-header-actions">
-        <button class="auth-icon-button guest-extra" type="button" data-auth-open="register" aria-label="Join to collect bonuses"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11h8v10H4a1 1 0 0 1-1-1v-9Zm10 0h8v9a1 1 0 0 1-1 1h-7V11ZM2 6h20v4H2V6Zm10-1C6 5 4 3 6 1c3-2 6 4 6 4Zm0 0c6 0 8-2 6-4-3-2-6 4-6 4Z"/></svg></button>
         <button class="auth-button auth-button--secondary" type="button" data-auth-open="login">Login</button>
-        <button class="auth-button" type="button" data-auth-open="register">Register</button>
+        <button class="auth-button primary-button" type="button" data-auth-open="register">Register</button>
       </div>
     </div>
   </header>
@@ -139,7 +139,7 @@
     <section class="rewards-popover__section" aria-labelledby="rewards-missions-title">
       <h3 id="rewards-missions-title">Achievements</h3>
       <ul id="rewards-missions" class="rewards-popover__list"></ul>
-      <a class="reward-preview__action rewards-popover__more" href="#/achievements" data-rewards-page="achievements">View all achievements</a>
+      <a class="rewards-popover__more" href="#/achievements" data-rewards-page="achievements">Show more</a>
     </section>
   </section>
   <main class="page-content" id="lobby-view">
@@ -159,17 +159,42 @@
     <section class="hero-carousel" id="hero-carousel" role="region" aria-roledescription="carousel" aria-label="Featured promotions" lang="en" dir="ltr">
       <div class="hero-carousel__viewport" id="hero-viewport" tabindex="0" aria-label="Promotional banners" aria-live="off">
         <div class="hero-carousel__track" id="hero-track">
-          <article class="hero-carousel__slide" data-hero-title="Banner 1" role="group" aria-roledescription="slide" aria-label="1 of 4: Banner 1">
-            <div class="hero-banner" aria-hidden="true"></div>
+          <article class="hero-carousel__slide" data-hero-title="Daily Spin &amp; Win" role="group" aria-roledescription="slide" aria-label="1 of 4: Daily Spin &amp; Win">
+            <div class="hero-banner hero-banner--wheel">
+              <img class="hero-wheel__art" src="assets/hero/cop-coin-wheel-v1.png" width="1254" height="1254" alt="" draggable="false" fetchpriority="high">
+              <div class="hero-wheel__copy">
+                <h2 class="hero-wheel__title">SPIN &amp;<br>WIN</h2>
+                <p class="hero-wheel__description">A free spin every day.</p>
+                <button class="primary-button hero-wheel__button" type="button" data-hero-category="spin-wheel" aria-haspopup="dialog">Let's spin</button>
+              </div>
+            </div>
           </article>
-          <article class="hero-carousel__slide" data-hero-title="Banner 2" role="group" aria-roledescription="slide" aria-label="2 of 4: Banner 2">
-            <div class="hero-banner" aria-hidden="true"></div>
+          <article class="hero-carousel__slide" data-hero-title="Daily Login Streak" role="group" aria-roledescription="slide" aria-label="2 of 4: Daily Login Streak">
+            <div class="hero-banner">
+              <div class="hero-promo__copy">
+                <h2 class="hero-promo__title">DAILY LOGIN<br>STREAK</h2>
+                <p class="hero-promo__description">Log in daily. Keep your streak going.</p>
+                <button class="primary-button hero-promo__button" type="button" data-hero-category="achievements">View rewards</button>
+              </div>
+            </div>
           </article>
-          <article class="hero-carousel__slide" data-hero-title="Banner 3" role="group" aria-roledescription="slide" aria-label="3 of 4: Banner 3">
-            <div class="hero-banner" aria-hidden="true"></div>
+          <article class="hero-carousel__slide" data-hero-title="First Purchase Offer" role="group" aria-roledescription="slide" aria-label="3 of 4: First Purchase Offer">
+            <div class="hero-banner">
+              <div class="hero-promo__copy">
+                <h2 class="hero-promo__title">150% SC</h2>
+                <p class="hero-promo__description">On your first purchase.</p>
+                <button class="primary-button hero-promo__button" type="button" data-hero-category="store" aria-haspopup="dialog" aria-controls="store-dialog">View offers</button>
+              </div>
+            </div>
           </article>
-          <article class="hero-carousel__slide" data-hero-title="Banner 4" role="group" aria-roledescription="slide" aria-label="4 of 4: Banner 4">
-            <div class="hero-banner" aria-hidden="true"></div>
+          <article class="hero-carousel__slide" data-hero-title="Nolimit City" role="group" aria-roledescription="slide" aria-label="4 of 4: Nolimit City">
+            <div class="hero-banner">
+              <div class="hero-promo__copy">
+                <h2 class="hero-promo__title">NOLIMIT<br>CITY</h2>
+                <p class="hero-promo__description">Explore Nolimit City games.</p>
+                <button class="primary-button hero-promo__button" type="button" data-hero-category="nolimit-city">Explore games</button>
+              </div>
+            </div>
           </article>
         </div>
       </div>

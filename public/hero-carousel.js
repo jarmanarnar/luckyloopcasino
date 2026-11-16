@@ -2,7 +2,7 @@ import EmblaCarousel from './vendor/embla-carousel/embla-carousel.esm.js';
 
 let initialized = false;
 
-export function initHeroCarousel({ openHome, openCategory, openProviders } = {}) {
+export function initHeroCarousel({ openHome, openCategory, openProviders, openProvider, openFeature, openSpinWheel, openStore } = {}) {
   if (initialized) return;
   const root = document.querySelector('#hero-carousel');
   const viewport = document.querySelector('#hero-viewport');
@@ -170,7 +170,11 @@ export function initHeroCarousel({ openHome, openCategory, openProviders } = {})
     const id = button.dataset.heroCategory;
     if (!id) return;
     event.preventDefault();
-    if (id === 'all') openHome?.();
+    if (id === 'spin-wheel') openSpinWheel?.({ returnFocusTo: button });
+    else if (id === 'store') openStore?.();
+    else if (id === 'achievements') openFeature?.('achievements');
+    else if (id === 'nolimit-city') openProvider?.('nolimit-city');
+    else if (id === 'all') openHome?.();
     else if (id === 'providers') openProviders?.();
     else openCategory?.(id);
   });

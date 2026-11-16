@@ -255,7 +255,7 @@ test('failed persistence rolls back the wheel award without consuming accumulate
       return outcome;
     }));
     const saved = await store.read();
-    assert.equal(saved.wallet.balances.GC, 125000);
+    assert.equal(saved.wallet.balances.GC, 0);
     assert.equal(saved.ledger.length, 2);
     assert.equal(spinStatus(saved, later).spinsAvailable, 3);
   } finally { store.close(); }

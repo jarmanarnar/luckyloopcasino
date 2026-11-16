@@ -1,5 +1,15 @@
 # LuckyLoop promotional artwork
 
+## COP COIN wheel banner
+
+`cop-coin-wheel-v1.png` is an original 1254 × 1254 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. The existing G and S coins and chrome wordmark were supplied as style references. Its alpha channel is preserved. The complete illustration is displayed at 208px square, inset 32px from the top and 4px from the right of the slide. Frames no wider than 320px use a compact 176px illustration with a 48px top inset. The background is inset 48px from the top and 16px from the right, allowing the coins to extend beyond the panel without clipping at the slide edge. Copy and the interactive silver button are HTML. Full generation prompt: `cop-coin-wheel-v1.prompt.txt`.
+
+## COP COIN officer banner
+
+`cop-coin-officer-v1.png` is an unused original 1122 × 1402 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. It depicts a fictional adult female officer with a silver CC badge, dark jacket and blouse, and the existing G/S coin designs. The brand logo and currency art were supplied as style references. Original alpha is preserved. The user rejected this direction; the offer banner is currently text-only. Full prompt: `cop-coin-officer-v1.prompt.txt`.
+
+## Earlier artwork
+
 Original LuckyLoop artwork generated with the built-in OpenAI imagegen tool on 2026-10-30, from original text prompts without image references. These transparent, lossless WebP files preserve the source PNG pixels and alpha exactly.
 
 | Asset | Dimensions | Subject |

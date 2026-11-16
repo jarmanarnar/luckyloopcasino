@@ -1,8 +1,9 @@
 .hero-carousel {
   --banner-gap: 1rem;
+  --banner-width: 23rem;
   /* Keep banner height and indicator spacing stable across viewport sizes. */
   --banner-height: 16rem;
-  --banner-radius: var(--radius-card);
+  --banner-radius: var(--game-card-radius);
   min-width: 0;
   container: hero-banner / inline-size;
 }
@@ -10,26 +11,75 @@
 .hero-carousel:not([data-ready]) .hero-carousel__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .hero-carousel__viewport::-webkit-scrollbar { display: none; }
 .hero-carousel__track { display: flex; margin-left: calc(-1 * var(--banner-gap)); }
-.hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 100%; min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
+/* Keep card size stable; a narrow phone may constrain the frame, never its contents. */
+.hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 min(calc(var(--banner-width) + var(--banner-gap)), 100%); min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
 .hero-banner {
+  --banner-surface-inset: 3rem 1rem 0 0;
   position: relative;
+  isolation: isolate;
+  background: transparent;
+  box-sizing: border-box;
   height: var(--banner-height);
   overflow: hidden;
   overflow: clip;
+  border: 0;
   border-radius: var(--banner-radius);
-  background: var(--surface-card);
 }
-.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; margin-top: 1rem; }
+.hero-banner--wheel { container: wheel-banner / inline-size; }
+.hero-banner::before {
+  content: '';
+  position: absolute;
+  inset: var(--banner-surface-inset);
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--surface-glow);
+}
+.hero-banner::after { inset: var(--banner-surface-inset); z-index: 0; }
+.hero-wheel__art {
+  position: absolute;
+  z-index: 1;
+  top: 2rem;
+  right: .25rem;
+  width: 13rem;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+.hero-wheel__copy, .hero-promo__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 12rem; height: 100%; padding: 4rem 0 1.25rem 1.25rem; }
+.hero-wheel__title, .hero-promo__title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 900;
+  line-height: .98;
+  letter-spacing: -.045em;
+  color: var(--text-primary);
+  background: linear-gradient(175deg, var(--text-primary) 12%, var(--achievement-silver) 48%, var(--text-primary) 54%, var(--achievement-silver) 90%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 0 var(--achievement-edge));
+}
+.hero-wheel__description, .hero-promo__description { margin: .75rem 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
+.hero-wheel__button, .hero-promo__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.hero-promo__title { white-space: nowrap; }
+@container wheel-banner (max-width: 20rem) {
+  .hero-wheel__art { top: 3rem; width: 11rem; }
+  .hero-wheel__copy { width: 7rem; padding-left: .75rem; }
+}
+.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }
+.hero-carousel:not([hidden]) + .catalog-toolbar {
+  /* Keep the toolbar's shared padding so controls stay inset when sticky. */
+  margin-block-start: .5rem;
+}
 .hero-carousel__dots { display: flex; align-items: center; }
-.hero-carousel__dot { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; cursor: pointer; }
-.hero-carousel__dot-mark { display: block; width: 2rem; height: .1875rem; overflow: hidden; border-radius: 2px; background: var(--surface-control); transition: background 180ms ease; }
-.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--redeem-accent), var(--text-primary)); transform: scaleX(0); transform-origin: left center; }
-.hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { background: color-mix(in srgb, var(--redeem-accent) 32%, var(--surface-page)); }
+.hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: 2rem; padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
+.hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--surface-control); box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle); transition: width 180ms ease; }
+.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--text-primary) 65%, var(--redeem-accent)), var(--text-primary)); box-shadow: inset 0 1px 0 var(--button-inner-highlight); transform: scaleX(0); transform-origin: left center; }
+.hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; background: var(--surface-inset), var(--surface-glow); }
 .hero-carousel__dot:is(:hover, :focus-visible):not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
+body[data-reduce-motion="true"] .hero-carousel__dot-mark { transition: none; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@container hero-banner (min-width: 40rem) { .hero-carousel__slide { flex-basis: 50%; } }
-@container hero-banner (min-width: 70rem) { .hero-carousel__slide { flex-basis: 33.333333%; } }
 @media (prefers-reduced-motion: reduce) {
   .hero-carousel__dot, .hero-carousel__dot-mark { transition: none; }
   .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-fill { transform: scaleX(1); }

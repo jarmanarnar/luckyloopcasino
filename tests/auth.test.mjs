@@ -12,12 +12,14 @@ test('registration, logout and login keep one player, one wallet and the origina
   let account = await openDemoAccount({ indexedDB, scope: undefined, catalogIds: ['alpha'] });
   try {
     const before = account.getSnapshot();
+    assert.deepEqual(before.wallet.balances, { GC: 0, SC: 0 });
     assert.equal(account.isSignedIn(), false);
     assert.equal((await account.claimDaily()).ok, false, 'guests cannot credit the wallet');
     assert.equal((await account.register({ ...credentials, accepted: false })).ok, false);
     assert.equal((await account.register({ ...credentials, password: 'short' })).ok, false);
     assert.equal((await account.register({ ...credentials, email: ' DEMO@example.test ' })).ok, true);
     assert.equal(account.isSignedIn(), true);
+    assert.deepEqual(account.getSnapshot().wallet.balances, { GC: 0, SC: 0 }, 'registration does not grant starting coins');
     assert.equal(account.getSnapshot().identity.email, 'demo@example.test');
     assert.equal(account.getSnapshot().auth, undefined, 'credentials are never returned to UI snapshots');
     const persisted = await openAccountStore({ indexedDB, create: () => { throw new Error('Account already exists'); } });
@@ -30,6 +32,7 @@ test('registration, logout and login keep one player, one wallet and the origina
     assert.deepEqual(account.getSnapshot().ledger, before.ledger);
     await account.claimDaily();
     const credited = account.getSnapshot();
+    assert.deepEqual(credited.wallet.balances, { GC: 1000, SC: 0 });
     await account.logout();
     assert.equal(account.isSignedIn(), false);
     assert.equal(account.getSnapshot().identity.email, null);

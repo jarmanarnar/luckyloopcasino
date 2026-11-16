@@ -19,7 +19,7 @@ body[data-auth="guest"] .site-logo__image--mark { display: none; }
   background: var(--header-item-surface);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
 }
-.guest-header-actions .auth-button { font-size: .9375rem; font-weight: 500; }
+.guest-header-actions .auth-button { min-width: 6rem; font-size: .9375rem; font-weight: 500; }
 .guest-header-actions .auth-icon-button { width: var(--touch-target); padding-inline: 0; color: var(--text-secondary); }
 .guest-header-actions .auth-icon-button svg { width: 1.25rem; height: 1.25rem; }
 .guest-header-actions :is(.auth-button, .auth-icon-button):is(:hover, :focus-visible, [aria-expanded="true"]) {
@@ -29,6 +29,9 @@ body[data-auth="guest"] .site-logo__image--mark { display: none; }
   filter: none;
 }
 .guest-header-actions :is(.auth-button, .auth-icon-button):active { box-shadow: inset 0 2px 4px var(--shadow-color); }
+.guest-header-actions .auth-button--secondary { background: var(--secondary-button-surface); border-color: var(--secondary-button-border); box-shadow: none; }
+.guest-header-actions .auth-button--secondary:is(:hover, :focus-visible) { background: var(--secondary-button-hover); border-color: var(--secondary-button-border); }
+/* Rewards keeps the shared wallet-header.css sizing, breakpoints and motion. */
 .guest-welcome .primary-button { background: var(--action-surface); }
 .guest-welcome { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(19rem,1fr); overflow: hidden; border: 1px solid var(--border-default); border-radius: 1.125rem; background: var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle); margin-bottom: 1.75rem; }
 .guest-welcome__wireframe { min-width: 0; min-height: 20rem; box-sizing: border-box; border-radius: 1.05rem; background: var(--surface-inset); box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle); }
@@ -106,7 +109,6 @@ body[data-auth-dialog="open"] { overflow: hidden; }
   .guest-register-card { padding: 1.5rem; }
 }
 @media (width <= 1024px) {
-  .guest-extra { display: none; }
   .guest-header-actions { gap: .375rem; }
   .guest-header-actions .auth-button { padding-inline: .875rem; }
   body[data-auth="guest"] .site-logo { width: 3.25rem; height: 2.25rem; }
@@ -125,10 +127,12 @@ body[data-auth-dialog="open"] { overflow: hidden; }
   .auth-content { padding: 1.75rem 1.5rem 1.5rem; }
   .auth-tabs { margin-bottom: 1.25rem; }
 }
+@media (width <= 599px) {
+  .guest-header-actions .auth-button { min-width: var(--touch-target); }
+}
 @media (max-width: 22.4375rem) {
   body[data-auth="guest"] .header-context { gap: .25rem; }
   body[data-auth="guest"] .site-logo { width: 3rem; }
-  .guest-header-actions .auth-button { padding-inline: .625rem; }
   .auth-content { padding-inline: 1.125rem; }
   /* Keep the password hint clear of the eye control on the narrowest phones; entered text stays 16px. */
   .auth-input-wrap input::placeholder { font-size: .8125rem; }

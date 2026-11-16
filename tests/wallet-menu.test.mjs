@@ -34,10 +34,10 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     const { account, nodes, menu } = page;
     const ledger = account.getSnapshot().ledger;
     const balances = account.getSnapshot().wallet.balances;
-    assert.equal(nodes['wallet-amount-GC'].textContent, '125,000');
+    assert.equal(nodes['wallet-amount-GC'].textContent, '0');
     assert.equal(nodes['wallet-name-GC'].textContent, 'Gold Coins');
     assert.equal(nodes['wallet-name-SC'].textContent, 'Super Coins');
-    assert.equal(nodes['wallet-amount-SC'].textContent, '15.00');
+    assert.equal(nodes['wallet-amount-SC'].textContent, '0.00');
     menu.toggle();
     await nodes['wallet-select-SC'].click();
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
@@ -52,7 +52,7 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     assert.equal(nodes['wallet-amount-GC'].textContent, '••••••');
     assert.equal(nodes['wallet-amount-SC'].textContent, '••••••');
     assert.equal(nodes['coin-type-switch'].attributes['aria-label'], 'Super Coins balance hidden. Choose currency');
-    assert.doesNotMatch(nodes['wallet-select-SC'].attributes['aria-label'], /15\.00/);
+    assert.doesNotMatch(nodes['wallet-select-SC'].attributes['aria-label'], /0\.00/);
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
     assert.deepEqual(account.getSnapshot().wallet.balances, balances);
     assert.deepEqual(account.getSnapshot().ledger, ledger);

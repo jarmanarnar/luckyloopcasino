@@ -20,6 +20,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
   if (storage === undefined) { try { storage = scope?.localStorage; } catch { /* IndexedDB remains authoritative. */ } }
   const store = await openAccountStore({ indexedDB, name: databaseName, create: () => createDemoAccount(legacyData(storage)) });
   let snapshot = (await store.transact(account => applyAccountCommand(account, { type: 'catalog', gameIds: catalogIds }))).account;
+  snapshot = (await store.transact(account => applyAccountCommand(account, { type: 'session-visit' }))).account;
   const listeners = new Set();
   let closed = false;
   const channel = scope?.BroadcastChannel ? new scope.BroadcastChannel(databaseName) : null;
@@ -33,7 +34,9 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
       catch (error) { scope?.console?.error('Unable to update the demo account view:', error); }
     }
   }
-  async function refresh() { if (!closed) adopt(await store.read()); }
+  async function refresh() {
+    if (!closed) adopt((await store.transact(account => applyAccountCommand(account, { type: 'session-visit' }))).account);
+  }
   const refreshQuietly = () => { void refresh().catch(error => scope?.console?.error('Unable to refresh demo account:', error)); };
   const onVisibility = () => { if (!scope.document.hidden) refreshQuietly(); };
   const onStorage = event => { if (event.key === signalKey) refreshQuietly(); };
@@ -42,6 +45,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
   scope?.addEventListener('focus', refreshQuietly);
   scope?.addEventListener('pageshow', refreshQuietly);
   scope?.document?.addEventListener('visibilitychange', onVisibility);
+  const attendanceTimer = scope?.setInterval?.(() => { if (!scope.document?.hidden) refreshQuietly(); }, 60000);
   async function command(action, expectedPlayerId = snapshot.playerId) {
     const outcome = await store.transact(account => {
       // A tab or pending request belonging to a deleted account cannot edit
@@ -110,6 +114,7 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
     recordPageVisit: pageId => command({ type: 'page-visit', pageId }),
     close() {
       closed = true; channel?.close(); listeners.clear(); store.close();
+      if (attendanceTimer !== undefined) scope?.clearInterval?.(attendanceTimer);
       scope?.removeEventListener('storage', onStorage);
       scope?.removeEventListener('focus', refreshQuietly);
       scope?.removeEventListener('pageshow', refreshQuietly);

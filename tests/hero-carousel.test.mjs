@@ -119,6 +119,10 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
   document.querySelector = selector => selector === 'dialog[open]' ? (modal ? new Node() : null) : nodes[selector.slice(1)] || null;
   document.createElement = () => new Node();
   const catalog = {
+    openStore() { calls.push({ action: 'open-store' }); },
+    openFeature(id) { calls.push({ action: 'open-feature', id }); },
+    openProvider(id) { calls.push({ action: 'open-provider', id }); },
+    openSpinWheel(options) { calls.push({ action: 'open-wheel', returnFocusTo: options.returnFocusTo }); },
     openHome() { provider = ''; category = 'all'; calls.push({ action: 'navigate', id: 'all' }); },
     openCategory(id) { provider = ''; category = id; calls.push({ action: 'navigate', id }); },
     openProviders(options) {
@@ -287,6 +291,40 @@ test('banner CTAs navigate directly without clicking a hidden toolbar or resetti
   page.slides[0].children[0].dataset.heroCategory = 'all';
   page.slides[0].children[0].click();
   assert.deepEqual(page.calls.filter(call => call.action === 'navigate').map(call => call.id), ['all']);
+});
+
+test('wheel banner opens the existing wheel and returns focus to its CTA without navigating the catalog', () => {
+  const page = heroPage();
+  const button = page.slides[0].children[0];
+  button.dataset.heroCategory = 'spin-wheel';
+  button.click();
+  const wheelCalls = page.calls.filter(call => call.action === 'open-wheel');
+  assert.equal(wheelCalls.length, 1);
+  assert.equal(wheelCalls[0].returnFocusTo, button);
+  assert.equal(page.calls.some(call => call.action === 'navigate'), false);
+  assert.equal(page.category, 'all');
+});
+
+test('offer banner opens the store without navigating or purchasing a package', () => {
+  const page = heroPage();
+  page.slides[1].children[0].dataset.heroCategory = 'store';
+  page.slides[1].children[0].click();
+  assert.equal(page.calls.filter(call => call.action === 'open-store').length, 1);
+  assert.equal(page.calls.some(call => call.action === 'navigate'), false);
+  assert.equal(page.category, 'all');
+});
+
+test('daily login and Nolimit banners open their existing destinations', () => {
+  const page = heroPage();
+  page.slides[1].children[0].dataset.heroCategory = 'achievements';
+  page.slides[3].children[0].dataset.heroCategory = 'nolimit-city';
+  page.slides[1].children[0].click();
+  page.slides[3].children[0].click();
+  assert.deepEqual(page.calls.filter(call => call.action.startsWith('open-')), [
+    { action: 'open-feature', id: 'achievements' },
+    { action: 'open-provider', id: 'nolimit-city' },
+  ]);
+  assert.equal(page.calls.some(call => call.action === 'navigate'), false);
 });
 
 test('leaving the lobby pauses the hidden hero immediately and resumes the remaining countdown on return', () => {

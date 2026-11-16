@@ -17,22 +17,29 @@ import { initFeatureView } from './feature-view.js';
 import { initGameDetails } from './game-details-view.js';
 import { initHowToPlay } from './how-to-play.js';
 import { openDemoAccount } from './demo-account.js';
+import { openServerAccount } from './server-account.js';
+import { SERVER_ACCOUNT } from './account-config.js';
+import { initIdentityVerification } from './identity-verification.js';
 import { GAMES } from './catalog.js';
 import { initAuthView } from './auth-view.js';
 import { initSiteFooter } from './site-footer.js';
 import { initUiIcons } from './ui-icons.js';
 import { initSpinWheel } from './spin-wheel.js';
 import { initRedeemView } from './redeem-view.js';
+import { initAchievementDialog } from './achievement-dialog.js';
+import { initLobbyPromotions } from './lobby-promotions.js';
 
 export async function initApplication() {
   initUiIcons();
-  const account = await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
+  const account = SERVER_ACCOUNT ? await openServerAccount() : await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
   initSiteMode({ account });
   const auth = initAuthView({ account, router: initRouter() });
   const router = auth.router;
-  const phone = initPhoneVerification({ router, account });
+  const verification = initIdentityVerification({ router, account, auth, onVerified: channel => achievement.open(`verify-${channel}`) });
+  const phone = initPhoneVerification({ router, account, verifyIdentity: account.getSnapshot().serverManaged ? () => verification.open('phone') : null });
   const notifications = initNotificationsDrawer({ router, account, auth });
-  initRewardsPopover({ router, account });
+  const achievement = initAchievementDialog({ router, account, auth, openVerification: verification.open });
+  initRewardsPopover({ router, account, openAchievement: achievement.open, openRegistration: () => auth.open('register') });
   const wheel = initSpinWheel({ router, account, auth });
   const verifyPhone = () => auth.require(phone.open);
   const redeem = initRedeemView({ router, account, auth });
@@ -40,7 +47,7 @@ export async function initApplication() {
   initGameView({ router, account, verifyPhone: phone.open });
   const store = initStoreView({ router, account, auth, verifyPhone });
   const wallet = initWallet({ account, router, openStore: store.openStore });
-  const features = initFeatureView({ router, wallet, account, auth, openRedeem: redeem.open, openNotifications: notifications.open, openProfile: profile.open });
+  const features = initFeatureView({ router, wallet, account, auth, openRedeem: redeem.open, openNotifications: notifications.open, openProfile: profile.open, openAchievement: achievement.open });
   const catalog = initCatalogView({ router, member: features.member });
   initCatalogToolbar();
   initGameDetails({ router, member: features.member });
@@ -49,7 +56,8 @@ export async function initApplication() {
   const menu = initSiteMenu({ ...catalog, ...features, ...help, ...wheel, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
   initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
-  initHeroCarousel(catalog);
+  initHeroCarousel({ ...catalog, ...wheel, openFeature: features.openFeature, openStore: store.openStore });
+  initLobbyPromotions({ router, account, auth });
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {
     event.preventDefault();

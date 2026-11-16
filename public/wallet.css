@@ -69,7 +69,7 @@
   overflow: hidden;
 }
 #wallet-currency-label { flex: none; color: var(--text-primary); font-size: var(--wallet-value-size); font-weight: var(--header-font-weight); line-height: var(--wallet-line-height); }
-#wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: var(--header-font-weight); font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: var(--wallet-line-height); white-space: nowrap; text-overflow: ellipsis; }
+#wallet-balance-value, .wallet-balance-value, .wallet-value-measure { min-width: 0; overflow: hidden; font-size: var(--wallet-value-size); font-weight: var(--header-font-weight); font-variant-numeric: tabular-nums; letter-spacing: -.015em; line-height: var(--wallet-line-height); white-space: nowrap; text-overflow: ellipsis; }
 .wallet-value-measure { position: absolute; top: 0; left: 0; width: max-content; visibility: hidden; pointer-events: none; }
 #wallet-add {
   box-sizing: border-box;

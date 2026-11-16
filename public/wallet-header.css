@@ -1,10 +1,12 @@
 /* The original plus component remains available in the document. */
+:root {
+  --header-item-surface: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--redeem-button-gradient-bottom) 8%, transparent), transparent 72%), var(--surface-inset), var(--surface-panel);
+}
 body[data-wallet-layout="currency-menu"] #coin-wallet { display: none !important; }
 body[data-wallet-layout="currency-menu"] .top-bar {
   container: loop-header / inline-size;
   background: var(--top-bar-background);
   /* Keep the bar flat beside mobile browser chrome; light belongs to each control. */
-  --header-item-surface: radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--redeem-button-gradient-bottom) 8%, transparent), transparent 72%), var(--surface-inset), var(--surface-panel);
 }
 body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: var(--header-control-size); }
 .header-wallet-controls, .header-member-actions {
@@ -51,7 +53,7 @@ body[data-wallet-layout="currency-menu"] .top-bar__inner { grid-template-rows: v
   filter: none;
 }
 .wallet-balance-trigger .wallet-balance-copy { flex: 0 1 auto; padding: 0; justify-content: flex-start; }
-.wallet-balance-trigger :is(#wallet-balance-value, .wallet-value-measure) { font-weight: 400; }
+.wallet-balance-trigger :is(#wallet-balance-value, .wallet-balance-value, .wallet-value-measure) { font-weight: 400; }
 .wallet-balance-trigger #wallet-currency-label { display: none; }
 .wallet-chevron { flex: none; width: .75rem; height: .75rem; color: var(--text-secondary); }
 .wallet-balance-trigger[aria-expanded="true"] .wallet-chevron { transform: rotate(180deg); }

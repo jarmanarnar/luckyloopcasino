@@ -2,6 +2,7 @@ import { createMemberState, claimDailyReward, claimTaskReward, recordGameVisit, 
 import { createWalletState, formatBalance } from './wallet-state.js';
 import { isProfilePhoto } from './profile-photo.js';
 import { SPIN_PRIZES, spinStatus } from './spin-wheel-state.js';
+import { recordAttendance } from './achievement-catalog.js';
 
 export const ACCOUNT_DATABASE = 'luckyloopcasino-demo-account-v1';
 export const ACCOUNT_KEY = 'primary';
@@ -54,6 +55,9 @@ export function applyAccountCommand(current, command, now = new Date()) {
       return unchanged(failed('Register an account first.'));
     }
     next.auth.signedIn = true;
+  } else if (command.type === 'session-visit') {
+    if (!current.auth?.signedIn) return unchanged(result);
+    next.member = recordAttendance(current.member, now);
   } else if (command.type === 'logout') {
     if (!current.auth?.signedIn) return unchanged(result);
     next.auth.signedIn = false;
@@ -72,16 +76,23 @@ export function applyAccountCommand(current, command, now = new Date()) {
     }
     const outcome = daily ? claimDailyReward(current.member, now) : claimTaskReward(current.member, command.taskId, now);
     if (!outcome.result.ok) return unchanged(outcome.result);
-    const amount = outcome.result.amount;
-    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 7000 || current.wallet.balances.GC + amount > MAX_BALANCE) {
+    const rewards = outcome.result.rewards || { GC: outcome.result.amount };
+    const credits = Object.entries(rewards);
+    // Validate the whole bundle before committing either currency or the claim flag.
+    if (!credits.length || credits.some(([currency, amount]) => !['GC', 'SC'].includes(currency)
+      || !Number.isSafeInteger(amount) || amount <= 0 || current.wallet.balances[currency] + amount > MAX_BALANCE)) {
       return unchanged(failed('The demo balance could not be updated.'));
     }
     next.member = { ...outcome.state, history: current.member.history };
-    next.wallet.balances.GC += amount;
     const title = outcome.state.history.at(-1).title;
-    next.ledger.push(entry(next, { key, type: 'bonus', source: daily ? 'daily-bonus' : 'task',
-      sourceId: daily ? calendarKey(now) : command.taskId, title, currency: 'GC', amount, at }));
-    result = { ...outcome.result, transactionId: next.ledger.at(-1).id };
+    const transactionIds = [];
+    for (const [i, [currency, amount]] of credits.entries()) {
+      next.wallet.balances[currency] += amount;
+      const credit = entry(next, { key: i === 0 ? key : `${key}:${currency}`, type: 'bonus', source: daily ? 'daily-bonus' : 'task',
+        sourceId: daily ? calendarKey(now) : command.taskId, title, currency, amount, at });
+      next.ledger.push(credit); transactionIds.push(credit.id);
+    }
+    result = { ...outcome.result, rewards, transactionId: transactionIds[0], transactionIds };
   } else if (command.type === 'spin-wheel') {
     if (!current.auth?.signedIn) return unchanged(failed('Log in to spin the wheel.'));
     if (!spinStatus(current, now).available) return unchanged(failed('Your next free spin is not ready yet.'));
@@ -144,6 +155,7 @@ export function applyAccountCommand(current, command, now = new Date()) {
     next.member.history = current.member.history.filter(item => item.type !== 'game' || allowed.has(item.gameId));
     if (JSON.stringify(next.member) === JSON.stringify(current.member)) return unchanged(result);
   } else return unchanged(failed('Unknown account action.'));
+  if (['register', 'login', 'resume-demo'].includes(command.type)) next.member = recordAttendance(next.member, now);
   if (JSON.stringify(next) === JSON.stringify(current)) return unchanged(result);
   next.revision = current.revision + 1;
   next.updatedAt = at;

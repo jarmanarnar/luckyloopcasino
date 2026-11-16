@@ -426,6 +426,7 @@
     .provider-card.shelf-view-all-card { border-radius: .625rem; }
     .provider-card .shelf-view-all { height: 4.5rem; aspect-ratio: auto; }
     .provider-card .shelf-view-all::before, .provider-card .shelf-view-all::after { display: none; }
+    .game-launch, .hero-banner { background: var(--surface-glow); }
     .game-launch {
       position: relative;
       display: flex;
@@ -436,14 +437,13 @@
       overflow: hidden;
       border: 0;
       border-radius: inherit;
-      background: var(--surface-glow);
       color: var(--text-primary);
       text-align: start;
       cursor: pointer;
     }
     .game-launch:is(:hover, :focus-visible) { background: var(--surface-inset), var(--surface-glow); }
     /* The finish sits over the artwork without changing card size or spacing. */
-    .game-launch::after {
+    .game-launch::after, .hero-banner::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -524,11 +524,13 @@
     }
     @media (width > 1024px) { :root { --page-gutter: 3rem; } }
 
-    /* Lobby typography uses the existing 48rem title breakpoint. */
+    /* Lobby shelves keep the same cards, type and spacing at every viewport width. */
     body[data-page="home"] #lobby-view {
-      --shelf-title-size: 1.375rem;
+      --shelf-title-size: 1.625rem;
       --game-title-size: .9375rem;
+      --game-card-gap: 1rem;
     }
+    body[data-page="home"] #lobby-view .game-shelf + .game-shelf { margin-block-start: 3rem; }
     body[data-page="home"] #lobby-view .catalog-category { font-size: .9375rem; font-weight: 400; }
     body[data-page="home"] #lobby-view .game-shelf__title { font-weight: 600; }
     body[data-page="home"] #lobby-view .shelf-see-all { font-size: .875rem; font-weight: 400; }
@@ -536,6 +538,3 @@
     body[data-page="home"] #lobby-view .shelf-view-all__count { font-size: .8125rem; font-weight: 400; }
     body[data-page="home"] #lobby-view .game-provider-badge { font-size: .75rem; }
     body[data-page="home"] #lobby-view .catalog-empty { font-size: .9375rem; }
-    @media (min-width: 48rem) {
-      body[data-page="home"] #lobby-view { --shelf-title-size: 1.625rem; }
-    }

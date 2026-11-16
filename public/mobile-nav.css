@@ -31,6 +31,8 @@
   color: var(--text-secondary);
   font-family: var(--header-font-family);
 }
+body[data-auth="guest"] .mobile-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+body[data-auth="guest"] #mobile-nav-chat { display: none; }
 .mobile-nav__item {
   box-sizing: border-box;
   position: relative;

@@ -25,9 +25,10 @@ export function initAuthView({ account, router } = {}) {
   }
   function syncDemoAccess() {
     const saved = account.getSnapshot();
-    const available = saved.isTest === true && Boolean(saved.identity);
+    const available = saved.isTest === true && !saved.serverManaged && Boolean(saved.identity);
     for (const button of socialButtons) {
-      button.disabled = busy;
+      button.disabled = busy || saved.serverManaged === true;
+      button.hidden = saved.serverManaged === true;
       button.setAttribute('aria-disabled', String(button.disabled));
     }
     resumeButton.hidden = !available;
@@ -118,6 +119,12 @@ export function initAuthView({ account, router } = {}) {
     document.querySelector('#header-profile').hidden = !next;
     document.querySelector('#header-wallet-controls').hidden = !next;
     document.querySelector('#header-member-actions').hidden = !next;
+    // Reuse the actual Rewards control, including its badge and popover listeners.
+    const rewards = document.querySelector('#header-rewards');
+    const rewardsHost = document.querySelector(next ? '#header-member-actions' : '#guest-header-actions');
+    if (rewards && rewards.parentElement !== rewardsHost) {
+      rewardsHost.insertBefore(rewards, next ? document.querySelector('#header-notifications') : rewardsHost.firstElementChild);
+    }
     if (next && !signedIn) queueMicrotask(finish);
     if (!next && signedIn) {
       pending = null;

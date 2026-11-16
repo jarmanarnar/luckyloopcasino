@@ -12,7 +12,7 @@ function node(tag, className, text) {
   if (text !== undefined) el.textContent = text;
   return el;
 }
-export function initFeatureView({ router, wallet, account, auth, openRedeem, openNotifications, openProfile } = {}) {
+export function initFeatureView({ router, wallet, account, auth, openRedeem, openNotifications, openProfile, openAchievement } = {}) {
   const root = document.querySelector('#feature-view');
   const content = document.querySelector('#feature-content');
   const header = document.querySelector('#feature-header');
@@ -46,7 +46,7 @@ export function initFeatureView({ router, wallet, account, auth, openRedeem, ope
   }
   const ctx = {
     node, icon: createShelfIcon, router, games: GAMES, state: () => state, ui: { historyFilter: 'all' },
-    notify,
+    notify, openAchievement,
     refresh(pageId, focusId) {
       if (currentPage !== pageId) return false;
       renderContent();

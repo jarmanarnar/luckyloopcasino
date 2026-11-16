@@ -1,16 +1,19 @@
 import { CURRENCIES, formatBalance } from './wallet-state.js';
 import { renderProfileAvatar } from './profile-photo.js';
 
-export function initWalletMenu({ account, router, selectCurrency, document: doc = document } = {}) {
-  const shell = doc.querySelector('#header-wallet-controls');
-  const panel = doc.querySelector('#wallet-currency-menu');
-  const trigger = doc.querySelector('#coin-type-switch');
+export function initWalletMenu({ account, router, selectCurrency, document: doc = document, elements,
+  getCurrency = () => account.getSnapshot().wallet.currency,
+  inPlay = () => ['game', 'game-details'].includes(router?.getRoute?.().type) || doc.body?.dataset.playerActive === 'true',
+} = {}) {
+  const shell = elements?.shell ?? doc.querySelector('#header-wallet-controls');
+  const panel = elements?.panel ?? doc.querySelector('#wallet-currency-menu');
+  const trigger = elements?.trigger ?? doc.querySelector('#coin-type-switch');
   if (!shell || !panel || !trigger) return null;
-  const coin = doc.querySelector('#currency-coin');
-  const hide = doc.querySelector('#wallet-hide-balance');
-  const feedback = doc.querySelector('#wallet-menu-status');
-  const avatar = doc.querySelector('#header-avatar');
-  const options = new Map(['GC', 'SC'].map(code => [code, {
+  const coin = elements?.coin ?? doc.querySelector('#currency-coin');
+  const hide = elements?.hide ?? doc.querySelector('#wallet-hide-balance');
+  const feedback = elements?.feedback ?? doc.querySelector('#wallet-menu-status');
+  const avatar = elements ? elements.avatar : doc.querySelector('#header-avatar');
+  const options = elements?.options ?? new Map(['GC', 'SC'].map(code => [code, {
     row: doc.querySelector(`#wallet-row-${code}`),
     button: doc.querySelector(`#wallet-select-${code}`),
     name: doc.querySelector(`#wallet-name-${code}`),
@@ -27,12 +30,12 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     const { wallet } = account.getSnapshot();
     const member = account.getMemberState();
     const hidden = member.settings.hideBalance;
-    const code = wallet.currency;
+    const code = getCurrency();
     trigger.setAttribute('role', 'button');
     trigger.removeAttribute('aria-checked');
     trigger.dataset.action = 'currencies';
     trigger.title = 'Choose currency';
-    trigger.setAttribute('aria-label', (['game', 'game-details'].includes(router?.getRoute?.().type) || doc.body?.dataset.playerActive === 'true') ? `${CURRENCIES[code].name} In Play. Choose currency` : hidden ? `${CURRENCIES[code].name} balance hidden. Choose currency`
+    trigger.setAttribute('aria-label', inPlay() ? `${CURRENCIES[code].name} In Play. Choose currency` : hidden ? `${CURRENCIES[code].name} balance hidden. Choose currency`
       : `${CURRENCIES[code].name} balance: ${formatBalance(code, wallet.balances[code])}. Choose currency`);
     coin.src = code === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png';
     hide.setAttribute('aria-checked', String(hidden));
@@ -75,7 +78,7 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     if (event.key !== 'ArrowDown') return;
     event.preventDefault();
     if (panel.hidden) toggle();
-    options.get(account.getSnapshot().wallet.currency).button.focus();
+    options.get(getCurrency()).button.focus();
   });
   doc.addEventListener('pointerdown', event => { if (!panel.hidden && !shell.contains(event.target)) close(); });
   doc.addEventListener('keydown', event => {

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
+    "start:accounts": "node --env-file-if-exists=.env server/start-accounts.mjs",
     "dev": "node server.mjs",
     "build": "node scripts/build-static.mjs",
     "check": "node scripts/check.mjs",

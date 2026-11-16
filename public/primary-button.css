@@ -1,5 +1,9 @@
-/* Shared smoked-silver action skin. Each component owns its geometry.
-   Selected tabs, toggles and the red/blue BUY/REDEEM controls keep their skins. */
+/* Filled-silver adaptation of vinodjangid07 / pink-cheetah-68 (MIT).
+   https://uiverse.io/vinodjangid07/pink-cheetah-68
+   Original license: licenses/uiverse-pink-cheetah-68.txt
+   A 250% moving reflection keeps the 1s hover easing; pressing is softer and faster.
+   Real labels remain DOM content; no generated duplicate text or extra wrappers.
+   Each component keeps its dimensions. Rewards' green/yellow frame is separate. */
 :is(
   button.primary-button,
   .store-dialog .store-package__price,
@@ -10,7 +14,8 @@
   .phone-verification__submit,
   .chat-send,
   .how-to-play-finish,
-  .achievement-claim
+  .achievement-claim,
+  .ui-button--primary
 ) {
   --action-surface: var(--primary-button-surface);
 }
@@ -25,32 +30,57 @@
   .phone-verification__submit,
   .chat-send,
   .how-to-play-finish,
-  .achievement-claim
+  .achievement-claim,
+  .ui-button--primary
 ):not(:disabled):not([aria-disabled="true"]) {
-  border-color: var(--primary-button-border);
+  box-sizing: border-box;
+  border: 1px solid var(--primary-button-border);
   background: var(--primary-button-surface);
+  background-size: 250% 100%;
+  background-position: left;
   color: var(--primary-button-ink);
   box-shadow: var(--primary-button-shadow);
-  transform: translateY(0);
+  text-shadow: none;
+  transform: scale(1);
+  transform-origin: center;
   filter: none;
-  transition: transform 140ms ease-out, box-shadow 140ms ease-out, filter 140ms ease-out;
+  cursor: pointer;
+  transition: background-position 1s ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   :is(
-    button.primary-button,
-    .store-dialog .store-package__price,
-    .profile-editor__actions .feature-button--primary,
-    .settings-panel > .feature-button,
-    .reward-preview__action,
-    .notifications-drawer__read-all,
-    .phone-verification__submit,
-    .chat-send,
-    .how-to-play-finish,
-    .achievement-claim
-  ):hover:not(:disabled):not([aria-disabled="true"]) {
-    filter: brightness(1.055);
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim,
+  .ui-button--primary
+):hover:not(:disabled):not([aria-disabled="true"]) {
+    background-position: right;
   }
+}
+
+/* The component study uses the same states as the app, not an approximate skin. */
+:is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim,
+  .ui-button--primary
+):is(:focus-visible, [data-state="hover"], [data-state="focus"]):not(:disabled):not([aria-disabled="true"]) {
+  background-position: right;
 }
 
 :is(
@@ -63,25 +93,63 @@
   .phone-verification__submit,
   .chat-send,
   .how-to-play-finish,
-  .achievement-claim
-):active:not(:disabled):not([aria-disabled="true"]) {
-  transform: translateY(2px);
+  .achievement-claim,
+  .ui-button--primary
+):is(:active, [data-state="pressed"]):not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(.98);
   box-shadow: var(--primary-button-pressed-shadow);
+}
+
+/* Disabled controls cannot retain metallic movement from a previous press. */
+:is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim,
+  .ui-button--primary
+):is(:disabled, [aria-disabled="true"]) {
+  transform: none;
+  transition: none;
+  text-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :is(
-    button.primary-button,
-    .store-dialog .store-package__price,
-    .profile-editor__actions .feature-button--primary,
-    .settings-panel > .feature-button,
-    .reward-preview__action,
-    .notifications-drawer__read-all,
-    .phone-verification__submit,
-    .chat-send,
-    .how-to-play-finish,
-    .achievement-claim
-  ):not(:disabled):not([aria-disabled="true"]) {
-    transition: none;
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim,
+  .ui-button--primary
+):not(:disabled):not([aria-disabled="true"]) {
+    transform: none !important;
+    transition: none !important;
   }
+}
+body[data-reduce-motion="true"] :is(
+  button.primary-button,
+  .store-dialog .store-package__price,
+  .profile-editor__actions .feature-button--primary,
+  .settings-panel > .feature-button,
+  .reward-preview__action,
+  .notifications-drawer__read-all,
+  .phone-verification__submit,
+  .chat-send,
+  .how-to-play-finish,
+  .achievement-claim,
+  .ui-button--primary
+):not(:disabled):not([aria-disabled="true"]) {
+  transform: none !important;
+  transition: none !important;
 }

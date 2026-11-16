@@ -57,7 +57,8 @@ input[type="range"] { width: 100%; margin: 0; height: 24px; accent-color: #c9d6e
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%), 0 var(--lab-depth) 0 #030405;
   transform: translateY(0); transition: background-color 140ms, border-color 140ms, box-shadow 140ms, transform 140ms, filter 140ms;
 }
-.ui-button--primary { --control-fill: radial-gradient(ellipse at 80% 0%, var(--lab-blue), transparent 70%), linear-gradient(155deg, var(--primary-button-top), var(--button-accent) 55%, var(--primary-button-bottom)); color: var(--primary-button-ink); border-color: var(--primary-button-edge); box-shadow: inset 0 1px 0 rgb(255 255 255 / 26%), 0 var(--lab-depth) 0 var(--primary-button-edge), 0 5px 12px rgb(0 0 0 / 12%); }
+.ui-button--primary { --control-fill: var(--primary-button-surface); color: var(--primary-button-ink); border-color: var(--primary-button-border); box-shadow: var(--primary-button-shadow); }
+.ui-button--secondary { --control-fill: var(--secondary-button-surface); border-color: var(--secondary-button-border); box-shadow: none; }
 .ui-button--quiet { --control-fill: transparent; color: var(--text-secondary); border-color: transparent; box-shadow: none; }
 .ui-button--danger { --control-fill: transparent; color: var(--text-error); border-color: transparent; box-shadow: none; }
 :is(.ui-button, .ui-close)[data-state="hover"]:not(:disabled) { filter: brightness(1.09); border-color: rgb(202 221 241 / 30%); }

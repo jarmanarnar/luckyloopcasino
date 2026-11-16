@@ -58,13 +58,14 @@ export function initCommunityChat({ account, auth }) {
       if (!storage) status.textContent = 'Messages are available for this session only.';
     } catch { status.textContent = 'Messages are available for this session only.'; }
   }
-  for (const [selector, className] of [['#header-member-actions','header-member-action header-chat'], ['#guest-header-actions','auth-icon-button header-chat']]) {
-    const trigger = node('button', className);
+  const memberActions = document.querySelector('#header-member-actions');
+  if (memberActions) {
+    const trigger = node('button', 'header-member-action header-chat');
     trigger.type = 'button'; trigger.innerHTML = icon('chat'); trigger.title = 'Community chat';
     trigger.setAttribute('aria-label', 'Open community chat');
     trigger.setAttribute('aria-controls', panel.id); trigger.setAttribute('aria-expanded', 'false');
     trigger.addEventListener('click', () => opened ? close() : open(trigger));
-    document.querySelector(selector)?.append(trigger); triggers.push(trigger);
+    memberActions.append(trigger); triggers.push(trigger);
   }
   const mobileTrigger = document.querySelector('#mobile-nav-chat');
   if (mobileTrigger) triggers.push(mobileTrigger);

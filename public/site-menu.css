@@ -6,6 +6,9 @@ html:has(#site-menu[open]) { overflow: hidden; }
   --menu-header-height: 4rem;
   --menu-control-size: 2.75rem;
   --menu-space: .375rem;
+  --menu-promo-space: 1rem;
+  --menu-item-gap: .25rem;
+  --menu-group-space: .75rem;
   --menu-group-radius: .625rem;
   box-sizing: border-box;
   color: var(--text-primary);
@@ -190,7 +193,7 @@ html:has(#site-menu[open]) { overflow: hidden; }
 }
 .site-menu__search {
   height: var(--menu-control-size);
-  margin-bottom: .75rem;
+  margin-bottom: calc(var(--menu-promo-space) - var(--menu-space));
   border: 1px solid var(--border-default);
   background: var(--surface-subtle);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
@@ -198,22 +201,28 @@ html:has(#site-menu[open]) { overflow: hidden; }
   font-weight: 400;
   transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
+/* Only a visible wheel supplies the next gap; hidden guest content leaves no spacing override. */
+.site-menu__search:has(+ .spin-launcher:not([hidden])) { margin-bottom: 0; }
 .site-menu__search svg { flex: none; width: 1.25rem; height: 1.25rem; }
 .site-menu__search:hover { background: var(--surface-control); border-color: var(--surface-active); color: var(--text-primary); }
 
 .site-menu__navigation {
   display: grid;
   flex: none;
-  gap: .25rem;
+  gap: var(--menu-item-gap);
   padding: 0;
   border-radius: 0;
   background: transparent;
 }
 .site-menu__feature-group { margin: 0; }
+/* Keep one row rhythm across the separate navigation groups. */
+.site-menu__navigation + .site-menu__navigation {
+  margin-top: calc(var(--menu-item-gap) - var(--menu-space));
+}
 #menu-navigation,
-.site-menu__navigation--plain {
-  margin-top: .75rem;
-  padding-top: .875rem;
+.site-menu__navigation.site-menu__navigation--plain {
+  margin-top: calc(var(--menu-group-space) - var(--menu-space));
+  padding-top: var(--menu-group-space);
   border-top: 1px solid var(--border-default);
 }
 .site-menu__item {

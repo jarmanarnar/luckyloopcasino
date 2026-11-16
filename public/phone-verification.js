@@ -1,4 +1,4 @@
-export function initPhoneVerification({ router, account }) {
+export function initPhoneVerification({ router, account, verifyIdentity }) {
   const dialog = document.querySelector('#phone-verification-dialog');
   const numberForm = document.querySelector('#phone-verification-number-form');
   const codeForm = document.querySelector('#phone-verification-code-form');
@@ -38,6 +38,7 @@ export function initPhoneVerification({ router, account }) {
 
   return {
     open() {
+      if (verifyIdentity) return verifyIdentity();
       if (document.querySelector('dialog[open]:not(#store-dialog)')) return;
       reset();
       dialog.showModal();

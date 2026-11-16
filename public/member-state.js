@@ -1,9 +1,11 @@
 // Local prototype state only: no authentication, provider rounds or real transactions.
 import { isProfilePhoto } from './profile-photo.js';
+import { ACHIEVEMENTS, achievementProgress, formatAchievementRewards } from './achievement-catalog.js';
 
 export const MEMBER_STORAGE_KEY = 'luckyloopcasino-member-v1';
 const avatars = new Set(['L', '∞', '★', '7', 'G', 'S']);
-export const TASK_REWARDS = Object.freeze({ 'complete-profile': 500, 'first-game': 500, 'daily-check-in': 250 });
+export const TASK_REWARDS = Object.freeze({ 'complete-profile': 500, 'first-game': 500, 'daily-check-in': 250,
+  ...Object.fromEntries(ACHIEVEMENTS.map(task => [task.id, task.amount])) });
 const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
 const boundedStrings = (value, max = 200) => Array.isArray(value)
   ? [...new Set(value.filter(item => typeof item === 'string' && item.length <= 100))].slice(-max) : [];
@@ -22,10 +24,20 @@ export function createMemberState(saved = {}) {
     profile: { displayName: displayName.length >= 2 ? displayName : 'Loop Player', avatar: avatars.has(saved?.profile?.avatar) ? saved.profile.avatar : 'L',
       ...(isProfilePhoto(saved?.profile?.photo) ? { photo: saved.profile.photo } : {}) },
     settings: { hideBalance: saved?.settings?.hideBalance === true, reducedMotion: saved?.settings?.reducedMotion === true },
+    attendance: { lastVisit: iso(saved?.attendance?.lastVisit) ? saved.attendance.lastVisit : null,
+      streak: Number.isSafeInteger(saved?.attendance?.streak) && saved.attendance.streak > 0 ? saved.attendance.streak : 0,
+      bestStreak: Math.max(0, ...[saved?.attendance?.bestStreak, saved?.attendance?.streak].filter(Number.isSafeInteger)) },
     daily: { lastClaim: iso(saved?.daily?.lastClaim) ? saved.daily.lastClaim : null,
       streak: Number.isInteger(saved?.daily?.streak) && saved.daily.streak >= 0 && saved.daily.streak <= 7 ? saved.daily.streak : 0,
       totalClaims: Number.isSafeInteger(saved?.daily?.totalClaims) && saved.daily.totalClaims >= 0 ? saved.daily.totalClaims : 0 },
-    taskClaims: boundedStrings(saved?.taskClaims).filter(id => Object.hasOwn(TASK_REWARDS, id)),
+    taskClaims: boundedStrings(saved?.taskClaims).filter(id => Object.hasOwn(TASK_REWARDS, id)
+      || /^(?:explorer-\d+|collection-\d+|custom-avatar|first-favorite)$/.test(id)),
+    achievementStats: {
+      playSCUnits: Number.isSafeInteger(saved?.achievementStats?.playSCUnits) && saved.achievementStats.playSCUnits > 0 ? saved.achievementStats.playSCUnits : 0,
+      loyaltySCUnits: Number.isSafeInteger(saved?.achievementStats?.loyaltySCUnits) && saved.achievementStats.loyaltySCUnits > 0 ? saved.achievementStats.loyaltySCUnits : 0,
+      emailVerified: saved?.achievementStats?.emailVerified === true,
+      phoneVerified: saved?.achievementStats?.phoneVerified === true,
+    },
     favorites: boundedStrings(saved?.favorites), visited: boundedStrings(saved?.visited),
     notificationReadIds: normalizeNotificationReadIds(saved?.notificationReadIds),
     discoveredGameIds: boundedStrings(discovered, 1000),
@@ -56,9 +68,10 @@ export function dailyStatus(state, now = new Date()) {
 }
 
 export function taskEligible(id, state) {
-  return id === 'complete-profile' ? state.profile.displayName !== 'Loop Player'
-    : id === 'first-game' ? state.discoveredGameIds.length > 0 || state.history.some(entry => entry.type === 'game')
-      : id === 'daily-check-in' ? state.daily.totalClaims > 0 : false;
+  // Legacy commands remain compatible with saved clients; these are not in the current catalog.
+  if (id === 'complete-profile') return Boolean(state.profile?.displayName?.trim() && state.profile.displayName.trim() !== 'Loop Player');
+  if (id === 'first-game') return Boolean(state.discoveredGameIds?.length || state.history?.some(item => item.type === 'game'));
+  return id === 'daily-check-in' ? state.daily.totalClaims > 0 : achievementProgress(id, state).complete;
 }
 function rewardEntry(state, title, amount, now) {
   const at = new Date(now).toISOString();
@@ -76,9 +89,12 @@ export function claimTaskReward(state, id, now = new Date()) {
   if (!Object.hasOwn(TASK_REWARDS, id) || !taskEligible(id, state)) return { state, result: { ok: false, amount: 0, reason: 'Complete this task first.' } };
   if (state.taskClaims.includes(id)) return { state, result: { ok: false, amount: 0, reason: 'This reward has already been collected.' } };
   const amount = TASK_REWARDS[id];
-  const titles = { 'complete-profile': 'Profile complete', 'first-game': 'First game opened', 'daily-check-in': 'Daily check-in mission' };
-  return { state: { ...state, taskClaims: [...state.taskClaims, id], history: rewardEntry(state, titles[id], amount, now) },
-    result: { ok: true, amount } };
+  const rewards = ACHIEVEMENTS.find(task => task.id === id)?.rewards || { GC: amount };
+  const titles = { ...Object.fromEntries(ACHIEVEMENTS.map(task => [task.id, task.title])), 'complete-profile': 'Profile complete', 'first-game': 'First game opened', 'daily-check-in': 'Daily check-in mission' };
+  const history = rewardEntry(state, titles[id], amount, now);
+  history.at(-1).detail = `+${formatAchievementRewards(rewards)}`;
+  return { state: { ...state, taskClaims: [...state.taskClaims, id], history },
+    result: { ok: true, amount, rewards } };
 }
 
 export function recordGameVisit(state, game, now = new Date()) {

@@ -1,28 +1,26 @@
 import { renderAchievements } from './achievements-view.js';
+import { ACHIEVEMENTS, achievementProgress, discoveredGameCount, formatAchievementRewards } from './achievement-catalog.js';
 
 // Local prototype content. Rewards use the local demo ledger; vendor wagers,
 // purchases are not connected to these pages.
-export const DEMO_TASKS = Object.freeze([
-  Object.freeze({ id: 'complete-profile', title: 'Make it yours', description: 'Choose your display name in Profile.', amount: 500, target: 'profile', action: 'Edit profile' }),
-  Object.freeze({ id: 'first-game', title: 'Try your first game', description: 'Open a game from the casino lobby.', amount: 500, target: 'popular', action: 'Browse games' }),
-]);
+export const DEMO_TASKS = ACHIEVEMENTS;
 
-const amount = value => new Intl.NumberFormat('en-US').format(value);
-export const getDiscoveredGameCount = state => new Set(Array.isArray(state.discoveredGameIds) ? state.discoveredGameIds
-  : (state.history || []).filter(item => item.type === 'game' && item.gameId).map(item => item.gameId)).size;
+export const getDiscoveredGameCount = discoveredGameCount;
 
 export function taskComplete(id, state) {
-  if (id === 'complete-profile') return Boolean(state.profile?.displayName?.trim() && state.profile.displayName.trim() !== 'Loop Player');
-  if (id === 'first-game') return getDiscoveredGameCount(state) > 0 || (state.history || []).some(item => item.type === 'game');
-  return false;
+  return achievementProgress(id, state).complete;
 }
 
 export function getAchievements(state) {
   const claimed = new Set(state.taskClaims || []);
   return DEMO_TASKS.map(task => {
     const collected = claimed.has(task.id);
-    const complete = collected || taskComplete(task.id, state);
-    return { ...task, claimed: collected, complete, ready: complete && !collected };
+    const progress = achievementProgress(task.id, state);
+    const complete = collected || progress.complete;
+    const credits = collected ? (state.history || []).filter(item => item.source === 'task' && item.sourceId === task.id && item.amountUnits > 0) : [];
+    const rewards = credits.length ? Object.fromEntries(credits.map(item => [item.currency, item.amountUnits])) : task.rewards;
+    const title = task.id === 'welcome-member' && collected && rewards.GC !== 50000 ? 'Welcome to COP COIN' : task.title;
+    return { ...task, title, rewards, amount: rewards.GC || 0, progress: collected ? task.goal : progress.value, claimed: collected, complete, ready: complete && !collected };
   });
 }
 
@@ -31,12 +29,17 @@ export async function collectAchievements(ctx, ids) {
   ctx.ui.achievementsCollecting = true;
   ctx.refresh('achievements');
   let total = 0, count = 0, reason = '';
+  const rewards = { GC: 0, SC: 0 };
   try {
     for (const id of new Set(ids)) {
       // Re-read after each committed claim, including changes from other tabs.
       if (!getAchievements(ctx.state()).some(entry => entry.id === id && entry.ready)) continue;
       const result = await ctx.claimTask(id);
-      if (result.ok) { total += result.amount; count++; }
+      if (result.ok) {
+        const credit = result.rewards || { GC: result.amount };
+        for (const code of ['GC', 'SC']) rewards[code] += credit[code] || 0;
+        total += result.amount; count++;
+      }
       else { reason = result.reason || 'This reward is not available.'; break; }
     }
   } catch {
@@ -44,11 +47,11 @@ export async function collectAchievements(ctx, ids) {
   } finally {
     ctx.ui.achievementsCollecting = false;
     if (ctx.refresh('achievements', 'achievement-filter-' + (ctx.ui.achievementFilter || 'all'))) {
-      const success = count ? `${amount(total)} GC collected. ` : '';
+      const success = count ? `${formatAchievementRewards(rewards)} collected. ` : '';
       ctx.notify(success + (reason || (count ? 'Your balance is up to date.' : 'No rewards are ready to collect.')));
     }
   }
-  return { count, amount: total, reason };
+  return { count, amount: total, rewards, reason };
 }
 
 export function renderRewardsPage(pageId, ctx) {

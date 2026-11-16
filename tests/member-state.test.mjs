@@ -66,7 +66,7 @@ test('mission rewards require actual local eligibility and each mission settles 
   for (const [id, amount] of Object.entries(expected)) {
     assert.equal(taskEligible(id, state), true);
     const result = claimTaskReward(state, id, localDay(20));
-    assert.deepEqual(result.result, { ok: true, amount });
+    assert.deepEqual(result.result, { ok: true, amount, rewards: { GC: amount } });
     state = result.state;
     const afterRefresh = createMemberState(JSON.parse(JSON.stringify(state)));
     const duplicate = claimTaskReward(afterRefresh, id, localDay(21));

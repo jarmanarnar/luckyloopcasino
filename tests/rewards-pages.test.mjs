@@ -12,13 +12,14 @@ test('discovery statistics count distinct game launches rather than reward event
   assert.equal(getDiscoveredGameCount({ discoveredGameIds: ['a', 'a'], history: [] }), 1);
 });
 
-test('achievement completion persists after a profile change and excludes retired rewards', () => {
-  const entries = getAchievements({ profile: { displayName: 'Loop Player' }, taskClaims: ['complete-profile', 'daily-check-in'] });
-  assert.deepEqual(entries.map(({ id, complete, claimed, ready }) => ({ id, complete, claimed, ready })), [
-    { id: 'complete-profile', complete: true, claimed: true, ready: false },
-    { id: 'first-game', complete: false, claimed: false, ready: false },
-  ]);
-  assert.equal(getAchievements({ discoveredGameIds: ['a'] })[1].ready, true);
+test('completed includes collected rewards while ready excludes them and retired tasks', () => {
+  const entries = getAchievements({ attendance: { streak: 4, bestStreak: 4 }, taskClaims: ['login-streak-2', 'daily-check-in', 'complete-profile'] });
+  const collected = entries.find(entry => entry.id === 'login-streak-2');
+  assert.equal(collected.complete, true); assert.equal(collected.claimed, true); assert.equal(collected.ready, false);
+  assert.equal(entries.length, 55);
+  assert.equal(entries.some(entry => ['daily-check-in', 'complete-profile', 'first-game'].includes(entry.id)), false);
+  assert.equal(entries.filter(entry => entry.complete).length, 5);
+  assert.equal(entries.filter(entry => entry.ready).length, 4);
 });
 
 function rewardContext(state, claim) {
@@ -29,7 +30,7 @@ function rewardContext(state, claim) {
 }
 
 test('claim all serializes eligible rewards, ignores stale and duplicate IDs, and blocks duplicate clicks', async () => {
-  const state = { profile: { displayName: 'Alice' }, discoveredGameIds: ['a'], taskClaims: [] };
+  const state = { attendance: { bestStreak: 3, streak: 3 }, taskClaims: [] };
   const calls = [];
   let release;
   const gate = new Promise(resolve => { release = resolve; });
@@ -37,49 +38,50 @@ test('claim all serializes eligible rewards, ignores stale and duplicate IDs, an
     calls.push(id);
     await gate;
     state.taskClaims.push(id);
-    return { ok: true, amount: 500 };
+    return { ok: true, amount: 1500, rewards: { GC: 1500, SC: 15 } };
   });
-  const first = collectAchievements(ctx, ['complete-profile', 'complete-profile', 'daily-check-in', 'unknown', 'first-game']);
+  const first = collectAchievements(ctx, ['login-streak-2', 'login-streak-2', 'daily-check-in', 'unknown', 'login-streak-3']);
   assert.equal(ctx.ui.achievementsCollecting, true);
-  assert.deepEqual(await collectAchievements(ctx, ['first-game']), { count: 0, amount: 0 });
+  assert.deepEqual(await collectAchievements(ctx, ['login-streak-3']), { count: 0, amount: 0 });
   release();
-  assert.deepEqual(await first, { count: 2, amount: 1000, reason: '' });
-  assert.deepEqual(calls, ['complete-profile', 'first-game']);
+  assert.deepEqual(await first, { count: 2, amount: 3000, rewards: { GC: 3000, SC: 30 }, reason: '' });
+  assert.deepEqual(calls, ['login-streak-2', 'login-streak-3']);
   assert.equal(ctx.ui.achievementsCollecting, false);
-  assert.match(ctx.notices[0], /1,000 GC collected/);
-  await collectAchievements(ctx, ['complete-profile', 'first-game']);
+  assert.match(ctx.notices[0], /3,000 GC \+ 0.3 SC collected/);
+  await collectAchievements(ctx, ['login-streak-2', 'login-streak-3']);
   assert.equal(calls.length, 2, 'collected rewards cannot be submitted again');
 });
 
 test('claim all preserves a partial success, reports a failure, and can be retried', async () => {
-  const state = { profile: { displayName: 'Alice' }, discoveredGameIds: ['a'], taskClaims: [] };
+  const state = { attendance: { bestStreak: 3, streak: 3 }, taskClaims: [] };
   let fail = true;
   const ctx = rewardContext(state, async id => {
-    if (id === 'first-game' && fail) throw new Error('Storage unavailable');
+    if (id === 'login-streak-3' && fail) throw new Error('Storage unavailable');
     state.taskClaims.push(id);
-    return { ok: true, amount: 500 };
+    return { ok: true, amount: 1500, rewards: { GC: 1500, SC: 15 } };
   });
-  const result = await collectAchievements(ctx, ['complete-profile', 'first-game']);
-  assert.equal(result.amount, 500);
-  assert.match(ctx.notices[0], /500 GC collected.*could not be collected/);
+  const result = await collectAchievements(ctx, ['login-streak-2', 'login-streak-3']);
+  assert.equal(result.amount, 1500); assert.equal(result.rewards.SC, 15);
+  assert.match(ctx.notices[0], /1,500 GC \+ 0.15 SC collected.*could not be collected/);
   assert.equal(ctx.ui.achievementsCollecting, false);
   fail = false;
-  assert.equal((await collectAchievements(ctx, ['complete-profile', 'first-game'])).amount, 500);
-  assert.deepEqual(state.taskClaims, ['complete-profile', 'first-game']);
+  assert.equal((await collectAchievements(ctx, ['login-streak-2', 'login-streak-3'])).amount, 1500);
+  assert.deepEqual(state.taskClaims, ['login-streak-2', 'login-streak-3']);
 });
 
-test('mission eligibility comes from local profile and game activity', () => {
+test('the replacement catalog uses registration, verification, consecutive days and verified play totals', () => {
   const state = { profile: { displayName: 'Loop Player' }, daily: { totalClaims: 0 }, history: [] };
   assert.equal(taskComplete('complete-profile', state), false);
   assert.equal(taskComplete('first-game', state), false);
   assert.equal(taskComplete('daily-check-in', state), false);
   assert.equal(taskComplete('unknown', state), false);
-  assert.equal(taskComplete('complete-profile', { profile: { displayName: 'Alex' } }), true);
-  assert.equal(taskComplete('first-game', { history: [{ type: 'game' }] }), true);
-  assert.equal(taskComplete('first-game', { discoveredGameIds: ['a'], history: [] }), true);
+  assert.equal(taskComplete('complete-profile', { profile: { displayName: 'Alex' } }), false);
+  assert.equal(taskComplete('first-game', { history: [{ type: 'game' }] }), false);
+  assert.equal(taskComplete('welcome-member', { attendance: { bestStreak: 1 } }), true);
+  assert.equal(taskComplete('verify-phone', { achievementStats: { phoneVerified: true } }), true);
   assert.equal(taskComplete('daily-check-in', { daily: { totalClaims: 1 } }), false);
-  assert.deepEqual(DEMO_TASKS.map(item => [item.id, item.amount]), [
-    ['complete-profile', 500], ['first-game', 500],
+  assert.deepEqual(DEMO_TASKS.slice(0, 2).map(item => [item.id, item.rewards]), [
+    ['limit-breaker-1', { GC: 2500, SC: 25 }], ['limit-breaker-2', { GC: 7500, SC: 75 }],
   ]);
   assert.ok(Object.isFrozen(DEMO_TASKS) && DEMO_TASKS.every(Object.isFrozen));
 });

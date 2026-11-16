@@ -1,6 +1,6 @@
 export const CURRENCIES = Object.freeze({
-  GC: Object.freeze({ name: 'Gold Coins', decimals: 0, initial: 125000, credit: 1000 }),
-  SC: Object.freeze({ name: 'Super Coins', decimals: 2, initial: 1500, credit: 1000 }),
+  GC: Object.freeze({ name: 'Gold Coins', decimals: 0, initial: 0, credit: 1000 }),
+  SC: Object.freeze({ name: 'Super Coins', decimals: 2, initial: 0, credit: 1000 }),
 });
 
 const MAX_BALANCE = 999999999;

@@ -18,12 +18,8 @@ const types = new Map(Object.entries({
   '.woff2': 'font/woff2',
 }));
 
-export function createAppServer() {
+export function createAppServer({ accountApi = null } = {}) {
   return http.createServer(async (request, response) => {
-    if (!['GET', 'HEAD'].includes(request.method)) {
-      response.writeHead(405, { Allow: 'GET, HEAD' }).end();
-      return;
-    }
     let url, pathname;
     try {
       url = new URL(request.url, 'http://localhost');
@@ -31,6 +27,14 @@ export function createAppServer() {
     } catch {
       response.writeHead(400).end('Invalid path');
       return;
+    }
+    if (accountApi && await accountApi.handle(request, response, pathname)) return;
+    if (!['GET', 'HEAD'].includes(request.method)) {
+      response.writeHead(405, { Allow: 'GET, HEAD' }).end(); return;
+    }
+    if (accountApi && pathname === `${basePath}account-config.js`) {
+      response.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+      response.end(request.method === 'HEAD' ? undefined : 'export const SERVER_ACCOUNT = true;'); return;
     }
     if (pathname === '/favicon.ico') { response.writeHead(204).end(); return; }
     const redirect = destination => response.writeHead(308, {

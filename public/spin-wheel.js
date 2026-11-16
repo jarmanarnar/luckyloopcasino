@@ -1,5 +1,8 @@
 import { SPIN_PRIZES, SPIN_DURATION, spinStatus, spinCountdown, spinClockParts, spinLanding, spinProgress } from './spin-wheel-state.js';
 import { createUiIcon } from './ui-icons.js';
+import { createWalletCounter } from './wallet-counter.js';
+import { CURRENCIES, formatBalance } from './wallet-state.js';
+import { initWalletMenu } from './wallet-menu.js';
 
 const coinPath = currency => `assets/coins/${currency === 'GC' ? 'gold' : 'super'}-coin-front.png`;
 const node = (tag, className, text) => {
@@ -114,10 +117,18 @@ export function initSpinWheel({ account, auth, router }) {
   intro.append(node('h2', '', 'Make it your lucky day.'));
   const { dial, rotor, pointer } = createDial();
   const stage = node('div', 'spin-wheel__stage'); stage.append(dial);
+  const actions = node('div', 'spin-wheel__actions');
+  const statusRow = node('div', 'spin-wheel__status');
   const availability = node('p', 'spin-wheel__availability');
+  const cooldown = node('div', 'spin-wheel__cooldown'); cooldown.hidden = true;
+  const countdown = node('span', 'spin-wheel__next-time');
+  countdown.id = 'spin-wheel-next-time'; countdown.setAttribute('role', 'timer'); countdown.setAttribute('aria-live', 'off');
+  cooldown.append(node('span', 'spin-wheel__next-label', 'Next free spin in'), countdown);
+  statusRow.append(availability, cooldown);
   const spin = node('button', 'spin-wheel__spin', 'Spin & Win'); spin.type = 'button'; spin.id = 'spin-wheel-start';
   const message = node('p', 'spin-wheel__message'); message.setAttribute('role', 'status');
-  wheelView.append(intro, stage, availability, spin, message);
+  actions.append(statusRow, spin, message);
+  wheelView.append(intro, stage, actions);
   const prizeView = node('section', 'spin-wheel__prizes');
   prizeView.hidden = true;
   prizeView.append(node('h3', '', 'Something good in every spin.'), node('p', 'spin-wheel__note', '8 demo prizes. Each has a 1 in 8 chance.'));
@@ -139,6 +150,42 @@ export function initSpinWheel({ account, auth, router }) {
   const winClose = node('button', 'dialog-close icon-button spin-win__close');
   winClose.type = 'button'; winClose.setAttribute('aria-label', 'Close reward and return to wheel');
   winClose.append(createUiIcon('close'));
+  const winWalletArea = node('div', 'header-wallet-controls spin-win__wallet-area');
+  const winWallet = node('button', 'wallet-switch wallet-balance-trigger spin-win__wallet');
+  winWallet.type = 'button';
+  winWallet.setAttribute('aria-haspopup', 'dialog');
+  winWallet.setAttribute('aria-expanded', 'false');
+  winWallet.setAttribute('aria-controls', 'spin-win-wallet-menu');
+  const winWalletCoin = node('img', 'coin-art');
+  winWalletCoin.alt = ''; winWalletCoin.width = winWalletCoin.height = 24;
+  const winWalletValue = node('strong', 'wallet-balance-value');
+  winWalletValue.id = 'spin-win-wallet-value';
+  winWalletValue.setAttribute('aria-hidden', 'true');
+  const winWalletCopy = node('span', 'wallet-balance-copy');
+  winWalletCopy.dir = 'ltr'; winWalletCopy.setAttribute('aria-hidden', 'true');
+  winWalletCopy.append(winWalletValue);
+  const winWalletChevron = createUiIcon('down'); winWalletChevron.classList.add('wallet-chevron');
+  winWallet.append(winWalletCoin, winWalletCopy, winWalletChevron);
+  const winWalletPanel = node('section', 'wallet-currency-menu');
+  winWalletPanel.id = 'spin-win-wallet-menu'; winWalletPanel.hidden = true;
+  winWalletPanel.setAttribute('role', 'dialog'); winWalletPanel.setAttribute('aria-label', 'Wallet currencies');
+  const winWalletOptions = new Map(Object.keys(CURRENCIES).map(code => {
+    const row = node('div', 'wallet-currency-row');
+    const button = node('button', 'wallet-currency-option');
+    button.type = 'button'; button.id = `spin-win-wallet-select-${code}`;
+    const coin = node('img'); coin.src = coinPath(code); coin.alt = ''; coin.width = coin.height = 18;
+    const name = node('span', 'wallet-currency-name');
+    const amount = node('strong', 'wallet-currency-amount');
+    button.append(coin, name, amount); row.append(button); winWalletPanel.append(row);
+    return [code, { row, button, name, amount }];
+  }));
+  const winWalletHide = node('button', 'wallet-hide-balance');
+  winWalletHide.type = 'button'; winWalletHide.setAttribute('role', 'switch');
+  const winWalletHideSwitch = node('span', 'wallet-setting-switch'); winWalletHideSwitch.setAttribute('aria-hidden', 'true');
+  winWalletHide.append(node('span', '', 'Hide Balance'), winWalletHideSwitch);
+  const winWalletFeedback = node('p', 'wallet-menu-status'); winWalletFeedback.setAttribute('role', 'status');
+  winWalletPanel.append(winWalletHide, winWalletFeedback);
+  winWalletArea.append(winWallet, winWalletPanel);
   const resultView = node('section', 'spin-wheel__result');
   resultView.append(node('span', 'spin-wheel__eyebrow', 'LOOKS GOOD ON YOU'));
   const resultHeading = node('h2', '', 'You won!'); resultHeading.id = 'spin-win-title';
@@ -158,10 +205,10 @@ export function initSpinWheel({ account, auth, router }) {
   const resultAmount = node('strong', 'spin-wheel__result-amount');
   const resultCurrency = node('p', 'spin-wheel__result-currency');
   resultAmount.id = 'spin-win-amount'; resultCurrency.id = 'spin-win-currency';
-  const resultStatus = node('p', 'spin-wheel__result-status', 'Added to your demo balance'); resultStatus.setAttribute('role', 'status');
+  const resultStatus = node('p', 'spin-wheel__result-status', 'Added to your balance'); resultStatus.setAttribute('role', 'status');
   const done = node('button', 'spin-wheel__spin', 'Back to wheel'); done.type = 'button';
   resultView.append(resultHeading, resultArt, resultAmount, resultCurrency, resultStatus, done);
-  winDialog.append(winClose, resultView);
+  winDialog.append(winWalletArea, winClose, resultView);
   body.append(wheelView, prizeView);
   dialog.append(controls, body); document.body.append(dialog);
   document.body.append(winDialog);
@@ -188,22 +235,31 @@ export function initSpinWheel({ account, auth, router }) {
   // Rewards uses the same compact list pattern as the other reward entries.
   // Only its action opens the wheel; the promotional banner belongs in the menu.
   const rewardsHost = document.querySelector('#rewards-popover');
-  let rewardsList, rewardsAction, rewardsDescription;
+  let rewardsList, rewardsAction, rewardsDescription, rewardsWaiting, rewardsNextTime;
   if (rewardsHost) {
     rewardsList = node('ul', 'rewards-popover__list rewards-popover__wheel');
     const row = node('li', 'reward-preview reward-preview--wheel');
     const artwork = createDial(true).dial;
     artwork.classList.add('reward-preview__wheel');
     const copy = node('div', 'reward-preview__copy');
-    rewardsDescription = node('span', 'reward-preview__status', 'Your daily free spin');
+    rewardsDescription = node('span', 'reward-preview__status', 'Wheel of Fortune');
     rewardsDescription.id = 'rewards-spin-description';
-    copy.append(node('strong', '', 'Spin & Win'), rewardsDescription);
+    copy.append(node('strong', '', 'Spin & Win Now!'), rewardsDescription);
     rewardsAction = node('button', 'reward-preview__action reward-preview__spin', 'Spin & Win');
     rewardsAction.type = 'button'; rewardsAction.id = 'rewards-spin-wheel';
     rewardsAction.setAttribute('aria-haspopup', 'dialog');
     rewardsAction.setAttribute('aria-controls', dialog.id);
     rewardsAction.setAttribute('aria-describedby', rewardsDescription.id);
-    row.append(artwork, copy, rewardsAction);
+    rewardsWaiting = node('div', 'reward-preview__waiting');
+    rewardsWaiting.id = 'rewards-spin-waiting';
+    rewardsWaiting.setAttribute('role', 'timer');
+    rewardsWaiting.setAttribute('aria-live', 'off');
+    rewardsNextTime = node('strong', 'reward-preview__countdown');
+    rewardsNextTime.id = 'rewards-spin-next-time';
+    rewardsWaiting.append(node('span', 'reward-preview__waiting-label', 'Available In'), rewardsNextTime);
+    const rewardControl = node('div', 'reward-preview__wheel-control');
+    rewardControl.append(rewardsAction, rewardsWaiting);
+    row.append(artwork, copy, rewardControl);
     rewardsList.append(row);
     rewardsHost.querySelector('header').after(rewardsList);
     launchers.push(rewardsAction);
@@ -213,15 +269,56 @@ export function initSpinWheel({ account, auth, router }) {
   let sound = false, audio = null, ticking = 0, spinFrom = 0, spinTo = 0, tickSegment = 0, pointerAnimation = null;
   const spinDuration = SPIN_DURATION;
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || account.getMemberState().settings.reducedMotion;
+  let winWalletCode = null, winWalletPlayer = null, winWalletTarget = null;
+  const winWalletCounter = createWalletCounter({
+    duration: 1300,
+    onFrame(text) {
+      winWalletValue.textContent = account.getMemberState().settings.hideBalance ? '••••••' : text;
+    },
+  });
+  const winWalletMenu = initWalletMenu({ account, router, document,
+    elements: { shell: winWalletArea, panel: winWalletPanel, trigger: winWallet, coin: winWalletCoin,
+      hide: winWalletHide, feedback: winWalletFeedback, options: winWalletOptions },
+    getCurrency: () => winWalletCode ?? account.getSnapshot().wallet.currency,
+    inPlay: () => false,
+    selectCurrency(code) {
+      if (code !== winWalletCode) { winWalletCode = code; updateWinWallet(0); }
+      return true;
+    },
+  });
+  winWallet.addEventListener('click', () => winWalletMenu.toggle());
+  function updateWinWallet(from) {
+    if (!winDialog.open || !winWalletCode) return;
+    const snapshot = account.getSnapshot();
+    if (!account.isSignedIn() || snapshot.playerId !== winWalletPlayer) { closeAll(); return; }
+    const hidden = account.getMemberState().settings.hideBalance;
+    const target = snapshot.wallet.balances[winWalletCode];
+    const formatter = units => formatBalance(winWalletCode, Math.round(units));
+    winWalletMenu.render();
+    if (hidden || reduced() || document.hidden) winWalletCounter.immediate(target, formatter);
+    else if (from !== undefined || target !== winWalletTarget) {
+      if (from !== undefined) winWalletCounter.immediate(from, formatter);
+      winWalletCounter.animateTo(target, formatter);
+    } else if (winWalletValue.textContent === '••••••') winWalletCounter.immediate(target, formatter);
+    winWalletTarget = target;
+  }
   function update() {
     const status = spinStatus(account.getSnapshot());
     const availableLabel = `${status.spinsAvailable} free ${status.spinsAvailable === 1 ? 'spin' : 'spins'}`;
     const label = `${availableLabel} available. Next free spin in ${spinCountdown(status.remaining)}`;
     launcherClocks.forEach(item => item.update(status.remaining));
     if (launcherBadge) launcherBadge.hidden = status.available;
-    launchers.forEach(element => { element.setAttribute('aria-label', `Spin & Win. ${label}`); element.dataset.ready = String(status.available); });
-    if (rewardsList) rewardsList.hidden = !account.isSignedIn() || !status.available;
-    if (rewardsDescription) rewardsDescription.textContent = status.spinsAvailable > 1 ? `${availableLabel} available` : 'Your daily free spin';
+    launchers.forEach(element => { element.hidden = !account.isSignedIn(); element.setAttribute('aria-label', `Spin & Win. ${label}`); element.dataset.ready = String(status.available); });
+    if (rewardsList) rewardsList.hidden = !account.isSignedIn();
+    if (rewardsDescription) rewardsDescription.textContent = status.spinsAvailable > 1 ? `${availableLabel} available` : 'Wheel of Fortune';
+    if (rewardsAction) {
+      rewardsAction.hidden = !account.isSignedIn() || !status.available;
+      rewardsAction.disabled = !status.available || spinning;
+      rewardsWaiting.hidden = status.available;
+      const nextTime = spinClockParts(status.remaining).join(':');
+      if (rewardsNextTime.textContent !== nextTime) rewardsNextTime.textContent = nextTime;
+      rewardsWaiting.setAttribute('aria-label', `Next free spin in ${spinCountdown(status.remaining)}`);
+    }
     if (spinning) return;
     const lastIndex = SPIN_PRIZES.findIndex(prize => prize.id === status.last?.sourceId);
     if (lastIndex >= 0) {
@@ -231,6 +328,10 @@ export function initSpinWheel({ account, auth, router }) {
     availability.textContent = status.available ? `${status.spinsAvailable} ${status.spinsAvailable === 1 ? 'spin' : 'spins'} left` : 'No spins left';
     availability.setAttribute('aria-label', status.available ? `${availableLabel} available` : `No spins left. Next free spin in ${spinCountdown(status.remaining)}`);
     availability.dataset.ready = String(status.available);
+    actions.dataset.state = status.available ? 'ready' : 'waiting';
+    cooldown.hidden = status.available;
+    const nextSpin = spinCountdown(status.remaining);
+    if (countdown.textContent !== nextSpin) countdown.textContent = nextSpin;
     spin.disabled = !status.available;
     spin.textContent = 'Spin & Win';
   }
@@ -242,14 +343,22 @@ export function initSpinWheel({ account, auth, router }) {
     body.scrollTop = 0;
     update();
   }
-  function showResult(prize) {
+  function showResult(prize, transactionId) {
     if (!dialog.open || winDialog.open) return;
     resultView.dataset.currency = prize.currency;
     resultCoin.src = coinPath(prize.currency);
     resultAmount.textContent = new Intl.NumberFormat('en-US').format(prize.amount / (prize.currency === 'SC' ? 100 : 1));
     resultCurrency.textContent = prize.name;
+    const snapshot = account.getSnapshot();
+    const credited = snapshot.ledger.find(entry => entry.id === transactionId && entry.currency === prize.currency);
+    const from = credited ? credited.balanceAfterUnits - credited.amountUnits
+      : Math.max(0, snapshot.wallet.balances[prize.currency] - prize.amount);
+    winWalletCode = prize.currency;
+    winWalletPlayer = snapshot.playerId;
+    winWalletTarget = null;
     view('wheel');
     winDialog.showModal();
+    updateWinWallet(from);
     done.focus({ preventScroll: true });
   }
   function tone(frequency = 700, duration = .035, volume = .025) {
@@ -281,6 +390,7 @@ export function initSpinWheel({ account, auth, router }) {
     const session = dialogSession, playerId = account.getSnapshot().playerId;
     const stillOpen = () => dialog.open && dialogSession === session && account.isSignedIn() && account.getSnapshot().playerId === playerId;
     spinning = true; spin.disabled = true; prizesButton.disabled = true;
+    actions.dataset.state = 'spinning'; cooldown.hidden = true;
     spin.textContent = 'Spinning…'; availability.textContent = 'A little luck is on its way'; message.textContent = '';
     availability.setAttribute('aria-label', 'Spinning the wheel'); availability.dataset.ready = 'false';
     dialog.dataset.spinning = 'true';
@@ -310,7 +420,7 @@ export function initSpinWheel({ account, auth, router }) {
         if (!reduced()) await new Promise(resolve => setTimeout(resolve, 220));
       }
       spinning = false;
-      if (stillOpen()) showResult(prize);
+      if (stillOpen()) showResult(prize, result.transactionId);
     } catch { message.textContent = 'We could not save your spin. Please try again.'; }
     finally { spinning = false; delete dialog.dataset.spinning; prizesButton.disabled = false; stopTicks(); update(); }
   });
@@ -330,6 +440,10 @@ export function initSpinWheel({ account, auth, router }) {
   winClose.addEventListener('click', () => winDialog.close());
   winDialog.addEventListener('click', event => { if (event.target === winDialog) winDialog.close(); });
   winDialog.addEventListener('close', () => {
+    if (winDialog.open) return;
+    winWalletMenu.close();
+    winWalletCounter.cancel();
+    winWalletCode = winWalletPlayer = winWalletTarget = null;
     if (!dialog.open) return;
     view('wheel');
     (spin.disabled ? close : spin).focus({ preventScroll: true });
@@ -360,15 +474,16 @@ export function initSpinWheel({ account, auth, router }) {
     openSpinWheel({ returnFocusTo: document.querySelector('#header-rewards') });
   });
   function closeAll() {
+    winWalletCounter.cancel();
     if (winDialog.open) winDialog.close();
     if (dialog.open) dialog.close();
   }
   router.subscribe(closeAll);
-  account.subscribe(() => { if (!account.isSignedIn()) closeAll(); update(); });
+  account.subscribe(() => { if (!account.isSignedIn()) closeAll(); else updateWinWallet(); update(); });
   document.addEventListener('visibilitychange', () => {
     document.body.classList.toggle('spin-motion-paused', document.hidden);
-    if (!document.hidden) { update(); if (spinning && !reduced()) tick(); }
-    else stopTicks();
+    if (!document.hidden) { update(); updateWinWallet(); if (spinning && !reduced()) tick(); }
+    else { stopTicks(); if (winDialog.open) winWalletCounter.finish(); }
   });
   setInterval(() => { if (!document.hidden) update(); }, 1000);
   update(); view('wheel');

@@ -19,7 +19,9 @@
   /* Action colors; currency colors never change the application theme. */
   --primary-accent: #ffffff;
   --redeem-accent: #4da3ff;
-  --button-accent: #d9dee7;
+  --button-accent: #c5c8cc;
+  --achievement-silver: #c9cdd4;
+  --achievement-edge: #606670;
   --rewards-glow-start: #22c55e;
   --rewards-glow-end: #eab308;
   --buy-button-gradient-bottom: #ff0000;
@@ -55,14 +57,19 @@
   --gold-accent: var(--coin-gold);
 }
 
-/* Recompute every shade on the shared button; variants change only its accent. */
+/* Filled silver actions: a soft reflection and a shallow edge, without a chrome frame. */
 :root, .primary-button {
-  --primary-button-border: var(--primary-button-edge);
-  --primary-button-top: color-mix(in srgb, var(--button-accent) 88%, var(--text-primary));
-  --primary-button-bottom: color-mix(in srgb, var(--button-accent) 92%, var(--surface-page));
-  --primary-button-edge: color-mix(in srgb, var(--button-accent) 55%, var(--surface-page));
-  --primary-button-ink: #071018;
-  --primary-button-surface: radial-gradient(ellipse at 80% 0%, color-mix(in srgb, var(--redeem-button-gradient-bottom) 12%, transparent), transparent 70%), linear-gradient(155deg, var(--primary-button-top), var(--button-accent) 55%, var(--primary-button-bottom));
-  --primary-button-shadow: inset 0 1px 0 rgb(255 255 255 / 26%), 0 2px 0 var(--primary-button-edge), 0 6px 14px rgb(0 0 0 / 20%);
-  --primary-button-pressed-shadow: inset 0 1px 2px rgb(0 0 0 / 16%), 0 2px 6px rgb(0 0 0 / 16%);
+  --primary-button-border: #c0c4ca;
+  --primary-button-top: color-mix(in srgb, var(--button-accent) 22%, var(--text-primary));
+  --primary-button-bottom: color-mix(in srgb, var(--button-accent) 78%, var(--surface-page));
+  --primary-button-edge: color-mix(in srgb, var(--button-accent) 62%, var(--surface-page));
+  --primary-button-ink: #17191d;
+  --primary-button-surface: linear-gradient(115deg, #bcc1c9 0%, #e3e6eb 22%, #c9cdd4 45%, #eef0f3 67%, #c6cbd2 100%);
+  --primary-button-shadow: inset 0 1px 0 rgb(255 255 255 / 65%), inset 0 -1px 0 rgb(79 85 95 / 16%), 0 1px 2px rgb(0 0 0 / 24%);
+  --primary-button-pressed-shadow: inset 0 1px 2px rgb(40 45 53 / 22%);
+}
+:root {
+  --secondary-button-surface: #17191d;
+  --secondary-button-border: #34373e;
+  --secondary-button-hover: #22252b;
 }
