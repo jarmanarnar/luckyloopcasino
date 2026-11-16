@@ -41,7 +41,7 @@ export function initCommunityChat({ account, auth }) {
   const replyPreview = $('.chat-reply-preview'), emojiPicker = $('.chat-emoji'), emojiButton = $('[aria-label="Choose emoji"]');
   const sheet = $('.chat-sheet'), sheetBody = $('.chat-sheet__body');
   const desktop = matchMedia('(min-width: 75rem)');
-  const storageKey = 'luckyloop-chat-v1:' + account.getSnapshot().playerId;
+  let storageKey = 'luckyloop-chat-v1:' + account.getSnapshot().playerId;
   let storage; try { storage = localStorage; } catch { /* In-memory preview still works. */ }
   let messages = [], room = 'general', reply = null;
   let opened = false, opener = null, lastSent = 0, closeTimer = null;
@@ -122,6 +122,12 @@ export function initCommunityChat({ account, auth }) {
     input.style.height = 'auto'; input.style.height = Math.min(88, Math.max(38, input.scrollHeight)) + 'px';
   }
   function syncAccount() {
+    const nextKey = 'luckyloop-chat-v1:' + account.getSnapshot().playerId;
+    if (nextKey !== storageKey) {
+      storageKey = nextKey;
+      load(); input.value = ''; clearReply(); lastSent = 0;
+      feed.replaceChildren();
+    }
     const signed = account.isSignedIn();
     form.hidden = !signed; $('#chat-count').hidden = !signed;
     if (!signed) {

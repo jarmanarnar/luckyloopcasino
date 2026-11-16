@@ -119,6 +119,13 @@ textarea.feature-input { resize: vertical; }
 .settings-panel > .feature-button:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.04); }
 .settings-panel > .feature-button:disabled { background: var(--surface-subtle); border-color: var(--border-default); box-shadow: none; color: var(--text-secondary); }
 .feature-view:has(.settings-panel) .feature-status { border: 1px solid var(--border-default); border-radius: .75rem; background: var(--surface-glow); box-shadow: 0 .5rem 1.5rem var(--shadow-color); font-size: .875rem; }
+.settings-account { border: 1px solid var(--border-default); border-radius: 1.25rem; background: var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle); }
+.settings-account .feature-button { border: 1px solid var(--border-default); border-radius: .625rem; background: var(--surface-subtle); }
+.settings-account .settings-account__delete { color: var(--text-error); border-color: color-mix(in srgb, var(--text-error) 25%, transparent); }
+.settings-account .feature-button:hover:not(:disabled) { background: var(--surface-control); }
+.settings-account__confirmation { padding-top: 1rem; border-top: 1px solid var(--border-default); }
+.settings-account__error { margin: 0; color: var(--text-error); font-size: .875rem; font-weight: 400; }
+.settings-account__error:empty { display: none; }
 /* Keep the lighter, larger type scoped to Settings; shared feature pages retain their own scale. */
 .feature-view:has(.settings-panel) .feature-header h1 { font-size: 1.375rem; font-weight: 600; }
 :is(.settings-panel, .settings-account) .feature-section-title { font-size: 1.125rem; font-weight: 500; }

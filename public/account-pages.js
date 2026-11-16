@@ -125,7 +125,36 @@ function settings(ctx) {
     try { if (await ctx.saveSettings(patch)) ctx.notify('Preferences saved.'); }
     finally { save.disabled = false; }
   });
-  return form;
+  const root = ctx.node('div', 'feature-stack');
+  const accountCard = card(ctx, 'Demo account', 'Delete this browser’s demo account to start fresh and test with a new account.');
+  accountCard.classList.add('settings-account');
+  const playerId = ctx.state().playerId;
+  const confirmation = ctx.node('div', 'feature-stack settings-account__confirmation');
+  confirmation.id = 'delete-account-confirmation'; confirmation.hidden = true;
+  confirmation.append(ctx.node('p', 'feature-muted', 'This removes your profile, demo balances, rewards, spin history and saved activity from this browser. You can sign up again immediately.'));
+  const actions = ctx.node('div', 'feature-actions');
+  const error = ctx.node('p', 'settings-account__error'); error.setAttribute('role', 'status');
+  const remove = button(ctx, 'Delete demo account', () => {
+    remove.hidden = true; confirmation.hidden = false; cancel.focus();
+  }, 'feature-button settings-account__delete');
+  remove.id = 'delete-demo-account'; remove.setAttribute('aria-controls', confirmation.id);
+  const cancel = button(ctx, 'Cancel', () => {
+    confirmation.hidden = true; remove.hidden = false; error.textContent = ''; remove.focus();
+  });
+  const confirm = button(ctx, 'Delete account', async () => {
+    if (confirm.disabled) return;
+    confirm.disabled = cancel.disabled = true; error.textContent = '';
+    confirm.textContent = 'Deleting…';
+    try {
+      const result = await ctx.deleteDemoAccount(playerId);
+      if (!result.ok) error.textContent = result.reason;
+    } catch { error.textContent = 'Your account could not be deleted. Please try again.'; }
+    finally { confirm.disabled = cancel.disabled = false; confirm.textContent = 'Delete account'; }
+  }, 'feature-button settings-account__delete');
+  confirm.id = 'confirm-delete-demo-account';
+  actions.append(cancel, confirm); confirmation.append(actions, error);
+  accountCard.append(remove, confirmation); root.append(form, accountCard);
+  return root;
 }
 
 const FAQs = [

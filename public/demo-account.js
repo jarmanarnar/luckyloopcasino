@@ -42,12 +42,22 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
   scope?.addEventListener('focus', refreshQuietly);
   scope?.addEventListener('pageshow', refreshQuietly);
   scope?.document?.addEventListener('visibilitychange', onVisibility);
-  async function command(action) {
+  async function command(action, expectedPlayerId = snapshot.playerId) {
     const outcome = await store.transact(account => {
+      // A tab or pending request belonging to a deleted account cannot edit
+      // the replacement account, even if it has already been registered.
+      if (account.playerId !== expectedPlayerId) {
+        return { account, result: { ok: false, reason: 'Your demo account changed. Please try again.' } };
+      }
       if (['claim-daily', 'claim-task', 'profile', 'settings', 'favorite', 'game-visit', 'notifications-read'].includes(action.type)
         && !account.auth?.signedIn) return { account, result: { ok: false, amount: 0, reason: 'Log in to use your account.' } };
       return applyAccountCommand(account, action);
     });
+    if (action.type === 'delete-account' && outcome.result.ok) {
+      for (const key of [...WALLET_KEYS, MEMBER_STORAGE_KEY, `luckyloop-chat-v1:${expectedPlayerId}`]) {
+        try { storage?.removeItem?.(key); } catch { /* The committed fresh account remains authoritative. */ }
+      }
+    }
     adopt(outcome.account);
     // Notification is only a hint. Receivers read the committed database state.
     try {
@@ -64,11 +74,12 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
     },
     isSignedIn: () => snapshot.auth?.signedIn === true,
     async register({ email, password, accepted } = {}) {
+      const playerId = snapshot.playerId;
       email = normalizeDemoEmail(email);
       if (!validDemoEmail(email)) return { ok: false, reason: 'Enter a valid email address.' };
       if (typeof password !== 'string' || password.length < 8 || password.length > 256) return { ok: false, reason: 'Use a password with 8–256 characters.' };
       if (accepted !== true) return { ok: false, reason: 'Please confirm the terms to continue.' };
-      return command({ type: 'register', email, credential: await createDemoCredential(password) });
+      return command({ type: 'register', email, credential: await createDemoCredential(password) }, playerId);
     },
     async login({ email, password } = {}) {
       const saved = await store.read();
@@ -77,9 +88,10 @@ export async function openDemoAccount({ indexedDB = globalThis.indexedDB, storag
         || !await matchesDemoCredential(password, saved.auth?.credential)) {
         return { ok: false, reason: 'Email or password does not match this account.' };
       }
-      return command({ type: 'login', email, credential: saved.auth.credential });
+      return command({ type: 'login', email, credential: saved.auth.credential }, saved.playerId);
     },
     logout: () => command({ type: 'logout' }),
+    deleteAccount: playerId => command({ type: 'delete-account' }, playerId),
     // Explicit local-demo recovery; this is not a Google identity verification.
     resumeDemo: () => command({ type: 'resume-demo' }),
     getMemberState: () => accountMemberState(snapshot),

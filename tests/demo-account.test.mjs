@@ -5,11 +5,97 @@ import { createDemoAccount, applyAccountCommand, accountMemberState } from '../p
 import { openAccountStore } from '../public/demo-account-store.js';
 import { openDemoAccount } from '../public/demo-account.js';
 import { MEMBER_STORAGE_KEY } from '../public/member-state.js';
+import { spinStatus } from '../public/spin-wheel-state.js';
 
 const now = new Date(2026, 10, 1, 12);
 const create = () => createDemoAccount({}, { now, playerId: 'demo-test' });
 const command = (store, action, date = now) => store.transact(account => applyAccountCommand(account, action, date));
 const options = indexedDB => ({ indexedDB, create });
+
+test('deleting a demo account clears its data and allows a new registration with a fresh spin', async () => {
+  const indexedDB = new IDBFactory(), values = new Map();
+  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+  const config = { indexedDB, storage, scope: undefined, catalogIds: ['alpha'] };
+  const account = await openDemoAccount(config);
+  let reopened;
+  try {
+    await account.register({ email: 'before@example.test', password: 'BeforeDemo37!', accepted: true });
+    await account.saveProfile({ displayName: 'Deleted Player', avatar: '★' });
+    await account.saveSettings({ reducedMotion: true, hideBalance: true });
+    await account.toggleFavorite('alpha');
+    await account.recordGameVisit({ id: 'alpha', title: 'Alpha' });
+    await account.markNotificationsRead(['platform:welcome']);
+    await account.spinWheel();
+    const previous = account.getSnapshot();
+    assert.equal(spinStatus(previous).available, false);
+    values.set(MEMBER_STORAGE_KEY, JSON.stringify(previous.member));
+    values.set('luckyloopcasino-demo-wallet-v1', JSON.stringify(previous.wallet));
+    values.set(`luckyloop-chat-v1:${previous.playerId}`, '{"messages":[]}');
+    values.set('unrelated-setting', 'keep');
+    let notified = 0;
+    account.subscribe(() => notified++);
+    assert.equal((await account.deleteAccount(previous.playerId)).ok, true);
+    const fresh = account.getSnapshot();
+    assert.equal(notified, 1);
+    assert.ok(fresh.revision > previous.revision, 'other tabs must adopt the reset');
+    assert.notEqual(fresh.playerId, previous.playerId);
+    assert.equal(account.isSignedIn(), false);
+    assert.equal(fresh.identity, null);
+    assert.deepEqual(fresh.member, create().member);
+    assert.deepEqual(fresh.wallet, create().wallet);
+    assert.equal(fresh.ledger.length, 2);
+    assert.ok(fresh.ledger.every(item => item.type === 'opening' && item.playerId === fresh.playerId));
+    assert.equal(spinStatus(fresh).available, true);
+    assert.equal(values.has(MEMBER_STORAGE_KEY), false);
+    assert.equal(values.has('luckyloopcasino-demo-wallet-v1'), false);
+    assert.equal(values.has(`luckyloop-chat-v1:${previous.playerId}`), false);
+    assert.equal(values.get('unrelated-setting'), 'keep');
+    assert.equal((await account.login({ email: 'before@example.test', password: 'BeforeDemo37!' })).ok, false);
+    assert.equal((await account.resumeDemo()).ok, false);
+    account.close();
+    reopened = await openDemoAccount(config);
+    assert.equal(reopened.getSnapshot().playerId, fresh.playerId);
+    assert.equal((await reopened.register({ email: 'after@example.test', password: 'AfterDemo37!', accepted: true })).ok, true);
+    assert.equal((await reopened.spinWheel()).ok, true);
+    assert.equal((await reopened.spinWheel()).ok, false, 'the new account still has the normal cooldown');
+  } finally { account.close(); reopened?.close(); }
+});
+
+test('a stale tab cannot delete or edit a replacement account', async () => {
+  const config = { indexedDB: new IDBFactory(), scope: undefined };
+  const first = await openDemoAccount(config);
+  await first.register({ email: 'first@example.test', password: 'FirstDemo37!', accepted: true });
+  const staleDelete = await openDemoAccount(config), staleEdit = await openDemoAccount(config);
+  const oldId = first.getSnapshot().playerId;
+  try {
+    await first.deleteAccount();
+    await first.register({ email: 'second@example.test', password: 'SecondDemo37!', accepted: true });
+    const replacement = first.getSnapshot();
+    assert.equal((await staleDelete.deleteAccount(oldId)).ok, false);
+    assert.equal((await staleEdit.saveProfile({ displayName: 'Stale edit' })).ok, false);
+    await first.refresh();
+    assert.deepEqual(first.getSnapshot(), replacement);
+    assert.equal(staleDelete.getSnapshot().playerId, replacement.playerId, 'rejected stale actions reconcile the tab');
+    assert.equal((await first.deleteAccount(oldId)).ok, false, 'an old confirmation cannot delete a new identity');
+  } finally { first.close(); staleDelete.close(); staleEdit.close(); }
+});
+
+test('deletion rejects guests and non-demo accounts and rolls back on persistence failure', async () => {
+  const guest = create();
+  assert.equal(applyAccountCommand(guest, { type: 'delete-account' }).account, guest);
+  const real = { ...guest, isTest: false, auth: { signedIn: true } };
+  assert.equal(applyAccountCommand(real, { type: 'delete-account' }).account, real);
+  const store = await openAccountStore({ indexedDB: new IDBFactory(), create: () => ({ ...create(), auth: { signedIn: true } }) });
+  try {
+    const original = await store.read();
+    await assert.rejects(store.transact(current => {
+      const outcome = applyAccountCommand(current, { type: 'delete-account' });
+      outcome.account.unsavable = () => {};
+      return outcome;
+    }), { name: 'DataCloneError' });
+    assert.deepEqual(await store.read(), original);
+  } finally { store.close(); }
+});
 function reconcile(account) {
   for (const currency of ['GC', 'SC']) {
     const entries = account.ledger.filter(entry => entry.currency === currency);

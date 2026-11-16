@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#070708">
+  <title>COP COIN — UI Elements</title>
+  <link rel="icon" href="assets/brand/cop-coin-cc.png">
+  <link rel="stylesheet" href="typography.css">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="ui-elements.css">
+  <script src="ui-elements.js" type="module"></script>
+</head>
+<body>
+  <svg class="lab-symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  </svg>
+  <header class="lab-header">
+    <a href="./#/" aria-label="חזרה ללובי COP COIN"><img src="assets/brand/cop-coin-wordmark.png" width="2172" height="724" alt="COP COIN"></a>
+    <span class="lab-edition" dir="ltr">UI STUDY <span>01</span></span>
+  </header>
+  <main class="lab-main">
+    <section class="lab-intro" aria-labelledby="lab-title">
+      <div><p class="lab-eyebrow">דף רכיבים · תצוגה מקומית</p><h1 id="lab-title">נמצא את התחושה שלנו.</h1><p class="lab-lead">כפתורים, שדות וסגירה — אותה משפחה, בכל מצב.</p></div>
+      <a class="lab-back" href="./#/">חזרה לאתר <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <section class="lab-tuning" aria-label="כוונון העיצוב">
+      <label class="lab-tune"><span>פינות <output id="radius-value" for="radius">10</output></span><input id="radius" type="range" min="4" max="20" step="1" value="10" aria-label="עיגול פינות"></label>
+      <label class="lab-tune"><span>גלואו כחול <output id="glow-value" for="glow">12%</output></span><input id="glow" type="range" min="0" max="24" step="1" value="12" aria-label="עוצמת הגלואו הכחול"></label>
+      <label class="lab-tune"><span>עומק לחיצה <output id="depth-value" for="depth">2</output></span><input id="depth" type="range" min="0" max="3" step="1" value="2" aria-label="עומק הלחיצה"></label>
+      <button class="lab-reset" id="reset-tuning" type="button">איפוס</button>
+    </section>
+
+    <section class="lab-section" aria-labelledby="buttons-title">
+      <div class="lab-section-heading"><div><p class="lab-eyebrow" dir="ltr">01 / ACTIONS</p><h2 id="buttons-title">משקל שונה. אותה שפה.</h2></div><p>כסף מעושן לפעולה הראשית. פעולה משנית שקטה יותר.</p></div>
+      <div class="lab-live-strip" dir="ltr" lang="en" aria-label="כפתורים להתנסות">
+        <button class="ui-button ui-button--primary" type="button" data-feedback="הפעולה הראשית נלחצה">Save changes <svg><use href="#icon-arrow"/></svg></button>
+        <button class="ui-button ui-button--secondary" type="button" data-feedback="הפעולה המשנית נלחצה">Cancel</button>
+        <button class="ui-button ui-button--quiet" type="button" data-feedback="פעולת הטקסט נלחצה">View details <svg><use href="#icon-arrow"/></svg></button>
+        <button class="ui-button ui-button--danger" type="button" data-feedback="הדגמת כפתור הסרה — לא נמחק דבר">Remove photo</button>
+        <span class="lab-live-hint" dir="rtl" lang="he">אפשר ללחוץ ולנסות</span>
+      </div>
+      <p class="lab-note">המצבים למטה מוצגים קבועים להשוואה. מיקוד הוא הסימון שמופיע במעבר עם Tab.</p>
+      <div id="button-states" class="lab-states" aria-label="השוואת מצבי כפתורים"></div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="fields-title">
+      <div class="lab-section-heading"><div><p class="lab-eyebrow" dir="ltr">02 / INPUTS</p><h2 id="fields-title">שדות ברורים, בלי רעש.</h2></div><p>אותו קצה עדין בחיפוש, בטופס ובעריכה.</p></div>
+      <div class="lab-field-grid" dir="ltr" lang="en">
+        <div class="lab-field-example"><p class="lab-state-label" lang="he">רגיל · אפשר להקליד</p><label class="ui-field"><span>Search games</span><span class="ui-field-shell"><svg><use href="#icon-search"/></svg><input id="sample-search" type="search" placeholder="Search games" autocomplete="off"></span></label><p class="ui-help">Find your next game.</p></div>
+        <div class="lab-field-example"><p class="lab-state-label" lang="he">מיקוד</p><label class="ui-field"><span>Display name</span><span class="ui-field-shell" data-state="focus"><input type="text" placeholder="Your name" value="Alex" readonly></span></label><p class="ui-help">A clear edge, a quiet background.</p></div>
+        <div class="lab-field-example"><p class="lab-state-label" lang="he">שגיאה</p><label class="ui-field"><span>Display name</span><span class="ui-field-shell" data-state="error"><input type="text" value="A" aria-invalid="true" aria-describedby="sample-error" readonly></span></label><p class="ui-help ui-help--error" id="sample-error">Use at least 2 characters.</p></div>
+        <div class="lab-field-example"><p class="lab-state-label" lang="he">מושבת</p><label class="ui-field"><span>Phone number</span><span class="ui-field-shell" data-state="disabled"><input type="tel" placeholder="Phone number" disabled aria-describedby="sample-disabled"></span></label><p class="ui-help" id="sample-disabled">Phone verification is not available yet.</p></div>
+      </div>
+    </section>
+
+    <section class="lab-section" aria-labelledby="close-title">
+      <div class="lab-section-heading"><div><p class="lab-eyebrow" dir="ltr">03 / CLOSE</p><h2 id="close-title">סגירה אחת, בכל חלון.</h2></div><p>אזור לחיצה נוח, אייקון נקי ואותו אפקט.</p></div>
+      <div id="close-states" class="lab-close-states" aria-label="השוואת מצבי סגירה"></div>
+    </section>
+
+    <section class="lab-section lab-context" aria-labelledby="context-title">
+      <div><p class="lab-eyebrow" dir="ltr">04 / IN CONTEXT</p><h2 id="context-title">איך זה מרגיש יחד?</h2><p class="lab-context-copy">פתחו את החלון, שנו את שם הדוגמה ונסו לשמור. גם טעינה, שגיאה, אישור וסגירה הם חלק מהעיצוב.</p><button class="ui-button ui-button--secondary" id="open-preview" type="button">פתיחת חלון לדוגמה <svg><use href="#icon-arrow"/></svg></button><p class="lab-note">ההתנסות אינה משנה את הפרופיל שלכם.</p></div>
+      <div class="lab-context-card" dir="ltr" lang="en"><div class="lab-context-heading"><div><span class="lab-eyebrow">PROFILE</span><h3>Edit profile</h3></div><button class="ui-close" type="button" data-feedback="זהו כרטיס תצוגה. את הסגירה אפשר לנסות בחלון לדוגמה." aria-label="Preview close button"><svg><use href="#icon-close"/></svg></button></div><label class="ui-field"><span>Display name</span><span class="ui-field-shell"><input type="text" value="Alex" readonly></span></label><div class="lab-context-actions"><button class="ui-button ui-button--secondary" type="button" data-feedback="הדגמת ביטול">Cancel</button><button class="ui-button ui-button--primary" type="button" id="open-preview-save">Save changes</button></div></div>
+    </section>
+    <footer class="lab-footer"><span>COP COIN · UI Elements</span><span>כיוון לבדיקה — לפני יישום בשאר האתר</span></footer>
+  </main>
+
+  <dialog id="preview-dialog" class="lab-dialog" dir="ltr" lang="en" aria-labelledby="preview-title" aria-describedby="preview-description">
+    <div class="lab-context-heading"><div><span class="lab-eyebrow">PROFILE</span><h2 id="preview-title">Edit profile</h2></div><button class="ui-close" type="button" data-close-preview aria-label="Close profile preview"><svg><use href="#icon-close"/></svg></button></div>
+    <p id="preview-description" class="ui-help">Try the controls. Your account stays unchanged.</p>
+    <form id="preview-form" novalidate>
+      <label class="ui-field"><span>Display name</span><span class="ui-field-shell" id="preview-name-shell"><input id="preview-name" type="text" value="Alex" maxlength="24" autocomplete="off" required aria-describedby="preview-name-help"></span></label>
+      <p id="preview-name-help" class="ui-help">2–24 characters.</p>
+      <div class="lab-context-actions"><button class="ui-button ui-button--secondary" type="button" data-close-preview>Cancel</button><button class="ui-button ui-button--primary" id="preview-submit" type="submit">Save changes</button></div>
+      <p class="lab-form-status" id="preview-status" role="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+  <div class="lab-toast" id="lab-feedback" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

@@ -57,6 +57,13 @@ export function applyAccountCommand(current, command, now = new Date()) {
   } else if (command.type === 'logout') {
     if (!current.auth?.signedIn) return unchanged(result);
     next.auth.signedIn = false;
+  } else if (command.type === 'delete-account') {
+    if (current.isTest !== true || !current.auth?.signedIn) {
+      return unchanged(failed('Log in to your demo account to delete it.'));
+    }
+    // Replace all account-owned data atomically, including the credential and
+    // spin ledger. The revision below must keep increasing so open tabs adopt it.
+    next = createDemoAccount({}, { now });
   } else if (command.type === 'claim-daily' || command.type === 'claim-task') {
     const daily = command.type === 'claim-daily';
     const key = daily ? `daily:${calendarKey(now)}` : `task:${command.taskId}`;
@@ -83,7 +90,7 @@ export function applyAccountCommand(current, command, now = new Date()) {
       return unchanged(failed('The demo reward could not be added. Please try again later.'));
     }
     next.wallet.balances[prize.currency] += prize.amount;
-    next.ledger.push(entry(next, { key: `wheel:${at}`, type: 'bonus', source: 'spin-wheel', sourceId: prize.id,
+    next.ledger.push(entry(next, { key: `wheel:${at}:${current.ledger.length}`, type: 'bonus', source: 'spin-wheel', sourceId: prize.id,
       title: 'Spin & Win', currency: prize.currency, amount: prize.amount, at }));
     result = { ok: true, prizeId: prize.id, index: command.index, transactionId: next.ledger.at(-1).id };
   } else if (command.type === 'currency') {

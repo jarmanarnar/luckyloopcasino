@@ -72,6 +72,16 @@ export function initFeatureView({ router, wallet, account, auth, openRedeem, ope
     async saveSettings(settings) {
       return (await save(() => account.saveSettings(settings))).ok;
     },
+    async deleteDemoAccount(playerId) {
+      let result;
+      try { result = await account.deleteAccount(playerId); }
+      catch { return { ok: false, reason: 'Your demo account could not be deleted. Please try again.' }; }
+      if (result.ok) {
+        router.navigate({ type: 'home' }, { replace: true });
+        auth?.open('register');
+      }
+      return result;
+    },
     async toggleFavorite(id) {
       if (!games.has(id)) return;
       if (!account.isSignedIn()) return auth?.require(() => ctx.toggleFavorite(id));

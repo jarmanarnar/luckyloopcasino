@@ -1,5 +1,5 @@
 // Sample rewards for the local demo. No purchase or real-money prize is involved.
-export const SPIN_COOLDOWN = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 export const SPIN_DURATION = 5200;
 export const SPIN_PRIZES = Object.freeze([
   { id: 'gold-100k', currency: 'GC', amount: 100000, label: '100K', name: 'Gold Coins' },
@@ -13,10 +13,17 @@ export const SPIN_PRIZES = Object.freeze([
 ].map(Object.freeze));
 
 export function spinStatus(account, now = Date.now()) {
-  const last = account.ledger.findLast(item => item.source === 'spin-wheel');
-  const nextAt = last ? Date.parse(last.at) + SPIN_COOLDOWN : 0;
-  const remaining = Math.max(0, nextAt - Number(new Date(now)));
-  return { available: remaining === 0, remaining, nextAt, last };
+  const spins = account.ledger.filter(item => item.source === 'spin-wheel');
+  const registered = new Date(account.auth?.registeredAt ?? account.identity?.registeredAt ?? account.createdAt);
+  const current = new Date(now);
+  // Grant one on registration, then one at each local midnight. Count calendar
+  // dates rather than elapsed 24-hour periods so DST days still grant only one.
+  const calendarDay = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS;
+  const days = Math.max(0, calendarDay(current) - calendarDay(registered));
+  const spinsAvailable = Math.max(0, 1 + days - spins.length);
+  const nextAt = +new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
+  const remaining = Math.max(0, nextAt - current.getTime());
+  return { available: spinsAvailable > 0, spinsAvailable, remaining, nextAt, last: spins.at(-1) };
 }
 
 export function spinCountdown(remaining) {

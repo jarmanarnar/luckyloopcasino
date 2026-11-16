@@ -96,13 +96,10 @@ function createClock() {
 export function initSpinWheel({ account, auth, router }) {
   const dialog = node('dialog', 'spin-wheel');
   dialog.id = 'spin-wheel-dialog'; dialog.lang = 'en'; dialog.dir = 'ltr';
-  dialog.setAttribute('aria-labelledby', 'spin-wheel-title');
-  const header = node('header', 'dialog-header');
-  const title = node('h2', '', 'Spin & Win'); title.id = 'spin-wheel-title';
+  dialog.setAttribute('aria-label', 'Spin & Win');
   const close = node('button', 'dialog-close icon-button');
   close.type = 'button'; close.setAttribute('aria-label', 'Close Spin & Win');
   close.append(createUiIcon('close'));
-  header.append(title, close);
   const body = node('div', 'spin-wheel__body');
   const controls = node('div', 'spin-wheel__controls');
   const prizesButton = node('button', 'spin-wheel__text-button', 'View prizes');
@@ -111,19 +108,16 @@ export function initSpinWheel({ account, auth, router }) {
   soundButton.setAttribute('aria-label', 'Turn wheel sound on');
   soundButton.setAttribute('aria-pressed', 'false');
   soundButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9h4l6-5v16l-6-5H3z"/><path class="spin-sound-on" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8q4 4 0 8m3-11q7 7 0 14"/><path class="spin-sound-off" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m17 9 5 6m0-6-5 6"/></svg>';
-  controls.append(prizesButton, soundButton);
+  controls.append(prizesButton, soundButton, close);
   const wheelView = node('section', 'spin-wheel__play');
   const intro = node('div', 'spin-wheel__intro');
-  intro.append(node('span', 'spin-wheel__eyebrow', 'THE DAILY SPIN'), node('h3', '', 'Make it your lucky day.'));
+  intro.append(node('h2', '', 'Make it your lucky day.'));
   const { dial, rotor, pointer } = createDial();
   const stage = node('div', 'spin-wheel__stage'); stage.append(dial);
   const availability = node('p', 'spin-wheel__availability');
-  const cooldownClock = createClock(); cooldownClock.clock.classList.add('spin-countdown--large');
   const spin = node('button', 'spin-wheel__spin', 'Spin & Win'); spin.type = 'button'; spin.id = 'spin-wheel-start';
-  const lastReward = node('button', 'spin-wheel__text-button spin-wheel__last', 'View last reward'); lastReward.type = 'button';
-  const note = node('p', 'spin-wheel__note', 'Demo rewards · One free spin every 24 hours');
   const message = node('p', 'spin-wheel__message'); message.setAttribute('role', 'status');
-  wheelView.append(intro, stage, availability, cooldownClock.clock, spin, lastReward, note, message);
+  wheelView.append(intro, stage, availability, spin, message);
   const prizeView = node('section', 'spin-wheel__prizes');
   prizeView.hidden = true;
   prizeView.append(node('h3', '', 'Something good in every spin.'), node('p', 'spin-wheel__note', '8 demo prizes. Each has a 1 in 8 chance.'));
@@ -136,9 +130,18 @@ export function initSpinWheel({ account, auth, router }) {
     list.append(row);
   }
   prizeView.append(list);
-  const resultView = node('section', 'spin-wheel__result'); resultView.hidden = true;
+  // The celebration sits above the wheel. Dismissing it never closes or
+  // replaces the wheel, including after the last available spin.
+  const winDialog = node('dialog', 'spin-win');
+  winDialog.id = 'spin-win-dialog'; winDialog.lang = 'en'; winDialog.dir = 'ltr';
+  winDialog.setAttribute('aria-labelledby', 'spin-win-title');
+  winDialog.setAttribute('aria-describedby', 'spin-win-amount spin-win-currency');
+  const winClose = node('button', 'dialog-close icon-button spin-win__close');
+  winClose.type = 'button'; winClose.setAttribute('aria-label', 'Close reward and return to wheel');
+  winClose.append(createUiIcon('close'));
+  const resultView = node('section', 'spin-wheel__result');
   resultView.append(node('span', 'spin-wheel__eyebrow', 'LOOKS GOOD ON YOU'));
-  const resultHeading = node('h3', '', 'You won!');
+  const resultHeading = node('h2', '', 'You won!'); resultHeading.id = 'spin-win-title';
   const resultArt = node('div', 'spin-wheel__result-art');
   const confetti = node('div', 'spin-wheel__confetti'); confetti.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < 28; i++) {
@@ -154,78 +157,100 @@ export function initSpinWheel({ account, auth, router }) {
   resultArt.append(confetti, resultCoin);
   const resultAmount = node('strong', 'spin-wheel__result-amount');
   const resultCurrency = node('p', 'spin-wheel__result-currency');
+  resultAmount.id = 'spin-win-amount'; resultCurrency.id = 'spin-win-currency';
   const resultStatus = node('p', 'spin-wheel__result-status', 'Added to your demo balance'); resultStatus.setAttribute('role', 'status');
-  const done = node('button', 'spin-wheel__spin', 'Continue'); done.type = 'button';
+  const done = node('button', 'spin-wheel__spin', 'Back to wheel'); done.type = 'button';
   resultView.append(resultHeading, resultArt, resultAmount, resultCurrency, resultStatus, done);
-  body.append(controls, wheelView, prizeView, resultView);
-  dialog.append(header, body); document.body.append(dialog);
+  winDialog.append(winClose, resultView);
+  body.append(wheelView, prizeView);
+  dialog.append(controls, body); document.body.append(dialog);
+  document.body.append(winDialog);
 
   const launchers = [];
   const launcherClocks = [];
-  for (const selector of ['#menu-content', '#rewards-popover']) {
-    const host = document.querySelector(selector);
-    if (!host) continue;
+  let launcherBadge;
+  if (document.querySelector('#menu-content')) {
     const launcher = node('button', 'spin-launcher'); launcher.type = 'button';
     launcher.dataset.tooltip = 'Spin & Win'; launcher.setAttribute('aria-haspopup', 'dialog'); launcher.setAttribute('aria-controls', dialog.id);
     const copy = node('span', 'spin-launcher__copy');
-    const badge = node('span', 'spin-launcher__badge');
-    const status = node('span', 'spin-launcher__status', '1 free spin');
     const clock = createClock();
-    copy.append(node('strong', '', 'Spin & Win'), status, clock.clock);
+    copy.append(node('strong', '', 'Spin & Win'), clock.clock);
+    launcherBadge = node('span', 'spin-launcher__badge', 'Available soon'); launcherBadge.hidden = true;
     const artwork = node('span', 'spin-launcher__art');
     artwork.setAttribute('aria-hidden', 'true');
     artwork.append(node('span', 'spin-launcher__spark spin-launcher__spark--gold'), node('span', 'spin-launcher__spark spin-launcher__spark--violet'), createDial(true).dial);
-    launcher.append(badge, copy, artwork);
-    if (selector === '#menu-content') { launcher.id = 'menu-spin-wheel'; document.querySelector('#menu-search').after(launcher); }
-    else { launcher.id = 'rewards-spin-wheel'; host.querySelector('header').after(launcher); }
-    launchers.push(launcher); launcherClocks.push({ ...clock, badge, status });
+    launcher.append(launcherBadge, copy, artwork);
+    launcher.id = 'menu-spin-wheel';
+    document.querySelector('#menu-search').after(launcher);
+    launchers.push(launcher); launcherClocks.push(clock);
   }
 
-  let phase = 'wheel', spinning = false, animation = null, angle = 0, opener = null, recentPrize = null;
+  // Rewards uses the same compact list pattern as the other reward entries.
+  // Only its action opens the wheel; the promotional banner belongs in the menu.
+  const rewardsHost = document.querySelector('#rewards-popover');
+  let rewardsList, rewardsAction, rewardsDescription;
+  if (rewardsHost) {
+    rewardsList = node('ul', 'rewards-popover__list rewards-popover__wheel');
+    const row = node('li', 'reward-preview reward-preview--wheel');
+    const artwork = createDial(true).dial;
+    artwork.classList.add('reward-preview__wheel');
+    const copy = node('div', 'reward-preview__copy');
+    rewardsDescription = node('span', 'reward-preview__status', 'Your daily free spin');
+    rewardsDescription.id = 'rewards-spin-description';
+    copy.append(node('strong', '', 'Spin & Win'), rewardsDescription);
+    rewardsAction = node('button', 'reward-preview__action reward-preview__spin', 'Spin & Win');
+    rewardsAction.type = 'button'; rewardsAction.id = 'rewards-spin-wheel';
+    rewardsAction.setAttribute('aria-haspopup', 'dialog');
+    rewardsAction.setAttribute('aria-controls', dialog.id);
+    rewardsAction.setAttribute('aria-describedby', rewardsDescription.id);
+    row.append(artwork, copy, rewardsAction);
+    rewardsList.append(row);
+    rewardsHost.querySelector('header').after(rewardsList);
+    launchers.push(rewardsAction);
+  }
+
+  let phase = 'wheel', spinning = false, animation = null, angle = 0, opener = null, dialogSession = 0;
   let sound = false, audio = null, ticking = 0, spinFrom = 0, spinTo = 0, tickSegment = 0, pointerAnimation = null;
   const spinDuration = SPIN_DURATION;
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || account.getMemberState().settings.reducedMotion;
   function update() {
     const status = spinStatus(account.getSnapshot());
-    const label = status.available ? 'Free spin ready' : `Next in ${spinCountdown(status.remaining)}`;
-    launcherClocks.forEach(item => {
-      item.badge.textContent = status.available ? 'Free spin ready' : 'Available soon';
-      item.status.hidden = !status.available;
-      item.clock.hidden = status.available;
-      item.update(status.remaining);
-    });
+    const availableLabel = `${status.spinsAvailable} free ${status.spinsAvailable === 1 ? 'spin' : 'spins'}`;
+    const label = `${availableLabel} available. Next free spin in ${spinCountdown(status.remaining)}`;
+    launcherClocks.forEach(item => item.update(status.remaining));
+    if (launcherBadge) launcherBadge.hidden = status.available;
     launchers.forEach(element => { element.setAttribute('aria-label', `Spin & Win. ${label}`); element.dataset.ready = String(status.available); });
+    if (rewardsList) rewardsList.hidden = !account.isSignedIn() || !status.available;
+    if (rewardsDescription) rewardsDescription.textContent = status.spinsAvailable > 1 ? `${availableLabel} available` : 'Your daily free spin';
     if (spinning) return;
     const lastIndex = SPIN_PRIZES.findIndex(prize => prize.id === status.last?.sourceId);
     if (lastIndex >= 0) {
       angle = (360 - lastIndex * 45) % 360;
       rotor.style.transform = `rotate(${angle}deg)`;
     }
-    availability.textContent = status.available ? '1 free spin. Make it count.' : 'Your next free spin in';
-    availability.setAttribute('aria-label', status.available ? '1 free spin available' : `Next free spin in ${spinCountdown(status.remaining)}`);
-    cooldownClock.clock.hidden = status.available;
-    cooldownClock.update(status.remaining);
+    availability.textContent = status.available ? `${status.spinsAvailable} ${status.spinsAvailable === 1 ? 'spin' : 'spins'} left` : 'No spins left';
+    availability.setAttribute('aria-label', status.available ? `${availableLabel} available` : `No spins left. Next free spin in ${spinCountdown(status.remaining)}`);
     availability.dataset.ready = String(status.available);
     spin.disabled = !status.available;
-    spin.textContent = status.available ? 'Spin & Win' : 'Come back for your next spin';
-    lastReward.hidden = !status.last;
+    spin.textContent = 'Spin & Win';
   }
   function view(next) {
     phase = next; dialog.dataset.phase = next;
-    wheelView.hidden = next !== 'wheel'; prizeView.hidden = next !== 'prizes'; resultView.hidden = next !== 'result';
+    wheelView.hidden = next !== 'wheel'; prizeView.hidden = next !== 'prizes';
     prizesButton.textContent = next === 'wheel' ? 'View prizes' : 'Back to wheel';
     prizesButton.disabled = spinning;
     body.scrollTop = 0;
     update();
   }
   function showResult(prize) {
-    recentPrize = prize;
+    if (!dialog.open || winDialog.open) return;
     resultView.dataset.currency = prize.currency;
     resultCoin.src = coinPath(prize.currency);
     resultAmount.textContent = new Intl.NumberFormat('en-US').format(prize.amount / (prize.currency === 'SC' ? 100 : 1));
     resultCurrency.textContent = prize.name;
-    view('result');
-    if (dialog.open) done.focus({ preventScroll: true });
+    view('wheel');
+    winDialog.showModal();
+    done.focus({ preventScroll: true });
   }
   function tone(frequency = 700, duration = .035, volume = .025) {
     if (!sound || !audio || audio.state !== 'running') return;
@@ -253,17 +278,20 @@ export function initSpinWheel({ account, auth, router }) {
   }
   spin.addEventListener('click', async () => {
     if (spinning || !spinStatus(account.getSnapshot()).available) return;
-    spinning = true; spin.disabled = true; prizesButton.disabled = true; lastReward.hidden = true;
+    const session = dialogSession, playerId = account.getSnapshot().playerId;
+    const stillOpen = () => dialog.open && dialogSession === session && account.isSignedIn() && account.getSnapshot().playerId === playerId;
+    spinning = true; spin.disabled = true; prizesButton.disabled = true;
     spin.textContent = 'Spinning…'; availability.textContent = 'A little luck is on its way'; message.textContent = '';
-    cooldownClock.clock.hidden = true;
+    availability.setAttribute('aria-label', 'Spinning the wheel'); availability.dataset.ready = 'false';
     dialog.dataset.spinning = 'true';
     delete dial.dataset.landed;
     try {
       const result = await account.spinWheel();
+      if (!stillOpen()) return;
       if (!result.ok) { message.textContent = result.reason; return; }
       const prize = SPIN_PRIZES[result.index];
       const target = spinLanding(result.index, angle);
-      if (dialog.open) {
+      if (stillOpen()) {
         spinFrom = angle; spinTo = target; tickSegment = Math.floor((angle + 22.5) / 45);
         const frames = Array.from({ length: 121 }, (_, index) => ({
           offset: index / 120, transform: `rotate(${angle + (target - angle) * spinProgress(index / 120)}deg)`,
@@ -272,25 +300,21 @@ export function initSpinWheel({ account, auth, router }) {
         if (!reduced()) tick();
         await animation.finished.catch(() => {});
       }
+      if (!stillOpen()) return;
       angle = target % 360; rotor.style.transform = `rotate(${angle}deg)`;
       animation?.cancel(); animation = null;
       stopTicks();
       dial.dataset.landed = 'true';
-      if (dialog.open) {
+      if (stillOpen()) {
         tone(1047, .35, .045);
         if (!reduced()) await new Promise(resolve => setTimeout(resolve, 220));
       }
       spinning = false;
-      showResult(prize);
+      if (stillOpen()) showResult(prize);
     } catch { message.textContent = 'We could not save your spin. Please try again.'; }
     finally { spinning = false; delete dialog.dataset.spinning; prizesButton.disabled = false; stopTicks(); update(); }
   });
   prizesButton.addEventListener('click', () => view(phase === 'wheel' ? 'prizes' : 'wheel'));
-  lastReward.addEventListener('click', () => {
-    const last = spinStatus(account.getSnapshot()).last;
-    const prize = SPIN_PRIZES.find(item => item.id === last?.sourceId);
-    if (prize) showResult(prize);
-  });
   soundButton.addEventListener('click', async () => {
     if (!sound) {
       try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); await audio.resume(); }
@@ -301,13 +325,23 @@ export function initSpinWheel({ account, auth, router }) {
     soundButton.setAttribute('aria-label', sound ? 'Turn wheel sound off' : 'Turn wheel sound on');
     if (sound) tone();
   });
-  close.addEventListener('click', () => dialog.close()); done.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => dialog.close());
+  done.addEventListener('click', () => winDialog.close());
+  winClose.addEventListener('click', () => winDialog.close());
+  winDialog.addEventListener('click', event => { if (event.target === winDialog) winDialog.close(); });
+  winDialog.addEventListener('close', () => {
+    if (!dialog.open) return;
+    view('wheel');
+    (spin.disabled ? close : spin).focus({ preventScroll: true });
+  });
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
   });
   dialog.addEventListener('close', () => {
+    dialogSession++;
+    if (winDialog.open) winDialog.close();
     animation?.cancel(); stopTicks();
     [opener, document.querySelector('#header-rewards'), document.querySelector('#mobile-nav-menu')]
       .find(element => element?.getClientRects().length && !element.closest('[inert]'))?.focus({ preventScroll: true });
@@ -316,8 +350,8 @@ export function initSpinWheel({ account, auth, router }) {
     return auth.require(() => {
       if (dialog.open || document.querySelector('dialog[open]')) return;
       opener = returnFocusTo;
-      if (phase !== 'result' || !recentPrize || spinStatus(account.getSnapshot()).available) view('wheel');
-      else view('result');
+      dialogSession++;
+      view('wheel');
       message.textContent = ''; dialog.showModal();
     });
   }
@@ -325,8 +359,12 @@ export function initSpinWheel({ account, auth, router }) {
     document.querySelector('#rewards-popover').hidePopover();
     openSpinWheel({ returnFocusTo: document.querySelector('#header-rewards') });
   });
-  router.subscribe(() => { if (dialog.open) dialog.close(); });
-  account.subscribe(() => { if (!account.isSignedIn() && dialog.open) dialog.close(); update(); });
+  function closeAll() {
+    if (winDialog.open) winDialog.close();
+    if (dialog.open) dialog.close();
+  }
+  router.subscribe(closeAll);
+  account.subscribe(() => { if (!account.isSignedIn()) closeAll(); update(); });
   document.addEventListener('visibilitychange', () => {
     document.body.classList.toggle('spin-motion-paused', document.hidden);
     if (!document.hidden) { update(); if (spinning && !reduced()) tick(); }

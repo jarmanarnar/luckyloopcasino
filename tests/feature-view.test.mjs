@@ -16,7 +16,7 @@ const source = (await readFile(new URL('../public/feature-view.js', import.meta.
 
 async function memberPage(initialRoute, storage = new Map()) {
   let route = initialRoute, pageContext;
-  const subscribers = [], navigations = [], profileOpens = [], dialogOpens = [];
+  const subscribers = [], navigations = [], profileOpens = [], dialogOpens = [], authOpens = [];
   class Node {
     constructor(tag = 'div') { this.tagName = tag; this.dataset = {}; this.children = []; this.listeners = new Map(); }
     append(...children) { this.children.push(...children); }
@@ -51,6 +51,7 @@ async function memberPage(initialRoute, storage = new Map()) {
     openProfile: options => profileOpens.push(options),
     openRedeem: () => dialogOpens.push('redeem'),
     openNotifications: () => dialogOpens.push('notifications'),
+    auth: { open: mode => authOpens.push(mode) },
     createMemberState, MEMBER_STORAGE_KEY,
     createShelfIcon: () => new Node('svg'), formatRoute,
     GAMES: [{ id: 'alpha', title: 'Alpha', providerId: 'studio', providerName: 'Studio' }],
@@ -59,10 +60,29 @@ async function memberPage(initialRoute, storage = new Map()) {
     renderRewardsPage: () => null,
     renderAccountPage(pageId, ctx) { pageContext = ctx; return new Node(); },
   };
-  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, openProfile, openRedeem, openNotifications });`, context);
+  const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, auth, openProfile, openRedeem, openNotifications });`, context);
   await account.refresh();
-  return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, context: () => pageContext };
+  return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, authOpens, context: () => pageContext };
 }
+
+test('demo deletion opens registration only after persistence succeeds and keeps failures inline', async () => {
+  const page = await memberPage({ type: 'feature', pageId: 'settings' });
+  const playerId = page.account.getSnapshot().playerId;
+  const remove = page.account.deleteAccount;
+  page.account.deleteAccount = async () => { throw new Error('Persistence unavailable'); };
+  const failed = await page.context().deleteDemoAccount(playerId);
+  assert.equal(failed.ok, false);
+  assert.match(failed.reason, /could not be deleted/);
+  assert.equal(page.account.isSignedIn(), true);
+  assert.equal(page.router.getRoute().pageId, 'settings');
+  assert.equal(page.nodes['feature-status'].textContent, '', 'a global notice must not cover the retry button');
+  assert.deepEqual(page.authOpens, []);
+  page.account.deleteAccount = remove;
+  assert.equal((await page.context().deleteDemoAccount(playerId)).ok, true);
+  assert.equal(page.account.isSignedIn(), false);
+  assert.equal(page.router.getRoute().type, 'home');
+  assert.deepEqual(page.authOpens, ['register']);
+});
 
 test('member pages render and remain navigable without a page Back control', async () => {
   for (const { id: pageId } of Object.values(FEATURE_PAGES).filter(page => page.showHeader)) {
