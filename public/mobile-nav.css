@@ -1,11 +1,14 @@
 :root {
   --mobile-nav-height: calc(3.9375rem + env(safe-area-inset-bottom, 0px));
+  --mobile-nav-bottom-space: env(safe-area-inset-bottom, 0px);
 }
 /* Keep the installed phone app compact above the home indicator.
    With no bottom inset, retain the regular navigation height. */
 @media (display-mode: standalone) and (width <= 599px) {
   :root {
     --mobile-nav-height: max(3.9375rem, calc(3.125rem + env(safe-area-inset-bottom, 0px)));
+    /* Use part of the phone inset for the controls, retaining room for the home indicator. */
+    --mobile-nav-bottom-space: min(env(safe-area-inset-bottom, 0px), max(1.25rem, calc(env(safe-area-inset-bottom, 0px) - .75rem)));
   }
 }
 
@@ -17,7 +20,7 @@
   display: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   height: var(--mobile-nav-height);
-  padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(.75rem, env(safe-area-inset-left, 0px));
+  padding: 0 max(.75rem, env(safe-area-inset-right, 0px)) var(--mobile-nav-bottom-space) max(.75rem, env(safe-area-inset-left, 0px));
   border: 0;
   border-top: 1px solid var(--top-bar-divider);
   background:
@@ -70,8 +73,9 @@
 }
 #mobile-nav-lobby::before { content: none; }
 .mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
-/* Account for the PNG's transparent padding while keeping the visible CC inside the bar. */
-.mobile-nav__icon--brand { width: 4.25rem; height: 3rem; margin-block: -.875rem; object-fit: contain; }
+/* Keep the icon slot aligned; the CC floats above the bar independently of the labels. */
+.mobile-nav__icon--brand { width: 4.25rem; }
+.mobile-nav__icon--brand img { position: absolute; top: -1rem; left: 50%; width: 4.25rem; height: 3rem; transform: translateX(-50%); object-fit: contain; pointer-events: none; }
 .mobile-nav__label { font-size: .8125rem; font-weight: 400; line-height: 1.2; white-space: nowrap; }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) .mobile-nav__icon { color: var(--catalog-accent); }
