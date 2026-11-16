@@ -7,6 +7,8 @@
   min-width: 0;
   container: hero-banner / inline-size;
 }
+/* The member lobby starts with these banners; other page headers keep their spacing. */
+body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; }
 .hero-carousel__viewport { overflow: hidden; touch-action: pan-y; }
 .hero-carousel:not([data-ready]) .hero-carousel__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .hero-carousel__viewport::-webkit-scrollbar { display: none; }
@@ -14,7 +16,7 @@
 /* Keep card size stable; a narrow phone may constrain the frame, never its contents. */
 .hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 min(calc(var(--banner-width) + var(--banner-gap)), 100%); min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
 .hero-banner {
-  --banner-surface-inset: 3rem 1rem 0 0;
+  --banner-surface-inset: 1.5rem .5rem 0 0;
   position: relative;
   isolation: isolate;
   background: transparent;
@@ -45,7 +47,7 @@
   pointer-events: none;
   user-select: none;
 }
-.hero-wheel__copy, .hero-promo__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 12rem; height: 100%; padding: 4rem 0 1.25rem 1.25rem; }
+.hero-wheel__copy, .hero-promo__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 12rem; height: 100%; padding: 2.5rem 0 1.25rem 1.25rem; }
 .hero-wheel__title, .hero-promo__title {
   margin: 0;
   font-size: 1.875rem;
