@@ -75,7 +75,7 @@
 .mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
 /* Keep the icon slot aligned; the CC floats above the bar independently of the labels. */
 .mobile-nav__icon--brand { width: 4.25rem; }
-.mobile-nav__icon--brand img { position: absolute; top: -1rem; left: 50%; width: 4.25rem; height: 3rem; transform: translateX(-50%); object-fit: contain; pointer-events: none; }
+.mobile-nav__icon--brand img { position: absolute; top: -1.25rem; left: 50%; width: 5.25rem; height: 3.5rem; transform: translateX(-50%); object-fit: contain; }
 .mobile-nav__label { font-size: .8125rem; font-weight: 400; line-height: 1.2; white-space: nowrap; }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) .mobile-nav__icon { color: var(--catalog-accent); }
