@@ -1,0 +1,13 @@
+Generated with the built-in OpenAI image generator on 2026-11-17.
+Approved bell concept for the Daily Login Streak banner. Original transparent PNG preserved in artifacts/casino-banner-sources; delivery WebP keeps the full image and alpha.
+
+Use case: ads-marketing.
+Create ONE large standalone three-dimensional GOLD NOTIFICATION BELL for the DAILY LOGIN STREAK banner on the COP COIN casino website. The concept must be immediately simple and recognizable: just a beautiful substantial bell, a premium tactile 3D object.
+
+Subject and design: a bold elegant bell with a generously rounded crown, a small rounded loop on top, a smoothly flared thick lower rim, and a visible round clapper beneath. Rich polished warm gold metal body, refined silver chrome accents at the base of the top loop and inside the lower rim, physically convincing thickness and weight. Smooth broad curves, exquisite clean highlights and dimensional reflections, sophisticated glossy casino-game promotional CGI. Three-quarter view, gently tilted about 12 degrees as if ringing; clearly reveal the underside and round clapper. Strong compact silhouette that reads at 235px wide.
+
+Lighting: premium studio lighting, warm gold key reflections, subtle electric cyan-blue reflected light along one edge appropriate to a black/chrome COP COIN site. Rich dimensional shading, luminous but controlled highlights, sharp polished rendering rather than a flat icon or realistic room photograph. The bell should be visually impressive through its volume and materials, not through added objects.
+
+Composition: square image, entire bell centered and fully visible, about 88% of the image height, generous real transparent margins around every edge, especially loop and clapper. Genuine transparent alpha background and transparent empty spaces. No scene, no floor, no rectangular panel, no opaque halo, no cast shadow on a background.
+
+Exactly ONE bell only. No person, character, face, animal, skull, coins, cards, chips, calendar, badge, number, typography, logo, button, watermark, motion lines, particles or extra objects. This is a clean standalone website asset, not a banner mockup or contact sheet.
