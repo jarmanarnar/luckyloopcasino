@@ -14,10 +14,10 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-carousel__track { display: flex; margin-left: calc(-1 * var(--banner-gap)); }
 /* Fill the lane with whole cards; artwork, type and height retain their own sizes. */
 .hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 100%; min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
-@container hero-banner (min-width: 45rem) {
+@container hero-banner (min-width: 40rem) {
   .hero-carousel__slide { flex-basis: 50%; }
 }
-@container hero-banner (min-width: 68rem) {
+@container hero-banner (min-width: 70rem) {
   .hero-carousel__slide { flex-basis: calc(100% / 3); }
 }
 .hero-banner {
