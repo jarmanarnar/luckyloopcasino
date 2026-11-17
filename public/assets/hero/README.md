@@ -1,14 +1,16 @@
 # LuckyLoop promotional artwork
 
+All four current COP COIN banner illustrations use a shared width of `calc(13rem * 1.13)` (235.04px at the default font size), exactly 13% above their former 208px width. They retain their natural aspect ratios, fixed size across responsive layouts, and the existing 256px card height. Copy reflows alongside the art; all four use a localized dark fade behind the copy at card widths of 352px or less.
+
 ## COP COIN wheel banner
 
-`cop-coin-wheel-v1.png` is an original 1254 × 1254 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. The existing G and S coins and chrome wordmark were supplied as style references. Its alpha channel is preserved. The complete illustration is displayed at a fixed 208px square at every viewport width, inset 8px from the top and flush with the right edge of the slide. Narrow cards reflow the copy without shrinking the artwork or its 30px heading. The background is inset 24px from the top and 8px from the right, so the coins extend above and beside the panel while the complete artwork stays within the slide. Copy and the interactive silver button are HTML. Full generation prompt: `cop-coin-wheel-v1.prompt.txt`.
+`cop-coin-wheel-v1.png` is an original 1254 × 1254 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. The existing G and S coins and chrome wordmark were supplied as style references. Its alpha channel is preserved. The complete illustration is displayed at a fixed 235.04px square at every viewport width, inset 8px from the top and flush with the right edge of the slide. Narrow cards reflow the copy without shrinking the artwork or its 30px heading. The background is inset 24px from the top and 8px from the right, so the coins extend above and beside the panel while the complete artwork stays within the slide. Copy and the interactive silver button are HTML. Full generation prompt: `cop-coin-wheel-v1.prompt.txt`.
 
 ## COP COIN Nolimit banner
 
 `cop-coin-nolimit-v2.png` is an original 1224 × 1285 RGBA casino illustration generated with the built-in OpenAI image generator on 2026-11-17. Its chrome skull, black cards and chips, gold G coins and blue S coin are original promotional artwork, not an official Nolimit City game character. This is the visual direction selected by the user. Full prompt: `cop-coin-nolimit-v2.prompt.txt`.
 
-The illustration is rendered at a fixed 208px wide at every viewport width, top 8px/right 0, within the same inset panel as the wheel. The alpha is unchanged. Cards fill the lane in one, two or three complete columns; image dimensions are independent of that width. The wheel artwork remains unchanged; the daily-login and first-purchase banners use the approved character artwork described below. Rejected and exploratory images and prompts are retained under `artifacts/casino-banner-drafts/`, outside public assets.
+The illustration is rendered at a fixed 235.04px wide at every viewport width, top 8px/right 0, within the same inset panel as the wheel. The alpha is unchanged. Cards fill the lane in one, two or three complete columns; image dimensions are independent of that width. The wheel artwork remains unchanged; the daily-login and first-purchase banners use the approved character artwork described below. Rejected and exploratory images and prompts are retained under `artifacts/casino-banner-drafts/`, outside public assets.
 
 ## COP COIN daily-login and first-purchase banners
 
@@ -16,7 +18,7 @@ The illustration is rendered at a fixed 208px wide at every viewport width, top 
 
 The unchanged 1254 × 1254 PNG originals are archived locally under `artifacts/casino-banner-sources/`. The 624 × 624 WebPs use quality 92, method 6, with alpha verified identical to the resized originals. They are 149,036 and 142,972 bytes respectively, instead of 5,044,467 combined PNG bytes. They load lazily at low priority and do not block application readiness.
 
-Both use the existing fixed 208px artwork placement (top 8px, right 0), unchanged card height, and inset panel. The full composition remains visible. Only these two cards reflow their HTML copy within the space alongside the art; text remains 30px and the HTML buttons retain their original destinations. At card widths of 320px or less, a localized dark fade behind the copy keeps it readable alongside the fixed-size art. No text or button is baked into the illustration.
+Both use the existing fixed 235.04px artwork placement (top 8px, right 0), unchanged card height, and inset panel. The full composition remains visible. These cards reflow their HTML copy within the space alongside the art; text remains 30px and the HTML buttons retain their original destinations. At card widths of 352px or less, a localized dark fade behind the copy keeps it readable alongside the fixed-size art. No text or button is baked into the illustration.
 
 ## COP COIN officer banner
 
