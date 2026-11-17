@@ -1,0 +1,16 @@
+Generated using the built-in image generator on 2026-11-17. Approved by the user for the local Spin & Win hero. Starting from cop-coin-wheel-v2, the following edits were applied in order. The final source is exec-99bd414c-1959-4476-8cef-a373a86457f5.png.
+
+EDIT 1: SUBTLE TILT
+Edit the supplied approved wheel graphic. Make ONE restrained change: give the wheel a subtle three-dimensional tilt toward the LEFT, where the banner text will be. This is a small pose refinement, not a redesign.
+
+Preserve the exact polished chrome rim, gold pointer, ten alternating purple and gold enamel wedges, small plain silver center, and all FOUR original coins with their clean raised letters (two yellow-gold G coins and two electric-blue S coins). Preserve their relative locations, scale, finish and the overall compact composition. Keep the striking reflective colors and precise existing 3D style.
+
+Pose: the wheel should remain almost frontal and fully readable, but its front face now aims about 12 degrees toward the viewer's LEFT, revealing a little more polished rim depth at its RIGHT edge. Add only a tiny approximately 4-degree leftward lean to the assembly, enough to feel dynamic. The upper gold pointer must remain attached and move naturally with the wheel. The coins should still float in the same four corner positions, with natural matching perspective. This should look like exactly the same object turned slightly in space, not a new design, not a dramatic side view, and not a flat skew.
+
+Keep the entire silhouette, including every coin and the gold pointer, inside the square canvas with a narrow clear margin. Preserve true alpha transparency. No background, floor, new objects, extra coins, lettering changes, added numbers, redesign, extra glows, motion blur or cropped edges.
+
+EDIT 2: REMOVE COINS
+Use case: precise-object-edit.
+Edit the supplied tilted wheel image with ONE change only: REMOVE ALL FOUR external currency coins completely. Remove both gold G coins and both blue S coins, including their shadows/reflections specifically cast onto the wheel. Fill their former outside areas with genuine alpha transparency and reconstruct the small portions of the continuous chrome rim they obscured.
+
+Preserve the existing wheel exactly: same subtle left-facing 3D tilt and perspective, same size and position on the square canvas, same ten alternating saturated royal-purple and golden-yellow sectors, same smooth sculpted polished silver/chrome rim, same small plain silver central cap, same gold pointer attached at the top, same lighting and metallic material quality. Do not redesign or restyle the wheel, change its angle or add any new symbols, lettering, numerals, objects or decorations. Leave ONLY the complete wheel with its gold pointer. Entire silhouette visible with transparent background. No background, floor, shadow plane, watermark, glow cloud or cropping.

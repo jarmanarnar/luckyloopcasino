@@ -1,0 +1,31 @@
+Generated with the built-in OpenAI image generator on 2026-11-17.
+Approved for local integration in the Nolimit City banner. Original slot-machine tray coins retained; only the four external coins were removed. This is original promotional artwork, not an official provider logo or game asset. Original transparent PNG preserved in artifacts/casino-banner-sources; delivery WebP preserves resized alpha.
+
+INITIAL GENERATION PROMPT:
+Use case: ads-marketing.
+Create ONE original premium 3D casino SLOT MACHINE cutout to accompany a NOLIMIT CITY games-promotion banner on the COP COIN website. A new simple, strong object-based concept: an impressive compact mechanical slot machine in glossy black and silver chrome, with BOTH gold G coins and blue S coins. The site has approved beautiful tactile 3D metallic bell and gift-box illustrations, so match that clean premium physical-object aesthetic.
+
+MAIN OBJECT: a compact elegant vintage-inspired but contemporary high-end three-reel slot machine, front view with a gentle three-quarter turn facing toward the LEFT where webpage copy sits. Broad readable face, substantial rounded black lacquer cabinet, exquisite polished SILVER CHROME edge frame and gently rounded precision bevels. One large inset reel window showing three separate ivory enamel reels with bold beautifully dimensional rich burgundy-red "7" symbols, reading "777". Natural mechanical depth and shadow inside the reel window, not a flat screen. A tasteful narrow dark ruby translucent panel above the reels, with no words or logos. Small elegant polished gold lever ball on a short silver handle at the right side, close to the body. Below the reels, a clean chrome payout tray with a few visible coins. No crowded tiny buttons or extra screens. The machine is the dominant hero object, broad and compact rather than tall and skinny. Strong readable silhouette at235px.
+
+CURRENCIES: exactly FOUR prominent thick beveled currency coins arranged around the machine in a compact natural grouping: TWO shiny gold coins with clear raised ivory capital G, TWO vivid cyan-blue enamel coins with clear raised ivory capital S. A large blue S coin leans against the lower-right front corner; a slightly smaller gold G coin leans at lower-left. One smaller gold G coin and one smaller blue S coin float just above opposite shoulders of the machine, with air between them. Both types are immediately visible. Gold faces and gold rims for G, electric blue faces and cyan/chrome beveled rims for S. The few coins in the payout tray may show only edges, but no additional readable symbols.
+
+STYLE / MATERIALS: premium polished casino game advertising CGI with realistic sculptural volume, exquisite silver chrome and luminous warm gold, rich black lacquer, smooth jewel-blue enamel, convincing metallic weight. Controlled bright studio reflections and deep inner shadows, a soft warm highlight balanced by cool blue reflected light on metal. Sophisticated glamorous nightlife casino feel, vivid and exciting through the red7symbols, gold coins and blue coins, no flat cartoon treatment, no distressed industrial texture, no antique filigree. Finish should be as tactile and beautifully lit as a luxury 3D metallic product illustration.
+
+COMPOSITION / DELIVERY: one compact unified square arrangement, face oriented gently left toward adjacent website text, all of the machine, lever and coins fully inside canvas with6% transparent safety margin. Top coins extend slightly above the cabinet for an attractive banner-breakout silhouette. TRUE TRANSPARENT ALPHA background in all gaps and around all objects. No floor, no pedestal, no environment, no opaque halo, fog or cast shadow plane. No character, person, skull, animal, fedora, police uniform, cards, bow, confetti, sparkle icons, branding, caption, logo, reward amount, UI button or watermark. The ONLY text is777 on the reels and G/S on the corresponding coins. ONE standalone transparent asset, not a mockup or contact sheet.
+
+APPROVED REMOVAL EDIT:
+Use case: precise-object-edit.
+Make a minimal removal edit to THIS ORIGINAL slot-machine illustration.
+
+REMOVE ONLY THESE FOUR LARGE EXTERNAL COINS:
+1. The large floating gold G coin above the cabinet at upper left.
+2. The large floating blue S coin above the cabinet at upper right.
+3. The large gold G coin leaning outside the cabinet at lower left.
+4. The large blue S coin leaning outside the cabinet at lower right.
+
+Where these four coins overlap the cabinet, restore the naturally continuing black cabinet and chrome trim. Where they occupy the background, replace them with true alpha transparency.
+
+CRITICAL: the SMALL ORIGINAL COINS ALREADY INSIDE THE PAYOUT TRAY MUST REMAIN EXACTLY AS THEY ARE IN THIS SOURCE IMAGE. Do not remove, replace, recolor, reinterpret, add to, or redesign the tray contents. Keep their existing subtle mostly edge-on gold metal shapes, original lighting and original partial visibility. Do not add any blue coin faces. Do not draw any new G or S letters. Do not make the tray coins larger or more prominent. The original restrained tray contents are specifically what the user likes.
+
+Preserve every other feature: original machine geometry, glossy black cabinet, silver chrome trim, ruby-red blank top panel, three ivory reels with red777, silver lever and gold ball, entire payout tray, position, angle, perspective, scale, realistic materials, lighting and framing. Preserve the gold lever ball; it is NOT a coin. No extra props, no new text, no decorative objects, no backdrop or floor. Preserve actual transparent alpha background. Output the same full machine with only the four external coins removed, while its original tray coins stay intact.
+

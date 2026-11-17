@@ -1,0 +1,34 @@
+Generated with the built-in OpenAI image generator on 2026-11-17.
+Approved for local integration in the 150% SC first-purchase banner. Version 2 adds gold G coins and ruby-burgundy ribbon beside blue S coins. Original transparent PNG preserved in artifacts/casino-banner-sources; delivery WebP preserves resized alpha.
+
+INITIAL GENERATION PROMPT:
+Use case: ads-marketing.
+Create ONE original premium 3D promotional cutout for the COP COIN website's first-purchase "150% SC" offer. Concept: a beautiful OPEN SILVER GIFT BOX presenting extra BLUE S COINS as a welcome bonus. The successful visual style to follow is a substantial polished three-dimensional notification bell: one immediately recognizable real-feeling sculptural object, clean smooth forms, rich materials, beautiful studio lighting and a compact silhouette. Modern casino luxury.
+
+MAIN OBJECT: an elegant substantial silver gift box with softly rounded corners, brushed silver broad surfaces and beautifully polished chrome beveled edges. A simple wide black satin gift ribbon wraps the box; its matching lid is tilted slightly open and floats just above and behind the box, with a tasteful simple black satin bow. The lid and bow remain visually secondary. The front of the gift box has a clean uninterrupted silver face, no logo, wording, patterns or engravings. View from a natural three-quarter angle with the top visible, gently oriented inward toward the LEFT, because the object will sit on the RIGHT of a small website banner. Modern restrained product design, tactile dimensional forms and precise materials, not ornate antique metalwork.
+
+COINS: five chunky electric cyan-blue enamel SC coins, each with one clear large raised ivory capital "S" and a thick dimensional beveled blue/chrome rim. Three coins visibly rise from the open gift in a short compact arc, with natural varied angles and separation. One larger clearly readable S coin leans against the lower-right front corner, and one is partly nestled inside the open box. Keep the arrangement compact and intentional, not a cloud of tiny scattered coins. Rich deep-blue sides, brilliant cyan edge highlights, smooth glossy blue faces, substantial real thickness. The blue coins are the visual color and main reward signal. No gold coins needed; focus on SC.
+
+RENDERING: gorgeous premium casino advertising CGI, convincing weight and physical depth, sophisticated highly polished chrome reflections, satin ribbon texture, smooth jewel-blue enamel, bright controlled white highlights, soft dimensional shadows within the composition, subtle blue reflected light on silver. Elegant, celebratory, visually readable at235px, clean bold silhouette with a few strong forms. Use silver, charcoal/black and brilliant blue; refined materials supply the glamour. No roughness or overcomplicated decorations.
+
+COMPOSITION: square isolated asset, full gift box, lid, ribbon and all coins within the canvas with 6% genuine transparent margins. The topmost coin and lid can project above the main box for a pleasing breakout silhouette on a banner. Strong compact grouping; slightly more mass on the right. Real transparent ALPHA background in every gap and around all objects. No floor, scenery, opaque glow, haze or shadow plane. No person, woman, animal, skull, vault, banknote, playing card, tiny chips, confetti, sparkle icons, text, numbers, logo, caption, button or watermark. The only letters are S on the coins. ONE standalone production-quality asset, no banner mockup or contact sheet.
+
+APPROVED EDIT PROMPT:
+Use case: precise-object-edit.
+Edit the supplied silver gift-box casino cutout to make it more colorful, celebratory and less monotonous, with BOTH of COP COIN's currency types clearly present.
+
+Preserve the attractive open silver gift box, softly rounded corners, polished chrome edges, tilted floating lid, compact composition, perspective, premium realistic 3D material rendering, and genuine transparent alpha background.
+
+Changes:
+1. Replace the BLACK satin wrapping ribbon and bow with a rich glossy RUBY-BURGUNDY satin ribbon and bow. Beautiful natural satin folds, brilliant ruby highlights and deep wine-red shadows, tasteful luxurious gift packaging. The silver box body stays silver, giving clear contrast between silver, warm ruby, gold and blue.
+
+2. Recompose the coins into a balanced arrangement of SIX substantial coins: THREE electric cyan-blue enamel coins with a clear large raised ivory capital "S", and THREE rich lustrous GOLD coins with a clear large raised ivory capital "G". Both types must be prominent and immediately distinguishable, not hidden.
+- One large blue S coin leans against the lower-right front corner as in the original.
+- One medium gold G coin leans against the lower-left front corner, fully readable.
+- Above the open box, arrange two blue S and two gold G coins at different heights and slight angles in a tight energetic rising arc. Keep each letter readable and the coin circles intact. Mix the gold and blue naturally rather than placing all of one currency on one side.
+The gold coins have smooth luminous gold faces, chunky rounded beveled rims and dimensional ivory G letters. The blue coins retain the existing smooth vivid blue faces, cyan highlights and chunky beveled rims with dimensional ivory S letters. Every coin feels substantial, polished and tactile. No different currency symbols.
+
+3. Add natural warm gold reflected light from the G coins onto the nearby silver box, balanced with the existing cool cyan reflections from S coins. This is reflected illumination on objects only, no external halo, sparkle symbols or confetti.
+
+Keep the box, bow, lid and all six coins fully inside the square canvas with real transparent safety margins; maintain the compact silhouette suitable for a small235px website banner graphic. No person, animal, vault, floor, backdrop, scene, extra props, numbers, promotional text, logo, watermark or UI. Only the letters G and S on their respective coins. Preserve real transparency in all gaps and around the object. One edited standalone asset.
+

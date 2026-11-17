@@ -3,7 +3,7 @@
   /* Keep banner height and indicator spacing stable across viewport sizes. */
   --banner-height: 16rem;
   --banner-radius: var(--game-card-radius);
-  /* All four illustrations are 13% larger than the original 13rem artwork. */
+  /* Banner illustrations are 13% larger than the original 13rem artwork. */
   --banner-art-width: calc(13rem * 1.13);
   min-width: 0;
   container: hero-banner / inline-size;
@@ -26,6 +26,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 }
 .hero-banner {
   --banner-surface-inset: 1.5rem .5rem 0 0;
+  container: promo-card / inline-size;
   position: relative;
   isolation: isolate;
   background: transparent;
@@ -36,9 +37,6 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   border: 0;
   border-radius: var(--banner-radius);
 }
-.hero-banner--wheel { container: wheel-banner / inline-size; }
-.hero-banner--nolimit { container: promo-banner / inline-size; }
-.hero-banner--streak, .hero-banner--offer { container: promo-banner / inline-size; }
 .hero-banner::before {
   content: '';
   position: absolute;
@@ -48,7 +46,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   background: var(--surface-glow);
 }
 .hero-banner::after { inset: var(--banner-surface-inset); z-index: 0; }
-.hero-wheel__art {
+.hero-banner__art {
   position: absolute;
   z-index: 1;
   /* Float above the inset panel, while keeping the full artwork inside the slide. */
@@ -59,19 +57,11 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   pointer-events: none;
   user-select: none;
 }
-.hero-promo__art {
-  position: absolute;
-  z-index: 1;
-  top: .5rem;
-  right: 0;
-  width: var(--banner-art-width);
-  height: auto;
-  pointer-events: none;
-  user-select: none;
-}
-.hero-wheel__copy, .hero-promo__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 12rem; height: 100%; padding: 2.5rem 0 1.25rem 1.25rem; }
-.hero-wheel__title, .hero-promo__title {
+.hero-banner__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: clamp(8.25rem, calc(100% - var(--banner-art-width)), 12rem); height: 100%; padding: 2.5rem 0 1.25rem 1.25rem; }
+.hero-banner__title {
   margin: 0;
+  max-width: 100%;
+  white-space: normal;
   font-size: 1.875rem;
   font-weight: 900;
   line-height: .98;
@@ -83,29 +73,16 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 0 var(--achievement-edge));
 }
-.hero-wheel__description, .hero-promo__description { margin: .75rem 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
-.hero-wheel__button, .hero-promo__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
-.hero-promo__title { white-space: nowrap; }
-/* The artwork keeps its size while the copy uses the space beside it. */
-.hero-promo__copy { width: clamp(8.25rem, calc(100% - var(--banner-art-width)), 12rem); }
-:is(.hero-banner--streak, .hero-banner--offer) .hero-promo__title { max-width: 100%; white-space: normal; }
-@container promo-banner (max-width: 22rem) {
-  .hero-promo__copy { padding-left: .75rem; }
+.hero-banner__description { margin: .75rem 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
+.hero-banner__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.hero-banner__button:disabled { cursor: default; }
+/* Every card uses the same text flow beside the fixed-size artwork. */
+@container promo-card (max-width: 20rem) {
+  .hero-banner__description { max-width: 7rem; }
 }
-@container wheel-banner (max-width: 22rem) {
-  .hero-wheel__copy { width: 8rem; padding-left: .75rem; }
-}
-@container wheel-banner (max-width: 20rem) {
-  /* Reflow the heading beside the full-size artwork instead of scaling the image. */
-  .hero-wheel__copy { width: 5.5rem; }
-  .hero-wheel__description { margin-block: .5rem; }
-}
-@container promo-banner (max-width: 20rem) {
-  .hero-promo__description { max-width: 7rem; }
-  .hero-banner--offer .hero-promo__title { max-width: 5.5rem; }
-}
-@container (max-width: 22rem) {
-  .hero-wheel__copy::before, .hero-promo__copy::before {
+@container promo-card (max-width: 22rem) {
+  .hero-banner__copy { padding-left: .75rem; }
+  .hero-banner__copy::before {
     content: '';
     position: absolute;
     z-index: -1;
