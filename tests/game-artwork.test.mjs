@@ -57,13 +57,14 @@ test('unsampled games keep the existing text card and do not request arbitrary a
   assert.equal(art.children[0].hidden, false);
 });
 
-test('optional failed game covers do not block startup, while required assets still fail', async () => {
+test('missing artwork never blocks startup or promotes lazy requests', async () => {
   const required = { loading: 'lazy', getClientRects: () => [{}], decode: () => Promise.resolve() };
   const optional = { dataset: { optionalArtwork: 'true' }, loading: 'lazy',
     getClientRects: () => [{}], decode: () => Promise.reject(new Error('Missing cover')) };
   const doc = { images: [required, optional], fonts: { ready: Promise.resolve() } };
   await waitForPageAssets(doc);
-  assert.equal(optional.loading, 'eager');
+  assert.equal(optional.loading, 'lazy');
   required.decode = () => Promise.reject(new Error('Missing required asset'));
-  await assert.rejects(waitForPageAssets(doc), /Missing required asset/);
+  await waitForPageAssets(doc);
+  assert.equal(required.loading, 'lazy');
 });

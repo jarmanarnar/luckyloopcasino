@@ -9,7 +9,7 @@ function node(tag, className, text) {
 }
 function coin(code, size = 32) {
   const img = node('img', 'coin-art');
-  Object.assign(img, { src: `assets/coins/${code === 'GC' ? 'gold' : 'super'}-coin-front.png`,
+  Object.assign(img, { src: `assets/coins/${code === 'GC' ? 'gold' : 'super'}-coin-front.webp`,
     alt: '', width: size, height: size });
   img.setAttribute('aria-hidden', 'true');
   return img;

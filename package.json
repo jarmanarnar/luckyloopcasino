@@ -20,6 +20,7 @@
     "embla-carousel": "8.6.0"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "fake-indexeddb": "6.2.7"
   }
 }

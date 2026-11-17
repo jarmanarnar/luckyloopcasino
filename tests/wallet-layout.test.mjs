@@ -155,7 +155,7 @@ test('inside a game the wallet becomes Buy Coins, opens Store without changing c
     assert.equal(button.attributes['aria-checked'], undefined);
     assert.equal(page.nodes['#wallet-purchase-label'].hidden, false);
     assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, true);
-    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png');
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.webp' : 'assets/coins/super-coin-front.webp');
     await button.events.click();
     assert.deepEqual(page.storeCalls, ['store']);
     assert.deepEqual(page.account.getSnapshot().wallet, before.wallet);
@@ -165,7 +165,7 @@ test('inside a game the wallet becomes Buy Coins, opens Store without changing c
     assert.equal(button.attributes['aria-checked'], String(currency === 'SC'));
     assert.equal(page.nodes['#wallet-purchase-label'].hidden, true);
     assert.equal(page.nodes['#coin-type-switch > .wallet-balance-copy'].hidden, false);
-    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png');
+    assert.equal(page.nodes['#currency-coin'].src, currency === 'GC' ? 'assets/coins/gold-coin-front.webp' : 'assets/coins/super-coin-front.webp');
     await button.events.click();
     assert.notEqual(page.account.getSnapshot().wallet.currency, currency);
   }

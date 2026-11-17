@@ -32,7 +32,7 @@ export function initHowToPlay({ router } = {}) {
   function coin(currency, className) {
     const image = document.createElement('img');
     image.className = `how-to-play-coin ${className}`;
-    image.src = `assets/coins/${currency === 'gc' ? 'gold' : 'super'}-coin-front.png`;
+    image.src = `assets/coins/${currency === 'gc' ? 'gold' : 'super'}-coin-front.webp`;
     image.alt = '';
     image.width = image.height = 96;
     return image;

@@ -27,7 +27,7 @@ export function renderAchievements(ctx, entries, collect) {
   const total = n('div', 'achievements-hero__total');
   total.append(ctx.icon('jackpot'), n('strong', '', `${completed.length}/${entries.length}`));
   total.setAttribute('aria-label', `${completed.length} of ${entries.length} achievements completed`); copy.append(total);
-  const artwork = n('img', 'achievements-hero__art'); artwork.src = 'assets/brand/cop-coin-cc.png'; artwork.alt = ''; artwork.width = 1536; artwork.height = 1024;
+  const artwork = n('img', 'achievements-hero__art'); artwork.src = 'assets/brand/cop-coin-cc.webp'; artwork.alt = ''; artwork.width = 1536; artwork.height = 1024;
   intro.append(copy, artwork);
   const showcase = n('div', 'achievements-hero__showcase'), heading = n('div', 'achievements-hero__heading'); heading.append(n('h3', '', 'Completed'));
   const claimAll = button(busy ? 'Claiming…' : 'Claim All Rewards', 'achievement-claim', () => collect(ready.map(entry => entry.id)));

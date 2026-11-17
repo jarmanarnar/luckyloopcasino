@@ -21,12 +21,12 @@ export function initAchievementDialog({ account, auth, router, openVerification,
     progress.setAttribute('role', 'progressbar'); progress.setAttribute('aria-label', `${entry.title} progress`);
     progress.setAttribute('aria-valuemin', '0'); progress.setAttribute('aria-valuemax', String(entry.goal)); progress.setAttribute('aria-valuenow', String(entry.progress));
     progress.append(createShelfIcon('history'), node('strong', '', `${format(entry.progress)} / ${format(entry.goal)}`));
-    if (entry.progressCurrency) { const coin = node('img'); coin.src = 'assets/coins/super-coin-front.png'; coin.alt = 'SC'; coin.width = coin.height = 18; progress.append(coin); }
+    if (entry.progressCurrency) { const coin = node('img'); coin.src = 'assets/coins/super-coin-front.webp'; coin.alt = 'SC'; coin.width = coin.height = 18; progress.append(coin); }
     progress.append(node('span', 'achievement-dialog__unit', entry.unit));
     const rewards = node('div', 'achievement-dialog__rewards');
     for (const [code, units] of Object.entries(entry.rewards)) {
       const reward = node('div', 'achievement-dialog__reward'), coin = node('img');
-      coin.src = `assets/coins/${code === 'GC' ? 'gold' : 'super'}-coin-front.png`; coin.alt = ''; coin.width = coin.height = 28;
+      coin.src = `assets/coins/${code === 'GC' ? 'gold' : 'super'}-coin-front.webp`; coin.alt = ''; coin.width = coin.height = 28;
       const copy = node('span'); copy.append(node('span', '', code), node('strong', '', format(units / (code === 'SC' ? 100 : 1)))); reward.append(coin, copy); rewards.append(reward);
     }
     body.replaceChildren(medal, title, description, progress, node('h3', '', 'Rewards'), rewards); actions.replaceChildren();

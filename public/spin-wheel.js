@@ -4,7 +4,7 @@ import { createWalletCounter } from './wallet-counter.js';
 import { CURRENCIES, formatBalance } from './wallet-state.js';
 import { initWalletMenu } from './wallet-menu.js';
 
-const coinPath = currency => `assets/coins/${currency === 'GC' ? 'gold' : 'super'}-coin-front.png`;
+const coinPath = currency => `assets/coins/${currency === 'GC' ? 'gold' : 'super'}-coin-front.webp`;
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -71,7 +71,7 @@ function createDial(mini = false) {
   const reflection = node('div', 'spin-dial__reflection');
   const hub = node('div', 'spin-dial__hub');
   const logo = node('img');
-  logo.src = 'assets/brand/cop-coin-cc.png'; logo.alt = ''; logo.width = 80; logo.height = 46;
+  logo.src = 'assets/brand/cop-coin-cc.webp'; logo.alt = ''; logo.width = 80; logo.height = 46;
   hub.append(logo);
   const pointer = node('span', 'spin-dial__pointer');
   dial.append(frame, viewport, reflection, hub, pointer);

@@ -20,7 +20,8 @@ test('canonical page serves COP COIN branding and local styles', async () => {
   assert.match(html, /<title>COP COIN<\/title>/);
   assert.match(html, /href="styles.css"/);
   assert.match(html, /href="wallet.css"/);
-  assert.match(html, /src="bootstrap.js"/);
+  assert.match(html, /rel="modulepreload" href="bootstrap\.js"/);
+  assert.match(html, /import\('\.\/bootstrap\.js'\)\.then/);
   assert.doesNotMatch(html, /<style>/);
 });
 

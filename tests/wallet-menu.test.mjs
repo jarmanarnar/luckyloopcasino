@@ -43,7 +43,7 @@ test('currency menu uses real balances, masks both currencies and preserves the 
     assert.equal(account.getSnapshot().wallet.currency, 'SC');
     assert.equal(nodes['wallet-select-SC'].attributes['aria-pressed'], 'true');
     assert.equal(nodes['wallet-currency-menu'].hidden, true);
-    assert.equal(nodes['currency-coin'].src, 'assets/coins/super-coin-front.png');
+    assert.equal(nodes['currency-coin'].src, 'assets/coins/super-coin-front.webp');
     await account.saveSettings({ reducedMotion: true });
     menu.toggle();
     await nodes['wallet-hide-balance'].click();

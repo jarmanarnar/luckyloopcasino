@@ -70,7 +70,7 @@ export function initLobbyPromotions({ router, account, auth, document: doc = doc
     reward.setAttribute('aria-label', formatAchievementRewards(task.rewards));
     for (const [currency, units] of Object.entries(task.rewards)) {
       const item = node('span', 'promotion-dialog__coin');
-      const img = node('img'); img.src = `assets/coins/${currency === 'GC' ? 'gold' : 'super'}-coin-front.png`;
+      const img = node('img'); img.src = `assets/coins/${currency === 'GC' ? 'gold' : 'super'}-coin-front.webp`;
       img.alt = ''; img.width = img.height = 28;
       const amount = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(units / (currency === 'SC' ? 100 : 1));
       item.append(img, node('strong', '', amount), node('span', '', currency)); reward.append(item);

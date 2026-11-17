@@ -6,27 +6,28 @@ export async function bootApplication({ document: doc = document, window: scope 
   const loader = doc.querySelector('#app-loader');
   const status = doc.querySelector('#app-load-status');
   const retry = doc.querySelector('#app-load-retry');
-  let logo;
-  const deadline = (promise, milliseconds) => {
-    let timer;
-    return Promise.race([promise, new Promise((_, reject) => {
-      timer = scope.setTimeout(() => reject(new Error('Application loading timed out')), milliseconds);
-    })]).finally(() => scope.clearTimeout(timer));
-  };
-  const frame = () => new Promise(resolve => scope.requestAnimationFrame(resolve));
+  let logo, slowTimer;
+  const frame = () => doc.hidden ? Promise.resolve()
+    : new Promise(resolve => scope.requestAnimationFrame(resolve));
   retry.addEventListener('click', () => scope.location.reload());
   try {
     logo = createLogo({ document: doc, window: scope });
-    const [application] = await deadline(Promise.all([
-      load(), Promise.all([400, 500, 600, 700, 800].map(weight => doc.fonts?.load(`${weight} 16px Poppins`))),
-    ]), 15_000);
-    const router = await deadline(application.initApplication(), 15_000);
-    await deadline(waitForPageAssets(doc), 15_000);
+    // Slow downloads may still succeed. Offer a retry without abandoning them.
+    slowTimer = scope.setTimeout(() => {
+      status.className = 'app-loader__message';
+      status.textContent = 'Taking longer than usual. Still loading…';
+      retry.hidden = false;
+    }, 15_000);
+    const application = await load();
+    const router = await application.initApplication();
+    await waitForPageAssets(doc, scope);
     router.prepareLayout();
     router.restoreInitialScroll();
     await waitForStableLayout(doc, scope);
     doc.body.dataset.appState = 'ready';
+    retry.hidden = true;
     loader.hidden = true;
+    scope.clearTimeout(slowTimer);
     logo.stop();
     // Reveal the completed layout without animating its initial values.
     await frame();
@@ -41,6 +42,8 @@ export async function bootApplication({ document: doc = document, window: scope 
     retry.hidden = false;
     scope.console.error('LuckyLoop could not start:', error);
     return false;
+  } finally {
+    scope.clearTimeout(slowTimer);
   }
 }
 

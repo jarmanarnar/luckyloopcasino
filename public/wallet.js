@@ -165,7 +165,7 @@ export function initWallet({ openStore, account, router } = {}) {
     if (purchaseLabel) purchaseLabel.hidden = !purchasing;
     coinSwitch.dataset.action = purchasing ? 'store' : 'currency';
     switchCoin.src = purchasing ? addArt.src
-      : state.currency === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png';
+      : state.currency === 'GC' ? 'assets/coins/gold-coin-front.webp' : 'assets/coins/super-coin-front.webp';
     coinSwitch.setAttribute('role', purchasing ? 'button' : 'switch');
     if (purchasing) coinSwitch.removeAttribute('aria-checked');
     else coinSwitch.setAttribute('aria-checked', String(state.currency === 'SC'));
@@ -182,7 +182,7 @@ export function initWallet({ openStore, account, router } = {}) {
     if (switchBalanceCopy) coinSwitch.dataset.balanceMotion = String(animate && renderedCurrency !== null && renderedCurrency !== code &&
       !reducedMotion.matches && !preferences.reducedMotion && !document.hidden);
     applyLayout(readLayout());
-    addArt.src = code === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png';
+    addArt.src = code === 'GC' ? 'assets/coins/gold-coin-front.webp' : 'assets/coins/super-coin-front.webp';
     const precision = 10 ** CURRENCIES[code].decimals;
     const playing = inGame();
     const formatter = value => playing ? 'In Play' : formatBalance(code, value * precision);

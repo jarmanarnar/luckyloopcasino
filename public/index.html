@@ -15,18 +15,21 @@
   <script type="module" src="pwa.js"></script>
   <meta name="description" content="COP COIN — a casino lobby prototype with provider catalogs, game collections, and a two-currency demo wallet.">
   <title>COP COIN</title>
-  <link rel="icon" type="image/png" href="assets/brand/cop-coin-cc.png">
-  <link rel="preload" as="image" href="assets/brand/cop-coin-beacons.png" fetchpriority="high">
+  <link rel="icon" type="image/png" href="assets/brand/app-icons/icon-192.png">
+  <link rel="modulepreload" href="bootstrap.js">
   <link rel="stylesheet" href="theme.css">
   <style id="app-loader-styles">
     body:is([data-app-state="loading"], [data-app-state="error"]) > :not(#app-loader) { visibility: hidden; }
-    .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: var(--surface-page); color: var(--text-primary); text-align: center; touch-action: none; }
+    .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: var(--surface-page, #070708); color: var(--text-primary, #fff); text-align: center; touch-action: none; }
     .app-loader[hidden] { display: none !important; }
-    .app-loader__brand { --app-loader-duration: 1800ms; width: min(10rem, calc(100vw - 3rem)); aspect-ratio: 3 / 2; }
-    .app-loader__image { display: block; width: 100%; height: 100%; object-fit: contain; animation: app-loader-glow var(--app-loader-duration) ease-in-out infinite; }
+    .app-loader__brand { --app-loader-duration: 1800ms; position: relative; display: grid; place-items: center; width: min(10rem, calc(100vw - 3rem)); aspect-ratio: 3 / 2; }
+    .app-loader__fallback { font: italic 900 1.5rem/1 system-ui, sans-serif; letter-spacing: -.05em; }
+    .app-loader__brand[data-art-ready="true"] .app-loader__fallback { visibility: hidden; }
+    .app-loader__image { position: absolute; inset: 0; display: block; visibility: hidden; width: 100%; height: 100%; object-fit: contain; animation: app-loader-glow var(--app-loader-duration) ease-in-out infinite; }
+    .app-loader__brand[data-art-ready="true"] .app-loader__image { visibility: visible; }
     .app-loader__brand[data-paused="true"] .app-loader__image { animation-play-state: paused; }
     .app-loader__brand[data-reduced="true"] .app-loader__image { animation: none; }
-    .app-loader__message { margin: 0; color: var(--text-secondary); font: .875rem var(--app-font-family); }
+    .app-loader__message { margin: 0; color: var(--text-secondary, #a8a8b0); font: .875rem var(--app-font-family, system-ui, sans-serif); }
     .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: var(--surface-control); color: var(--text-primary); font-weight: 700; cursor: pointer; }
     @keyframes app-loader-glow { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) {
@@ -65,7 +68,8 @@
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
     <div id="app-loader-brand" class="app-loader__brand" data-paused="true" role="img" aria-label="COP COIN red and blue beacons">
-      <img class="app-loader__image" src="assets/brand/cop-coin-beacons.png" width="1536" height="1024" alt="" fetchpriority="high">
+      <span class="app-loader__fallback" aria-hidden="true">COP COIN</span>
+      <img class="app-loader__image" src="assets/brand/cop-coin-beacons.webp" width="1536" height="1024" alt="" decoding="async">
     </div>
     <p id="app-load-status" class="visually-hidden">Loading COP COIN…</p>
     <button id="app-load-retry" class="app-loader__retry" type="button" hidden>Try again</button>
@@ -81,23 +85,23 @@
         <button class="icon-button menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded="false" aria-controls="site-menu">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg>
         </button>
-        <a class="site-logo" href="#" aria-label="COP COIN home"><img class="site-logo__image site-logo__image--wordmark" src="assets/brand/cop-coin-wordmark.png" width="2172" height="724" alt="COP COIN" fetchpriority="high"><img class="site-logo__image site-logo__image--mark" src="assets/brand/cop-coin-cc.png" width="1536" height="1024" alt="COP COIN"></a>
+        <a class="site-logo" href="#" aria-label="COP COIN home"><img class="site-logo__image site-logo__image--wordmark" src="assets/brand/cop-coin-wordmark.webp" width="2172" height="724" alt="COP COIN" fetchpriority="high"><img class="site-logo__image site-logo__image--mark" src="assets/brand/cop-coin-cc.webp" width="1536" height="1024" alt="COP COIN"></a>
       </div>
       <div id="coin-wallet" class="coin-wallet" data-currency="GC" aria-label="Demo wallet" role="group" hidden>
-        <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/gold-coin-front.png" width="48" height="48" alt="" aria-hidden="true"></button>
+        <button id="wallet-add" class="icon-button" type="button" aria-label="Open Store" aria-controls="store-view"><img id="wallet-add-art" src="assets/coins/gold-coin-front.webp" width="48" height="48" alt="" aria-hidden="true"></button>
       </div>
       <div id="header-wallet-controls" class="header-wallet-controls" hidden>
         <button id="coin-type-switch" class="wallet-switch wallet-balance-trigger" type="button" aria-label="Choose currency" aria-haspopup="dialog" aria-expanded="false" aria-controls="wallet-currency-menu" hidden>
-          <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin-front.png" width="20" height="20" alt="" aria-hidden="true">
+          <img id="currency-coin" class="coin-art" src="assets/coins/gold-coin-front.webp" width="20" height="20" alt="" aria-hidden="true">
           <span class="wallet-balance-copy" dir="ltr" aria-hidden="true"><span id="wallet-currency-label">GC</span><strong id="wallet-balance-value">0</strong></span>
           <svg class="wallet-chevron" data-ui-icon="down" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
         </button>
         <section id="wallet-currency-menu" class="wallet-currency-menu" role="dialog" aria-label="Wallet currencies" hidden>
           <div id="wallet-row-GC" class="wallet-currency-row" data-active="true">
-            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-GC" class="wallet-currency-name">Gold Coins</span><strong id="wallet-amount-GC" class="wallet-currency-amount">0</strong></button>
+            <button id="wallet-select-GC" class="wallet-currency-option" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.webp" width="18" height="18" alt=""><span id="wallet-name-GC" class="wallet-currency-name">Gold Coins</span><strong id="wallet-amount-GC" class="wallet-currency-amount">0</strong></button>
           </div>
           <div id="wallet-row-SC" class="wallet-currency-row" data-active="false">
-            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt=""><span id="wallet-name-SC" class="wallet-currency-name">Super Coins</span><strong id="wallet-amount-SC" class="wallet-currency-amount">0.00</strong></button>
+            <button id="wallet-select-SC" class="wallet-currency-option" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.webp" width="18" height="18" alt=""><span id="wallet-name-SC" class="wallet-currency-name">Super Coins</span><strong id="wallet-amount-SC" class="wallet-currency-amount">0.00</strong></button>
           </div>
           <button id="wallet-hide-balance" class="wallet-hide-balance" type="button" role="switch" aria-checked="false"><span>Hide Balance</span><span class="wallet-setting-switch" aria-hidden="true"></span></button>
           <p id="wallet-menu-status" class="wallet-menu-status" role="status"></p>
@@ -161,7 +165,7 @@
         <div class="hero-carousel__track" id="hero-track">
           <article class="hero-carousel__slide" data-hero-title="Daily Spin &amp; Win" role="group" aria-roledescription="slide" aria-label="1 of 4: Daily Spin &amp; Win">
             <div class="hero-banner hero-banner--wheel">
-              <img class="hero-wheel__art" src="assets/hero/cop-coin-wheel-v1.png" width="1254" height="1254" alt="" draggable="false" fetchpriority="high">
+              <img class="hero-wheel__art" src="assets/hero/cop-coin-wheel-v1.webp" width="1254" height="1254" alt="" draggable="false" decoding="async" fetchpriority="low">
               <div class="hero-wheel__copy">
                 <h2 class="hero-wheel__title">SPIN &amp;<br>WIN</h2>
                 <p class="hero-wheel__description">A free spin every day.</p>
@@ -189,7 +193,7 @@
           </article>
           <article class="hero-carousel__slide" data-hero-title="Nolimit City" role="group" aria-roledescription="slide" aria-label="4 of 4: Nolimit City">
             <div class="hero-banner hero-banner--nolimit">
-              <img class="hero-promo__art" src="assets/hero/cop-coin-nolimit-v2.png" width="1224" height="1285" alt="" draggable="false" loading="lazy" decoding="async">
+              <img class="hero-promo__art" src="assets/hero/cop-coin-nolimit-v2.webp" width="1224" height="1285" alt="" draggable="false" loading="lazy" decoding="async">
               <div class="hero-promo__copy">
                 <h2 class="hero-promo__title">NOLIMIT<br>CITY</h2>
                 <p class="hero-promo__description">Explore Nolimit City games.</p>
@@ -249,8 +253,8 @@
             </span>
           </div>
           <div class="game-preplay__actions" role="group" aria-label="Play currency">
-            <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.png" alt="" aria-hidden="true">Gold Coins</button>
-            <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.png" alt="" aria-hidden="true">Super Coins</button>
+            <button id="game-play-gc" type="button" aria-pressed="true"><img src="assets/coins/gold-coin-front.webp" alt="" aria-hidden="true">Gold Coins</button>
+            <button id="game-play-sc" type="button" aria-pressed="false"><img src="assets/coins/super-coin-front.webp" alt="" aria-hidden="true">Super Coins</button>
           </div>
           <button id="game-play-confirm" type="button" class="primary-button">Play with Gold Coins</button>
         </div>
@@ -272,7 +276,7 @@
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" lang="en" dir="ltr" hidden>
     <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-haspopup="dialog" aria-controls="store-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
-    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><span class="mobile-nav__icon mobile-nav__icon--brand" aria-hidden="true"><img src="assets/brand/cop-coin-cc.png" width="1536" height="1024" alt="" draggable="false"></span><span class="mobile-nav__label">Lobby</span></button>
+    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><span class="mobile-nav__icon mobile-nav__icon--brand" aria-hidden="true"><img src="assets/brand/cop-coin-cc.webp" width="1536" height="1024" alt="" draggable="false"></span><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="redeem-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
     <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon" data-ui-icon="chat" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span class="mobile-nav__label">Chat</span></button>
   </nav>
@@ -328,17 +332,17 @@
       <section id="redeem-details" hidden aria-label="Redemption details">
         <div class="redeem-selected"><strong id="redeem-method-name">Bank Transfer</strong><button id="redeem-change" class="redeem-change" type="button">Change method</button></div>
         <div class="redeem-balance">
-          <div class="redeem-balance__total"><span>Your Super Coins</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.png" width="24" height="24" alt=""><span data-redeem-balance>0.00</span></strong></div>
+          <div class="redeem-balance__total"><span>Your Super Coins</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.webp" width="24" height="24" alt=""><span data-redeem-balance>0.00</span></strong></div>
           <div class="redeem-balance__line"><span>Available in preview</span><strong data-redeem-balance>0.00</strong></div>
           <div class="redeem-balance__line redeem-balance__line--playthrough"><span>Playthrough required</span><span>Not connected</span></div>
           <div class="redeem-playthrough-track" aria-hidden="true"></div>
         </div>
         <p class="redeem-explanation">Use your demo balance to preview a redemption. Playthrough and cash payouts aren't available yet.</p>
-        <div class="redeem-rate"><span>Preview exchange rate</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.png" width="18" height="18" alt="">1 SC = $1.00</strong></div>
+        <div class="redeem-rate"><span>Preview exchange rate</span><strong class="redeem-coin-value"><img src="assets/coins/super-coin-front.webp" width="18" height="18" alt="">1 SC = $1.00</strong></div>
         <form id="redeem-form" class="redeem-form" novalidate>
           <label class="redeem-amount-label" for="redeem-amount">Redemption amount</label>
           <div class="redeem-amount-box">
-            <img src="assets/coins/super-coin-front.png" width="32" height="32" alt="">
+            <img src="assets/coins/super-coin-front.webp" width="32" height="32" alt="">
             <div class="redeem-amount-copy"><span>Super Coins</span><input id="redeem-amount" name="amount" type="text" inputmode="decimal" maxlength="16" placeholder="0.00" autocomplete="off" aria-describedby="redeem-error" aria-invalid="false"></div>
             <button id="redeem-max" class="redeem-max" type="button" aria-label="Use maximum preview amount">Max</button>
           </div>
@@ -460,7 +464,7 @@
       <div class="site-footer__main">
         <div class="site-footer__brand">
           <a class="site-footer__logo" href="#/" aria-label="COP COIN home">
-            <img src="assets/brand/cop-coin-wordmark.png" width="2172" height="724" alt="COP COIN" loading="lazy">
+            <img src="assets/brand/cop-coin-wordmark.webp" width="2172" height="724" alt="COP COIN" loading="lazy">
           </a>
           <p>Discover your next favorite game.</p>
           <p class="site-footer__intro">Explore the lobby, collect achievements and keep your favorites in one place.</p>
@@ -575,6 +579,39 @@
       </div>
     </div>
   </dialog>
-  <script type="module" src="bootstrap.js"></script>
+  <script>
+    // This recovery path must work even when the bootstrap module cannot download.
+    (() => {
+      const brand = document.querySelector('#app-loader-brand');
+      const image = brand.querySelector('img');
+      const status = document.querySelector('#app-load-status');
+      const retry = document.querySelector('#app-load-retry');
+      const reload = () => location.reload();
+      const showStatus = message => {
+        status.className = 'app-loader__message';
+        status.textContent = message;
+        retry.hidden = false;
+      };
+      const showArt = () => { brand.dataset.artReady = String(image.naturalWidth > 0); };
+      image.addEventListener('load', showArt);
+      image.addEventListener('error', showArt);
+      if (image.complete) showArt();
+      retry.addEventListener('click', reload);
+      const slow = setTimeout(() => {
+        if (document.body.dataset.appState === 'loading') showStatus('Taking longer than usual. Still loading…');
+      }, 15_000);
+      import('./bootstrap.js').then(() => {
+        clearTimeout(slow);
+        // The loaded bootstrap now owns the retry action and loading status.
+        retry.removeEventListener('click', reload);
+      }).catch(error => {
+        clearTimeout(slow);
+        document.body.dataset.appState = 'error';
+        brand.dataset.paused = 'true';
+        showStatus('Unable to connect. Check your connection and try again.');
+        console.error('COP COIN startup download failed:', error);
+      });
+    })();
+  </script>
 </body>
 </html>

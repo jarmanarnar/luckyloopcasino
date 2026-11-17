@@ -37,7 +37,7 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     trigger.title = 'Choose currency';
     trigger.setAttribute('aria-label', inPlay() ? `${CURRENCIES[code].name} In Play. Choose currency` : hidden ? `${CURRENCIES[code].name} balance hidden. Choose currency`
       : `${CURRENCIES[code].name} balance: ${formatBalance(code, wallet.balances[code])}. Choose currency`);
-    coin.src = code === 'GC' ? 'assets/coins/gold-coin-front.png' : 'assets/coins/super-coin-front.png';
+    coin.src = code === 'GC' ? 'assets/coins/gold-coin-front.webp' : 'assets/coins/super-coin-front.webp';
     hide.setAttribute('aria-checked', String(hidden));
     hide.disabled = busy;
     for (const [currency, option] of options) {

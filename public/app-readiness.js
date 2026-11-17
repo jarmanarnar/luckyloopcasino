@@ -1,11 +1,19 @@
-export async function waitForPageAssets(doc) {
-  // Lazy provider marks also belong to the current page. Start their requests
-  // behind the loader instead of letting them appear after the page is shown.
-  const images = [...doc.images].filter(image => image.getClientRects().length);
-  for (const image of images) image.loading = 'eager';
-  await Promise.all([doc.fonts?.ready, ...images.map(image => image.decode().catch(error => {
-    if (image.dataset?.optionalArtwork !== 'true') throw error;
-  }))]);
+export function waitForPageAssets(doc, scope = globalThis, { timeout = 600 } = {}) {
+  // Images already reserve their geometry. Let their normal loading and error
+  // fallbacks work without turning artwork into a prerequisite for opening the app.
+  if (!doc.fonts) return Promise.resolve();
+  const fonts = [Promise.resolve().then(() => doc.fonts.ready)];
+  if (typeof doc.fonts.load === 'function') {
+    for (const weight of [400, 500, 600, 700, 800]) {
+      fonts.push(Promise.resolve().then(() => doc.fonts.load(`${weight} 16px Poppins`)));
+    }
+  }
+  return new Promise(resolve => {
+    const finish = () => { scope.clearTimeout(timer); resolve(); };
+    const timer = scope.setTimeout(finish, timeout);
+    // The wallet also remeasures when fonts arrive after this short grace period.
+    Promise.allSettled(fonts).then(finish);
+  });
 }
 
 function layoutSnapshot(doc) {
@@ -16,19 +24,25 @@ function layoutSnapshot(doc) {
   }).join('|');
 }
 
-export function waitForStableLayout(doc, scope, { quietTime = 200, timeout = 15_000 } = {}) {
-  return new Promise((resolve, reject) => {
-    let frame, previous, stableSince;
-    const timer = scope.setTimeout(() => {
+export function waitForStableLayout(doc, scope, { quietTime = 200, timeout = 1_000 } = {}) {
+  if (doc.hidden) return Promise.resolve();
+  return new Promise(resolve => {
+    let frame, previous, stableSince, finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      scope.clearTimeout(timer);
       scope.cancelAnimationFrame(frame);
-      reject(new Error('Application layout did not settle'));
-    }, timeout);
+      resolve();
+    };
+    const timer = scope.setTimeout(finish, timeout);
     function measure(now) {
+      if (finished) return;
+      if (doc.hidden) { finish(); return; }
       const snapshot = layoutSnapshot(doc);
       if (snapshot !== previous) { previous = snapshot; stableSince = now; }
       if (now - stableSince >= quietTime) {
-        scope.clearTimeout(timer);
-        resolve();
+        finish();
       } else frame = scope.requestAnimationFrame(measure);
     }
     frame = scope.requestAnimationFrame(measure);
