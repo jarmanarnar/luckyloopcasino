@@ -36,6 +36,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 }
 .hero-banner--wheel { container: wheel-banner / inline-size; }
 .hero-banner--nolimit { container: promo-banner / inline-size; }
+.hero-banner--streak, .hero-banner--offer { container: promo-banner / inline-size; }
 .hero-banner::before {
   content: '';
   position: absolute;
@@ -83,6 +84,12 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-wheel__description, .hero-promo__description { margin: .75rem 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
 .hero-wheel__button, .hero-promo__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .hero-promo__title { white-space: nowrap; }
+/* The new characters keep their size while the copy uses the space beside them. */
+:is(.hero-banner--streak, .hero-banner--offer) .hero-promo__copy { width: clamp(8.25rem, calc(100% - 13rem), 12rem); }
+:is(.hero-banner--streak, .hero-banner--offer) .hero-promo__title { max-width: 100%; white-space: normal; }
+@container promo-banner (max-width: 22rem) {
+  :is(.hero-banner--streak, .hero-banner--offer) .hero-promo__copy { padding-left: .75rem; }
+}
 @container wheel-banner (max-width: 22rem) {
   .hero-wheel__copy { width: 8rem; padding-left: .75rem; }
 }
@@ -93,6 +100,16 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 }
 @container promo-banner (max-width: 20rem) {
   .hero-promo__description { max-width: 7rem; }
+  .hero-banner--offer .hero-promo__title { max-width: 5.5rem; }
+  :is(.hero-banner--streak, .hero-banner--offer) .hero-promo__copy::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 1.5rem -1rem 0 0;
+    border-radius: var(--banner-radius) 0 0 var(--banner-radius);
+    background: linear-gradient(90deg, var(--surface-panel) 35%, color-mix(in srgb, var(--surface-panel) 88%, transparent) 60%, transparent);
+    pointer-events: none;
+  }
 }
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }
 .hero-carousel:not([hidden]) + .catalog-toolbar {

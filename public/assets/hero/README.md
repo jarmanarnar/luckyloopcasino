@@ -8,11 +8,19 @@
 
 `cop-coin-nolimit-v2.png` is an original 1224 × 1285 RGBA casino illustration generated with the built-in OpenAI image generator on 2026-11-17. Its chrome skull, black cards and chips, gold G coins and blue S coin are original promotional artwork, not an official Nolimit City game character. This is the visual direction selected by the user. Full prompt: `cop-coin-nolimit-v2.prompt.txt`.
 
-The illustration is rendered at a fixed 208px wide at every viewport width, top 8px/right 0, within the same inset panel as the wheel. The alpha is unchanged. Cards fill the lane in one, two or three complete columns; image dimensions are independent of that width. The wheel artwork remains unchanged; the daily-login and first-purchase banners remain text-only pending a selected design. Rejected and exploratory images and prompts are retained under `artifacts/casino-banner-drafts/`, outside public assets.
+The illustration is rendered at a fixed 208px wide at every viewport width, top 8px/right 0, within the same inset panel as the wheel. The alpha is unchanged. Cards fill the lane in one, two or three complete columns; image dimensions are independent of that width. The wheel artwork remains unchanged; the daily-login and first-purchase banners use the approved character artwork described below. Rejected and exploratory images and prompts are retained under `artifacts/casino-banner-drafts/`, outside public assets.
+
+## COP COIN daily-login and first-purchase banners
+
+`cop-coin-daily-streak-v1.webp` depicts a casino bulldog with a seven-day calendar and G/S coins. `cop-coin-first-purchase-v1.webp` depicts an adult casino host with an open chrome vault and G/S coins. Both are original illustrations generated with the built-in OpenAI image generator on 2026-11-17 and approved for integration. Their exact generation prompts are stored alongside the WebPs as matching `.prompt.txt` files.
+
+The unchanged 1254 × 1254 PNG originals are archived locally under `artifacts/casino-banner-sources/`. The 624 × 624 WebPs use quality 92, method 6, with alpha verified identical to the resized originals. They are 149,036 and 142,972 bytes respectively, instead of 5,044,467 combined PNG bytes. They load lazily at low priority and do not block application readiness.
+
+Both use the existing fixed 208px artwork placement (top 8px, right 0), unchanged card height, and inset panel. The full composition remains visible. Only these two cards reflow their HTML copy within the space alongside the art; text remains 30px and the HTML buttons retain their original destinations. At card widths of 320px or less, a localized dark fade behind the copy keeps it readable alongside the fixed-size art. No text or button is baked into the illustration.
 
 ## COP COIN officer banner
 
-`cop-coin-officer-v1.png` is an unused original 1122 × 1402 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. It depicts a fictional adult female officer with a silver CC badge, dark jacket and blouse, and the existing G/S coin designs. The brand logo and currency art were supplied as style references. Original alpha is preserved. The user rejected this direction; the offer banner is currently text-only. Full prompt: `cop-coin-officer-v1.prompt.txt`.
+`cop-coin-officer-v1.png` is an unused original 1122 × 1402 RGBA illustration generated with the built-in OpenAI image generator on 2026-11-17. It depicts a fictional adult female officer with a silver CC badge, dark jacket and blouse, and the existing G/S coin designs. The brand logo and currency art were supplied as style references. Original alpha is preserved. The user rejected this direction; this officer concept is not used. Full prompt: `cop-coin-officer-v1.prompt.txt`.
 
 ## Earlier artwork
 
