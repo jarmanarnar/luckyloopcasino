@@ -1,4 +1,5 @@
 import EmblaCarousel from './vendor/embla-carousel/embla-carousel.esm.js';
+import { resizeHeroCarousel } from './hero-resize.js';
 
 let initialized = false;
 
@@ -21,10 +22,13 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
     loop: true, align: 'start', slidesToScroll: 1, containScroll: false,
     // A gentler attraction keeps wide-card moves from feeling like a quick snap.
     duration: 42,
+    watchResize: (api, entries) => resizeHeroCarousel(api, entries, { animate: !motionReduced() && !document.hidden }),
   });
   root.dataset.ready = 'true';
   const rotationDuration = 6000;
   let timer = null;
+  let resizeTimer = null;
+  let resizing = false;
   let remaining = rotationDuration;
   let startedAt = null;
   let progressAnimation = null;
@@ -96,7 +100,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
   function canRotate() {
     return !root.hidden && !destroyed && !suspended && !motionReduced()
       && !['loading', 'error'].includes(document.body.dataset.appState) && !document.body.dataset.appStarting
-      && !hovered && !focused && !dragging && visible && !document.hidden
+      && !hovered && !focused && !dragging && !resizing && visible && !document.hidden
       && document.body.dataset.view !== 'game' && !document.querySelector('dialog[open]')
       && carousel.scrollSnapList().length > 1;
   }
@@ -183,6 +187,18 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
 
   carousel.on('select', () => { updateSelection(); scheduleRotation(); });
   carousel.on('reInit', () => { updateSelection(); scheduleRotation(); });
+  carousel.on('resize', () => {
+    // Width transitions remeasure the slides on each frame. Keep their selected
+    // anchor aligned and resume the existing countdown only after resizing stops.
+    resizing = true;
+    scheduleRotation();
+    if (resizeTimer !== null) window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      resizeTimer = null;
+      resizing = false;
+      scheduleRotation();
+    }, 160);
+  });
   carousel.on('pointerDown', () => {
     dragging = true;
     dragStart = carousel.selectedScrollSnap();
@@ -208,6 +224,8 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
   carousel.on('destroy', () => {
     destroyed = true;
     stopTimer();
+    if (resizeTimer !== null) window.clearTimeout(resizeTimer);
+    resizeTimer = null;
     progressAnimation?.cancel();
     progressAnimation = null;
     stateObserver.disconnect();

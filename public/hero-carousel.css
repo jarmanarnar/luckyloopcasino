@@ -14,6 +14,8 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-carousel__track { display: flex; margin-left: calc(-1 * var(--banner-gap)); }
 /* Fill the lane with whole cards; artwork, type and height retain their own sizes. */
 .hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 100%; min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
+/* Animate the card's layout width; Embla continues to own all loop transforms. */
+.hero-carousel[data-ready] .hero-carousel__slide { transition: flex-basis 360ms cubic-bezier(.22, 1, .36, 1); }
 @container hero-banner (min-width: 40rem) {
   .hero-carousel__slide { flex-basis: 50%; }
 }
@@ -105,8 +107,9 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-carousel__dot:is(:hover, :focus-visible):not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
 body[data-reduce-motion="true"] .hero-carousel__dot-mark { transition: none; }
+body[data-reduce-motion="true"] .hero-carousel[data-ready] .hero-carousel__slide { transition: none; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
-  .hero-carousel__dot, .hero-carousel__dot-mark { transition: none; }
+  .hero-carousel__dot, .hero-carousel__dot-mark, .hero-carousel[data-ready] .hero-carousel__slide { transition: none; }
   .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-fill { transform: scaleX(1); }
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
+import { resizeHeroCarousel } from '../public/hero-resize.js';
 
 const source = (await readFile(new URL('../public/hero-carousel.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initHeroCarousel', 'function initHeroCarousel');
@@ -135,7 +136,7 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
     },
   };
   const context = { document, window, Element: Node, MutationObserver, IntersectionObserver,
-    catalog,
+    catalog, resizeHeroCarousel,
     EmblaCarousel(viewport, options) { factories++; assert.equal(viewport, nodes['hero-viewport']); calls.push({ action: 'init', options }); return api; } };
   vm.runInNewContext(`${source}\ninitHeroCarousel(catalog);`, context);
   return {
@@ -399,6 +400,55 @@ test('repeated visibility, reinitialization, and body notifications do not resta
   assert.equal([...page.timers.values()][0].due, 6000);
   page.fireTimer();
   assert.equal(page.nodes['hero-dots'].children[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('responsive resizing pauses the countdown and resumes its remaining time after 160ms quiet', () => {
+  const page = heroPage(); page.visible();
+  const fill = page.animations.at(-1);
+  page.elapse(1700);
+  page.emit('resize');
+  assert.equal(fill.playState, 'paused');
+  assert.equal(fill.currentTime, 1700);
+  assert.equal(page.timers.size, 1);
+  assert.equal([...page.timers.values()][0].duration, 160);
+  page.elapse(80);
+  page.emit('reInit');
+  page.emit('resize');
+  assert.equal(page.timers.size, 1, 'new resize notifications replace the previous quiet timer');
+  assert.equal(fill.currentTime, 1700);
+  assert.equal(page.calls.some(call => call.action === 'scrollNext'), false);
+  page.fireTimer();
+  assert.equal(fill.playState, 'running');
+  assert.equal(page.animations.at(-1), fill);
+  assert.equal([...page.timers.values()][0].duration, 4300);
+  page.fireTimer();
+  assert.equal(page.nodes['hero-dots'].children[1].getAttribute('aria-pressed'), 'true');
+});
+
+test('finishing a resize does not bypass another autoplay pause reason', () => {
+  const page = heroPage(); page.visible();
+  const root = page.nodes['hero-carousel'], fill = page.animations.at(-1);
+  page.elapse(1200);
+  page.emit('resize');
+  root.emit('pointerenter', { pointerType: 'mouse' });
+  page.fireTimer();
+  assert.equal(fill.playState, 'paused');
+  assert.equal(page.timers.size, 0);
+  root.emit('pointerleave');
+  assert.equal(fill.playState, 'running');
+  assert.equal([...page.timers.values()][0].duration, 4800);
+});
+
+test('destroying during a resize cancels its quiet timer and cannot restart autoplay', () => {
+  const page = heroPage(); page.visible();
+  const fill = page.animations.at(-1);
+  page.emit('resize');
+  assert.equal([...page.timers.values()][0].duration, 160);
+  page.emit('destroy');
+  assert.equal(page.timers.size, 0);
+  assert.equal(fill.playState, 'idle');
+  page.window.emit('pageshow'); page.visible(); page.mutations[0].callback();
+  assert.equal(page.timers.size, 0);
 });
 
 test('manual navigation, including selecting the current dot, starts a fresh synchronized countdown', () => {
