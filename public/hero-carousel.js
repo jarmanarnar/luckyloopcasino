@@ -19,6 +19,8 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
   const motionReduced = () => reducedMotion.matches || document.body.dataset.reduceMotion === 'true';
   const carousel = EmblaCarousel(viewport, {
     loop: true, align: 'start', slidesToScroll: 1, containScroll: false,
+    // A gentler attraction keeps wide-card moves from feeling like a quick snap.
+    duration: 42,
   });
   root.dataset.ready = 'true';
   const rotationDuration = 6000;
