@@ -9,8 +9,11 @@ import { getFavoriteGames } from '../public/catalog-page-model.js';
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
-function menuPage({ desktop = false, routeFromGame = false, storage = new Map(), favorites = [] } = {}) {
+function menuPage({ desktop = false, routeFromGame = false, storage = new Map(), favorites = [],
+  reduced = false, siteReduced = false, sidebarDuration = '240ms' } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
+  const timers = new Map();
+  let timerId = 0;
   const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
   let memberState = createMemberState({ favorites });
   const memberListeners = [];
@@ -113,6 +116,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   }
   document.body = new Node();
   document.body.dataset.view = 'lobby';
+  if (siteReduced) document.body.dataset.reduceMotion = 'true';
   const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy', 'menu-redeem',
     'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
@@ -145,6 +149,8 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   document.addEventListener = documentEvents.addEventListener.bind(documentEvents);
   const breakpoint = new Node();
   breakpoint.matches = desktop;
+  const motion = new Node();
+  motion.matches = reduced;
   nodes['coin-wallet'].dataset.currency = 'GC';
   nodes['catalog-categories'].dataset.activeMenu = 'lobby';
   const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
@@ -241,14 +247,18 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   };
   const context = {
     document, Element: Node, CATEGORIES, getGamesForCategory, getFavoriteGames, catalog,
+    getComputedStyle: () => ({ getPropertyValue: property => property === '--sidebar-duration' ? sidebarDuration : '' }),
+    setTimeout(action, delay) { timers.set(++timerId, { action, delay }); return timerId; },
+    clearTimeout(id) { timers.delete(id); },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     createShelfIcon: () => new Node(),
     window: {
       innerWidth: 1280, innerHeight: 900,
       addEventListener(type, callback) { windowEvents[type] = callback; },
       matchMedia(query) {
-        assert.equal(query, '(width > 1024px)');
-        return breakpoint;
+        if (query === '(width > 1024px)') return breakpoint;
+        assert.equal(query, '(prefers-reduced-motion: reduce)');
+        return motion;
       },
     },
     MutationObserver: class {
@@ -263,11 +273,13 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
   const socialCasino = nodes['menu-navigation'].children[0];
   const casinoItems = socialCasino?.nextSibling;
-  const resize = matches => {
+  const finishExit = () => nodes['site-sidebar'].emit('transitionend', { propertyName: 'transform' });
+  const resize = (matches, { settle = true } = {}) => {
     breakpoint.matches = matches;
     breakpoint.emit('change', { matches });
+    if (settle) finishExit();
   };
-  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api,
+  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api, timers, motion, finishExit,
     item, feature, socialCasino, casinoItems, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     setFavorites(favorites) { memberState = createMemberState({ ...memberState, favorites }); memberListeners.forEach(listener => listener()); },
@@ -744,6 +756,130 @@ test('switching an expanded desktop sidebar to mobile restores the header and st
   assert.equal(page.nodes['site-menu'].open, true);
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+});
+
+test('desktop exit keeps the real controls in place until its own transform finishes', () => {
+  for (const expanded of [false, true]) {
+    const page = menuPage({ desktop: true });
+    if (expanded) page.nodes['menu-toggle'].click();
+    const sidebar = page.nodes['site-sidebar'];
+    page.resize(false, { settle: false });
+    assert.equal(page.document.body.dataset.sidebar, 'hidden');
+    assert.equal(sidebar.hidden, false, 'the outgoing sidebar remains rendered');
+    assert.equal(sidebar.inert, true);
+    assert.equal(sidebar.dataset.expanded, String(expanded), 'the outgoing presentation stays intact');
+    assert.equal(page.nodes['menu-toggle'].parentElement, page.nodes['sidebar-header']);
+    assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['sidebar-header']);
+    assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
+    assert.equal(page.nodes['site-menu'].open, false);
+    assert.equal([...page.timers.values()][0].delay, 320);
+
+    sidebar.emit('transitionend', { target: page.nodes['menu-content'], propertyName: 'transform' });
+    sidebar.emit('transitionend', { propertyName: 'width' });
+    assert.equal(sidebar.hidden, false, 'child transitions and width changes do not finish the handoff');
+    assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
+
+    page.finishExit();
+    assert.equal(sidebar.hidden, true);
+    assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+    assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['menu-mobile-header']);
+    assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
+    assert.equal(page.timers.size, 0);
+  }
+});
+
+test('rapid breakpoint reversal cancels the old exit without losing the expanded preference', () => {
+  const storage = new Map();
+  const page = menuPage({ desktop: true, storage });
+  const sidebar = page.nodes['site-sidebar'];
+  page.nodes['menu-toggle'].click();
+  page.resize(false, { settle: false });
+  const staleTimeout = [...page.timers.values()][0].action;
+  page.resize(true, { settle: false });
+  assert.equal(page.timers.size, 0);
+  staleTimeout();
+  page.finishExit();
+  assert.equal(sidebar.hidden, false);
+  assert.equal(sidebar.inert, false);
+  assert.equal(page.document.body.dataset.sidebar, 'expanded');
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
+  assert.equal(page.nodes['menu-toggle'].parentElement, page.nodes['sidebar-header']);
+  assert.equal(storage.get('luckyloop-sidebar-expanded-v1'), 'true');
+  assert.ok(page.observers[0].targets.length > 0);
+
+  page.resize(false, { settle: false });
+  assert.equal(page.timers.size, 1, 'a fresh exit gets its own completion timer');
+  page.finishExit();
+  assert.equal(sidebar.hidden, true);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+});
+
+test('opening the mobile drawer during sidebar exit completes the shared-content handoff immediately', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.resize(false, { settle: false });
+  const staleTimeout = [...page.timers.values()][0].action;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+  assert.equal(page.nodes['lobby-view'].inert, true);
+  assert.equal(page.timers.size, 0);
+  staleTimeout();
+  assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+  page.api.closeMenu(); page.flushClose();
+  assert.equal(page.nodes['lobby-view'].inert, false);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+});
+
+test('reduced motion from either preference completes the sidebar handoff immediately', () => {
+  for (const options of [{ reduced: true }, { siteReduced: true }]) {
+    const page = menuPage({ desktop: true, ...options });
+    page.resize(false, { settle: false });
+    assert.equal(page.nodes['site-sidebar'].hidden, true);
+    assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+    assert.equal(page.document.body.dataset.sidebar, 'hidden');
+    assert.equal(page.timers.size, 0);
+  }
+});
+
+test('initial mobile layout has no outgoing sidebar or exit timer', () => {
+  const page = menuPage();
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  assert.equal(page.nodes['site-sidebar'].inert, true);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.document.body.dataset.sidebar, 'hidden');
+  assert.equal(page.timers.size, 0);
+});
+
+test('focus leaves outgoing inert controls immediately and is not stolen at transition completion', () => {
+  const page = menuPage({ desktop: true });
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.feature('settings').focus();
+  assert.equal(page.document.activeElement, page.feature('settings'));
+  page.resize(false, { settle: false });
+  assert.equal(page.nodes['site-sidebar'].inert, true);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+  page.feature('settings').focus();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu'], 'outgoing controls cannot regain focus');
+  page.finishExit();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
+  page.resize(true);
+  assert.equal(page.nodes['site-sidebar'].inert, false);
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+});
+
+test('missing transitionend falls back to the configured CSS duration', () => {
+  const page = menuPage({ desktop: true, sidebarDuration: '.2s' });
+  page.resize(false, { settle: false });
+  const timeout = [...page.timers.values()][0];
+  assert.equal(timeout.delay, 280);
+  timeout.action();
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.timers.size, 0);
 });
 
 test('collapsed desktop navigation shows one custom tooltip for pointer and keyboard interaction', () => {

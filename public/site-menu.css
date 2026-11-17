@@ -19,14 +19,18 @@ html:has(#site-menu[open]) { overflow: hidden; }
   position: fixed;
   z-index: 30;
   inset: 0 auto 0 0;
-  display: none;
+  display: flex;
   flex-direction: column;
-  width: var(--sidebar-width);
+  width: var(--sidebar-rail-width);
   height: 100dvh;
   overflow: hidden;
   border-right: 1px solid var(--sidebar-divider);
-  transition: width var(--sidebar-duration) var(--sidebar-easing);
+  transform: translateX(-100%);
+  transition: width var(--sidebar-duration) var(--sidebar-easing), transform var(--sidebar-duration) var(--sidebar-easing);
 }
+.site-sidebar[hidden] { display: none; }
+.site-sidebar[data-expanded="true"] { width: var(--sidebar-expanded-width); }
+body:is([data-sidebar="expanded"], [data-sidebar="collapsed"]) .site-sidebar { transform: translateX(0); }
 /* Continue the header divider through both sidebar layouts without changing their height. */
 .site-sidebar::after {
   content: '';
@@ -285,41 +289,45 @@ html:has(#site-menu[open]) { overflow: hidden; }
 }
 .site-menu__tooltip::before { content: ''; position: absolute; top: calc(50% - .25rem); left: -.25rem; width: .5rem; height: .5rem; background: inherit; transform: rotate(45deg); }
 
+/* Keep both sides of the breakpoint animatable, including the closing panel. */
+body[data-sidebar] {
+  --sidebar-width: 0px;
+  padding-left: var(--sidebar-width);
+  transition: padding-left var(--sidebar-duration) var(--sidebar-easing);
+}
+body[data-sidebar] .top-bar {
+  inset-inline: auto;
+  left: var(--sidebar-width);
+  right: 0;
+  width: auto;
+  transition: left var(--sidebar-duration) var(--sidebar-easing);
+}
+.site-sidebar[data-expanded="false"] .site-sidebar__header {
+  flex-direction: column;
+  gap: 0;
+  height: auto;
+  padding: .625rem 0 1rem;
+}
+.site-sidebar[data-expanded="false"] .site-sidebar__header > .menu-toggle { margin-bottom: 1.125rem; }
+.site-sidebar[data-expanded="false"] .site-menu__shortcuts { flex: none; grid-template-columns: var(--menu-control-size); gap: .5rem; }
+.site-sidebar[data-expanded="false"] .site-menu__shortcut svg { display: block; }
+.site-sidebar[data-expanded="false"] .site-menu__scroll { padding: 0 .84375rem 1rem; }
+.site-sidebar[data-expanded="false"] .site-menu__search { justify-content: center; gap: 0; height: var(--menu-control-size); min-height: var(--menu-control-size); padding: 0; }
+.site-sidebar[data-expanded="false"] .site-menu__item { justify-content: center; gap: 0; padding-inline: 0; }
+.site-sidebar[data-expanded="false"] .site-menu__item .game-shelf__icon { width: 1.25rem; height: 1.25rem; }
+.site-sidebar[data-expanded="false"] .site-menu__item > span,
+.site-sidebar[data-expanded="false"] .site-menu__shortcut > span,
+.site-sidebar[data-expanded="false"] .site-menu__search > span { display: none; }
+.site-sidebar[data-expanded="false"] .site-menu__chevron,
+.site-sidebar[data-expanded="false"] .site-menu__subitems { display: none; }
 @media (width > 1024px) {
-  body[data-sidebar] {
-    --sidebar-width: var(--sidebar-rail-width);
-    padding-left: var(--sidebar-width);
-    transition: padding-left var(--sidebar-duration) var(--sidebar-easing);
-  }
+  body[data-sidebar="collapsed"] { --sidebar-width: var(--sidebar-rail-width); }
   body[data-sidebar="expanded"] { --sidebar-width: var(--sidebar-expanded-width); }
-  body[data-sidebar] .top-bar {
-    inset-inline: auto;
-    left: var(--sidebar-width);
-    right: 0;
-    width: auto;
-    transition: left var(--sidebar-duration) var(--sidebar-easing);
-  }
-  .site-sidebar { display: flex; }
-  .site-sidebar[data-expanded="false"] .site-sidebar__header {
-    flex-direction: column;
-    gap: 0;
-    height: auto;
-    padding: .625rem 0 1rem;
-  }
-  .site-sidebar[data-expanded="false"] .site-sidebar__header > .menu-toggle { margin-bottom: 1.125rem; }
-  .site-sidebar[data-expanded="false"] .site-menu__shortcuts { flex: none; grid-template-columns: var(--menu-control-size); gap: .5rem; }
-  .site-sidebar[data-expanded="false"] .site-menu__shortcut svg { display: block; }
-  .site-sidebar[data-expanded="false"] .site-menu__scroll { padding: 0 .84375rem 1rem; }
-  .site-sidebar[data-expanded="false"] .site-menu__search { justify-content: center; gap: 0; height: var(--menu-control-size); min-height: var(--menu-control-size); padding: 0; }
-  .site-sidebar[data-expanded="false"] .site-menu__item { justify-content: center; gap: 0; padding-inline: 0; }
-  .site-sidebar[data-expanded="false"] .site-menu__item .game-shelf__icon { width: 1.25rem; height: 1.25rem; }
-  .site-sidebar[data-expanded="false"] .site-menu__item > span,
-  .site-sidebar[data-expanded="false"] .site-menu__shortcut > span,
-  .site-sidebar[data-expanded="false"] .site-menu__search > span { display: none; }
-  .site-sidebar[data-expanded="false"] .site-menu__chevron,
-  .site-sidebar[data-expanded="false"] .site-menu__subitems { display: none; }
   body[data-sidebar="collapsed"] .site-menu__tooltip { display: block; }
 }
+body[data-reduce-motion="true"][data-sidebar],
+body[data-reduce-motion="true"][data-sidebar] .top-bar,
+body[data-reduce-motion="true"] .site-sidebar { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .site-menu, .site-menu::backdrop, .site-menu__chevron, .site-menu__shortcut,
   .site-menu__item, .site-menu__search,

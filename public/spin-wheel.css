@@ -159,16 +159,14 @@ html:has(.spin-wheel[open], .spin-win[open]) { overflow: hidden; }
 .reward-preview__wheel.spin-dial--mini { position: relative; width: 2.5rem; top: auto; right: auto; filter: drop-shadow(0 2px 3px #0006); }
 .rewards-popover:not(:popover-open) .reward-preview__wheel .spin-dial__rotor { animation-play-state: paused; }
 .site-menu__scroll > .spin-launcher { flex: none; margin: calc(var(--menu-promo-space) - var(--menu-space)) 0; }
-@media (width > 1024px) {
-  .site-sidebar[data-expanded="false"] .spin-launcher { height: var(--menu-control-size); min-height: var(--menu-control-size); padding: 0; justify-content: center; border: 0; border-radius: 50%; background: transparent; box-shadow: none; }
-  .site-sidebar[data-expanded="false"] .spin-launcher__copy,
-  .site-sidebar[data-expanded="false"] .spin-launcher__badge { display: none; }
-  .site-sidebar[data-expanded="false"] .spin-launcher__art { display: grid; place-items: center; overflow: visible; border-radius: 0; }
-  .site-sidebar[data-expanded="false"] .spin-launcher__art::before,
-  .site-sidebar[data-expanded="false"] .spin-launcher__art::after,
-  .site-sidebar[data-expanded="false"] .spin-launcher__spark { display: none; }
-  .site-sidebar[data-expanded="false"] .spin-dial--mini { position: relative; width: 2.625rem; top: auto; right: auto; filter: none; }
-}
+.site-sidebar[data-expanded="false"] .spin-launcher { height: var(--menu-control-size); min-height: var(--menu-control-size); padding: 0; justify-content: center; border: 0; border-radius: 50%; background: transparent; box-shadow: none; }
+.site-sidebar[data-expanded="false"] .spin-launcher__copy,
+.site-sidebar[data-expanded="false"] .spin-launcher__badge { display: none; }
+.site-sidebar[data-expanded="false"] .spin-launcher__art { display: grid; place-items: center; overflow: visible; border-radius: 0; }
+.site-sidebar[data-expanded="false"] .spin-launcher__art::before,
+.site-sidebar[data-expanded="false"] .spin-launcher__art::after,
+.site-sidebar[data-expanded="false"] .spin-launcher__spark { display: none; }
+.site-sidebar[data-expanded="false"] .spin-dial--mini { position: relative; width: 2.625rem; top: auto; right: auto; filter: none; }
 @media (width <= 480px) {
   .spin-wheel { border-radius: 1rem; }
   .spin-wheel__controls { padding: .75rem 1rem .25rem; }

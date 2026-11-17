@@ -31,7 +31,10 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   const triggerSibling = trigger.nextSibling;
   const menuBackground = new Map();
   const desktopMedia = window.matchMedia('(width > 1024px)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let desktop = false;
+  let sidebarExitTimer = null;
+  let finishSidebarExit = null;
   let expanded = false;
   const sidebarStorageKey = 'luckyloop-sidebar-expanded-v1';
   try { expanded = localStorage.getItem(sidebarStorageKey) === 'true'; } catch { /* Keep the default when storage is unavailable. */ }
@@ -185,7 +188,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
 
   function restoreMenuFocus(preferred = null) {
     const candidates = [preferred, trigger, bottomTrigger, document.querySelector('.site-logo')];
-    candidates.find(node => node?.getClientRects().length)?.focus({ preventScroll: true });
+    candidates.find(node => node?.getClientRects().length && !(sidebar.inert && sidebar.contains(node)))?.focus({ preventScroll: true });
   }
 
   function setMenuBackgroundInert(active) {
@@ -201,6 +204,27 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     }
   }
 
+  function moveMenuToMobile() {
+    sidebar.hidden = true;
+    triggerHome.insertBefore(trigger, triggerSibling);
+    mobileHeader.append(shortcuts);
+    dialog.append(menuContent);
+    trigger.setAttribute('aria-haspopup', 'dialog');
+    trigger.setAttribute('aria-controls', 'site-menu');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-label', 'Open menu');
+  }
+
+  function cancelSidebarExit() {
+    clearTimeout(sidebarExitTimer);
+    sidebarExitTimer = null;
+    finishSidebarExit = null;
+  }
+
+  sidebar.addEventListener('transitionend', event => {
+    if (event.target === sidebar && event.propertyName === 'transform') finishSidebarExit?.();
+  });
+
   function applyLayout() {
     hideTooltip();
     const restoreFocus = trigger === document.activeElement || (bottomTrigger && bottomTrigger === document.activeElement)
@@ -212,30 +236,46 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       pendingClose = true;
       dialog.close();
     }
+    const wasDesktop = desktop;
+    cancelSidebarExit();
     desktop = desktopMedia.matches;
-    sidebar.hidden = !desktop;
     if (desktop) {
+      const wasHidden = sidebar.hidden;
+      sidebar.hidden = false;
+      sidebar.inert = false;
       sidebarHeader.append(trigger);
       sidebarHeader.append(shortcuts);
       sidebarContent.append(menuContent);
       trigger.removeAttribute('aria-haspopup');
       trigger.setAttribute('aria-controls', 'site-sidebar');
+      sidebar.dataset.expanded = String(expanded);
+      // Establish the off-screen starting point when returning from mobile.
+      // A breakpoint reversal during an exit keeps its current transition instead.
+      if (wasHidden) sidebar.getBoundingClientRect();
       setExpanded(expanded);
       observeState();
       syncMenu();
     } else {
-      triggerHome.insertBefore(trigger, triggerSibling);
-      mobileHeader.append(shortcuts);
-      dialog.append(menuContent);
-      trigger.setAttribute('aria-haspopup', 'dialog');
-      trigger.setAttribute('aria-controls', 'site-menu');
-      trigger.setAttribute('aria-expanded', 'false');
-      trigger.setAttribute('aria-label', 'Open menu');
-      delete document.body.dataset.sidebar;
-      sidebar.dataset.expanded = 'false';
+      document.body.dataset.sidebar = 'hidden';
+      sidebar.inert = true;
       observer.disconnect();
+      if (wasDesktop && !reducedMotion.matches && document.body.dataset.reduceMotion !== 'true' && !document.hidden) {
+        // Keep the real controls in place until the panel has slid out.
+        // Opening the mobile drawer can finish this handoff immediately.
+        const finish = () => {
+          if (finishSidebarExit !== finish || desktop) return;
+          cancelSidebarExit();
+          moveMenuToMobile();
+        };
+        finishSidebarExit = finish;
+        const duration = getComputedStyle(sidebar).getPropertyValue('--sidebar-duration').trim();
+        const milliseconds = parseFloat(duration) * (duration.endsWith('ms') ? 1 : 1000);
+        sidebarExitTimer = setTimeout(finish, (Number.isFinite(milliseconds) ? milliseconds : 240) + 80);
+      } else {
+        moveMenuToMobile();
+      }
     }
-    if (restoreFocus) restoreMenuFocus();
+    if (restoreFocus) restoreMenuFocus(desktop ? trigger : bottomTrigger);
   }
 
   function openMenu({ returnFocusTo = trigger } = {}) {
@@ -244,6 +284,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       setExpanded(!expanded);
       return;
     }
+    finishSidebarExit?.();
     menuOpener = returnFocusTo;
     syncMenu();
     afterClose = null;
