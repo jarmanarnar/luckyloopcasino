@@ -1,6 +1,5 @@
 .hero-carousel {
   --banner-gap: 1rem;
-  --banner-width: 23rem;
   /* Keep banner height and indicator spacing stable across viewport sizes. */
   --banner-height: 16rem;
   --banner-radius: var(--game-card-radius);
@@ -13,8 +12,14 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-carousel:not([data-ready]) .hero-carousel__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .hero-carousel__viewport::-webkit-scrollbar { display: none; }
 .hero-carousel__track { display: flex; margin-left: calc(-1 * var(--banner-gap)); }
-/* Keep card size stable; a narrow phone may constrain the frame, never its contents. */
-.hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 min(calc(var(--banner-width) + var(--banner-gap)), 100%); min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
+/* Fill the lane with whole cards; artwork, type and height retain their own sizes. */
+.hero-carousel__slide { box-sizing: border-box; position: relative; flex: 0 0 100%; min-width: 0; padding-left: var(--banner-gap); scroll-snap-align: start; }
+@container hero-banner (min-width: 45rem) {
+  .hero-carousel__slide { flex-basis: 50%; }
+}
+@container hero-banner (min-width: 68rem) {
+  .hero-carousel__slide { flex-basis: calc(100% / 3); }
+}
 .hero-banner {
   --banner-surface-inset: 1.5rem .5rem 0 0;
   position: relative;
@@ -28,6 +33,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   border-radius: var(--banner-radius);
 }
 .hero-banner--wheel { container: wheel-banner / inline-size; }
+.hero-banner--nolimit { container: promo-banner / inline-size; }
 .hero-banner::before {
   content: '';
   position: absolute;
@@ -41,6 +47,16 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   position: absolute;
   z-index: 1;
   /* Float above the inset panel, while keeping the full artwork inside the slide. */
+  top: .5rem;
+  right: 0;
+  width: 13rem;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+.hero-promo__art {
+  position: absolute;
+  z-index: 1;
   top: .5rem;
   right: 0;
   width: 13rem;
@@ -65,9 +81,16 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-wheel__description, .hero-promo__description { margin: .75rem 0; color: var(--text-secondary); font-size: .75rem; line-height: 1.4; }
 .hero-wheel__button, .hero-promo__button { flex: none; min-height: 2.75rem; margin-top: auto; padding: .625rem 1.25rem; font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; }
 .hero-promo__title { white-space: nowrap; }
+@container wheel-banner (max-width: 22rem) {
+  .hero-wheel__copy { width: 8rem; padding-left: .75rem; }
+}
 @container wheel-banner (max-width: 20rem) {
-  .hero-wheel__art { width: 11rem; }
-  .hero-wheel__copy { width: 7rem; padding-left: .75rem; }
+  /* Reflow the heading beside the full-size artwork instead of scaling the image. */
+  .hero-wheel__copy { width: 5.5rem; }
+  .hero-wheel__description { margin-block: .5rem; }
+}
+@container promo-banner (max-width: 20rem) {
+  .hero-promo__description { max-width: 7rem; }
 }
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }
 .hero-carousel:not([hidden]) + .catalog-toolbar {
