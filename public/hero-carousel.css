@@ -3,14 +3,17 @@
   /* Keep banner height and indicator spacing stable across viewport sizes. */
   --banner-height: 16rem;
   --banner-radius: var(--game-card-radius);
-  /* Banner illustrations are 13% larger than the original 13rem artwork. */
+  /* Keep the original text lane while enlarging every illustration by another 10%. */
   --banner-art-width: calc(13rem * 1.13);
+  --banner-art-scale: 1.1;
+  --banner-art-bleed: max(0px, calc(var(--banner-art-width) * var(--banner-art-scale) - var(--banner-height)));
   min-width: 0;
   container: hero-banner / inline-size;
 }
-/* The member lobby starts with these banners; other page headers keep their spacing. */
-body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; }
-.hero-carousel__viewport { overflow: hidden; touch-action: pan-y; }
+/* Guest and member lobbies share the same banner offset below the header. */
+body[data-page="home"] > .page-content { margin-top: .5rem; }
+/* Preserve the artwork's lower edge without moving the indicators or categories. */
+.hero-carousel__viewport { overflow: hidden; touch-action: pan-y; padding-bottom: var(--banner-art-bleed); margin-bottom: calc(-1 * var(--banner-art-bleed)); }
 .hero-carousel:not([data-ready]) .hero-carousel__viewport { overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .hero-carousel__viewport::-webkit-scrollbar { display: none; }
 .hero-carousel__track { display: flex; margin-left: calc(-1 * var(--banner-gap)); }
@@ -32,8 +35,7 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
   background: transparent;
   box-sizing: border-box;
   height: var(--banner-height);
-  overflow: hidden;
-  overflow: clip;
+  overflow: visible;
   border: 0;
   border-radius: var(--banner-radius);
 }
@@ -49,10 +51,10 @@ body[data-page="home"][data-auth="member"] > .page-content { margin-top: .5rem; 
 .hero-banner__art {
   position: absolute;
   z-index: 1;
-  /* Float above the inset panel, while keeping the full artwork inside the slide. */
-  top: .5rem;
+  /* Float above the inset panel; the viewport reserves the small lower overhang. */
+  top: 0;
   right: 0;
-  width: var(--banner-art-width);
+  width: calc(var(--banner-art-width) * var(--banner-art-scale));
   height: auto;
   pointer-events: none;
   user-select: none;

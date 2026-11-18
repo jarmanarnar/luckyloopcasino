@@ -113,7 +113,6 @@ export function initAuthView({ account, router } = {}) {
     const next = account.isSignedIn();
     document.body.dataset.auth = next ? 'member' : 'guest';
     document.querySelector('#guest-header-actions').hidden = next;
-    document.querySelector('#guest-welcome').hidden = next || router.getRoute().type !== 'home';
     document.querySelector('#coin-wallet').hidden = !next;
     document.querySelector('#coin-type-switch').hidden = !next;
     document.querySelector('#header-profile').hidden = !next;
