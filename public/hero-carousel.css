@@ -101,16 +101,17 @@ body[data-page="home"] > .page-content { margin-top: .5rem; }
     content: '';
   }
 }
-.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }
+/* Keep the dots close to the banners with a compact gap before the categories. */
+.hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; box-sizing: border-box; min-height: 2.25rem; margin-top: 2px; padding-bottom: .25rem; }
 .hero-carousel:not([hidden]) + .catalog-toolbar {
-  /* Keep the toolbar's shared padding so controls stay inset when sticky. */
-  margin-block-start: .5rem;
+  /* Account for the toolbar's sticky padding: 20px from the dots to its buttons. */
+  margin-block-start: -.5rem;
 }
 .hero-carousel__dots { display: flex; align-items: center; }
 .hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: 2rem; padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }
-.hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--surface-control); box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle); transition: width 320ms cubic-bezier(.22, 1, .36, 1); }
-.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--text-primary) 65%, var(--redeem-accent)), var(--text-primary)); box-shadow: inset 0 1px 0 var(--button-inner-highlight); transform: scaleX(0); transform-origin: left center; }
-.hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; background: var(--surface-inset), var(--surface-glow); }
+.hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--surface-control); transition: width 320ms cubic-bezier(.22, 1, .36, 1); }
+.hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--achievement-silver) 55%, var(--surface-panel)); transform: scaleX(0); transform-origin: left center; }
+.hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; background: color-mix(in srgb, var(--achievement-silver) 18%, var(--surface-panel)); }
 .hero-carousel__dot:is(:hover, :focus-visible):not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
 body[data-reduce-motion="true"] .hero-carousel__dot-mark { transition: none; }
