@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildReleaseData, releaseModule } from '../scripts/import-release-calendar.mjs';
 import { GAMES } from '../public/catalog.js';
-import { FILTER_CATEGORIES, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, FILTER_CATEGORIES, getGameCategoryIds, getGamesForCategory } from '../public/collections.js';
 import { GAME_TYPES, getGameTypeId } from '../public/game-types.js';
 import { formatRoute, parseRoute } from '../public/routes.js';
 
@@ -39,23 +39,72 @@ test('release import rejects invalid dates, future releases and unverified page 
     games: [{ ...calendar.games[0], url: 'https://unrelated.test/games/example' }] }), /Unexpected official game page/);
 });
 
-test('table and video poker formats remain separate from slots, tap games and live-dealer claims', () => {
+test('Table & Cards groups ten table and card games without changing their exact formats', () => {
   const cases = { blackjack3ne0000: 'blackjack', ameriroulette3ne: 'roulette', roulette2advne00: 'roulette',
-    roulettesne00000: 'roulette', baccarat2ne00000: 'baccarat', casinoholdemne00: 'poker', jacksmultihandn1: 'video-poker' };
+    roulettesne00000: 'roulette', baccarat2ne00000: 'baccarat', casinoholdemne00: 'poker', jacksmultihandn1: 'video-poker',
+    'hacksaw-1446': 'instant-win', 'hacksaw-1416': 'instant-win', 'hacksaw-1328': 'instant-win' };
   const slots = new Set(getGamesForCategory('slots').map(game => game.id));
   for (const [id, type] of Object.entries(cases)) {
     const game = GAMES.find(game => game.id === id);
     assert.equal(getGameTypeId(game), type);
     assert.ok(getGamesForCategory(type).includes(game));
+    assert.ok(getGameCategoryIds(game).includes(type));
+    assert.ok(getGameCategoryIds(game).includes('table'));
     assert.equal(slots.has(id), false);
     const route = { type: 'category', categoryId: type };
     assert.deepEqual(parseRoute(formatRoute(route)), route);
   }
-  assert.equal(getGamesForCategory('table').length, 6);
+  assert.equal(CATEGORIES.find(category => category.id === 'table').title, 'Table & Cards');
+  assert.deepEqual(new Set(getGamesForCategory('table').map(game => game.id)), new Set(Object.keys(cases)));
+  for (const id of ['hacksaw-1590', 'hacksaw-1321', 'hacksaw-2491']) {
+    assert.equal(getGamesForCategory('table').some(game => game.id === id), false, id);
+  }
   assert.equal(getGamesForCategory('video-poker').length, 1);
   assert.equal(getGamesForCategory('tap').length, 13);
   assert.equal(getGamesForCategory('slots').length, 993);
   assert.equal(getGameTypeId({ id: 'blackjack3ne0000', vertical: 'live' }), 'blackjack');
   assert.equal(GAME_TYPES.some(type => type.id === 'live'), false);
   assert.equal(new Set(FILTER_CATEGORIES.map(category => category.id)).size, FILTER_CATEGORIES.length);
+});
+
+test('instant-win and crash remain precise legacy formats without a primary Instant Games category', () => {
+  const instant = getGamesForCategory('instant-win');
+  const crash = getGamesForCategory('crash');
+  const combined = [...instant, ...crash];
+  assert.equal(instant.length, 14);
+  assert.deepEqual(crash.map(game => game.id), ['hacksaw-2491']);
+  assert.equal(combined.length, 15);
+  assert.ok(instant.every(game => getGameTypeId(game) === 'instant-win'));
+  assert.ok(crash.every(game => getGameTypeId(game) === 'crash'));
+  const speedCrash = GAMES.find(game => game.id === 'hacksaw-1632');
+  assert.equal(getGameTypeId(speedCrash), 'instant-win', 'title wording must not override the provider format');
+  for (const game of combined) {
+    const categories = getGameCategoryIds(game);
+    assert.ok(categories.includes('hacksaw-gaming'), game.id);
+    assert.ok(categories.includes(getGameTypeId(game)), game.id);
+    assert.equal(categories.includes('slots'), false, game.id);
+    assert.equal(categories.includes('scratchcards'), false, game.id);
+    assert.equal(categories.includes('scratch-tap'), false, game.id);
+    assert.equal(new Set(categories).size, categories.length, game.id);
+  }
+  for (const id of ['instant-games', 'instant-win', 'crash', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker']) {
+    assert.equal(CATEGORIES.some(category => category.id === id), false, id);
+    assert.equal(FILTER_CATEGORIES.some(category => category.id === id), false, `${id} remains a detail format`);
+  }
+});
+
+test('Scratch & Tap combines the complete scratchcard and tap collections without relabelling them', () => {
+  const tap = getGamesForCategory('tap');
+  const scratch = getGamesForCategory('scratchcards');
+  const combined = getGamesForCategory('scratch-tap');
+  assert.equal(tap.length, 13);
+  assert.equal(scratch.length, 52);
+  assert.equal(combined.length, 65);
+  assert.deepEqual(new Set(combined.map(game => game.id)), new Set([...tap, ...scratch].map(game => game.id)));
+  for (const game of combined) {
+    const type = getGameTypeId(game);
+    assert.ok(['tap', 'scratchcards'].includes(type), game.id);
+    assert.ok(getGameCategoryIds(game).includes(type), game.id);
+    assert.ok(getGameCategoryIds(game).includes('scratch-tap'), game.id);
+  }
 });

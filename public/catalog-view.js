@@ -1,5 +1,5 @@
 import { PROVIDERS } from './catalog.js';
-import { CATEGORIES, FILTER_CATEGORIES, getGamesForCategory } from './collections.js';
+import { CATEGORIES, FILTER_CATEGORIES, LEGACY_CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
@@ -111,7 +111,6 @@ export function initCatalogView({ router, member } = {}) {
   const collectionKeys = new Map(['favorites', 'recent-games'].map(type => [type, collectionKey(type)]));
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
-  categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)));
   const filterMenus = [providerSelect, sortSelect].map(enhanceCatalogSelect);
   for (const category of CATEGORIES) {
     const button = node('button', 'catalog-category');
@@ -259,6 +258,11 @@ export function initCatalogView({ router, member } = {}) {
     categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
     sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
     providerSelect.value = route.providerId || '';
+    // Existing links can still filter an exact format without advertising tiny groups.
+    const legacyFilter = !FILTER_CATEGORIES.some(category => category.id === route.categoryId)
+      ? LEGACY_CATEGORIES.find(category => category.id === route.categoryId) : null;
+    categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)),
+      ...(legacyFilter ? [option(legacyFilter.id, legacyFilter.title)] : []));
     categorySelect.value = route.categoryId || 'all';
     sortSelect.replaceChildren(...(model.allowedSorts || []).map(id => option(id, sortLabels[id])));
     sortSelect.value = model.sort || '';

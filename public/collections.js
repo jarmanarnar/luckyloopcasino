@@ -1,35 +1,40 @@
 import { GAMES } from './catalog.js';
 import { GAME_TYPES, getGameTypeId, isTableGame } from './game-types.js';
 import { GAME_RELEASES } from './game-releases.js';
+import { THEME_GAME_IDS, HACKSAW_HIGHLIGHT_IDS, NOLIMIT_HIGHLIGHT_IDS, HACKSAW_CARD_GAME_IDS } from './collection-picks.js';
 export { GAME_RELEASES, RELEASES_VERIFIED_ON } from './game-releases.js';
 
 // Game format and editorial collections are separate from the studio/provider.
-// Format mapping is documented in game-types.js. The lobby navigation is a
-// deliberately small set; existing editorial collections remain addressable.
+// Format mapping is documented in game-types.js. Shared browse categories power
+// the category bar, sidebar and lobby shelves; sparse formats stay in broader groups.
 export const CATEGORIES = [
-  { id: 'popular', title: 'Popular', description: 'A curated selection from the current demo catalog.' },
-  { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
-  { id: 'tap', title: 'Tap Games', description: 'Tap-and-reveal games and Tapcards.' },
-  { id: 'instant-win', title: 'Instant Win', description: 'Instant games from the provider catalog.' },
-  { id: 'scratchcards', title: 'Scratchcards', description: 'Reveal-and-scratch games.' },
-  { id: 'crash', title: 'Crash', description: 'Crash games from the provider catalog.' },
-  { id: 'table', title: 'Table Games', description: 'Blackjack, roulette, baccarat and casino poker.' },
-  { id: 'video-poker', title: 'Video Poker', description: 'Single-player video poker games.' },
+  { id: 'popular', title: 'COP COIN Picks', description: 'Our handpicked mix of slots, card reveals and quick-play games.' },
   { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
+  { id: 'nolimit-city', title: 'Nolimit City', description: 'Explore the Nolimit City collection.' },
+  { id: 'hacksaw-gaming', title: 'Hacksaw Gaming', description: 'A mix of Hacksaw slots, scratch games and quick-play games.' },
+  { id: 'wild-west', title: 'Wild West', description: 'Outlaws, saloons and frontier adventures.' },
+  { id: 'gold-rush', title: 'Gold Rush', description: 'Gold, treasure and mining-themed games.' },
+  { id: 'egypt', title: 'Egyptian Treasures', description: 'Pharaohs, pyramids and ancient Egyptian treasures.' },
+  { id: 'asian', title: 'Asian Fortune', description: 'Explore games inspired by Asian settings and legends.' },
+  { id: 'fruit', title: 'Fruit Games', description: 'Fruit-themed slots and tap games.' },
+  { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
+  { id: 'scratch-tap', title: 'Scratch & Tap', description: 'Scratchcards, Tapcards and tap-and-reveal games.' },
+  { id: 'table', title: 'Table & Cards', description: 'Roulette, blackjack, baccarat, poker and card games.' },
+  { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
 ];
 
+// Keep existing links and exact game formats available without promoting tiny shelves.
 export const LEGACY_CATEGORIES = [
-  { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
   { id: 'picks', title: 'Editor’s Favorites', description: 'A handpicked selection for you to try and review.' },
-  ...GAME_TYPES,
-  { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
-  { id: 'jackpot', title: 'Jackpot Picks', description: 'Demo titles from the Jackpot collection.' },
-  { id: 'fruit', title: 'Fruit Slots', description: 'Fruit-themed titles and collections.' },
+  { id: 'instant-games', title: 'Instant Games', description: 'Instant and crash games from the provider catalog.' },
   { id: 'adventure', title: 'Adventure', description: 'Explore temples, jungles, pirates and treasure.' },
+  { id: 'spooky', title: 'Spooky Spins', description: 'A handpicked collection of ghosts, witches and spooky themes.' },
+  { id: 'jackpot', title: 'Jackpot Picks', description: 'Demo titles from the Jackpot collection.' },
+  ...GAME_TYPES,
 ];
 
 const allCategories = [...CATEGORIES, ...LEGACY_CATEGORIES.filter(category => !CATEGORIES.some(item => item.id === category.id))];
-export const FILTER_CATEGORIES = [...CATEGORIES, ...GAME_TYPES.filter(type => !CATEGORIES.some(category => category.id === type.id))];
+export const FILTER_CATEGORIES = CATEGORIES;
 
 // General release dates cover the entire active catalog, with per-game source provenance.
 export function getGameReleaseDate(gameOrId) {
@@ -42,12 +47,14 @@ const POPULAR_IDS = [
   'SanQuentin',
   'monopolymneyv196',
   'niptuck000000000',
+  'hacksaw-1294',
   'bloodsuckerstapa',
   'gonzosqumegaways',
   'bonanzatacardsv1',
   'ouija00000000000',
   'starbursttaparoo',
   'SixFeetUnder',
+  'hacksaw-1321',
   'gopnik0000000000',
   'freakshowrevelat',
   'cashvolttaparoo0',
@@ -58,6 +65,7 @@ const POPULAR_IDS = [
   'fruitshopgrr96f1',
   'divinegoldr96f10',
   'TombstoneBegins',
+  'hacksaw-2491',
   'GatorHunters',
   'starburstgar96f1',
   'FireInTheHole3',
@@ -106,18 +114,24 @@ const SPOOKY_IDS = new Set([
   'draculaawakening', 'luckyhalloween00',
   'freakshowrevelat', 'BookOfShadows',
 ]);
+const themeIds = new Map(Object.entries(THEME_GAME_IDS).map(([id, ids]) => [id, new Set(ids)]));
+const cardGameIds = new Set(HACKSAW_CARD_GAME_IDS);
 
 // Jackpot membership is based only on the official title naming Jackpot,
 // not on a claim that a public demo participates in a funded jackpot pool.
 const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
-  table: isTableGame,
+  ...Object.fromEntries([...themeIds].map(([id, ids]) => [id, game => ids.has(game.id)])),
+  table: game => isTableGame(game) || getGameTypeId(game) === 'video-poker' || cardGameIds.has(game.id),
+  'nolimit-city': game => game.providerId === 'nolimit-city',
+  'hacksaw-gaming': game => game.providerId === 'hacksaw-gaming',
+  'scratch-tap': game => ['scratchcards', 'tap'].includes(getGameTypeId(game)),
+  'instant-games': game => ['instant-win', 'crash'].includes(getGameTypeId(game)),
   popular: game => popular.has(game.id),
   'new-releases': game => latestReleaseIds.has(game.id),
   picks: game => picks.has(game.id),
   megaways: game => /\bmegaways\b/i.test(game.title),
   jackpot: game => /\bjackpots?\b/i.test(game.title),
-  fruit: game => /fruit|berryburst|go bananas/i.test(game.title),
   adventure: game => /gonzo|gonzita|pirate|treasure|jungle|temple|pyramid|aztec|atlantis|tomb of|dungeon quest/i.test(game.title),
   spooky: game => SPOOKY_IDS.has(game.id),
 };
@@ -127,9 +141,15 @@ const today = new Date().toISOString().slice(0, 10);
 const latestReleases = GAMES.filter(game => getGameReleaseDate(game) && getGameReleaseDate(game) <= today)
   .sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a))).slice(0, 100);
 const latestReleaseIds = new Set(latestReleases.map(game => game.id));
+const providerOrder = (providerId, highlights) => [...new Set([
+  ...highlights, ...GAMES.filter(game => game.providerId === providerId).map(game => game.id),
+])];
 const orderedCollections = new Map([
   ['popular', POPULAR_IDS], ['picks', PICK_IDS],
   ['new-releases', latestReleases.map(game => game.id)],
+  ['nolimit-city', providerOrder('nolimit-city', NOLIMIT_HIGHLIGHT_IDS)],
+  ['hacksaw-gaming', providerOrder('hacksaw-gaming', HACKSAW_HIGHLIGHT_IDS)],
+  ...Object.entries(THEME_GAME_IDS),
 ]);
 const collections = new Map(allCategories.map(category => [category.id,
   orderedCollections.has(category.id) ? orderedCollections.get(category.id).map(id => gamesById.get(id)).filter(Boolean)

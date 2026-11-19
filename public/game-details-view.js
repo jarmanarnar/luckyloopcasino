@@ -1,5 +1,5 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, LEGACY_CATEGORIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
+import { CATEGORIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -8,7 +8,7 @@ import { GAME_ARTWORK } from './game-artwork.js';
 
 const games = new Map(GAMES.map(game => [game.id, game]));
 const providerNames = new Map(PROVIDERS.map(provider => [provider.id, provider.name]));
-const categoryNames = new Map([...CATEGORIES, ...LEGACY_CATEGORIES].map(category => [category.id, category.title]));
+const categoryNames = new Map(CATEGORIES.map(category => [category.id, category.title]));
 let controller;
 
 function node(tag, className, text) {
@@ -97,7 +97,7 @@ export function initGameDetails({ router, member } = {}) {
       time.dateTime = releaseDate;
       addAttribute('Release date', time);
     }
-    const categories = getGameCategoryIds(game).filter(id => !['all', getGameTypeId(game)].includes(id));
+    const categories = getGameCategoryIds(game).filter(id => categoryNames.has(id) && !['all', getGameTypeId(game)].includes(id));
     if (categories.length) {
       const links = node('div', 'game-details-collections');
       for (const categoryId of categories) links.append(routeLink(categoryNames.get(categoryId) || categoryId,
@@ -183,12 +183,13 @@ export function initGameDetails({ router, member } = {}) {
     const title = node('h2', 'game-shelf__title');
     title.id = 'game-details-related-title';
     const popularRoute = { type: 'category', categoryId: 'popular' };
-    title.append(routeLink('Popular', popularRoute, 'game-shelf__title-link'));
+    const collectionTitle = categoryNames.get('popular') || 'Popular';
+    title.append(routeLink(collectionTitle, popularRoute, 'game-shelf__title-link'));
     const all = routeLink('All', popularRoute, 'game-details-all shelf-see-all');
-    all.setAttribute('aria-label', 'See all Popular games');
+    all.setAttribute('aria-label', `See all ${collectionTitle} games`);
     header.append(title, all);
     const list = node('ul', 'game-track');
-    list.setAttribute('aria-label', 'Popular games');
+    list.setAttribute('aria-label', `${collectionTitle} games`);
     list.dir = 'ltr';
     list.tabIndex = 0;
     for (const candidate of related) {

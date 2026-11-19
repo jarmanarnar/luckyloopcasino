@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
 import { GAMES, PROVIDERS } from '../public/catalog.js';
-import { CATEGORIES, LEGACY_CATEGORIES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { PROVIDER_LOGOS } from '../public/provider-assets.js';
 import { getGameTypeId } from '../public/game-types.js';
 import { getProviderDetails } from '../public/provider-details.js';
@@ -72,11 +72,61 @@ test('all 33 previously excluded games are restored once with their original dem
   }
 });
 
-test('lobby categories stay focused while existing editorial choices remain available', () => {
-  assert.deepEqual(CATEGORIES.map(category => category.id), ['popular', 'slots', 'tap', 'instant-win', 'scratchcards', 'crash', 'table', 'video-poker', 'new-releases']);
-  assert.equal(getGamesForCategory('popular').length, 37);
-  assert.equal(new Set(getGamesForCategory('popular').map(game => game.id)).size, 37);
-  assert.ok(getGamesForCategory('spooky').length > 0);
+test('primary categories provide substantial collections and cover every available game', () => {
+  assert.deepEqual(CATEGORIES.map(category => category.id), [
+    'popular', 'new-releases', 'nolimit-city', 'hacksaw-gaming', 'wild-west',
+    'gold-rush', 'egypt', 'asian', 'fruit', 'megaways', 'scratch-tap', 'table', 'slots',
+  ]);
+  const covered = new Set();
+  for (const category of CATEGORIES) {
+    const games = getGamesForCategory(category.id);
+    assert.ok(games.length >= 10, `${category.id} needs enough games to browse`);
+    assert.equal(new Set(games.map(game => game.id)).size, games.length, category.id);
+    assert.ok(games.every(game => GAMES.includes(game)), category.id);
+    games.forEach(game => covered.add(game.id));
+  }
+  assert.deepEqual(covered, new Set(GAMES.map(game => game.id)));
+});
+
+test('theme collections use relevant settings and fruit titles without ambiguous keyword matches', () => {
+  const cases = [
+    { categoryId: 'wild-west', count: 17,
+      included: ['TombstoneBegins', 'DeadwoodRip', 'hacksaw-1620'],
+      excluded: ['EastVsWest', 'hacksaw-1309', 'hacksaw-1197'] },
+    { categoryId: 'gold-rush', count: 18,
+      included: ['hacksaw-1020', 'gonzosgoldr30000'],
+      excluded: ['GoldenShower', 'rome000000000000'] },
+    { categoryId: 'egypt', count: 20,
+      included: ['TombOfAkhenaten', 'hacksaw-1612'],
+      excluded: ['BookOfShadows', 'extrachillliv396'] },
+    { categoryId: 'asian', count: 12,
+      included: ['hacksaw-1348', 'dragonslckstacks'],
+      excluded: ['divinegoldr96f10', 'finndragontr96f1'] },
+    { categoryId: 'fruit', count: 30,
+      included: ['fruitshopgrr96f1', 'hacksaw-1693', 'hacksaw-1081', 'hacksaw-1031', 'happyapples00000'],
+      excluded: ['PearlHarbor', 'hacksaw-1938'] },
+  ];
+  for (const { categoryId, count, included, excluded } of cases) {
+    const members = new Set(getGamesForCategory(categoryId).map(game => game.id));
+    assert.equal(members.size, count, categoryId);
+    for (const id of [...included, ...excluded]) assert.ok(GAMES.some(game => game.id === id), id);
+    for (const id of included) assert.equal(members.has(id), true, `${categoryId}: ${id}`);
+    for (const id of excluded) assert.equal(members.has(id), false, `${categoryId}: ${id}`);
+  }
+  assert.equal(CATEGORIES.find(category => category.id === 'fruit').title, 'Fruit Games');
+  assert.equal(getGamesForCategory('megaways').length, 56);
+});
+
+test('provider highlights include their complete catalogs and Picks retains distinct editorial choices', () => {
+  for (const [providerId, count] of [['nolimit-city', 141], ['hacksaw-gaming', 257]]) {
+    const highlighted = getGamesForCategory(providerId);
+    assert.equal(highlighted.length, count, providerId);
+    assert.deepEqual(new Set(highlighted.map(game => game.id)),
+      new Set(GAMES.filter(game => game.providerId === providerId).map(game => game.id)), providerId);
+  }
+  assert.equal(CATEGORIES.find(category => category.id === 'popular').title, 'COP COIN Picks');
+  assert.equal(getGamesForCategory('popular').length, 40);
+  assert.equal(new Set(getGamesForCategory('popular').map(game => game.id)).size, 40);
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
 });
 

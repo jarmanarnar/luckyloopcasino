@@ -17,7 +17,7 @@ function documentStub() {
 
 test('every official cover belongs to an available game and is a valid local image file', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  assert.equal(Object.keys(GAME_ARTWORK).length, 272);
+  assert.equal(Object.keys(GAME_ARTWORK).length, 318);
   for (const category of ['popular']) {
     for (const game of getGamesForCategory(category).slice(0, 8)) {
       assert.ok(GAME_ARTWORK[game.id], `The first row of ${category} needs artwork for ${game.title}`);
@@ -32,6 +32,16 @@ test('every official cover belongs to an available game and is a valid local ima
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
       assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
     } else assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
+  }
+});
+
+test('each curated theme opens with twelve games that have cover artwork', () => {
+  for (const categoryId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']) {
+    const openingGames = getGamesForCategory(categoryId).slice(0, 12);
+    assert.equal(openingGames.length, 12, `${categoryId} needs a complete opening selection`);
+    for (const game of openingGames) {
+      assert.ok(GAME_ARTWORK[game.id], `${categoryId} needs artwork for ${game.title}`);
+    }
   }
 });
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { formatRoute, initRouter, parseRoute } from '../public/routes.js';
+import { getCatalogPage } from '../public/catalog-page-model.js';
 
 function browser(hash = '', state = null, storage = new Map()) {
   const listeners = new Map(), frames = new Map();
@@ -110,6 +111,25 @@ test('category, provider and search links retain their page and filters after re
   for (const hash of ['#', '#/', '#/unrecognised', '#/providers/%E0%A4%A', '#/providers/../../x']) {
     assert.deepEqual(parseRoute(hash), { type: 'home' });
   }
+});
+
+test('new browse groups and existing exact-format links remain refresh-safe destinations', () => {
+  for (const categoryId of ['nolimit-city', 'hacksaw-gaming', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap',
+    'megaways', 'adventure', 'fruit', 'spooky', 'jackpot', 'table',
+    'instant-win', 'crash', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'picks']) {
+    const route = { type: 'category', categoryId };
+    const hash = `#/${categoryId}`;
+    assert.equal(formatRoute(route), hash);
+    assert.deepEqual(parseRoute(hash), route);
+    const refreshed = initRouter({ window: browser(hash).scope }).getRoute();
+    assert.deepEqual(refreshed, route);
+    const page = getCatalogPage(refreshed);
+    assert.equal(page.type, 'category', categoryId);
+    assert.ok(page.games.length > 0, categoryId);
+  }
+  const filtered = { type: 'search', categoryId: 'hacksaw-gaming', providerId: 'hacksaw-gaming', query: 'Moneyplane' };
+  assert.deepEqual(parseRoute(formatRoute(filtered)), filtered);
+  assert.deepEqual(getCatalogPage(parseRoute(formatRoute(filtered))).games.map(game => game.id), ['hacksaw-2491']);
 });
 
 test('removed All Games addresses resolve to Search and preserve their filters on refresh', () => {

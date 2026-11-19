@@ -1,7 +1,7 @@
 import { createUiIcon } from './ui-icons.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const sharedIcons = { history: 'history', logout: 'logout', 'how-to-play': 'help', support: 'support', scratchcards: 'cards', 'video-poker': 'cards' };
+const sharedIcons = { history: 'history', logout: 'logout', 'how-to-play': 'help', support: 'support', 'scratch-tap': 'cards', scratchcards: 'cards', 'video-poker': 'cards' };
 
 function shape(tag, attributes) {
   const node = document.createElementNS(SVG_NS, tag);
@@ -21,6 +21,7 @@ export function createShelfIcon(id) {
       svg.append(path('m6 9 6 6 6-6-1.4-1.4-4.6 4.6-4.6-4.6L6 9Z'));
       break;
     case 'achievements':
+    case 'nolimit-city':
       svg.append(path('M12 2 3 6v6c0 5 5.3 8.8 9 10 3.7-1.2 9-5 9-10V6l-9-4Zm0 4 1.8 3.7 4.1.6-3 2.9.7 4.1-3.6-1.9-3.6 1.9.7-4.1-3-2.9 4.1-.6L12 6Z'));
       break;
     case 'tasks':
@@ -51,6 +52,21 @@ export function createShelfIcon(id) {
     case 'slots':
       svg.append(path('M4 3h16v3.6L10.1 21H4.7l9.7-13.8H8.2v2.3H4V3Z'));
       break;
+    case 'hacksaw-gaming':
+      svg.append(path('M2 4h20v4H2V4Zm2 6h16l-2 4-2-2-2 4-2-2-2 4-2-2-2 4-2-2V10Z'));
+      break;
+    case 'wild-west':
+      svg.append(path('M7 4h10l2 10H5L7 4Zm-4 9 3 3h12l3-3 2 2c-2 4-6 6-11 6S3 19 1 15l2-2Z'));
+      break;
+    case 'gold-rush':
+      svg.append(path('m9 3-2 6h10l-2-6H9ZM4 12l-3 8h10l-2-8H4Zm11 0-2 8h10l-3-8h-5Z'));
+      break;
+    case 'egypt':
+      svg.append(path('M12 2 1 21h22L12 2Zm0 4 7.5 13H12V6Z'));
+      break;
+    case 'asian':
+      svg.append(path('M6 2h12v3H6V2ZM4 7h16l2 5-2 5H4l-2-5 2-5Zm2 12h12v3H6v-3Z'));
+      break;
     case 'table':
     case 'blackjack':
     case 'roulette':
@@ -58,18 +74,17 @@ export function createShelfIcon(id) {
     case 'poker':
       svg.append(path('M12 3c-2 4-8 7-8 11a4 4 0 0 0 7 2l-2 5h6l-2-5a4 4 0 0 0 7-2c0-4-6-7-8-11Z'));
       break;
+    case 'instant-games':
     case 'instant-win':
     case 'tap':
       svg.append(path('M10 2a1.8 1.8 0 0 1 1.8 1.8v6.9l.5-.5a1.7 1.7 0 0 1 2.7.6 1.7 1.7 0 0 1 2.9.9 1.6 1.6 0 0 1 2.3 1.8l-1 4.1c-.7 2.6-2.2 4.4-5 4.4h-2.6c-1.8 0-3.1-.8-4.2-2.5l-3.8-6a1.8 1.8 0 0 1 2.8-2.2l1.8 1.9V3.8A1.8 1.8 0 0 1 10 2Z'));
       svg.append(path('M3.1 3.3 6 5.8 4.8 7.2 1.9 4.7l1.2-1.4ZM17.7 3.3l1.2 1.4L16 7.2l-1.2-1.4 2.9-2.5Z'));
       break;
-    case 'popular':
-      svg.append(path('M13.5 2c.9 1.5 1.6 3.6 1 6.5.9-.5 2-1.5 2.5-3.5.4 2.8 4 5.2 4 10 0 4.7-3.8 8-9 8-5.5 0-9-2.6-9-7 0-2.9 2.7-6.2 6-9-.2 1.9.1 3 1 4 2.4-2.5 4.2-4.5 3.5-9Zm-1.1 11c.6 2.1-1.4 3.2-1.9 4.4-.3.6-.1 2.6 1.7 2.6 1.9 0 2.8-1.3 2.6-2.7-.2-1.7-1.8-2.8-2.4-4.3Z'));
-      break;
     case 'crash':
     case 'new-releases':
       svg.append(path('M14 3.1c2.1-.8 4.4-1.1 6.8-1l.1.1c.1 2.4-.2 4.7-1 6.8-1.1 3-3.2 5.5-6.3 7.3l-5.9-5.9C9.5 7.3 12 5.2 14 3.1ZM15 6.5a2 2 0 1 0 2.8 2.8A2 2 0 0 0 15 6.5ZM6.9 8.4 3.8 9 1 14l5.6-.8-1.2-1.3 1.5-3.5Zm8.7 8.7-.6 3.1L10 23l.8-5.6 1.3 1.2 3.5-1.5ZM5.8 15.4c-2 .4-3.7 2.1-3.8 6.6 4.5-.1 6.2-1.8 6.6-3.8l-2.8-2.8Z'));
       break;
+    case 'popular':
     case 'picks':
       svg.append(path('m12 2.5 3 6 6.6 1-4.8 4.7 1.1 6.6-5.9-3.1-5.9 3.1 1.1-6.6L2.4 9.5l6.6-1 3-6Z'));
       break;

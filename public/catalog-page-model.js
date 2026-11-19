@@ -2,7 +2,8 @@ import { GAMES, PROVIDERS } from './catalog.js';
 import { CATEGORIES, LEGACY_CATEGORIES, getGamesForCategory, getGameReleaseDate } from './collections.js';
 
 export const PAGE_SIZE = 35;
-export const LOBBY_CATEGORIES = ['popular', 'slots', 'new-releases'];
+// One ordered category list drives both navigation and the lobby's game shelves.
+export const LOBBY_CATEGORIES = CATEGORIES.map(category => category.id);
 const categories = new Map([...LEGACY_CATEGORIES, ...CATEGORIES].map(category => [category.id, category]));
 const gamesById = new Map(GAMES.map(game => [game.id, game]));
 const byName = (a, b) => a.title.localeCompare(b.title);

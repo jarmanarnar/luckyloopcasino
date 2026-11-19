@@ -1,7 +1,7 @@
 import { isFeaturePage } from './feature-pages.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
-const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'spooky', 'picks', 'tap', 'instant-win', 'scratchcards', 'crash', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'nolimit-city', 'hacksaw-gaming', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
 const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };

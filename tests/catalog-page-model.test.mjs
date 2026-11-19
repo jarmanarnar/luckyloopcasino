@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAMES } from '../public/catalog.js';
-import { getGameReleaseDate } from '../public/collections.js';
+import { CATEGORIES, FILTER_CATEGORIES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { getProviderDetails } from '../public/provider-details.js';
 import { getCatalogPage, LOBBY_CATEGORIES, PAGE_SIZE, pageSlice } from '../public/catalog-page-model.js';
 
@@ -38,11 +38,33 @@ test('Favorites distinguishes an empty collection from a search with no matches 
   assert.deepEqual(getCatalogPage({ type: 'favorites' }, { favoriteIds: [] }).games, []);
 });
 
-test('home remains a lobby with Popular, Slots and New Releases in the requested order', () => {
+test('home exposes every toolbar category as a browsable lobby shelf in the same order', () => {
   assert.deepEqual(getCatalogPage({ type: 'home' }), {
     type: 'home', title: 'Lobby', activeMenu: 'lobby',
   });
-  assert.deepEqual(LOBBY_CATEGORIES, ['popular', 'slots', 'new-releases']);
+  assert.deepEqual(LOBBY_CATEGORIES, CATEGORIES.map(category => category.id));
+  assert.deepEqual(FILTER_CATEGORIES.map(category => category.id), LOBBY_CATEGORIES);
+  assert.equal(new Set(LOBBY_CATEGORIES).size, LOBBY_CATEGORIES.length);
+  for (const categoryId of ['instant-games', 'instant-win', 'crash', 'video-poker', 'tap', 'scratchcards']) {
+    assert.equal(LOBBY_CATEGORIES.includes(categoryId), false, categoryId);
+  }
+  for (const category of CATEGORIES) {
+    const page = getCatalogPage({ type: 'category', categoryId: category.id });
+    assert.equal(page.type, 'category', category.id);
+    assert.equal(page.title, category.title);
+    assert.equal(page.activeMenu, category.id);
+    assert.deepEqual(new Set(ids(page)), new Set(getGamesForCategory(category.id).map(game => game.id)));
+  }
+});
+
+test('all instant and crash games are visible within Picks, Hacksaw or Table shelves', () => {
+  const quickGames = [...getGamesForCategory('instant-win'), ...getGamesForCategory('crash')];
+  assert.equal(quickGames.length, 15);
+  const visible = new Set(['popular', 'hacksaw-gaming', 'table']
+    .flatMap(categoryId => getGamesForCategory(categoryId).slice(0, 24).map(game => game.id)));
+  for (const game of quickGames) assert.ok(visible.has(game.id), `${game.title} needs a visible lobby home`);
+  const picks = getGamesForCategory('popular').slice(0, 24).map(game => game.id);
+  for (const id of ['hacksaw-1294', 'hacksaw-1321', 'hacksaw-2491']) assert.ok(picks.includes(id), id);
 });
 
 test('Search is the complete searchable catalog distinct from the Lobby overview', () => {
@@ -57,17 +79,18 @@ test('Search is the complete searchable catalog distinct from the Lobby overview
   assert.deepEqual(ids(filtered), ['bloodsuckerstapa']);
 });
 
-test('Popular has its own identity and preserves editorial order before optional sorting', () => {
+test('COP COIN Picks preserves its editorial order before optional sorting', () => {
   const page = getCatalogPage({ type: 'category', categoryId: 'popular' });
   assert.equal(page.type, 'category');
-  assert.equal(page.title, 'Popular');
+  assert.equal(page.title, 'COP COIN Picks');
   assert.equal(page.activeMenu, 'popular');
   assert.equal(page.sort, 'featured');
-  assert.equal(page.games.length, 37);
+  assert.equal(page.games.length, 40);
   assert.equal(pageSlice(page.games).hasMore, true);
-  assert.equal(pageSlice(page.games, 70).visible.length, 37);
+  assert.equal(pageSlice(page.games, 70).visible.length, 40);
   assert.equal(pageSlice(page.games, 70).hasMore, false);
-  assert.deepEqual(ids(page).slice(0, 5), [
+  const additions = new Set(['hacksaw-1294', 'hacksaw-1321', 'hacksaw-2491']);
+  assert.deepEqual(ids(page).filter(id => !additions.has(id)).slice(0, 5), [
     'nunchucksr96f100', 'SanQuentin', 'monopolymneyv196',
     'niptuck000000000', 'bloodsuckerstapa',
   ]);
@@ -79,12 +102,32 @@ test('category provider and text filters intersect without spilling into the ful
   });
   assert.deepEqual(ids(page), ['ouija00000000000']);
   assert.equal(page.query, 'OuIjA');
-  assert.equal(page.title, 'Popular');
+  assert.equal(page.title, 'COP COIN Picks');
   assert.equal(page.activeMenu, 'popular');
 
   const slots = getCatalogPage({ type: 'category', categoryId: 'slots', providerId: 'taparoo' });
   assert.deepEqual(slots.games, [], 'Tap-A-Roo games must not leak into Slots');
   assert.equal(slots.title, 'Slots');
+});
+
+test('new browse groups intersect provider and text filters on category and search pages', () => {
+  const cases = [
+    { categoryId: 'hacksaw-gaming', providerId: 'hacksaw-gaming', query: '  MoNeYpLaNe ', expected: ['hacksaw-2491'] },
+    { categoryId: 'nolimit-city', providerId: 'nolimit-city', query: 'san quentin', expected: ['SanQuentin2', 'SanQuentinManhunt', 'SanQuentin'] },
+    { categoryId: 'table', providerId: 'netent', query: 'jacks', expected: ['jacksmultihandn1'] },
+    { categoryId: 'table', providerId: 'hacksaw-gaming', query: 'baccarat', expected: ['hacksaw-1446'] },
+    { categoryId: 'scratch-tap', providerId: 'taparoo', query: 'blood', expected: ['bloodsuckerstapa'] },
+    { categoryId: 'fruit', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
+    { categoryId: 'megaways', providerId: 'red-tiger', query: 'gonzo', expected: ['gonzosqumegaways'] },
+    { categoryId: 'wild-west', providerId: 'hacksaw-gaming', query: 'duel', expected: ['hacksaw-1620'] },
+    { categoryId: 'hacksaw-gaming', providerId: 'netent', query: '', expected: [] },
+  ];
+  for (const { expected, ...filters } of cases) {
+    for (const type of ['category', 'search']) {
+      const page = getCatalogPage({ type, ...filters });
+      assert.deepEqual(ids(page), expected, `${type}: ${filters.categoryId}`);
+    }
+  }
 });
 
 test('provider directory search and individual provider pages have separate identities', () => {
