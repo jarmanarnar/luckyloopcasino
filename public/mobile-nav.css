@@ -66,11 +66,13 @@
   body[data-auth="guest"] { --mobile-nav-height: 0px; }
   body[data-mobile-nav="true"] { padding-bottom: var(--mobile-nav-height); }
   body[data-mobile-nav="true"][data-auth="member"] .mobile-nav { display: grid; }
-  body[data-mobile-nav="true"][data-view="game"] { padding-bottom: 0; }
-  body[data-mobile-nav="true"][data-view="game"] .mobile-nav { display: none; }
+  /* Embedded players retain the game-details route and its lobby view marker.
+     Match the actual player modes with the same specificity as the member rule. */
+  body[data-mobile-nav="true"]:is([data-view="game"], [data-player-mobile="true"], [data-player-fullscreen="true"]) { padding-bottom: 0; }
+  body[data-mobile-nav="true"]:is([data-view="game"], [data-player-mobile="true"], [data-player-fullscreen="true"]) .mobile-nav { display: none; }
   body[data-mobile-nav="true"][data-auth="member"] .top-bar #menu-toggle { display: none; }
   body[data-mobile-nav="true"]:not([data-view="game"]) .top-bar .site-logo { display: flex; }
-  html:has(body[data-mobile-nav="true"][data-auth="member"]:not([data-view="game"])) { scroll-padding-block-end: var(--mobile-nav-height); }
+  html:has(body[data-mobile-nav="true"][data-auth="member"]:not([data-view="game"], [data-player-mobile="true"], [data-player-fullscreen="true"])) { scroll-padding-block-end: var(--mobile-nav-height); }
 }
 /* Retain full-size guest actions when the header also contains the menu trigger. */
 @media (max-width: 22.4375rem) {
