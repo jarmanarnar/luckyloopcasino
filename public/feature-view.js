@@ -21,6 +21,7 @@ export function initFeatureView({ router, wallet, account, auth, openRedeem, ope
   if (!router || !root || !content || !title || !header) return;
   const readState = () => account.isSignedIn() ? account.getMemberState() : createMemberState();
   let state = readState();
+  let signedIn = account.isSignedIn();
   let currentPage = null;
   const memberListeners = new Set();
   const games = new Map(GAMES.map(game => [game.id, game]));
@@ -47,6 +48,8 @@ export function initFeatureView({ router, wallet, account, auth, openRedeem, ope
   const ctx = {
     node, icon: createShelfIcon, router, games: GAMES, state: () => state, ui: { historyFilter: 'all' },
     notify, openAchievement,
+    isSignedIn: () => account.isSignedIn(),
+    openRegistration: () => auth?.open('register'),
     refresh(pageId, focusId) {
       if (currentPage !== pageId) return false;
       renderContent();
@@ -115,19 +118,22 @@ export function initFeatureView({ router, wallet, account, auth, openRedeem, ope
     document.title = `${page.title} · COP COIN`;
     notice.textContent = '';
     if (currentPage === 'history' && meta.historyFilter === 'transaction') ctx.ui.historyFilter = 'transaction';
-    void save(() => account.recordPageVisit(currentPage));
+    if (account.isSignedIn()) void save(() => account.recordPageVisit(currentPage));
     renderContent();
     if (meta.source === 'navigate' && meta.focus !== false) title.focus({ preventScroll: true });
   }
   account.subscribe(() => {
     const next = readState();
-    if (JSON.stringify(next) === JSON.stringify(state)) return;
+    const authChanged = signedIn !== account.isSignedIn();
+    signedIn = account.isSignedIn();
+    if (!authChanged && JSON.stringify(next) === JSON.stringify(state)) return;
     const preferencesChanged = JSON.stringify(next.settings) !== JSON.stringify(state.settings);
     state = next;
+    if (authChanged) notice.textContent = '';
     if (preferencesChanged) applyPreferences();
     // An update in another tab must not erase an unfinished form.
     const editing = content.contains?.(document.activeElement) && document.activeElement?.matches('input, textarea, select');
-    if (currentPage && !editing) renderContent();
+    if (currentPage && (authChanged || !editing)) renderContent();
     for (const listener of memberListeners) listener();
   });
   router.subscribe(render);

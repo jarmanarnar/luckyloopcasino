@@ -7,15 +7,17 @@ import { resizeHeroCarousel } from '../public/hero-resize.js';
 const source = (await readFile(new URL('../public/hero-carousel.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initHeroCarousel', 'function initHeroCarousel');
 
-function heroPage({ reduced = false, intersection = true, starting = false } = {}) {
+function heroPage({ reduced = false, intersection = true, starting = false, welcomeGuest = false, nolimitMember = false, signedIn = false, nativeScrollLeft = 0 } = {}) {
   const calls = [], timers = new Map(), mutations = [], intersections = [], animations = [], providerCalls = [];
+  const accountListeners = new Set();
+  let authenticated = signedIn;
   let timerId = 0, selected = 0, modal = false, factories = 0, now = 0;
   const document = { body: { dataset: { view: 'lobby' } }, hidden: false, activeElement: null };
   if (starting) Object.assign(document.body.dataset, { appState: 'loading', appStarting: 'true' });
   class Node {
     constructor() { this.dataset = {}; this.style = {}; this.attributes = new Map(); this.listeners = new Map(); this.children = []; this.hidden = false; this.disabled = false; this.textContent = ''; }
     append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
-    replaceChildren() { this.children = []; }
+    replaceChildren() { for (const child of this.children) child.parent = null; this.children = []; }
     setAttribute(name, value) { this.attributes.set(name, value); }
     getAttribute(name) { return this.attributes.get(name) ?? null; }
     addEventListener(type, callback) {
@@ -59,6 +61,7 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
   const ids = ['hero-carousel', 'hero-viewport', 'hero-track', 'hero-dots',
     'hero-status', 'hero-controls', 'catalog-categories', 'catalog-shelves'];
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
+  nodes['hero-viewport'].scrollLeft = nativeScrollLeft;
   const root = nodes['hero-carousel'];
   root.append(nodes['hero-viewport'], nodes['hero-controls']);
   nodes['hero-viewport'].append(nodes['hero-track']);
@@ -69,9 +72,24 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
     slide.dataset.heroTitle = title;
     cta.dataset.heroCategory = ['picks', 'providers', 'tap', 'slots'][index];
     slide.append(cta);
-    nodes['hero-track'].append(slide);
     return slide;
   });
+  if (nolimitMember) {
+    const nolimit = new Node(), explore = new Node();
+    Object.assign(nolimit.dataset, { heroTitle: 'Nolimit City', heroMember: '' });
+    nolimit.hidden = true;
+    explore.dataset.heroCategory = 'nolimit-city';
+    nolimit.append(explore);
+    slides.splice(3, 0, nolimit);
+  }
+  if (welcomeGuest) {
+    const welcome = new Node(), register = new Node();
+    Object.assign(welcome.dataset, { heroTitle: 'Welcome Bonus', heroGuest: '' });
+    register.dataset.authOpen = 'register';
+    welcome.append(register);
+    slides.unshift(welcome);
+  }
+  nodes['hero-track'].append(...slides);
   nodes['hero-track'].querySelectorAll = selector => { assert.equal(selector, '.hero-carousel__slide'); return slides; };
   const firstShelf = new Node();
   nodes['catalog-shelves'].querySelector = selector => { assert.equal(selector, '.game-shelf'); return firstShelf; };
@@ -93,13 +111,22 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
   nodes['catalog-categories'].querySelector = selector => categoryButtons[selector.match(/^\[data-category="([^"]+)"\]$/)?.[1]] || null;
   const listeners = new Map();
   const emit = type => { for (const callback of listeners.get(type) || []) callback(api, type); };
+  let activeSlides = slides;
+  const wrapIndex = index => ((index % activeSlides.length) + activeSlides.length) % activeSlides.length;
   const api = {
     selectedScrollSnap: () => selected,
-    scrollSnapList: () => [0, 1, 2, 3],
+    scrollSnapList: () => activeSlides.map((_, index) => index),
+    slideNodes: () => activeSlides,
     on(type, callback) { if (!listeners.has(type)) listeners.set(type, []); listeners.get(type).push(callback); return api; },
-    scrollTo(index, jump) { calls.push({ action: 'scrollTo', index, jump }); selected = ((index % 4) + 4) % 4; emit('select'); },
-    scrollNext(jump) { calls.push({ action: 'scrollNext', jump }); selected = (selected + 1) % 4; emit('select'); },
-    scrollPrev(jump) { calls.push({ action: 'scrollPrev', jump }); selected = (selected + 3) % 4; emit('select'); },
+    scrollTo(index, jump) { calls.push({ action: 'scrollTo', index, jump }); selected = wrapIndex(index); emit('select'); },
+    scrollNext(jump) { calls.push({ action: 'scrollNext', jump }); selected = wrapIndex(selected + 1); emit('select'); },
+    scrollPrev(jump) { calls.push({ action: 'scrollPrev', jump }); selected = wrapIndex(selected - 1); emit('select'); },
+    reInit(options = {}) {
+      if (options.slides) activeSlides = [...options.slides];
+      selected = Math.max(0, Math.min(options.startIndex ?? selected, activeSlides.length - 1));
+      calls.push({ action: 'reInit', slides: [...activeSlides], startIndex: selected, nativeScrollLeft: nodes['hero-viewport'].scrollLeft });
+      emit('reInit');
+    },
   };
   const motion = new Node(); motion.matches = reduced;
   const window = new Node();
@@ -120,6 +147,10 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
   document.querySelector = selector => selector === 'dialog[open]' ? (modal ? new Node() : null) : nodes[selector.slice(1)] || null;
   document.createElement = () => new Node();
   const catalog = {
+    account: {
+      isSignedIn: () => authenticated,
+      subscribe(listener) { accountListeners.add(listener); return () => accountListeners.delete(listener); },
+    },
     openStore() { calls.push({ action: 'open-store' }); },
     openFeature(id) { calls.push({ action: 'open-feature', id }); },
     openProvider(id) { calls.push({ action: 'open-provider', id }); },
@@ -137,11 +168,14 @@ function heroPage({ reduced = false, intersection = true, starting = false } = {
   };
   const context = { document, window, Element: Node, MutationObserver, IntersectionObserver,
     catalog, resizeHeroCarousel,
-    EmblaCarousel(viewport, options) { factories++; assert.equal(viewport, nodes['hero-viewport']); calls.push({ action: 'init', options }); return api; } };
+    EmblaCarousel(viewport, options) { factories++; assert.equal(viewport, nodes['hero-viewport']); activeSlides = [...(options.slides || slides)]; calls.push({ action: 'init', options, nativeScrollLeft: viewport.scrollLeft, ready: root.dataset.ready }); return api; } };
   vm.runInNewContext(`${source}\ninitHeroCarousel(catalog);`, context);
   return {
     nodes, slides, calls, timers, api, document, firstShelf, categoryButtons, motion, window, mutations, intersections, animations, context, providerCalls,
     get factories() { return factories; }, get provider() { return provider; }, get category() { return category; },
+    get accountSubscriptionCount() { return accountListeners.size; },
+    setSignedIn(value) { authenticated = value; for (const listener of accountListeners) listener(); },
+    notifyAccount() { for (const listener of accountListeners) listener(); },
     visible(value = true) { intersections[0]?.callback([{ target: root, isIntersecting: value }]); },
     elapse(duration) { now += duration; },
     fireTimer() { assert.equal(timers.size, 1); const [id, timer] = timers.entries().next().value; now = Math.max(now, timer.due); timers.delete(id); timer.callback(); },
@@ -178,6 +212,178 @@ test('initializes once, reveals controls, and labels the four promotions with on
   assert.equal(page.slides[3].getAttribute('aria-label'), '4 of 4: Slots');
   assert.equal(page.nodes['hero-status'].textContent, '');
   assert.equal(page.timers.size, 0, 'intersection must confirm visibility before autoplay');
+});
+
+test('guests start with the welcome slide and members have no hidden promotion snap', () => {
+  const guest = heroPage({ welcomeGuest: true });
+  assert.equal(guest.api.slideNodes()[0], guest.slides[0]);
+  assert.equal(guest.slides[0].hidden, false);
+  assert.equal(guest.api.selectedScrollSnap(), 0);
+  assert.equal(guest.api.scrollSnapList().length, 5);
+  assert.equal(guest.nodes['hero-dots'].children.length, 5);
+  assert.equal(guest.slides[0].getAttribute('aria-label'), '1 of 5: Welcome Bonus');
+  assert.equal(guest.nodes['hero-dots'].children[0].getAttribute('aria-pressed'), 'true');
+
+  const member = heroPage({ welcomeGuest: true, signedIn: true });
+  assert.equal(member.slides[0].hidden, true);
+  assert.equal(member.api.slideNodes()[0], member.slides[1]);
+  assert.equal(member.api.scrollSnapList().length, 4);
+  assert.equal(member.nodes['hero-dots'].children.length, 4);
+  assert.equal(member.slides[1].getAttribute('aria-label'), '1 of 4: Our Picks');
+  member.nodes['hero-viewport'].emit('keydown', { key: 'ArrowLeft' });
+  assert.equal(member.api.slideNodes()[member.api.selectedScrollSnap()], member.slides[4]);
+  member.nodes['hero-viewport'].emit('keydown', { key: 'ArrowRight' });
+  assert.equal(member.api.slideNodes()[member.api.selectedScrollSnap()], member.slides[1]);
+});
+
+test('guest and member audiences each have five real slides, showing only their own promotion', () => {
+  for (const signedIn of [false, true]) {
+    const page = heroPage({ welcomeGuest: true, nolimitMember: true, signedIn });
+    const welcome = page.slides[0];
+    const nolimit = page.slides.find(slide => slide.dataset.heroTitle === 'Nolimit City');
+    assert.equal(welcome.hidden, signedIn);
+    assert.equal(nolimit.hidden, !signedIn);
+    assert.equal(page.api.slideNodes().includes(welcome), !signedIn);
+    assert.equal(page.api.slideNodes().includes(nolimit), signedIn);
+    assert.equal(page.api.slideNodes()[0], page.slides[signedIn ? 1 : 0]);
+    assert.equal(page.api.scrollSnapList().length, 5);
+    assert.equal(page.nodes['hero-dots'].children.length, 5);
+    assert.equal(page.nodes['hero-track'].children.length, 6);
+    assert.equal(page.api.slideNodes().every(slide => !slide.hidden), true);
+    const titles = page.nodes['hero-dots'].children.map(dot => dot.getAttribute('aria-label'));
+    assert.equal(titles.some(title => title.includes('Nolimit City')), signedIn);
+    assert.equal(titles.some(title => title.includes('Welcome Bonus')), !signedIn);
+  }
+});
+
+test('audience transitions exchange welcome and Nolimit without losing a public selection or creating empty dots', () => {
+  const page = heroPage({ welcomeGuest: true, nolimitMember: true });
+  const welcome = page.slides[0];
+  const nolimit = page.slides.find(slide => slide.dataset.heroTitle === 'Nolimit City');
+  page.visible();
+  for (let cycle = 0; cycle < 3; cycle++) {
+    page.select(3);
+    const selected = page.api.slideNodes()[3];
+    page.setSignedIn(true);
+    assert.equal(page.api.slideNodes()[page.api.selectedScrollSnap()], selected);
+    assert.equal(page.api.selectedScrollSnap(), 2);
+    assert.equal(nolimit.hidden, false);
+    assert.equal(welcome.hidden, true);
+    assert.equal(page.nodes['hero-dots'].children.length, 5);
+    assert.equal(page.nodes['hero-dots'].children[2].getAttribute('aria-pressed'), 'true');
+    page.select(page.api.slideNodes().indexOf(nolimit));
+    page.setSignedIn(false);
+    assert.equal(page.api.selectedScrollSnap(), 0);
+    assert.equal(page.api.slideNodes()[0], welcome);
+    assert.equal(nolimit.hidden, true);
+    assert.equal(page.api.slideNodes().includes(nolimit), false);
+    assert.equal(page.api.scrollSnapList().length, 5);
+    assert.equal(page.nodes['hero-dots'].children.length, 5);
+    assert.equal(page.nodes['hero-dots'].children[0].getAttribute('aria-pressed'), 'true');
+    assert.equal(new Set(page.api.slideNodes()).size, 5);
+    assert.equal(page.nodes['hero-track'].children.length, 6);
+    assert.equal(page.timers.size, 1);
+  }
+});
+
+test('initializing a guest carousel clears restored native scroll before Embla measures the first welcome slide', () => {
+  const page = heroPage({ welcomeGuest: true, nativeScrollLeft: 368 });
+  const initialization = page.calls.find(call => call.action === 'init');
+  assert.equal(initialization.ready, 'true', 'disable native scroll-snap fallback before measurement');
+  assert.equal(initialization.nativeScrollLeft, 0, 'restored wheel scroll must not offset the welcome under Embla');
+  assert.equal(page.nodes['hero-viewport'].scrollLeft, 0);
+  assert.equal(page.api.selectedScrollSnap(), 0);
+  assert.equal(page.api.slideNodes()[0], page.slides[0]);
+});
+
+test('audience changes clear native scroll before remeasuring both member and guest slides', () => {
+  const page = heroPage({ welcomeGuest: true });
+  for (const signedIn of [true, false]) {
+    page.nodes['hero-viewport'].scrollLeft = 368;
+    page.setSignedIn(signedIn);
+    const reinit = page.calls.filter(call => call.action === 'reInit').at(-1);
+    assert.equal(reinit.nativeScrollLeft, 0);
+    assert.equal(page.nodes['hero-viewport'].scrollLeft, 0);
+    assert.equal(page.api.selectedScrollSnap(), 0);
+    assert.equal(page.api.slideNodes()[0], page.slides[signedIn ? 1 : 0]);
+  }
+});
+
+test('login preserves a selected public promotion and logout returns to the first welcome without duplicates', () => {
+  const page = heroPage({ welcomeGuest: true });
+  page.visible();
+  page.select(3);
+  const selectedSlide = page.api.slideNodes()[3];
+  const previousFill = page.animations.at(-1);
+  page.elapse(1200);
+  page.setSignedIn(true);
+  assert.equal(page.api.slideNodes()[page.api.selectedScrollSnap()], selectedSlide);
+  assert.equal(page.api.selectedScrollSnap(), 2);
+  assert.equal(page.slides[0].hidden, true);
+  assert.equal(page.nodes['hero-dots'].children.length, 4);
+  assert.equal(page.nodes['hero-dots'].children[2].getAttribute('aria-pressed'), 'true');
+  assert.equal(previousFill.playState, 'idle');
+  assert.equal(page.timers.size, 1);
+
+  for (let cycle = 0; cycle < 3; cycle++) {
+    page.setSignedIn(false);
+    assert.equal(page.api.selectedScrollSnap(), 0);
+    assert.equal(page.api.slideNodes()[0], page.slides[0]);
+    assert.equal(page.slides[0].hidden, false);
+    assert.equal(page.nodes['hero-dots'].children.length, 5);
+    assert.equal(page.nodes['hero-dots'].children[0].getAttribute('aria-pressed'), 'true');
+    assert.equal(new Set(page.api.slideNodes()).size, 5);
+    assert.equal(page.nodes['hero-track'].children.length, 5);
+    assert.equal(page.slides[4].getAttribute('aria-label'), '5 of 5: Slots');
+    assert.equal(page.timers.size, 1);
+    page.setSignedIn(true);
+    assert.equal(page.api.selectedScrollSnap(), 0, 'removing a selected welcome falls back to the first member promotion');
+    assert.equal(page.api.slideNodes()[0], page.slides[1]);
+    assert.equal(page.nodes['hero-dots'].children.length, 4);
+    assert.equal(page.slides[4].getAttribute('aria-label'), '4 of 4: Slots');
+    assert.equal(page.timers.size, 1);
+  }
+  assert.equal(page.factories, 1, 'audience changes reinitialize the same carousel');
+  assert.equal(page.calls.filter(call => call.action === 'reInit').length, 7);
+});
+
+test('wallet notifications preserve the selected promotion, dot nodes, fill and autoplay deadline', () => {
+  for (const signedIn of [false, true]) {
+    const page = heroPage({ welcomeGuest: true, signedIn });
+    page.visible();
+    page.select(2);
+    const selectedSlide = page.api.slideNodes()[2];
+    const dot = page.nodes['hero-dots'].children[2];
+    const fill = page.animations.at(-1), animationCount = page.animations.length;
+    const timerId = [...page.timers.keys()][0];
+    page.elapse(1800);
+    page.notifyAccount(); page.notifyAccount();
+    assert.equal(page.calls.some(call => call.action === 'reInit'), false);
+    assert.equal(page.api.slideNodes()[page.api.selectedScrollSnap()], selectedSlide);
+    assert.equal(page.nodes['hero-dots'].children[2], dot);
+    assert.equal(page.animations.length, animationCount);
+    assert.equal(page.animations.at(-1), fill);
+    assert.equal(fill.currentTime, 1800);
+    assert.equal(page.timers.size, 1);
+    assert.equal([...page.timers.keys()][0], timerId);
+    assert.equal([...page.timers.values()][0].due, 6000);
+  }
+});
+
+test('destroy unsubscribes from account updates and cannot rebuild the welcome slide or restart autoplay', () => {
+  const page = heroPage({ welcomeGuest: true });
+  page.visible();
+  assert.equal(page.accountSubscriptionCount, 1);
+  const dot = page.nodes['hero-dots'].children[0];
+  const fill = page.animations.at(-1);
+  page.emit('destroy');
+  assert.equal(page.accountSubscriptionCount, 0);
+  assert.equal(page.timers.size, 0);
+  assert.equal(fill.playState, 'idle');
+  page.setSignedIn(true); page.setSignedIn(false); page.notifyAccount();
+  assert.equal(page.calls.some(call => call.action === 'reInit'), false);
+  assert.equal(page.nodes['hero-dots'].children[0], dot);
+  assert.equal(page.timers.size, 0);
 });
 
 test('saved site motion preference pauses autoplay and fill without overriding the operating-system preference', () => {

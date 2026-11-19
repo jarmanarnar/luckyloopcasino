@@ -1,4 +1,4 @@
-.achievements { display: grid; gap: 1.5rem; min-width: 0; }
+.achievements { display: grid; gap: 1.5rem; min-width: 0; container: achievements / inline-size; }
 .achievements-hero { position: relative; overflow: hidden; padding: 1.75rem; border: 1px solid var(--border-default); border-radius: 1rem; background: radial-gradient(ellipse at 95% 0%, var(--redeem-button-tonal), transparent 50%), var(--surface-panel); }
 .achievements-hero__intro { box-sizing: border-box; position: relative; display: flex; align-items: center; min-height: 9rem; padding-bottom: 1.5rem; }
 .achievements-hero__copy { position: relative; z-index: 1; padding-right: 15rem; }
@@ -51,7 +51,7 @@
 .achievement-card__category { display: block; margin-bottom: .375rem; color: var(--text-secondary); font-size: .6875rem; letter-spacing: .04em; }
 .achievement-card__progress-caption { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: .875rem; color: var(--text-secondary); font-size: .6875rem; font-variant-numeric: tabular-nums; }
 .achievement-card__hint { color: var(--text-secondary); font-size: .75rem; }
-.achievement-card__description { display: block; margin: 0; color: var(--text-secondary); font-size: .875rem; font-weight: 400; line-height: 1.6; }
+.achievement-card__description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; margin: 0; color: var(--text-secondary); font-size: .875rem; font-weight: 400; line-height: 1.6; }
 .achievement-card__reward { display: flex; align-items: center; gap: .375rem; color: var(--coin-gold); font-size: .9375rem; }
 .achievement-card__reward strong { font-weight: 500; }
 .achievement-card__reward img { flex: none; }
@@ -102,8 +102,8 @@
 .achievements-empty h3 { margin: .75rem 0 .5rem; font-size: 1.125rem; font-weight: 500; }
 .achievements-empty p { color: var(--text-secondary); font-size: .9375rem; font-weight: 400; }
 .achievements :is(button,a,article):focus-visible { outline: 2px solid var(--primary-accent); outline-offset: 4px; }
-@media (width < 80rem) {
-  .achievement-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+@container achievements (width >= 62.5rem) {
+  .achievement-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media (width < 45rem) {
   .achievements { gap: 1rem; }

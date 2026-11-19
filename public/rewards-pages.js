@@ -20,11 +20,18 @@ export function getAchievements(state) {
     const credits = collected ? (state.history || []).filter(item => item.source === 'task' && item.sourceId === task.id && item.amountUnits > 0) : [];
     const rewards = credits.length ? Object.fromEntries(credits.map(item => [item.currency, item.amountUnits])) : task.rewards;
     const title = task.id === 'welcome-member' && collected && rewards.GC !== 50000 ? 'Welcome to COP COIN' : task.title;
-    return { ...task, title, rewards, amount: rewards.GC || 0, progress: collected ? task.goal : progress.value, claimed: collected, complete, ready: complete && !collected };
+    // Collected welcome bonuses describe their recorded payout, even after amounts change.
+    const description = credits.length && task.group === 'welcome' && task.metric === 'streak'
+      ? `Log in for ${task.goal} consecutive days to receive ${formatAchievementRewards(rewards)}.` : task.description;
+    return { ...task, title, description, rewards, amount: rewards.GC || 0, progress: collected ? task.goal : progress.value, claimed: collected, complete, ready: complete && !collected };
   });
 }
 
 export async function collectAchievements(ctx, ids) {
+  if (ctx.isSignedIn?.() === false) {
+    ctx.openRegistration?.();
+    return { count: 0, amount: 0 };
+  }
   if (ctx.ui.achievementsCollecting) return { count: 0, amount: 0 };
   ctx.ui.achievementsCollecting = true;
   ctx.refresh('achievements');
@@ -32,9 +39,11 @@ export async function collectAchievements(ctx, ids) {
   const rewards = { GC: 0, SC: 0 };
   try {
     for (const id of new Set(ids)) {
+      if (ctx.isSignedIn?.() === false) break;
       // Re-read after each committed claim, including changes from other tabs.
       if (!getAchievements(ctx.state()).some(entry => entry.id === id && entry.ready)) continue;
       const result = await ctx.claimTask(id);
+      if (ctx.isSignedIn?.() === false) break;
       if (result.ok) {
         const credit = result.rewards || { GC: result.amount };
         for (const code of ['GC', 'SC']) rewards[code] += credit[code] || 0;
@@ -46,7 +55,7 @@ export async function collectAchievements(ctx, ids) {
     reason = 'Your rewards could not be collected. Please try again.';
   } finally {
     ctx.ui.achievementsCollecting = false;
-    if (ctx.refresh('achievements', 'achievement-filter-' + (ctx.ui.achievementFilter || 'all'))) {
+    if (ctx.refresh('achievements', 'achievement-filter-' + (ctx.ui.achievementFilter || 'all')) && ctx.isSignedIn?.() !== false) {
       const success = count ? `${formatAchievementRewards(rewards)} collected. ` : '';
       ctx.notify(success + (reason || (count ? 'Your balance is up to date.' : 'No rewards are ready to collect.')));
     }

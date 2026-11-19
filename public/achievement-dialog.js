@@ -11,11 +11,12 @@ export function initAchievementDialog({ account, auth, router, openVerification,
   const close = node('button', 'dialog-close icon-button achievement-dialog__close'); close.type = 'button'; close.setAttribute('aria-label', 'Close achievement'); close.append(createUiIcon('close'));
   const body = node('div', 'achievement-dialog__body'), notice = node('p', 'achievement-dialog__notice'), actions = node('div', 'achievement-dialog__actions'); notice.setAttribute('role', 'status');
   dialog.append(close, body, notice, actions); doc.body.append(dialog);
-  let selected = null, opener = null, pending = false, session = 0;
+  let selected = null, opener = null, pending = false, session = 0, wasSignedIn = account.isSignedIn();
   const ctx = { node, icon: createShelfIcon };
   const button = (text, css, action) => { const el = node('button', css, text); el.type = 'button'; el.addEventListener('click', action); return el; };
+  const entries = () => getAchievements(account.isSignedIn() ? account.getMemberState() : {});
   function render() {
-    const entry = getAchievements(account.getMemberState()).find(item => item.id === selected); if (!entry) return;
+    const entry = entries().find(item => item.id === selected); if (!entry) return;
     const medal = achievementMedal(ctx, entry, true), title = node('h2', '', entry.title); title.id = 'achievement-detail-title';
     const description = node('p', 'achievement-dialog__description', entry.description), progress = node('div', 'achievement-dialog__progress');
     progress.setAttribute('role', 'progressbar'); progress.setAttribute('aria-label', `${entry.title} progress`);
@@ -30,13 +31,17 @@ export function initAchievementDialog({ account, auth, router, openVerification,
       const copy = node('span'); copy.append(node('span', '', code), node('strong', '', format(units / (code === 'SC' ? 100 : 1)))); reward.append(coin, copy); rewards.append(reward);
     }
     body.replaceChildren(medal, title, description, progress, node('h3', '', 'Rewards'), rewards); actions.replaceChildren();
-    if (entry.ready) {
+    if (!account.isSignedIn()) {
+      actions.append(button('Close', 'achievement-dialog__secondary', () => dialog.close()),
+        button('Join & Unlock', 'achievement-claim', () => { dialog.close(); auth.open('register'); }));
+    } else if (entry.ready) {
       const claim = button(pending ? 'Claiming…' : 'Claim', 'achievement-claim', () => claimReward(entry.id)); claim.disabled = pending; actions.append(claim);
     } else {
       actions.append(button('Close', 'achievement-dialog__secondary', () => dialog.close()));
       if (!entry.claimed) {
         const verification = ['email', 'phone'].includes(entry.metric);
         const action = button(entry.action || 'Go to lobby', 'achievement-claim', () => {
+          if (!account.isSignedIn()) return;
           dialog.close();
           if (verification) openVerification?.(entry.metric); else router.navigate({ type: 'home' });
         }); action.disabled = verification && !openVerification; actions.append(action);
@@ -68,9 +73,12 @@ export function initAchievementDialog({ account, auth, router, openVerification,
     const target = opener?.isConnected ? opener : doc.getElementById('achievement-filter-all') || doc.querySelector('#header-rewards'); target?.focus({ preventScroll: true });
   });
   router.subscribe(() => { if (dialog.open) dialog.close(); });
-  account.subscribe(() => { if (dialog.open) { if (!account.isSignedIn()) dialog.close(); else render(); } });
-  return { open(id) { return auth.require(() => {
-    if (doc.querySelector('dialog[open]') || !getAchievements(account.getMemberState()).some(item => item.id === id)) return;
+  account.subscribe(() => {
+    const signedIn = account.isSignedIn(), loggedOut = wasSignedIn && !signedIn; wasSignedIn = signedIn;
+    if (dialog.open) { if (loggedOut) dialog.close(); else render(); }
+  });
+  return { open(id) {
+    if (doc.querySelector('dialog[open]') || !entries().some(item => item.id === id)) return;
     selected = id; opener = doc.activeElement; session++; notice.textContent = ''; render(); dialog.showModal(); close.focus({ preventScroll: true });
-  }); } };
+  } };
 }

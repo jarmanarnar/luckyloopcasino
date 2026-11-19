@@ -97,6 +97,24 @@ class Element {
 }
 const descendants = node => [node, ...node.children.flatMap(descendants)];
 
+test('guests browse achievement cards and open registration only from Join & Unlock', () => {
+  let root, opened, registrations = 0, claims = 0;
+  const ctx = { ui: {}, node: (tag, css, text) => new Element(tag, css, text), icon: () => new Element('svg'),
+    isSignedIn: () => false, openRegistration: () => registrations++,
+    openAchievement: id => { opened = id; }, refresh: () => render() };
+  const render = () => { root = renderAchievements(ctx, getAchievements(createMemberState()), () => claims++); };
+  const find = id => descendants(root).find(node => node.id === id);
+  render();
+  assert.ok(descendants(root).some(node => node.text === '0/55'));
+  find('achievement-verify-email').events.click();
+  assert.equal(opened, 'verify-email'); assert.equal(registrations, 0);
+  descendants(root).find(node => node.text === 'Show more').events.click();
+  assert.equal(descendants(root).filter(node => node.className === 'achievement-card').length, 24);
+  const join = find('achievement-claim-all');
+  assert.equal(join.text, 'Join & Unlock'); assert.equal(join.disabled, false);
+  join.events.click(); assert.equal(registrations, 1); assert.equal(claims, 0);
+});
+
 test('status filters, card and medal details, pagination and claim-all use the same achievement state', () => {
   const entries = getAchievements(createMemberState({ discoveredGameIds: ['a', 'b'], attendance: { bestStreak: 4, streak: 4, lastVisit: day(4).toISOString() } }));
   let root, claimed, opened;
@@ -110,15 +128,46 @@ test('status filters, card and medal details, pagination and claim-all use the s
   descendants(root).find(node => node.text === 'Show more').events.click();
   assert.equal(cards().length, 24);
   assert.equal(descendants(root).some(node => node.className === 'achievement-groups'), false);
-  find('achievement-limit-breaker-1').events.click(); assert.equal(opened, 'limit-breaker-1');
+  find('achievement-welcome-member').events.click(); assert.equal(opened, 'welcome-member');
   const medal = descendants(root).find(node => node.className === 'achievement-award');
   medal.events.click(); assert.equal(opened, medal.dataset.achievementId);
   find('achievement-filter-completed').events.click();
   assert.equal(cards().length, 5);
   find('achievement-claim-all').events.click();
-  assert.deepEqual(claimed, entries.filter(entry => entry.ready).map(entry => entry.id));
+  assert.deepEqual(new Set(claimed), new Set(entries.filter(entry => entry.ready).map(entry => entry.id)));
   find('achievement-filter-in-progress').events.click();
-  assert.ok(cards().every(node => !['achievement-login-streak-2', 'achievement-login-streak-3', 'achievement-login-streak-4'].includes(node.id)));
+  const expected = entries.filter(entry => !entry.complete && entry.progress > 0 && entry.progress < entry.goal);
+  assert.ok(cards().every(node => expected.some(entry => node.id === `achievement-${entry.id}`)));
+  assert.equal(cards()[0].id, 'achievement-login-streak-5');
+  assert.ok(descendants(root).some(node => node.text === `Showing 12 of ${expected.length} achievements`));
+  while (descendants(root).some(node => node.text === 'Show more')) {
+    descendants(root).find(node => node.text === 'Show more').events.click();
+  }
+  assert.deepEqual(new Set(cards().map(node => node.id)), new Set(expected.map(entry => `achievement-${entry.id}`)));
+  assert.equal(descendants(root).some(node => node.className === 'achievement-groups'), false);
+});
+
+test('zero-progress guests see an honest empty In progress filter and can return to all 55 achievements', () => {
+  let root;
+  const ctx = { ui: {}, isSignedIn: () => false, node: (tag, css, text) => new Element(tag, css, text),
+    icon: () => new Element('svg'), refresh: () => render() };
+  const render = () => { root = renderAchievements(ctx, getAchievements(createMemberState()), () => assert.fail('Guest must not claim')); };
+  const find = id => descendants(root).find(node => node.id === id);
+  const cards = () => descendants(root).filter(node => node.className.split(' ').includes('achievement-card'));
+  render();
+  assert.deepEqual(cards().slice(0, 3).map(node => node.id), ['achievement-welcome-member', 'achievement-verify-email', 'achievement-verify-phone']);
+  assert.ok(cards().some(node => node.id === 'achievement-verify-phone'));
+  assert.ok(cards().some(node => node.id === 'achievement-limit-breaker-1'));
+  assert.ok(cards().some(node => node.id === 'achievement-loyalty-tier-1'));
+  find('achievement-filter-in-progress').events.click();
+  assert.equal(cards().length, 0);
+  assert.ok(descendants(root).some(node => node.text === 'Showing 0 of 0 achievements'));
+  assert.ok(descendants(root).some(node => node.text === 'No achievements in progress yet. Browse All to find your next goal.'));
+  assert.equal(descendants(root).some(node => node.text === 'All achievements are completed.'), false);
+  find('achievement-filter-all').events.click();
+  assert.equal(cards().length, 12);
+  assert.ok(descendants(root).some(node => node.text === 'Showing 12 of 55 achievements'));
+  assert.equal(descendants(root).filter(node => node.className === 'achievement-filter').length, 3);
 });
 
 test('both currencies roll back together when either balance cannot accept the reward', () => {

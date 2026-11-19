@@ -1,4 +1,5 @@
 import { formatAchievementRewards } from './achievement-catalog.js';
+import { isAchievementInProgress, sortAchievements } from './achievement-order.js';
 
 export const formatAchievementProgress = value => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
 
@@ -15,8 +16,10 @@ export function achievementMedal(ctx, entry, hero = false) {
 
 export function renderAchievements(ctx, entries, collect) {
   const n = ctx.node;
-  const completed = entries.filter(entry => entry.complete).sort((a, b) => Number(b.ready) - Number(a.ready) || b.goal - a.goal);
-  const ready = entries.filter(entry => entry.ready), busy = Boolean(ctx.ui.achievementsCollecting);
+  const guest = ctx.isSignedIn?.() === false;
+  const ordered = sortAchievements(entries);
+  const completed = ordered.filter(entry => entry.complete);
+  const ready = ordered.filter(entry => entry.ready), busy = Boolean(ctx.ui.achievementsCollecting);
   const filter = ctx.ui.achievementFilter || 'all', pageSize = 12;
   const root = n('div', 'achievements');
   const button = (text, className, action) => {
@@ -30,10 +33,11 @@ export function renderAchievements(ctx, entries, collect) {
   const artwork = n('img', 'achievements-hero__art'); artwork.src = 'assets/hero/cop-coin-achievements-trophy-v1.webp'; artwork.alt = ''; artwork.width = 624; artwork.height = 624; artwork.decoding = 'async';
   intro.append(copy, artwork);
   const showcase = n('div', 'achievements-hero__showcase'), heading = n('div', 'achievements-hero__heading'); heading.append(n('h3', '', 'Completed'));
-  const claimAll = button(busy ? 'Claiming…' : 'Claim All Rewards', 'achievement-claim', () => collect(ready.map(entry => entry.id)));
-  claimAll.id = 'achievement-claim-all'; claimAll.disabled = busy || ready.length === 0;
+  const claimAll = button(guest ? 'Join & Unlock' : busy ? 'Claiming…' : 'Claim All Rewards', 'achievement-claim',
+    () => guest ? ctx.openRegistration?.() : collect(ready.map(entry => entry.id)));
+  claimAll.id = 'achievement-claim-all'; claimAll.disabled = !guest && (busy || ready.length === 0);
   const totals = ready.reduce((sum, entry) => { for (const [code, value] of Object.entries(entry.rewards)) sum[code] = (sum[code] || 0) + value; return sum; }, {});
-  claimAll.title = ready.length ? `${formatAchievementRewards(totals)} ready to claim` : 'No rewards ready to claim'; heading.append(claimAll);
+  claimAll.title = guest ? 'Join to unlock achievement rewards' : ready.length ? `${formatAchievementRewards(totals)} ready to claim` : 'No rewards ready to claim'; heading.append(claimAll);
   const medals = n('div', 'achievements-hero__medals');
   for (const entry of completed) {
     const badge = button('', 'achievement-award', () => ctx.openAchievement?.(entry.id)); badge.dataset.achievementId = entry.id;
@@ -53,7 +57,7 @@ export function renderAchievements(ctx, entries, collect) {
   }
   toolbar.append(filters);
   const results = n('div', 'achievements-results'); results.id = 'achievement-results'; results.setAttribute('aria-busy', String(busy));
-  const matching = entries.filter(entry => filter === 'all' || (filter === 'completed' ? entry.complete : !entry.complete));
+  const matching = ordered.filter(entry => filter === 'all' || (filter === 'completed' ? entry.complete : isAchievementInProgress(entry)));
   const visible = matching.slice(0, ctx.ui.achievementLimit || pageSize), grid = n('div', 'achievement-grid');
   for (const entry of visible) {
     const card = button('', `achievement-card${entry.ready ? ' is-ready' : ''}`, () => ctx.openAchievement?.(entry.id));
@@ -63,7 +67,8 @@ export function renderAchievements(ctx, entries, collect) {
     card.append(achievementMedal(ctx, entry), body); grid.append(card);
   }
   if (visible.length) results.append(grid);
-  else results.append(n('p', 'achievements-empty', filter === 'completed' ? 'No completed achievements yet.' : 'All achievements are completed.'));
+  else results.append(n('p', 'achievements-empty', filter === 'completed' ? 'No completed achievements yet.'
+    : filter === 'in-progress' ? 'No achievements in progress yet. Browse All to find your next goal.' : 'No achievements available.'));
   const pagination = n('div', 'achievements-pagination'), count = n('p', 'achievements-count', `Showing ${visible.length} of ${matching.length} achievements`);
   count.setAttribute('role', 'status'); pagination.append(count);
   if (visible.length < matching.length) pagination.append(button('Show more', 'achievement-show-more', () => {

@@ -14,8 +14,8 @@ afterEach(() => accounts.splice(0).forEach(account => account.close()));
 const source = (await readFile(new URL('../public/feature-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initFeatureView', 'function initFeatureView');
 
-async function memberPage(initialRoute, storage = new Map()) {
-  let route = initialRoute, pageContext;
+async function memberPage(initialRoute, storage = new Map(), { guest = false } = {}) {
+  let route = initialRoute, pageContext, renderCount = 0;
   const subscribers = [], navigations = [], profileOpens = [], dialogOpens = [], authOpens = [];
   class Node {
     constructor(tag = 'div') { this.tagName = tag; this.dataset = {}; this.children = []; this.listeners = new Map(); }
@@ -45,7 +45,7 @@ async function memberPage(initialRoute, storage = new Map()) {
   const account = await openDemoAccount({ indexedDB: databases.get(storage), scope: undefined,
     storage: { getItem: key => storage.get(key) ?? null }, catalogIds: ['alpha'] });
   accounts.push(account);
-  if (!account.isSignedIn()) await account.register({ email: 'feature-test@example.test', password: 'FeatureDemo37!', accepted: true });
+  if (!guest && !account.isSignedIn()) await account.register({ email: 'feature-test@example.test', password: 'FeatureDemo37!', accepted: true });
   const context = {
     document, router, account, structuredClone, wallet: { setPreferences() {} }, FEATURE_PAGES, isFeaturePage,
     openProfile: options => profileOpens.push(options),
@@ -58,12 +58,43 @@ async function memberPage(initialRoute, storage = new Map()) {
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     CustomEvent: class { constructor(type) { this.type = type; } },
     renderRewardsPage: () => null,
-    renderAccountPage(pageId, ctx) { pageContext = ctx; return new Node(); },
+    renderAccountPage(pageId, ctx) { pageContext = ctx; renderCount++; return new Node(); },
   };
   const api = vm.runInNewContext(`${source}\ninitFeatureView({ router, wallet, account, auth, openProfile, openRedeem, openNotifications });`, context);
   await account.refresh();
-  return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, authOpens, context: () => pageContext };
+  return { api, account, router, storage, nodes, navigations, profileOpens, dialogOpens, authOpens, context: () => pageContext, renderCount: () => renderCount };
 }
+
+test('public achievements clear member progress on logout and let guests explicitly join', async () => {
+  const page = await memberPage({ type: 'feature', pageId: 'achievements' });
+  await page.account.claimTask('welcome-member');
+  assert.ok(page.context().state().taskClaims.includes('welcome-member'));
+  page.nodes['feature-status'].textContent = 'Private reward notice';
+  const count = page.renderCount();
+  await page.account.logout();
+  assert.ok(page.renderCount() > count);
+  assert.equal(page.router.getRoute().pageId, 'achievements');
+  assert.equal(page.nodes['feature-view'].hidden, false);
+  assert.equal(page.context().isSignedIn(), false);
+  assert.equal(page.context().state().attendance.bestStreak, 0);
+  assert.equal(page.context().state().taskClaims.length, 0);
+  assert.equal(page.context().state().history.length, 0);
+  assert.equal(page.nodes['feature-status'].textContent, '');
+  page.account.recordPageVisit = () => assert.fail('Guest browsing must not write member page history');
+  page.router.navigate({ type: 'feature', pageId: 'achievements' });
+  assert.deepEqual(page.authOpens, []);
+  page.context().openRegistration();
+  assert.deepEqual(page.authOpens, ['register']);
+});
+
+test('a fresh guest can render achievements without an account or personal progress', async () => {
+  const page = await memberPage({ type: 'feature', pageId: 'achievements' }, new Map(), { guest: true });
+  assert.equal(page.account.isSignedIn(), false);
+  assert.equal(page.nodes['feature-view'].hidden, false);
+  assert.equal(page.context().state().attendance.bestStreak, 0);
+  assert.equal(page.context().state().taskClaims.length, 0);
+  assert.deepEqual(page.authOpens, []);
+});
 
 test('demo deletion opens registration only after persistence succeeds and keeps failures inline', async () => {
   const page = await memberPage({ type: 'feature', pageId: 'settings' });

@@ -56,7 +56,7 @@ export async function initApplication() {
   const menu = initSiteMenu({ ...catalog, ...features, ...help, ...wheel, openStore: store.openStore });
   const chat = initCommunityChat({ account, auth });
   initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
-  initHeroCarousel({ ...catalog, ...wheel, openFeature: features.openFeature, openStore: store.openStore });
+  initHeroCarousel({ account, ...catalog, ...wheel, openFeature: features.openFeature, openStore: store.openStore });
   initLobbyPromotions({ router, account, auth });
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {

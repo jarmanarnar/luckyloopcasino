@@ -75,10 +75,10 @@ body:is([data-sidebar="expanded"], [data-sidebar="collapsed"]) .site-sidebar { t
 .site-menu {
   position: fixed;
   z-index: 25;
-  inset: 0 0 var(--mobile-nav-height, 3.9375rem);
+  inset: var(--top-bar-height) 0 var(--mobile-nav-height, 3.9375rem);
   width: 100%;
   max-width: none;
-  height: calc(100dvh - var(--mobile-nav-height, 3.9375rem));
+  height: calc(100dvh - var(--top-bar-height) - var(--mobile-nav-height, 3.9375rem));
   max-height: none;
   margin: 0;
   padding: 0;
@@ -97,12 +97,14 @@ body:is([data-sidebar="expanded"], [data-sidebar="collapsed"]) .site-sidebar { t
   .site-menu[open] { opacity: 0; transform: translateX(-100%); }
 }
 .site-menu__mobile-header {
-  height: calc(var(--menu-header-height) + env(safe-area-inset-top, 0px));
-  padding-top: calc(.625rem + env(safe-area-inset-top, 0px));
+  /* The fixed top bar already includes the phone's top safe area. */
+  height: var(--menu-header-height);
+  padding-top: .625rem;
   padding-left: max(.75rem, env(safe-area-inset-left, 0px));
   padding-right: max(.75rem, env(safe-area-inset-right, 0px));
   box-shadow: inset 0 -1px 0 var(--sidebar-divider);
 }
+body[data-auth="guest"] .site-menu__mobile-header { display: none; }
 /* Only menu content slides; the shell's fixed bottom navigation never moves. */
 .site-menu > .site-menu__scroll {
   padding-left: max(.75rem, env(safe-area-inset-left, 0px));

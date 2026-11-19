@@ -8,7 +8,7 @@ import { formatAchievementRewards } from '../public/achievement-catalog.js';
 import { createDemoAccount, applyAccountCommand, accountMemberState } from '../public/demo-account-state.js';
 const source = (await readFile(new URL('../public/achievement-dialog.js', import.meta.url), 'utf8')).replace(/^import .*;\r?\n/gm, '').replace('export function initAchievementDialog', 'function initAchievementDialog');
 
-function page({ hold, failure = false } = {}) {
+function page({ hold, failure = false, signedIn = true, member = { attendance: { bestStreak: 5, streak: 5 } } } = {}) {
   const nodes = [], listeners = [];
   const document = { activeElement: null };
   class Element {
@@ -26,22 +26,69 @@ function page({ hold, failure = false } = {}) {
   document.body = new Element('body'); document.createElement = tag => new Element(tag);
   document.querySelector = selector => selector === 'dialog[open]' ? nodes.find(node => node.tag === 'dialog' && node.open) : null;
   document.getElementById = id => nodes.find(node => node.id === id);
-  let saved = createDemoAccount({ member: { attendance: { bestStreak: 5, streak: 5 } } }); saved.auth = { signedIn: true };
-  let calls = 0;
+  let saved = createDemoAccount({ member }); saved.auth = { signedIn };
+  let calls = 0, memberReads = 0, authRequired = 0;
+  const registrations = [], verifications = [], navigations = [];
   const account = {
-    getSnapshot: () => saved, getMemberState: () => accountMemberState(saved), isSignedIn: () => saved.auth.signedIn, subscribe: fn => listeners.push(fn),
+    getSnapshot: () => saved, getMemberState: () => { memberReads++; return accountMemberState(saved); }, isSignedIn: () => saved.auth.signedIn, subscribe: fn => listeners.push(fn),
+    getCapabilities: () => ({ verification: { email: true, phone: true }, gameEvents: true }),
     async claimTask(taskId) { calls++; if (hold) await hold; if (failure) throw new Error('Storage unavailable'); const outcome = applyAccountCommand(saved, { type: 'claim-task', taskId }); saved = outcome.account; listeners.forEach(fn => fn()); return outcome.result; },
   };
   const icon = () => new Element('svg');
   const context = { document, account, getAchievements, achievementMedal, format, formatAchievementRewards, createShelfIcon: icon, createUiIcon: icon,
-    auth: { require: fn => fn() }, router: { subscribe() {}, navigate() {} } };
-  const api = vm.runInNewContext(`${source}\ninitAchievementDialog({ account, auth, router, document });`, context);
+    openVerification: metric => verifications.push(metric),
+    auth: { require: fn => { authRequired++; return fn(); }, open: mode => registrations.push({ mode, detailOpen: document.getElementById('achievement-dialog').open }) },
+    router: { subscribe() {}, navigate: route => navigations.push(route) } };
+  const api = vm.runInNewContext(`${source}\ninitAchievementDialog({ account, auth, router, openVerification, document });`, context);
   const dialog = document.getElementById('achievement-dialog');
   const tree = node => [node, ...node.children.flatMap(tree)];
-  return { api, dialog, account, get calls() { return calls; }, fail: value => { failure = value; },
+  return { api, dialog, account, registrations, verifications, navigations,
+    get calls() { return calls; }, get memberReads() { return memberReads; }, get authRequired() { return authRequired; },
+    fail: value => { failure = value; }, update: change => { change?.(saved); listeners.forEach(fn => fn()); },
     find: text => tree(dialog).find(node => node.textContent === text),
     notice: () => tree(dialog).find(node => node.className === 'achievement-dialog__notice').textContent };
 }
+
+test('guests browse catalog details with zero progress without reading a saved player or prompting for authentication', () => {
+  const view = page({ signedIn: false, member: {
+    attendance: { bestStreak: 30, streak: 30 }, taskClaims: ['welcome-member', 'login-streak-4'],
+    achievementStats: { playSCUnits: 3150000, loyaltySCUnits: 130000000, emailVerified: true, phoneVerified: true },
+  } });
+  view.account.getSnapshot().ledger.push({ source: 'task', sourceId: 'welcome-member', currency: 'GC', amountUnits: 1234 });
+  for (const [id, progress] of [['welcome-member', '0 / 1'], ['login-streak-4', '0 / 4'], ['verify-email', '0 / 1'],
+    ['verify-phone', '0 / 1'], ['limit-breaker-1', '0 / 70'], ['loyalty-tier-1', '0 / 100']]) {
+    view.api.open(id);
+    assert.equal(view.dialog.open, true); assert.ok(view.find(progress));
+    assert.ok(view.find('Close')); assert.ok(view.find('Join & Unlock'));
+    assert.equal(view.find('Claim'), undefined); assert.equal(view.find('Verify Email'), undefined); assert.equal(view.find('Verify Phone'), undefined);
+    if (id === 'welcome-member') { assert.ok(view.find('50K GC Reward')); assert.ok(view.find('50,000')); assert.equal(view.find('1,234'), undefined); }
+    if (id === 'login-streak-4') { assert.ok(view.find('1,500')); assert.ok(view.find('0.15')); }
+    view.update(); assert.equal(view.dialog.open, true); assert.ok(view.find(progress));
+    view.find('Close').click();
+  }
+  assert.equal(view.memberReads, 0); assert.equal(view.authRequired, 0); assert.equal(view.calls, 0);
+  assert.deepEqual(view.registrations, []); assert.deepEqual(view.verifications, []); assert.deepEqual(view.navigations, []);
+});
+
+test('guest Join & Unlock closes the preview before opening registration and never claims', () => {
+  const view = page({ signedIn: false }); view.api.open('verify-email'); view.find('Join & Unlock').click();
+  assert.equal(view.dialog.open, false); assert.deepEqual(view.registrations, [{ mode: 'register', detailOpen: false }]);
+  view.update(saved => { saved.auth.signedIn = true; });
+  assert.equal(view.dialog.open, false); assert.equal(view.calls, 0); assert.deepEqual(view.verifications, []);
+});
+
+test('member verification and game actions still work and logout closes private progress', () => {
+  const view = page(); view.api.open('verify-email'); view.find('Verify Email').click();
+  assert.equal(view.dialog.open, false); assert.deepEqual(view.verifications, ['email']);
+  view.api.open('limit-breaker-1'); view.find('Play Now').click();
+  assert.equal(view.dialog.open, false); assert.equal(view.navigations[0].type, 'home');
+  view.api.open('verify-phone'); const staleVerification = view.find('Verify Phone'); view.dialog.close();
+  view.api.open('login-streak-4'); const staleClaim = view.find('Claim');
+  view.update(saved => { saved.auth.signedIn = false; });
+  assert.equal(view.dialog.open, false); staleClaim.click(); assert.equal(view.calls, 0);
+  staleVerification.click(); assert.deepEqual(view.verifications, ['email']);
+  view.api.open('login-streak-4'); assert.ok(view.find('0 / 4')); assert.ok(view.find('Join & Unlock'));
+});
 
 test('details claim both currencies once, then show Close while the achievement remains completed', async () => {
   const view = page(); view.api.open('login-streak-4');

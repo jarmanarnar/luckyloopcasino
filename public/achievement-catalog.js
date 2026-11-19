@@ -1,5 +1,6 @@
 // Rewards use integer wallet units: GC coins and SC hundredths.
-// Reference: the 55 publicly displayed Lucky Bunny achievements, checked 2026-11-16.
+// Reference: the 55 publicly displayed Lucky Bunny achievements, checked 2026-11-19.
+// COP COIN welcome milestones total 500,000 GC + 5 SC; ordinary streaks are separate.
 const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
 const number = value => new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
 export const formatAchievementRewards = rewards => Object.entries(rewards || {})
@@ -8,6 +9,7 @@ const playGoals = [70, 140, 280, 700, 1260, 2450, 5600, 10500, 17500, 31500];
 const playRewards = [2500, 7500, 15000, 35000, 65000, 125000, 300000, 500000, 850000, 1600000];
 const tierGoals = [100, 1000, 4000, 10000, 22000, 55000, 100000, 200000, 420000, 760000, 1300000];
 const tierRewards = [1, 2, 10, 20, 30, 40, 60, 80, 100, 150, 200];
+const welcomeStreakRewards = { GC: 100000, SC: 150 };
 export const ACHIEVEMENTS = Object.freeze([
   ...playGoals.map((goal, i) => ({
     id: `limit-breaker-${i + 1}`, title: `Limit Breaker ${roman[i]}`,
@@ -15,10 +17,10 @@ export const ACHIEVEMENTS = Object.freeze([
     rewards: { GC: playRewards[i], SC: playRewards[i] / 100 },
     group: 'play', metric: 'playSC', goal, unit: 'Amount', progressCurrency: 'SC', icon: 'adventure', badge: roman[i], badgeLabel: 'LIMIT', action: 'Play Now',
   })),
-  { id: 'welcome-member', title: '50K GC Welcome Reward', description: 'Welcome to COP COIN. Your first reward is ready when you join.', rewards: { GC: 50000 }, group: 'welcome', metric: 'registration', goal: 1, unit: 'Registration', icon: 'achievements' },
+  { id: 'welcome-member', title: '50K GC Reward', description: 'Welcome to COP COIN. Your first reward is ready when you join.', rewards: { GC: 50000 }, group: 'welcome', metric: 'registration', goal: 1, unit: 'Registration', icon: 'achievements' },
   { id: 'verify-email', title: '150K GC + 1 SC', description: 'Verify your email address to collect your welcome reward.', rewards: { GC: 150000, SC: 100 }, group: 'welcome', metric: 'email', goal: 1, unit: 'Email verified', icon: 'notifications', action: 'Verify Email' },
   { id: 'verify-phone', title: '100K GC + 1 SC', description: 'Verify your phone number to continue your welcome journey.', rewards: { GC: 100000, SC: 100 }, group: 'welcome', metric: 'phone', goal: 1, unit: 'Phone verified', icon: 'profile', action: 'Verify Phone' },
-  ...[3, 7].map(goal => ({ id: `welcome-streak-${goal}`, title: `${goal}-Day Welcome Reward`, description: `Log in for ${goal} consecutive days to receive 150,000 GC and 1.5 SC.`, rewards: { GC: 150000, SC: 150 }, group: 'welcome', metric: 'streak', goal, unit: 'Days', badge: String(goal), badgeLabel: 'DAYS', action: 'Try Your Luck' })),
+  ...[3, 7].map(goal => ({ id: `welcome-streak-${goal}`, title: `${goal}-Day Welcome Reward`, description: `Log in for ${goal} consecutive days to receive ${formatAchievementRewards(welcomeStreakRewards)}.`, rewards: welcomeStreakRewards, group: 'welcome', metric: 'streak', goal, unit: 'Days', badge: String(goal), badgeLabel: 'DAYS', action: 'Try Your Luck' })),
   ...tierGoals.map((goal, i) => ({ id: `loyalty-tier-${i + 1}`, title: `${tierRewards[i]} SC Reward`,
     description: `Reach ${number(goal)} SC of loyalty progress to unlock tier ${roman[i]} and collect ${tierRewards[i]} SC.`,
     rewards: { SC: tierRewards[i] * 100 }, group: 'tier', metric: 'loyaltySC', goal, unit: 'Amount', progressCurrency: 'SC', badge: roman[i], badgeLabel: 'TIER', action: 'Play Now' })),

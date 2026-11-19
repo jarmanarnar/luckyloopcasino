@@ -42,6 +42,10 @@ body[data-auth="guest"] .site-logo__image--mark { display: none; }
 .auth-google { font: 800 1.125rem/1 var(--app-font-family); background: conic-gradient(#4285f4 0deg 95deg,#34a853 95deg 185deg,#fbbc05 185deg 240deg,#ea4335 240deg 290deg,#4285f4 290deg); background-clip: text; color: transparent; }
 
 body[data-auth="guest"] #menu-shortcuts, body[data-auth="guest"] nav[aria-label="My account"] { display: none !important; }
+body[data-auth="guest"] #menu-content [data-menu-category="recent-games"],
+body[data-auth="guest"] #menu-content [data-menu-category="favorites"],
+body[data-auth="guest"] #site-footer a[href="#/recent-games"],
+body[data-auth="guest"] #site-footer a[href="#/favorites"] { display: none !important; }
 body[data-auth-dialog="open"] { overflow: hidden; }
 
 .auth-dialog { box-sizing: border-box; position: fixed; max-width: calc(100vw - 2rem); width: 46rem; max-height: calc(100dvh - 2rem); padding: 0; margin: auto; border: 1px solid var(--border-default); border-radius: 1.25rem; color: var(--text-primary); background: var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle), 0 1.5rem 4rem var(--shadow-color); overflow: auto; overscroll-behavior: contain; }

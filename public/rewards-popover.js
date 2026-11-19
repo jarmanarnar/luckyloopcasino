@@ -1,6 +1,7 @@
 import { getAchievements } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { ACHIEVEMENTS, formatAchievementRewards } from './achievement-catalog.js';
+import { sortAchievements } from './achievement-order.js';
 
 export function initRewardsPopover({ router, account, openAchievement, openRegistration }) {
   const trigger = document.querySelector('#header-rewards');
@@ -28,8 +29,7 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
   }
   updateCount();
   if (typeof panel.showPopover !== 'function') {
-    trigger.addEventListener('click', () => account.isSignedIn()
-      ? router.navigate({ type: 'feature', pageId: 'achievements' }) : openRegistration?.());
+    trigger.addEventListener('click', () => router.navigate({ type: 'feature', pageId: 'achievements' }));
     account.subscribe(updateCount);
     return;
   }
@@ -88,7 +88,7 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
       details.type = 'button'; details.className = 'reward-preview__details';
       details.setAttribute('aria-label', `View ${task.title}`);
       details.append(icon, copy);
-      details.addEventListener('click', () => guest ? joinRewards() : viewAchievement(task.id));
+      details.addEventListener('click', () => viewAchievement(task.id));
       row.append(details);
     } else row.append(icon, copy);
     const claim = document.createElement('button');
@@ -118,7 +118,7 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
   function render() {
     const ready = updateCount();
     const suggestions = account.isSignedIn() && ready.length === 0
-      ? getAchievements(account.getMemberState()).filter(task => !task.complete) : [];
+      ? sortAchievements(getAchievements(account.getMemberState()).filter(task => !task.complete)) : [];
     const visible = (account.isSignedIn() ? ready.length ? ready : suggestions : guestRewards).slice(0, pageSize);
     missions.replaceChildren(...visible.map(rewardRow));
     empty.hidden = visible.length > 0;
@@ -163,8 +163,7 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
     if (!link || event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     close();
-    if (account.isSignedIn()) router.navigate({ type: 'feature', pageId: link.dataset.rewardsPage });
-    else joinRewards();
+    router.navigate({ type: 'feature', pageId: link.dataset.rewardsPage });
   });
   window.addEventListener('resize', () => { if (isOpen() && !position()) close(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && isOpen()) render(); });

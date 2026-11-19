@@ -57,3 +57,9 @@ Original LuckyLoop artwork generated with the built-in OpenAI imagegen tool on 2
 Prompt provenance: cohesive premium, playful stylized 3D game illustrations in glossy emerald, warm gold, and subtle violet; elegant reflections; compact floating compositions with transparent margins; readable at card scale. Prompts explicitly excluded words, logos, numbers, watermarks, UI, characters, and rectangular backgrounds. Each asset was generated separately using the subject brief above.
 
 PNG originals are preserved in the parent workspace at `artifacts/luckyloop-hero-sources/`. WebP conversion was format-only, without resizing or changes to the artwork; decoded RGBA pixels were verified identical.
+
+## COP COIN welcome-bonus banner
+
+`cop-coin-welcome-stacks-v2.webp` is the current welcome artwork: two substantial gold G coin stacks alongside one smaller blue S coin stack. It was generated as the requested fuller revision of v1. The complete approved 1254 × 1254 PNG from `artifacts/banner-concepts/` is archived byte-for-byte unchanged at `artifacts/casino-banner-sources/cop-coin-welcome-stacks-v2.png`. Delivery uses a 624 × 624 WebP (110,746 bytes, quality 92, method 6), without cropping or further creative changes and with alpha verified identical to the resized original. The edit prompt is preserved unchanged in `cop-coin-welcome-stacks-v2.prompt.txt`; delivery details and hashes are recorded in `artifacts/welcome-banner-v2-asset-metadata.json`.
+
+Previous illustration retained for reference: `cop-coin-welcome-stacks-v1.webp` has one tall gold G coin stack alongside one smaller blue S coin stack. Its unchanged 1254 × 1254 PNG remains at `artifacts/casino-banner-sources/cop-coin-welcome-stacks-v1.png`; the 624 × 624 WebP is 93,410 bytes (quality 92, method 6), with exact resized alpha. The original concept-stage prompt and `artifacts/welcome-banner-asset-metadata.json` are preserved.

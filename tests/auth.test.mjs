@@ -15,6 +15,7 @@ test('registration, logout and login keep one player, one wallet and the origina
     assert.deepEqual(before.wallet.balances, { GC: 0, SC: 0 });
     assert.equal(account.isSignedIn(), false);
     assert.equal((await account.claimDaily()).ok, false, 'guests cannot credit the wallet');
+    assert.equal((await account.claimTask('welcome-member')).ok, false, 'public achievement browsing does not authorize claims');
     assert.equal((await account.register({ ...credentials, accepted: false })).ok, false);
     assert.equal((await account.register({ ...credentials, password: 'short' })).ok, false);
     assert.equal((await account.register({ ...credentials, email: ' DEMO@example.test ' })).ok, true);
@@ -36,6 +37,7 @@ test('registration, logout and login keep one player, one wallet and the origina
     await account.logout();
     assert.equal(account.isSignedIn(), false);
     assert.equal(account.getSnapshot().identity.email, null);
+    assert.equal((await account.claimTask('welcome-member')).ok, false, 'signed-out members cannot claim a previously earned achievement');
     assert.equal((await account.toggleFavorite('alpha')).ok, false);
     assert.equal((await account.register(credentials)).ok, false, 'registering again never replaces an existing account');
     assert.equal((await account.login({ email: credentials.email, password: 'WrongPassword37!' })).ok, false);
@@ -110,13 +112,37 @@ test('credential-free demo entry is refused for a non-test account', async () =>
 
 test('public browsing stays open while account, purchase and game actions require login', () => {
   for (const route of [{ type: 'home' },{ type: 'category', categoryId: 'popular' },{ type: 'providers' },
-    { type: 'search' },{ type: 'feature', pageId: 'support' }]) {
+    { type: 'search' },{ type: 'feature', pageId: 'support' },{ type: 'feature', pageId: 'achievements' }]) {
     assert.equal(requiresAccount(route), false);
   }
   for (const route of [{ type: 'game', gameId: 'alpha' },{ type: 'game-details', gameId: 'alpha' },{ type: 'favorites' },{ type: 'store' },
-    ...['profile','history','settings','achievements','redeem','notifications'].map(pageId=>({type:'feature',pageId}))]) {
+    ...['profile','history','settings','redeem','notifications'].map(pageId=>({type:'feature',pageId}))]) {
     assert.equal(requiresAccount(route), true);
   }
+});
+
+test('guests can open achievements by deep link, navigation and browser history without an auth prompt', () => {
+  const achievements = { type: 'feature', pageId: 'achievements' };
+  let route = achievements;
+  const listeners = [], prompts = [], mounted = [];
+  const raw = {
+    getRoute: () => route,
+    subscribe(fn, { priority = 0 } = {}) { listeners.push({ fn, priority }); },
+    navigate(next) { route = next; for (const listener of [...listeners].sort((a, b) => a.priority - b.priority)) listener.fn(route); },
+  };
+  const router = createAuthRouter(raw, { isSignedIn: () => false }, requested => prompts.push(requested));
+  assert.deepEqual(router.getRoute(), achievements, 'initial achievement deep link is not replaced with home');
+  router.subscribe(next => mounted.push(next));
+  router.navigate({ type: 'home' });
+  router.navigate(achievements);
+  assert.deepEqual(mounted.at(-1), achievements, 'sidebar and footer navigation mounts the public page');
+  raw.navigate({ type: 'home' });
+  raw.navigate(achievements);
+  assert.deepEqual(mounted.at(-1), achievements, 'browser Back and Forward can restore the public page');
+  assert.deepEqual(prompts, []);
+  router.navigate({ type: 'feature', pageId: 'profile' });
+  assert.deepEqual(router.getRoute(), achievements, 'a private destination remains blocked from the public page');
+  assert.deepEqual(prompts, [{ type: 'feature', pageId: 'profile' }]);
 });
 
 test('guest deep links and browser navigation are guarded before views; successful login resumes the requested game', () => {

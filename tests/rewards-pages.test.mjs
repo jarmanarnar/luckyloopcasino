@@ -29,6 +29,33 @@ function rewardContext(state, claim) {
     notify: message => notices.push(message), claimTask: claim };
 }
 
+test('guest claim attempts open registration without submitting any rewards', async () => {
+  let registrations = 0, claims = 0;
+  const ctx = rewardContext({ attendance: { bestStreak: 30 } }, () => { claims++; });
+  ctx.isSignedIn = () => false;
+  ctx.openRegistration = () => registrations++;
+  assert.deepEqual(await collectAchievements(ctx, ['welcome-member', 'login-streak-2']), { count: 0, amount: 0 });
+  assert.equal(registrations, 1);
+  assert.equal(claims, 0);
+  assert.deepEqual(ctx.notices, []);
+});
+
+test('logging out during claim-all stops further claims and hides private reward notices', async () => {
+  let signedIn = true, release;
+  const calls = [];
+  const gate = new Promise(resolve => { release = resolve; });
+  const ctx = rewardContext({ attendance: { bestStreak: 3 }, taskClaims: [] }, async id => {
+    calls.push(id); await gate;
+    return { ok: true, amount: 1500, rewards: { GC: 1500, SC: 15 } };
+  });
+  ctx.isSignedIn = () => signedIn;
+  const result = collectAchievements(ctx, ['login-streak-2', 'login-streak-3']);
+  signedIn = false; release(); await result;
+  assert.deepEqual(calls, ['login-streak-2']);
+  assert.equal(ctx.ui.achievementsCollecting, false);
+  assert.deepEqual(ctx.notices, []);
+});
+
 test('claim all serializes eligible rewards, ignores stale and duplicate IDs, and blocks duplicate clicks', async () => {
   const state = { attendance: { bestStreak: 3, streak: 3 }, taskClaims: [] };
   const calls = [];

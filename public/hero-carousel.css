@@ -60,6 +60,19 @@ body[data-page="home"] > .page-content { margin-top: .5rem; }
   user-select: none;
 }
 .hero-banner__copy { position: relative; z-index: 2; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: clamp(8.25rem, calc(100% - var(--banner-art-width)), 12rem); height: 100%; padding: 2.5rem 0 1.25rem 1.25rem; }
+/* Long offer headings retain the shared maximum copy width when art is added. */
+.hero-banner__copy--wide,
+.hero-banner:not(:has(.hero-banner__art)) .hero-banner__copy { width: min(100%, 12rem); }
+.hero-banner__copy::before {
+  content: none;
+  position: absolute;
+  z-index: -1;
+  inset: 1.5rem -1rem 0 0;
+  border-radius: var(--banner-radius) 0 0 var(--banner-radius);
+  background: linear-gradient(90deg, var(--surface-panel) 35%, color-mix(in srgb, var(--surface-panel) 88%, transparent) 60%, transparent);
+  pointer-events: none;
+}
+.hero-banner__copy--wide::before { content: ''; }
 .hero-banner__title {
   margin: 0;
   max-width: 100%;
@@ -86,12 +99,6 @@ body[data-page="home"] > .page-content { margin-top: .5rem; }
   .hero-banner__copy { padding-left: .75rem; }
   .hero-banner__copy::before {
     content: '';
-    position: absolute;
-    z-index: -1;
-    inset: 1.5rem -1rem 0 0;
-    border-radius: var(--banner-radius) 0 0 var(--banner-radius);
-    background: linear-gradient(90deg, var(--surface-panel) 35%, color-mix(in srgb, var(--surface-panel) 88%, transparent) 60%, transparent);
-    pointer-events: none;
   }
 }
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; margin-top: 2px; }

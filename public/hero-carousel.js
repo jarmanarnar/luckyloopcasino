@@ -3,7 +3,7 @@ import { resizeHeroCarousel } from './hero-resize.js';
 
 let initialized = false;
 
-export function initHeroCarousel({ openHome, openCategory, openProviders, openProvider, openFeature, openSpinWheel, openStore } = {}) {
+export function initHeroCarousel({ account, openHome, openCategory, openProviders, openProvider, openFeature, openSpinWheel, openStore } = {}) {
   if (initialized) return;
   const root = document.querySelector('#hero-carousel');
   const viewport = document.querySelector('#hero-viewport');
@@ -12,19 +12,31 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
   const status = document.querySelector('#hero-status');
   const controls = document.querySelector('#hero-controls');
   if (![root, viewport, track, dots, status, controls].every(Boolean)) return;
-  const slides = [...track.querySelectorAll('.hero-carousel__slide')];
-  if (!slides.length) return;
+  const allSlides = [...track.querySelectorAll('.hero-carousel__slide')];
+  if (!allSlides.length) return;
   initialized = true;
 
+  let signedIn = account?.isSignedIn() === true;
+  function audienceSlides() {
+    return allSlides.filter(slide => {
+      slide.hidden = (signedIn && Object.hasOwn(slide.dataset, 'heroGuest'))
+        || (!signedIn && Object.hasOwn(slide.dataset, 'heroMember'));
+      return !slide.hidden;
+    });
+  }
+  let slides = audienceSlides();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const motionReduced = () => reducedMotion.matches || document.body.dataset.reduceMotion === 'true';
+  // Disable the native scroll-snap fallback before measuring. Revealing the
+  // guest slide can otherwise retain the wheel as the browser's snap target.
+  root.dataset.ready = 'true';
+  viewport.scrollLeft = 0;
   const carousel = EmblaCarousel(viewport, {
-    loop: true, align: 'start', slidesToScroll: 1, containScroll: false,
+    loop: true, align: 'start', slidesToScroll: 1, containScroll: false, slides,
     // A gentler attraction keeps wide-card moves from feeling like a quick snap.
     duration: 42,
     watchResize: (api, entries) => resizeHeroCarousel(api, entries, { animate: !motionReduced() && !document.hidden }),
   });
-  root.dataset.ready = 'true';
   const rotationDuration = 6000;
   let timer = null;
   let resizeTimer = null;
@@ -41,29 +53,54 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
   let suspended = false;
   let destroyed = false;
   let visible = !('IntersectionObserver' in window);
-  const titles = slides.map((slide, index) => slide.dataset.heroTitle || `Promotion ${index + 1}`);
+  let titles = [];
+  let dotButtons = [];
 
-  dots.replaceChildren();
-  const dotButtons = slides.map((slide, index) => {
-    slide.setAttribute('role', 'group');
-    slide.setAttribute('aria-roledescription', 'slide');
-    slide.setAttribute('aria-label', `${index + 1} of ${slides.length}: ${titles[index]}`);
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'hero-carousel__dot';
-    button.dataset.heroIndex = String(index);
-    button.setAttribute('aria-label', `Show promotion ${index + 1}: ${titles[index]}`);
-    button.setAttribute('aria-controls', 'hero-viewport');
-    const mark = document.createElement('span');
-    mark.className = 'hero-carousel__dot-mark';
-    mark.setAttribute('aria-hidden', 'true');
-    const fill = document.createElement('span');
-    fill.className = 'hero-carousel__dot-fill';
-    mark.append(fill);
-    button.append(mark);
-    dots.append(button);
-    return button;
-  });
+  function renderDots() {
+    titles = slides.map((slide, index) => slide.dataset.heroTitle || `Promotion ${index + 1}`);
+    dots.replaceChildren();
+    dotButtons = slides.map((slide, index) => {
+      slide.setAttribute('role', 'group');
+      slide.setAttribute('aria-roledescription', 'slide');
+      slide.setAttribute('aria-label', `${index + 1} of ${slides.length}: ${titles[index]}`);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'hero-carousel__dot';
+      button.dataset.heroIndex = String(index);
+      button.setAttribute('aria-label', `Show promotion ${index + 1}: ${titles[index]}`);
+      button.setAttribute('aria-controls', 'hero-viewport');
+      const mark = document.createElement('span');
+      mark.className = 'hero-carousel__dot-mark';
+      mark.setAttribute('aria-hidden', 'true');
+      const fill = document.createElement('span');
+      fill.className = 'hero-carousel__dot-fill';
+      mark.append(fill);
+      button.append(mark);
+      dots.append(button);
+      return button;
+    });
+  }
+  renderDots();
+
+  function syncAudience() {
+    const next = account.isSignedIn();
+    if (destroyed || next === signedIn) return;
+    const selectedSlide = slides[carousel.selectedScrollSnap()];
+    stopTimer();
+    progressAnimation?.cancel();
+    progressAnimation = null;
+    progressIndex = -1;
+    signedIn = next;
+    slides = audienceSlides();
+    renderDots();
+    focused = root.contains(document.activeElement) && !selectedSlide?.hidden;
+    dragging = false;
+    status.textContent = '';
+    // Supply visible nodes explicitly: hidden DOM children must not become empty snaps.
+    viewport.scrollLeft = 0;
+    carousel.reInit({ slides, startIndex: signedIn ? Math.max(0, slides.indexOf(selectedSlide)) : 0 });
+  }
+  const unsubscribeAccount = account?.subscribe(syncAudience);
 
   function stopTimer() {
     if (timer !== null) {
@@ -230,6 +267,7 @@ export function initHeroCarousel({ openHome, openCategory, openProviders, openPr
     progressAnimation = null;
     stateObserver.disconnect();
     visibilityObserver?.disconnect();
+    unsubscribeAccount?.();
     delete root.dataset.ready;
     controls.hidden = true;
   });

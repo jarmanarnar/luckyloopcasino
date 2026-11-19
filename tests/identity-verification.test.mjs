@@ -41,6 +41,7 @@ function page({ hold } = {}) {
     logout: () => { signedIn = false; listeners.forEach(fn => fn()); },
   };
 }
+
 test('verification UI sends without marking verified, handles a wrong code and leads to the reward only after approval', async () => {
   const view = page(); view.api.open('email');
   assert.equal(view.contact.value, 'member@example.test'); assert.equal(view.contact.readOnly, true);

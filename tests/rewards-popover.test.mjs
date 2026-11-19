@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import { getAchievements } from '../public/rewards-pages.js';
 import { ACHIEVEMENTS, formatAchievementRewards } from '../public/achievement-catalog.js';
+import { sortAchievements } from '../public/achievement-order.js';
 import { createDemoAccount, applyAccountCommand, accountMemberState } from '../public/demo-account-state.js';
 
 const source = (await readFile(new URL('../public/rewards-popover.js', import.meta.url), 'utf8'))
@@ -53,7 +54,7 @@ function page({ member = {}, hold, failure, signedIn = true, details = false, na
       saved = outcome.account; emit(); return outcome.result;
     },
   };
-  const context = { document, account, getAchievements, ACHIEVEMENTS, formatAchievementRewards, Intl, createShelfIcon: () => new Element('svg'),
+  const context = { document, account, getAchievements, ACHIEVEMENTS, formatAchievementRewards, sortAchievements, Intl, createShelfIcon: () => new Element('svg'),
     window: { addEventListener() {} }, router: { navigate: route => navigations.push(route), subscribe() {} },
     openAchievement: details ? id => opened.push(id) : undefined,
     openRegistration: () => registrations.push({ popoverOpen: Boolean(panel.open) }) };
@@ -71,19 +72,34 @@ const fullMember = {
   achievementStats: { playSCUnits: 3150000, loyaltySCUnits: 130000000, emailVerified: true, phoneVerified: true },
 };
 
-test('with no claimable rewards, two unfinished achievements open details without claiming or inflating the badge', () => {
+test('with no claimable rewards, unfinished email and phone lead and open details without inflating the badge', () => {
   const view = page({ member: { attendance: { bestStreak: 1 }, taskClaims: ['welcome-member'] }, details: true });
   view.open();
-  assert.deepEqual(view.missions.children.map(row => row.dataset.rewardId), ['limit-breaker-1', 'limit-breaker-2']);
+  assert.deepEqual(view.missions.children.map(row => row.dataset.rewardId), ['verify-email', 'verify-phone']);
   assert.equal(view.query('.rewards-popover__empty').hidden, true);
   assert.equal(view.trigger.querySelector('.rewards-count').hidden, true);
   assert.equal(view.query('.reward-preview__claim'), null);
-  assert.match(view.query('.reward-preview__status').textContent, /Reach 70 SC/);
+  assert.match(view.query('.reward-preview__status').textContent, /Verify your email/);
+  assert.ok(view.missions.children.every(row => row.querySelector('.reward-preview__show-more').textContent === 'Show more'));
   view.missions.children[0].querySelector('.reward-preview__show-more').click();
-  assert.deepEqual(view.opened, ['limit-breaker-1']); assert.equal(view.panel.open, false);
+  assert.deepEqual(view.opened, ['verify-email']); assert.equal(view.panel.open, false);
   view.open(); view.missions.children[1].querySelector('.reward-preview__details').click();
-  assert.deepEqual(view.opened, ['limit-breaker-1', 'limit-breaker-2']); assert.equal(view.calls.length, 0);
+  assert.deepEqual(view.opened, ['verify-email', 'verify-phone']); assert.equal(view.calls.length, 0);
   assert.equal(view.saved().wallet.balances.GC, 0);
+});
+
+test('claimed onboarding rewards drop out of suggestions while the remaining verification keeps priority', () => {
+  const partial = page({ member: { attendance: { streak: 1, bestStreak: 1 }, taskClaims: ['welcome-member', 'verify-email'],
+    achievementStats: { emailVerified: true } } });
+  partial.open();
+  assert.deepEqual(partial.missions.children.map(row => row.dataset.rewardId), ['verify-phone', 'login-streak-2']);
+  const complete = page({ member: { attendance: { streak: 1, bestStreak: 1 }, taskClaims: ['welcome-member', 'verify-email', 'verify-phone'],
+    achievementStats: { emailVerified: true, phoneVerified: true } }, details: true });
+  complete.open();
+  assert.deepEqual(complete.missions.children.map(row => row.dataset.rewardId), ['login-streak-2', 'welcome-streak-3']);
+  assert.ok(complete.missions.children.every(row => row.querySelector('.reward-preview__show-more').textContent === 'Show more'));
+  complete.missions.children[0].querySelector('.reward-preview__show-more').click();
+  assert.deepEqual(complete.opened, ['login-streak-2']);
 });
 
 test('the popup stays at two eligible rewards and the quiet footer opens the full achievements page', () => {
@@ -139,6 +155,7 @@ test('failed claims stay available; collecting the last reward switches to unfin
   assert.equal(view.query('.rewards-popover__empty').hidden, true);
   assert.equal(view.query('.reward-preview__claim'), null);
   assert.ok(view.missions.children.every(row => row.querySelector('.reward-preview__show-more')));
+  assert.deepEqual(view.missions.children.map(row => row.dataset.rewardId), ['verify-email', 'verify-phone']);
   assert.equal(view.saved().wallet.balances.GC, 50000);
   assert.equal(view.trigger.querySelector('.rewards-count').hidden, true);
   assert.equal(view.query('.rewards-count').hidden, true);
@@ -191,15 +208,26 @@ test('guests see two public rewards and both Join & Unlock actions open registra
   assert.deepEqual(view.saved(), before);
 });
 
-test('guest reward cards and Show more open registration; sign-in restores member rewards and their real count', () => {
+test('guest reward cards open public details and Show more browses achievements; sign-in restores private progress', () => {
   const view = page({ signedIn: false, member: fullMember, details: true });
+  const before = structuredClone(view.saved());
   view.open();
   view.missions.children[0].querySelector('.reward-preview__details').click();
+  assert.deepEqual(view.opened, ['verify-email']);
+  assert.equal(view.panel.open, false);
+  view.open();
+  view.missions.children[1].querySelector('.reward-preview__details').click();
+  assert.deepEqual(view.opened, ['verify-email', 'loyalty-tier-1']);
   view.open();
   const link = view.query('.rewards-popover__more');
   view.panel.listeners.click({ target: { closest: () => link }, preventDefault() {} });
-  assert.equal(view.registrations.length, 2);
-  assert.deepEqual(view.navigations, []);
+  assert.equal(view.panel.open, false);
+  assert.equal(view.registrations.length, 0);
+  assert.equal(view.navigations.length, 1);
+  assert.equal(view.navigations[0].type, 'feature');
+  assert.equal(view.navigations[0].pageId, 'achievements');
+  assert.deepEqual(view.calls, []);
+  assert.deepEqual(view.saved(), before, 'browsing public previews never changes the wallet or claims');
   view.open();
   view.login();
   assert.equal(view.panel.open, false, 'close before moving the header anchor after sign-in');
@@ -209,14 +237,25 @@ test('guest reward cards and Show more open registration; sign-in restores membe
   assert.ok(view.query('.reward-preview__claim'));
 });
 
-test('without native popovers the guest Rewards button opens registration, while members open achievements', () => {
-  const guest = page({ signedIn: false, nativePopover: false });
-  guest.trigger.click();
-  assert.equal(guest.registrations.length, 1);
-  assert.equal(guest.navigations.length, 0);
-  const member = page({ nativePopover: false });
-  member.trigger.click();
-  assert.equal(member.navigations[0].pageId, 'achievements');
+test('guest reward cards fall back to the public achievements page when no details handler exists', () => {
+  const view = page({ signedIn: false });
+  view.open();
+  view.missions.children[0].querySelector('.reward-preview__details').click();
+  assert.equal(view.panel.open, false);
+  assert.equal(view.navigations[0].pageId, 'achievements');
+  assert.equal(view.registrations.length, 0);
+  assert.equal(view.calls.length, 0);
+});
+
+test('without native popovers Rewards opens achievements for guests and members without registration', () => {
+  for (const signedIn of [false, true]) {
+    const view = page({ signedIn, nativePopover: false });
+    view.trigger.click();
+    assert.equal(view.navigations.length, 1);
+    assert.equal(view.navigations[0].pageId, 'achievements');
+    assert.equal(view.registrations.length, 0);
+    assert.equal(view.calls.length, 0);
+  }
 });
 
 test('the member claim count updates while closed; guests have one invitation indicator', () => {
