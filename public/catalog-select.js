@@ -22,6 +22,8 @@ export function enhanceCatalogSelect(select) {
   menu.setAttribute('role', 'listbox');
   menu.setAttribute('aria-label', select.getAttribute('aria-label'));
   trigger.setAttribute('aria-controls', menu.id);
+  // Associate the invoker so tapping it is not treated as an outside dismissal.
+  trigger.setAttribute('popovertarget', menu.id);
   select.hidden = true;
   wrapper.append(trigger, menu);
   let choices = [];
@@ -110,7 +112,13 @@ export function enhanceCatalogSelect(select) {
     if (changed) select.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  trigger.addEventListener('click', () => isOpen() ? close() : open());
+  trigger.addEventListener('click', event => {
+    // The custom toggle also refreshes options and positions the list; avoid a
+    // second native toggle after this handler.
+    event.preventDefault();
+    if (isOpen()) close();
+    else open();
+  });
   trigger.addEventListener('keydown', event => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Escape' && isOpen()) {

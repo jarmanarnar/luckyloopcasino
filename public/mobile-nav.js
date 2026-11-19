@@ -23,7 +23,8 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
         : categories.dataset.activeMenu === 'redeem' ? 'redeem'
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
         : ['feature', 'search', 'providers'].includes(document.body.dataset.page)
-          || ['search', 'providers'].includes(categories.dataset.activeMenu) ? 'menu' : 'lobby';
+          || ['search', 'providers'].includes(categories.dataset.activeMenu) ? 'menu'
+        : document.body.dataset.page === 'home' ? 'lobby' : null;
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);

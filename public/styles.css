@@ -529,8 +529,13 @@
       --shelf-title-size: 1.625rem;
       --game-title-size: .9375rem;
       --game-card-gap: 1rem;
+      --lobby-section-gap: 2rem;
+      --lobby-heading-gap: 1rem;
     }
-    body[data-page="home"] #lobby-view .game-shelf + .game-shelf { margin-block-start: 3rem; }
+    /* Match the section rhythm below the toolbar, including its bottom padding. */
+    body[data-page="home"] #lobby-view .catalog-shelves > .game-shelf:first-child:not(.catalog-result-shelf) { margin-block-start: calc(var(--lobby-section-gap) - var(--catalog-toolbar-padding)); }
+    body[data-page="home"] #lobby-view .game-shelf + .game-shelf { margin-block-start: var(--lobby-section-gap); }
+    body[data-page="home"] #lobby-view .game-shelf__header { margin-bottom: var(--lobby-heading-gap); }
     body[data-page="home"] #lobby-view .catalog-category { font-size: .9375rem; font-weight: 400; }
     body[data-page="home"] #lobby-view .game-shelf__title { font-weight: 600; }
     body[data-page="home"] #lobby-view .shelf-see-all { font-size: .875rem; font-weight: 400; }

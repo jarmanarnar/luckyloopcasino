@@ -26,6 +26,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
   const nodes = Object.fromEntries(ids.map(id => [id, new Node()]));
   const body = new Node();
   body.dataset.view = 'lobby';
+  body.dataset.page = 'home';
   nodes['mobile-nav'].hidden = true;
   nodes['catalog-categories'].dataset.activeMenu = 'lobby';
   const all = new Node();
@@ -249,7 +250,7 @@ test('Menu opens over either game page and closing it restores no selection unti
 });
 
 test('Store popup selects Store, blocks actions, and restores the underlying destination on dismissal', () => {
-  for (const [destination, pageId, selection] of [['providers', 'providers', 'menu'], ['achievements', 'feature', 'menu'], ['redeem', 'feature', 'redeem'], ['new-releases', 'category', 'lobby']]) {
+  for (const [destination, pageId, selection] of [['providers', 'providers', 'menu'], ['achievements', 'feature', 'menu'], ['redeem', 'feature', 'redeem'], ['new-releases', 'category', null]]) {
     const page = navPage();
     page.body.dataset.page = pageId;
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
@@ -263,7 +264,7 @@ test('Store popup selects Store, blocks actions, and restores the underlying des
     assert.equal(page.body.dataset.page, pageId);
     page.nodes['store-dialog'].open = false;
     page.flush();
-    assert.deepEqual(active(page), [selection]);
+    assert.deepEqual(active(page), selection ? [selection] : []);
     assert.equal(page.button('store').getAttribute('aria-expanded'), 'false');
     page.button('lobby').click();
     assert.equal(page.calls.at(-1).action, 'home');
@@ -295,11 +296,25 @@ test('member feature pages select Menu without claiming that its drawer is open'
 
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {
   const page = navPage();
-  for (const category of ['popular', 'spooky', 'picks', 'slots']) {
+  for (const category of ['new-releases', 'popular', 'spooky', 'picks', 'slots']) {
+    page.body.dataset.page = 'category';
     page.nodes['catalog-categories'].dataset.activeMenu = category;
     page.flush();
-    assert.deepEqual(active(page), ['lobby']);
-    assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
+    assert.deepEqual(active(page), []);
+    assert.equal(page.button('lobby').getAttribute('aria-current'), null);
+    page.button('menu').click();
+    page.button('menu').click();
+    assert.deepEqual(active(page), [], 'closing Menu must not select Lobby over a category');
+    page.button('store').click();
+    page.nodes['store-dialog'].open = false;
+    page.flush();
+    assert.deepEqual(active(page), [], 'closing Store must not select Lobby over a category');
+  }
+  for (const destination of ['provider', 'favorites', 'recent-games']) {
+    page.body.dataset.page = destination;
+    page.nodes['catalog-categories'].dataset.activeMenu = 'lobby';
+    page.flush();
+    assert.deepEqual(active(page), [], 'only the actual home page selects Lobby');
   }
   for (const destination of ['providers', 'search']) {
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
