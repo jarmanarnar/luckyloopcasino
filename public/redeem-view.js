@@ -4,7 +4,7 @@ import { redemptionAmount } from './redeem-state.js';
 const methods = { bank: 'Bank Transfer', card: 'Card Redemption' };
 const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export function initRedeemView({ router, account, auth }) {
+export function initRedeemView({ router, account, auth, popupNavigation }) {
   const dialog = document.querySelector('#redeem-dialog');
   const chooser = dialog.querySelector('#redeem-methods');
   const details = dialog.querySelector('#redeem-details');
@@ -15,6 +15,7 @@ export function initRedeemView({ router, account, auth }) {
   const output = dialog.querySelector('#redeem-receive');
   const change = dialog.querySelector('#redeem-change');
   const max = dialog.querySelector('#redeem-max');
+  const footer = dialog.querySelector('.redeem-dialog__footer');
   let method = null;
   let returnFocus = null;
   let showErrors = false;
@@ -50,13 +51,20 @@ export function initRedeemView({ router, account, auth }) {
     updateBalance();
   }
 
-  function showMethods(focus = false) {
+  function resetScroll() {
+    dialog.scrollTop = 0;
+    const body = dialog.querySelector('.redeem-dialog__body');
+    if (body) body.scrollTop = 0;
+  }
+
+  function showMethods(focus = false, reset = false) {
     const previous = method;
     method = null;
     chooser.hidden = false;
     details.hidden = true;
-    resetAmount();
-    dialog.scrollTop = 0;
+    if (footer) footer.hidden = true;
+    if (reset) resetAmount();
+    resetScroll();
     if (focus) chooser.querySelector(`[data-redeem-method="${previous || 'bank'}"]`).focus({ preventScroll: true });
   }
 
@@ -68,13 +76,17 @@ export function initRedeemView({ router, account, auth }) {
       details.dataset.method = method;
       chooser.hidden = true;
       details.hidden = false;
-      resetAmount();
-      dialog.scrollTop = 0;
+      if (footer) footer.hidden = false;
+      updateBalance();
+      resetScroll();
+      popupNavigation?.pushStep(dialog, { id: 'redeem-details', onBack: () => showMethods(true) });
       // Keep the mobile keyboard closed until the user taps the amount.
       change.focus({ preventScroll: true });
     });
   }
-  change.addEventListener('click', () => showMethods(true));
+  change.addEventListener('click', () => {
+    if (!popupNavigation?.backStep(dialog, 'redeem-details')) showMethods(true);
+  });
   amount.addEventListener('input', () => {
     status.hidden = true;
     status.textContent = '';
@@ -100,7 +112,8 @@ export function initRedeemView({ router, account, auth }) {
 
   function close() { if (dialog.open) dialog.close(); }
   dialog.addEventListener('close', () => {
-    showMethods();
+    if (dialog.open) return;
+    showMethods(false, true);
     if (returnFocus?.isConnected && !document.querySelector('dialog[open]')) returnFocus.focus({ preventScroll: true });
     returnFocus = null;
   });
@@ -123,7 +136,7 @@ export function initRedeemView({ router, account, auth }) {
       return auth.require(() => {
         if (document.querySelector('dialog[open]')) return;
         returnFocus = document.activeElement;
-        showMethods();
+        showMethods(false, true);
         dialog.showModal();
         dialog.querySelector('.dialog-close').focus({ preventScroll: true });
       });

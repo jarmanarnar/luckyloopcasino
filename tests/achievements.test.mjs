@@ -147,6 +147,60 @@ test('status filters, card and medal details, pagination and claim-all use the s
   assert.equal(descendants(root).some(node => node.className === 'achievement-groups'), false);
 });
 
+test('completed medal overflow counts reserve a slot only when the available row cannot fit every medal', () => {
+  for (const count of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 55]) {
+    const entries = getAchievements(createMemberState({ taskClaims: ACHIEVEMENTS.slice(0, count).map(entry => entry.id) }));
+    const ctx = { ui: {}, node: (tag, css, text) => new Element(tag, css, text), icon: () => new Element('svg') };
+    const root = renderAchievements(ctx, entries, () => assert.fail('Rendering must not collect rewards'));
+    const nodes = descendants(root);
+    const medals = nodes.filter(node => node.dataset.completedMedal === 'true');
+    assert.equal(medals.length, count, 'keep one stable node per completed achievement');
+    assert.equal(new Set(medals.map(node => node.dataset.achievementId)).size, count);
+    const overflow = nodes.filter(node => node.className.split(' ').includes('achievement-award--more'));
+    assert.deepEqual(overflow.map(node => Number(node.dataset.slots)), [2, 3, 4, 5, 6, 8].filter(slots => count > slots));
+    for (const more of overflow) {
+      const remaining = count - Number(more.dataset.slots) + 1;
+      assert.equal(more.text, `+${remaining}`);
+      assert.equal(more.attributes['aria-label'], `View all ${count} completed achievements (${remaining} more)`);
+      assert.equal(more.attributes['aria-controls'], 'achievement-results');
+      assert.equal(more.attributes['aria-haspopup'], undefined, 'the overflow control reveals results, not a popup');
+    }
+  }
+});
+
+test('every completed overflow control opens the full ordered list without claiming rewards or opening a popup', () => {
+  const entries = getAchievements(createMemberState({
+    attendance: { bestStreak: 30, streak: 30 },
+    achievementStats: { emailVerified: true },
+    taskClaims: ['welcome-member', 'verify-email', 'login-streak-2'],
+  }));
+  const snapshot = structuredClone(entries);
+  let root;
+  const refreshes = [];
+  const ctx = { ui: {}, node: (tag, css, text) => new Element(tag, css, text), icon: () => new Element('svg'),
+    openAchievement: () => assert.fail('Viewing all completed achievements must not open a detail popup'),
+    refresh: (...args) => { refreshes.push(args); render(); } };
+  const render = () => { root = renderAchievements(ctx, entries, () => assert.fail('Viewing completed achievements must not collect rewards')); };
+  render();
+  const initialMedals = descendants(root).filter(node => node.dataset.completedMedal === 'true');
+  const expected = initialMedals.map(node => `achievement-${node.dataset.achievementId}`);
+  assert.ok(expected.length > 12);
+  assert.ok(entries.some(entry => entry.claimed) && entries.some(entry => entry.ready));
+  for (const slots of [2, 3, 4, 5, 6, 8]) {
+    descendants(root).find(node => node.id === 'achievement-filter-all').events.click();
+    descendants(root).find(node => node.dataset.slots === String(slots)).events.click();
+    assert.equal(ctx.ui.achievementFilter, 'completed');
+    assert.equal(ctx.ui.achievementLimit, expected.length);
+    assert.deepEqual(refreshes.at(-1), ['achievements', 'achievement-filter-completed']);
+    const nodes = descendants(root);
+    assert.equal(nodes.find(node => node.id === 'achievement-filter-completed').attributes['aria-pressed'], 'true');
+    assert.deepEqual(nodes.filter(node => node.className.split(' ').includes('achievement-card')).map(node => node.id), expected);
+    assert.equal(nodes.some(node => node.text === 'Show more'), false, 'all completed entries are reachable immediately');
+    assert.ok(nodes.some(node => node.text === `Showing ${expected.length} of ${expected.length} achievements`));
+  }
+  assert.deepEqual(entries, snapshot, 'overflow navigation preserves progress, rewards and claim state');
+});
+
 test('zero-progress guests see an honest empty In progress filter and can return to all 55 achievements', () => {
   let root;
   const ctx = { ui: {}, isSignedIn: () => false, node: (tag, css, text) => new Element(tag, css, text),

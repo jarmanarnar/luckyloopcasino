@@ -1,0 +1,237 @@
+/* Mobile dialog shells share their chrome while retaining each feature's content. */
+.profile-editor__fields,
+.achievement-dialog__header,
+.achievement-dialog__scroll { display: contents; }
+.achievement-dialog__caption { display: none; }
+.redeem-dialog__footer { padding: 0 1.25rem 1.25rem; }
+.redeem-dialog__footer .redeem-submit { margin-top: 0; }
+.redeem-dialog__footer .redeem-preview-note { margin-top: .875rem; }
+
+@media (width <= 599px) {
+  :root {
+    --mobile-dialog-duration: 220ms;
+    --mobile-dialog-step-duration: 180ms;
+    --mobile-dialog-easing: cubic-bezier(.2, .7, .2, 1);
+    --mobile-dialog-inset-left: max(1rem, env(safe-area-inset-left, 0px));
+    --mobile-dialog-inset-right: max(1rem, env(safe-area-inset-right, 0px));
+    --mobile-dialog-footer-space: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  html:has(dialog:is(.store-dialog, .redeem-dialog, .auth-dialog, .profile-summary,
+    .how-to-play-dialog, .phone-verification, .achievement-dialog, .notifications-drawer,
+    .spin-wheel, .spin-win, .chat-sheet)[open]) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+    #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet) {
+    position: fixed;
+    box-sizing: border-box;
+    max-width: none;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    color: var(--text-primary);
+    opacity: 0;
+    translate: 0 1rem;
+    transition: opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing),
+      translate var(--mobile-dialog-duration) var(--mobile-dialog-easing);
+    transition: opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing),
+      translate var(--mobile-dialog-duration) var(--mobile-dialog-easing),
+      display var(--mobile-dialog-duration) allow-discrete,
+      overlay var(--mobile-dialog-duration) allow-discrete;
+  }
+
+  dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+    #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open] {
+    display: flex;
+    flex-direction: column;
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+    #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog) {
+    inset: var(--popup-viewport-top, 0px) 0 auto;
+    width: 100%;
+    height: var(--popup-viewport-height, 100dvh);
+    max-height: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--surface-glow);
+  }
+
+  dialog:is(#achievement-dialog, .chat-sheet) {
+    inset: auto 0 max(0px, calc(100dvh - var(--popup-viewport-top, 0px) - var(--popup-viewport-height, 100dvh)));
+    width: 100%;
+    height: auto;
+    max-height: calc(var(--popup-viewport-height, 100dvh) - max(1rem, env(safe-area-inset-top, 0px)));
+    margin: auto 0 0;
+    border: 1px solid var(--border-default);
+    border-bottom: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+    background: var(--surface-glow);
+  }
+
+  :is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #notifications-drawer) > header,
+  #spin-wheel-dialog > .spin-wheel__controls,
+  #spin-win-dialog > .spin-win__header {
+    box-sizing: border-box;
+    position: relative;
+    top: auto;
+    z-index: 3;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    min-height: calc(4.25rem + env(safe-area-inset-top, 0px));
+    margin: 0;
+    padding: calc(.75rem + env(safe-area-inset-top, 0px)) var(--mobile-dialog-inset-right) .75rem var(--mobile-dialog-inset-left);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-glow);
+  }
+
+  #profile-summary .profile-summary__close,
+  #spin-win-dialog .spin-win__close,
+  #achievement-dialog .achievement-dialog__close {
+    position: static;
+    flex: none;
+    margin: 0;
+  }
+
+  :is(#store-dialog, #redeem-dialog, #phone-verification-dialog) > :is(.store-dialog__body, .redeem-dialog__body, .phone-verification__body),
+  #profile-summary > .profile-summary__body,
+  #auth-dialog > .auth-layout,
+  #how-to-play-dialog > .how-to-play-body,
+  #notifications-drawer > .notifications-drawer__body,
+  #spin-wheel-dialog > .spin-wheel__body,
+  #spin-win-dialog > .spin-wheel__result,
+  #achievement-dialog > .achievement-dialog__scroll,
+  .chat-sheet > .chat-sheet__body {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-active) transparent;
+    padding: 1rem var(--mobile-dialog-inset-right) var(--mobile-dialog-footer-space) var(--mobile-dialog-inset-left);
+    scroll-padding-block: 1rem;
+  }
+
+  #auth-dialog > .auth-layout { display: block; padding: 0; }
+  #auth-dialog .auth-content { padding: 1rem var(--mobile-dialog-inset-right) var(--mobile-dialog-footer-space) var(--mobile-dialog-inset-left); }
+  #profile-summary > .profile-summary__body { align-content: start; }
+  #profile-summary > #profile-editor { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+  #profile-editor > .profile-editor__fields { display: grid; gap: 1.25rem; flex: 1 1 auto; min-height: 0; padding: 1rem var(--mobile-dialog-inset-right) 1.25rem var(--mobile-dialog-inset-left); overflow: auto; overscroll-behavior: contain; }
+
+  #profile-editor > .profile-editor__actions,
+  #redeem-dialog > .redeem-dialog__footer,
+  #how-to-play-dialog > .how-to-play-footer,
+  #notifications-drawer > .notifications-drawer__footer,
+  #achievement-dialog > .achievement-dialog__actions {
+    box-sizing: border-box;
+    flex: none;
+    margin: 0;
+    padding: .875rem var(--mobile-dialog-inset-right) var(--mobile-dialog-footer-space) var(--mobile-dialog-inset-left);
+    border-top: 1px solid var(--border-default);
+    background: var(--surface-glow);
+  }
+  #profile-summary > .profile-editor__status { flex: none; margin: 0; padding: .5rem var(--mobile-dialog-inset-right) calc(.75rem + env(safe-area-inset-bottom, 0px)) var(--mobile-dialog-inset-left); }
+  #profile-summary > .profile-editor__status:empty { display: none; }
+  #profile-summary:has(> .profile-editor__status:not(:empty)) #profile-editor > .profile-editor__actions { padding-bottom: .875rem; }
+  #notifications-drawer > .notifications-drawer__tabs { margin-inline: var(--mobile-dialog-inset-left) var(--mobile-dialog-inset-right); margin-top: .75rem; }
+
+  #achievement-dialog > .achievement-dialog__header,
+  .chat-sheet > header {
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    min-height: 4.25rem;
+    padding: .75rem var(--mobile-dialog-inset-right) .75rem var(--mobile-dialog-inset-left);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-glow);
+  }
+  #achievement-dialog .achievement-dialog__caption { display: block; font-size: 1.125rem; font-weight: 600; }
+  #achievement-dialog > .achievement-dialog__scroll { display: block; padding-bottom: 1rem; }
+  #achievement-dialog .achievement-dialog__body > .achievement-medal { width: 5rem; height: 5rem; margin-bottom: 1rem; }
+  #achievement-dialog > .achievement-dialog__actions > button { min-height: 3rem; }
+
+  /* The verification flow shares the achievement class, but uses a long form. */
+  #identity-verification-dialog { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr); gap: 0; }
+  #identity-verification-dialog[open] { display: grid; }
+  #identity-verification-dialog > h2 { grid-area: 1 / 1; align-self: center; margin: 0; padding: calc(.875rem + env(safe-area-inset-top, 0px)) 0 .875rem var(--mobile-dialog-inset-left); text-align: left; }
+  #identity-verification-dialog > .achievement-dialog__close { position: static; grid-area: 1 / 2; align-self: start; margin: calc(.75rem + env(safe-area-inset-top, 0px)) var(--mobile-dialog-inset-right) .75rem .75rem; }
+  #identity-verification-dialog > .achievement-dialog__description { grid-area: 2 / 1 / auto / -1; margin: 0; padding: 1rem var(--mobile-dialog-inset-right) 0 var(--mobile-dialog-inset-left); }
+  #identity-verification-dialog > .identity-verification__form { grid-area: 3 / 1 / auto / -1; align-content: start; min-height: 0; margin: 0; padding: 1rem var(--mobile-dialog-inset-right) var(--mobile-dialog-footer-space) var(--mobile-dialog-inset-left); overflow: auto; overscroll-behavior: contain; }
+
+  #spin-win-dialog > .spin-win__header { justify-content: flex-end; }
+  #spin-win-dialog .spin-win__wallet-area { position: relative; inset: auto; transform: none; flex: 1; min-width: 0; width: auto; max-width: calc(100% - 3.5rem); }
+  #spin-win-dialog > .spin-wheel__result { flex: 1 1 auto; width: 100%; max-width: none; margin: 0; }
+  #spin-wheel-dialog .spin-wheel__stage { width: min(100%, 22rem, 42dvh); }
+
+  :is(#redeem-methods, #redeem-details, #auth-form, #auth-recovery,
+    #profile-summary-overview, #profile-editor, .spin-wheel__play, .spin-wheel__prizes):not([hidden]) {
+    animation: mobile-dialog-step-in var(--mobile-dialog-step-duration) var(--mobile-dialog-easing) both;
+  }
+  @keyframes mobile-dialog-step-in {
+    from { opacity: 0; transform: translateY(.375rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .community-chat {
+    top: var(--popup-viewport-top, 0px);
+    width: 100%;
+    height: var(--popup-viewport-height, 100dvh);
+    border: 0;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: transform var(--mobile-dialog-duration) var(--mobile-dialog-easing), opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing);
+  }
+  body[data-chat="open"] .community-chat { opacity: 1; transform: translateY(0); }
+  .community-chat .chat-header { min-height: calc(4.25rem + env(safe-area-inset-top, 0px)); padding: calc(.75rem + env(safe-area-inset-top, 0px)) var(--mobile-dialog-inset-right) .75rem var(--mobile-dialog-inset-left); }
+  .community-chat .chat-feed { padding-inline: var(--mobile-dialog-inset-left) var(--mobile-dialog-inset-right); overscroll-behavior: contain; }
+  .community-chat .chat-footer { padding: .75rem var(--mobile-dialog-inset-right) var(--mobile-dialog-footer-space) var(--mobile-dialog-inset-left); }
+
+  dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+    #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)::backdrop {
+    opacity: 0;
+    background: var(--overlay-backdrop);
+    backdrop-filter: none;
+    transition: opacity var(--mobile-dialog-duration) ease;
+    transition: opacity var(--mobile-dialog-duration) ease,
+      display var(--mobile-dialog-duration) allow-discrete,
+      overlay var(--mobile-dialog-duration) allow-discrete;
+  }
+  dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+    #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+    #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open]::backdrop { opacity: 1; }
+
+  @starting-style {
+    dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+      #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+      #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open] { opacity: 0; translate: 0 1rem; }
+    dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
+      #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
+      #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open]::backdrop { opacity: 0; }
+  }
+
+  body[data-reduce-motion="true"] { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; }
+  @media (prefers-reduced-motion: reduce) { :root { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; } }
+}

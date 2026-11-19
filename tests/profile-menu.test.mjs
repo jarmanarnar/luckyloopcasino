@@ -8,7 +8,7 @@ import { getDiscoveredGameCount } from '../public/rewards-pages.js';
 const source = (await readFile(new URL('../public/profile-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initProfileMenu', 'function initProfileMenu');
 
-function profilePage({ preparePhoto = async () => 'test-photo' } = {}) {
+function profilePage({ preparePhoto = async () => 'test-photo', popupNavigation } = {}) {
   let focused;
   class Node {
     constructor() { this.listeners = new Map(); this.attributes = new Map(); this.dataset = {}; this.open = false; this.hidden = false; }
@@ -26,8 +26,8 @@ function profilePage({ preparePhoto = async () => 'test-photo' } = {}) {
     showPopover() {}
   }
   const selectors = ['#header-profile', '#profile-menu', '#profile-summary', '#profile-menu-status',
-    '#profile-summary-title', '#profile-summary-overview', '.profile-summary__edit', '.profile-summary__close',
-    '#profile-editor', '#profile-editor-name', '#profile-editor-avatars', '#profile-editor-cancel', '#profile-editor-save', '#profile-editor-status',
+    '#profile-summary-title', '#profile-summary-overview', '.profile-summary__body', '.profile-summary__edit', '.profile-summary__close',
+    '#profile-editor', '.profile-editor__fields', '#profile-editor-name', '#profile-editor-avatars', '#profile-editor-cancel', '#profile-editor-save', '#profile-editor-status',
     ...['preview', 'file', 'upload', 'remove', 'status'].map(id => `#profile-photo-${id}`),
     ...['avatar', 'name', 'since', 'games', 'favorites', 'rewards', 'coins'].map(id => `#profile-summary-${id}`),
     ...['summary', 'messages', 'redeem', 'logout'].map(action => `[data-profile-action="${action}"]`)];
@@ -47,10 +47,10 @@ function profilePage({ preparePhoto = async () => 'test-photo' } = {}) {
   };
   const document = { querySelector: selector => selector === 'dialog[open]' ? nodes['#profile-summary'].open ? nodes['#profile-summary'] : null : nodes[selector] };
   const router = { subscribe() {}, getRoute: () => ({ type: 'category', categoryId: 'popular' }), navigate: route => navigations.push(route) };
-  const context = { document, window: { addEventListener() {} }, router, account, getDiscoveredGameCount, createShelfIcon() {},
+  const context = { document, window: { addEventListener() {} }, router, account, popupNavigation, getDiscoveredGameCount, createShelfIcon() {},
     prepareProfilePhoto: preparePhoto,
     renderProfileAvatar(element, profile) { element.textContent = profile.avatar; element.photo = profile.photo || null; } };
-  const api = vm.runInNewContext(`${source}\ninitProfileMenu({router, account});`, context);
+  const api = vm.runInNewContext(`${source}\ninitProfileMenu({router, account, popupNavigation});`, context);
   return { api, nodes, choices, snapshot, account, writes, navigations, subscribers, focused: () => focused };
 }
 
@@ -71,6 +71,69 @@ test('profile edit and cancel stay in the same popup without changing the accoun
   await n['.profile-summary__edit'].fire('click');
   assert.equal(n['#profile-editor-name'].value, 'Alice');
   assert.equal(page.choices[0].getAttribute('aria-pressed'), 'true');
+});
+
+function profileNavigation() {
+  const steps = new Map();
+  return {
+    steps,
+    pushStep(dialog, step) { steps.set(dialog, step); },
+    clearSteps(dialog) { steps.delete(dialog); },
+    backStep(dialog, id) {
+      const step = steps.get(dialog);
+      if (!step || step.id !== id) return false;
+      steps.delete(dialog);
+      step.onBack();
+      return true;
+    },
+  };
+}
+
+test('browser Back from editing restores the profile without saving draft changes', async () => {
+  const popupNavigation = profileNavigation();
+  const page = profilePage({ popupNavigation }), n = page.nodes, dialog = n['#profile-summary'];
+  page.api.open({ edit: true });
+  n['#profile-editor-name'].value = 'Unsaved name';
+  await page.choices[2].fire('click');
+  for (const selector of ['#profile-summary', '.profile-summary__body', '#profile-summary-overview', '.profile-editor__fields']) {
+    n[selector].scrollTop = 180;
+  }
+  assert.equal(popupNavigation.backStep(dialog, 'edit'), true);
+  assert.equal(dialog.open, true);
+  assert.equal(n['#profile-editor'].hidden, true);
+  assert.equal(n['#profile-summary-name'].textContent, 'Alice');
+  assert.equal(page.focused(), n['.profile-summary__edit']);
+  assert.deepEqual(page.writes, []);
+  assert.deepEqual(page.navigations, []);
+  assert.equal(popupNavigation.steps.size, 0);
+  for (const selector of ['#profile-summary', '.profile-summary__body', '#profile-summary-overview', '.profile-editor__fields']) {
+    assert.equal(n[selector].scrollTop, 0);
+  }
+  await n['.profile-summary__edit'].fire('click');
+  assert.equal(n['#profile-editor-name'].value, 'Alice');
+  assert.equal(page.choices[0].getAttribute('aria-pressed'), 'true');
+  await n['#profile-editor-cancel'].fire('click');
+  assert.equal(popupNavigation.steps.size, 0, 'Cancel consumes the same inner step as browser Back');
+});
+
+test('Back invalidates a pending photo preview and X still closes the whole profile', async () => {
+  const popupNavigation = profileNavigation();
+  let finishPhoto;
+  const page = profilePage({ popupNavigation, preparePhoto: () => new Promise(resolve => { finishPhoto = resolve; }) });
+  const n = page.nodes, dialog = n['#profile-summary'];
+  page.api.open({ edit: true });
+  n['#profile-photo-file'].files = [{}];
+  const pending = n['#profile-photo-file'].fire('change');
+  popupNavigation.backStep(dialog, 'edit');
+  finishPhoto('stale-photo');
+  await pending;
+  await n['.profile-summary__edit'].fire('click');
+  assert.equal(n['#profile-photo-preview'].photo, null);
+  assert.equal(n['#profile-photo-status'].textContent, '');
+  assert.deepEqual(page.writes, []);
+  await n['.profile-summary__close'].fire('click');
+  assert.equal(dialog.open, false);
+  assert.equal(popupNavigation.steps.size, 0);
 });
 
 test('saving profile updates the shared summary and preserves concurrent untouched fields', async () => {

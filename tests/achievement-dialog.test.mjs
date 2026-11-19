@@ -42,7 +42,7 @@ function page({ hold, failure = false, signedIn = true, member = { attendance: {
   const api = vm.runInNewContext(`${source}\ninitAchievementDialog({ account, auth, router, openVerification, document });`, context);
   const dialog = document.getElementById('achievement-dialog');
   const tree = node => [node, ...node.children.flatMap(tree)];
-  return { api, dialog, account, registrations, verifications, navigations,
+  return { api, dialog, document, account, registrations, verifications, navigations,
     get calls() { return calls; }, get memberReads() { return memberReads; }, get authRequired() { return authRequired; },
     fail: value => { failure = value; }, update: change => { change?.(saved); listeners.forEach(fn => fn()); },
     find: text => tree(dialog).find(node => node.textContent === text),
@@ -117,4 +117,34 @@ test('closing and opening another detail during a pending claim never strands th
   assert.ok(view.find('5 Days Streak')); assert.equal(view.find('Claim').disabled, false);
   assert.equal(view.notice(), ''); assert.equal(view.calls, 1);
   assert.equal(view.account.getSnapshot().wallet.balances.GC, 1500);
+});
+
+test('achievement header and actions remain outside the scrolling details', () => {
+  const view = page(); view.api.open('login-streak-4');
+  const [header, scroll, actions] = view.dialog.children;
+  assert.equal(header.className, 'achievement-dialog__header');
+  assert.ok(header.children.some(node => node.attributes['aria-label'] === 'Close achievement'));
+  assert.equal(scroll.className, 'achievement-dialog__scroll');
+  assert.deepEqual(scroll.children.map(node => node.className), ['achievement-dialog__body', 'achievement-dialog__notice']);
+  assert.equal(actions.className, 'achievement-dialog__actions');
+  assert.ok(actions.children.includes(view.find('Claim')));
+});
+
+test('a queued close event cannot clear a reopened achievement or steal focus from another dialog', () => {
+  const view = page();
+  view.api.open('verify-email');
+  view.dialog.close();
+  view.api.open('verify-phone');
+  view.dialog.events.close();
+  view.update(saved => { saved.member.achievementStats.phoneVerified = true; });
+  assert.ok(view.find('Claim'), 'the reopened selection still receives state updates');
+
+  view.dialog.close();
+  const opener = view.document.createElement('button'); opener.isConnected = true; opener.focus();
+  view.api.open('verify-email');
+  view.dialog.open = false;
+  const nextDialog = view.document.createElement('dialog'); nextDialog.showModal();
+  const nextControl = view.document.createElement('button'); nextControl.focus();
+  view.dialog.events.close();
+  assert.equal(view.document.activeElement, nextControl, 'an auth or verification handoff keeps its new focus');
 });

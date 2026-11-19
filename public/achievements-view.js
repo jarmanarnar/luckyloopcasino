@@ -41,9 +41,24 @@ export function renderAchievements(ctx, entries, collect) {
   const medals = n('div', 'achievements-hero__medals');
   for (const entry of completed) {
     const badge = button('', 'achievement-award', () => ctx.openAchievement?.(entry.id)); badge.dataset.achievementId = entry.id;
+    badge.dataset.completedMedal = 'true';
     badge.setAttribute('aria-label', `${entry.title} — ${entry.claimed ? 'reward collected' : 'ready to claim'}`);
     badge.setAttribute('aria-haspopup', 'dialog'); badge.title = entry.title;
     badge.append(achievementMedal(ctx, entry, true)); medals.append(badge);
+  }
+  const showCompleted = () => {
+    ctx.ui.achievementFilter = 'completed'; ctx.ui.achievementLimit = completed.length;
+    ctx.refresh('achievements', 'achievement-filter-completed');
+  };
+  // Container queries select one count without observing or retaining rendered rows.
+  for (const slots of [2, 3, 4, 5, 6, 8]) {
+    if (completed.length <= slots) continue;
+    const remaining = completed.length - (slots - 1);
+    const more = button(`+${remaining}`, 'achievement-award achievement-award--more', showCompleted);
+    more.dataset.slots = String(slots);
+    more.setAttribute('aria-label', `View all ${completed.length} completed achievements (${remaining} more)`);
+    more.setAttribute('aria-controls', 'achievement-results');
+    medals.append(more);
   }
   if (!completed.length) medals.append(n('p', 'feature-muted', 'Your completed achievements will appear here.'));
   showcase.append(heading, medals); hero.append(intro, showcase);

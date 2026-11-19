@@ -10,7 +10,10 @@ export function initAchievementDialog({ account, auth, router, openVerification,
   dialog.setAttribute('aria-labelledby', 'achievement-detail-title');
   const close = node('button', 'dialog-close icon-button achievement-dialog__close'); close.type = 'button'; close.setAttribute('aria-label', 'Close achievement'); close.append(createUiIcon('close'));
   const body = node('div', 'achievement-dialog__body'), notice = node('p', 'achievement-dialog__notice'), actions = node('div', 'achievement-dialog__actions'); notice.setAttribute('role', 'status');
-  dialog.append(close, body, notice, actions); doc.body.append(dialog);
+  const header = node('header', 'achievement-dialog__header'), scroll = node('div', 'achievement-dialog__scroll');
+  header.append(node('span', 'achievement-dialog__caption', 'Achievement'), close);
+  scroll.append(body, notice);
+  dialog.append(header, scroll, actions); doc.body.append(dialog);
   let selected = null, opener = null, pending = false, session = 0, wasSignedIn = account.isSignedIn();
   const ctx = { node, icon: createShelfIcon };
   const button = (text, css, action) => { const el = node('button', css, text); el.type = 'button'; el.addEventListener('click', action); return el; };
@@ -69,8 +72,11 @@ export function initAchievementDialog({ account, auth, router, openVerification,
     const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
   } });
   dialog.addEventListener('close', () => {
+    if (dialog.open) return;
     session++; selected = null;
-    const target = opener?.isConnected ? opener : doc.getElementById('achievement-filter-all') || doc.querySelector('#header-rewards'); target?.focus({ preventScroll: true });
+    if (!doc.querySelector('dialog[open]')) {
+      const target = opener?.isConnected ? opener : doc.getElementById('achievement-filter-all') || doc.querySelector('#header-rewards'); target?.focus({ preventScroll: true });
+    }
   });
   router.subscribe(() => { if (dialog.open) dialog.close(); });
   account.subscribe(() => {
@@ -79,6 +85,6 @@ export function initAchievementDialog({ account, auth, router, openVerification,
   });
   return { open(id) {
     if (doc.querySelector('dialog[open]') || !entries().some(item => item.id === id)) return;
-    selected = id; opener = doc.activeElement; session++; notice.textContent = ''; render(); dialog.showModal(); close.focus({ preventScroll: true });
+    selected = id; opener = doc.activeElement; session++; notice.textContent = ''; render(); dialog.showModal(); scroll.scrollTop = 0; close.focus({ preventScroll: true });
   } };
 }

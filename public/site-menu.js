@@ -191,13 +191,34 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     candidates.find(node => node?.getClientRects().length && !(sidebar.inert && sidebar.contains(node)))?.focus({ preventScroll: true });
   }
 
+  function isAvailableControl(element) {
+    if (!element || element.disabled || element.tabIndex < 0 || !element.getClientRects().length) return false;
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+      if (ancestor.inert) return false;
+    }
+    return true;
+  }
+
+  function availableControls(root) {
+    return root ? [...root.querySelectorAll('button, a[href], input, select, textarea, summary, [tabindex]')]
+      .filter(isAvailableControl) : [];
+  }
+
   function setMenuBackgroundInert(active) {
     if (active) {
-      for (const element of document.body.children) {
-        if (element === dialog || element === bottomNav || menuBackground.has(element)) continue;
+      const guest = document.body.dataset.auth === 'guest';
+      const blockBackground = element => {
+        if (element === dialog || (!guest && element === bottomNav) || menuBackground.has(element)) return;
+        // Guests close the drawer from the header hamburger; block its siblings,
+        // not the ancestors that keep that one control interactive.
+        if (guest && element.contains(trigger)) {
+          if (element !== trigger) [...element.children].forEach(blockBackground);
+          return;
+        }
         menuBackground.set(element, element.inert);
         element.inert = true;
-      }
+      };
+      [...document.body.children].forEach(blockBackground);
     } else {
       for (const [element, inert] of menuBackground) element.inert = inert;
       menuBackground.clear();
@@ -288,12 +309,13 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     menuOpener = returnFocusTo;
     syncMenu();
     afterClose = null;
-    // The mobile bar remains in the shell. A non-modal dialog lets that same
-    // bar stay interactive while the covered page is inert.
+    // A non-modal dialog keeps the member bar or guest hamburger interactive
+    // while the rest of the covered page is inert.
     dialog.show();
     setMenuBackgroundInert(true);
     trigger.setAttribute('aria-expanded', 'true');
-    buyButton.focus({ preventScroll: true });
+    trigger.setAttribute('aria-label', 'Close menu');
+    availableControls(dialog)[0]?.focus({ preventScroll: true });
     observeState();
   }
 
@@ -318,7 +340,10 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     else closeMenu(() => openCategory?.(id));
   }
 
-  trigger.addEventListener('click', openMenu);
+  trigger.addEventListener('click', () => {
+    if (!desktop && dialog.open) closeMenu();
+    else openMenu();
+  });
   buyButton.addEventListener('click', () => closeMenu(() => openStore?.()));
   document.querySelector('#menu-spin-wheel')?.addEventListener('click', event => {
     const returnFocusTo = desktop ? event.currentTarget : menuOpener;
@@ -371,6 +396,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     }
     observer.disconnect();
     trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-label', 'Open menu');
     const action = afterClose;
     afterClose = null;
     if (action) {
@@ -387,9 +413,9 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       return;
     }
     if (event.key !== 'Tab' || event.ctrlKey || event.altKey || event.metaKey) return;
-    const controls = [dialog, bottomNav].filter(Boolean).flatMap(root =>
-      [...root.querySelectorAll('button, a[href], input, select, textarea, summary, [tabindex]')])
-      .filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
+    const shellControls = document.body.dataset.auth === 'guest'
+      ? [trigger].filter(isAvailableControl) : availableControls(bottomNav);
+    const controls = [...availableControls(dialog), ...shellControls];
     if (!controls.length) return;
     const current = controls.indexOf(document.activeElement);
     const next = current < 0 ? event.shiftKey ? controls.length - 1 : 0

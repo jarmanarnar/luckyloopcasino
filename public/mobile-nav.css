@@ -31,8 +31,6 @@
   color: var(--text-secondary);
   font-family: var(--header-font-family);
 }
-body[data-auth="guest"] .mobile-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-body[data-auth="guest"] #mobile-nav-chat { display: none; }
 .mobile-nav__item {
   box-sizing: border-box;
   position: relative;
@@ -57,39 +55,24 @@ body[data-auth="guest"] #mobile-nav-chat { display: none; }
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-/* Paint the active surface inside each existing touch target without changing its size. */
-.mobile-nav__item::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: .375rem .125rem;
-  border-radius: .75rem;
-  background: transparent;
-  pointer-events: none;
-}
 .mobile-nav__item:is(:hover, :focus-visible) { color: var(--text-primary); }
-.mobile-nav__item:is(:hover, :focus-visible)::before { background: var(--surface-subtle); }
-.mobile-nav__item:is([aria-current="page"], [data-active="true"])::before {
-  background: var(--surface-inset);
-  box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
-}
-#mobile-nav-lobby::before { content: none; }
-.mobile-nav__icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; fill: currentColor; }
-/* Enlarge the four utility icons while keeping their layout slot and label position. */
-.mobile-nav__icon:not(.mobile-nav__icon--brand) { width: 1.5rem; height: 1.5rem; margin-block: -.125rem; }
-/* Keep the icon slot aligned; the CC floats above the bar independently of the labels. */
-.mobile-nav__icon--brand { width: 4.25rem; }
-.mobile-nav__icon--brand img { position: absolute; top: -1.25rem; left: 50%; width: 5.25rem; height: 3.5rem; transform: translateX(-50%); object-fit: contain; }
+.mobile-nav__icon { display: block; flex: none; width: 1.5rem; height: 1.5rem; margin-block: -.125rem; fill: currentColor; }
 .mobile-nav__label { font-size: .8125rem; font-weight: 400; line-height: 1.2; white-space: nowrap; }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) { color: var(--text-primary); }
 .mobile-nav__item:is([aria-current="page"], [data-active="true"]) .mobile-nav__icon { color: var(--catalog-accent); }
 
 @media (width <= 1024px) {
+  /* Guests navigate through the header menu, so no space is reserved for a bottom bar. */
+  body[data-auth="guest"] { --mobile-nav-height: 0px; }
   body[data-mobile-nav="true"] { padding-bottom: var(--mobile-nav-height); }
-  body[data-mobile-nav="true"] .mobile-nav { display: grid; }
+  body[data-mobile-nav="true"][data-auth="member"] .mobile-nav { display: grid; }
   body[data-mobile-nav="true"][data-view="game"] { padding-bottom: 0; }
   body[data-mobile-nav="true"][data-view="game"] .mobile-nav { display: none; }
-  body[data-mobile-nav="true"] .top-bar #menu-toggle { display: none; }
+  body[data-mobile-nav="true"][data-auth="member"] .top-bar #menu-toggle { display: none; }
   body[data-mobile-nav="true"]:not([data-view="game"]) .top-bar .site-logo { display: flex; }
-  html:has(body[data-mobile-nav="true"]:not([data-view="game"])) { scroll-padding-block-end: var(--mobile-nav-height); }
+  html:has(body[data-mobile-nav="true"][data-auth="member"]:not([data-view="game"])) { scroll-padding-block-end: var(--mobile-nav-height); }
+}
+/* Retain full-size guest actions when the header also contains the menu trigger. */
+@media (max-width: 22.4375rem) {
+  body[data-mobile-nav="true"][data-auth="guest"] .top-bar .site-logo { display: none; }
 }

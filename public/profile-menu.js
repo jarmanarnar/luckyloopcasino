@@ -5,7 +5,7 @@ import { prepareProfilePhoto, renderProfileAvatar } from './profile-photo.js';
 const dateLabel = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 const number = new Intl.NumberFormat('en-US');
 
-export function initProfileMenu({ router, account, auth, openNotifications, openRedeem, preparePhoto = prepareProfilePhoto }) {
+export function initProfileMenu({ router, account, auth, popupNavigation, openNotifications, openRedeem, preparePhoto = prepareProfilePhoto }) {
   const trigger = document.querySelector('#header-profile');
   const menu = document.querySelector('#profile-menu');
   const summary = document.querySelector('#profile-summary');
@@ -51,6 +51,7 @@ export function initProfileMenu({ router, account, auth, openNotifications, open
   }
 
   function setEditorVisible(visible) {
+    if (!visible) popupNavigation?.clearSteps(summary);
     editSession++;
     photoRequest++;
     preparingPhoto = false;
@@ -62,6 +63,11 @@ export function initProfileMenu({ router, account, auth, openNotifications, open
     title.textContent = visible ? 'Edit profile' : 'My Profile';
     feedback.textContent = '';
     summary.scrollTop = 0;
+    const body = summary.querySelector('.profile-summary__body');
+    if (body) body.scrollTop = 0;
+    overview.scrollTop = 0;
+    const fields = editor.querySelector('.profile-editor__fields');
+    if (fields) fields.scrollTop = 0;
   }
 
   function startEditing() {
@@ -72,6 +78,7 @@ export function initProfileMenu({ router, account, auth, openNotifications, open
     photoChanged = false;
     name.value = originalProfile.displayName;
     setEditorVisible(true);
+    popupNavigation?.pushStep(summary, { id: 'edit', onBack: showOverview });
     renderPhotoPreview();
     name.focus();
   }
@@ -96,7 +103,9 @@ export function initProfileMenu({ router, account, auth, openNotifications, open
   }
 
   edit.addEventListener('click', startEditing);
-  cancel.addEventListener('click', showOverview);
+  cancel.addEventListener('click', () => {
+    if (!popupNavigation?.backStep(summary, 'edit')) showOverview();
+  });
   photoUpload.addEventListener('click', () => { if (!saving && !preparingPhoto) photoFile.click(); });
   photoFile.addEventListener('change', async () => {
     const file = photoFile.files?.[0];

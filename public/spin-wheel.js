@@ -96,7 +96,7 @@ function createClock() {
   } };
 }
 
-export function initSpinWheel({ account, auth, router }) {
+export function initSpinWheel({ account, auth, router, popupNavigation }) {
   const dialog = node('dialog', 'spin-wheel');
   dialog.id = 'spin-wheel-dialog'; dialog.lang = 'en'; dialog.dir = 'ltr';
   dialog.setAttribute('aria-label', 'Spin & Win');
@@ -141,14 +141,13 @@ export function initSpinWheel({ account, auth, router }) {
     list.append(row);
   }
   prizeView.append(list);
-  // The celebration sits above the wheel. Dismissing it never closes or
-  // replaces the wheel, including after the last available spin.
+  // Back returns to the wheel; the close control exits the complete wheel flow.
   const winDialog = node('dialog', 'spin-win');
   winDialog.id = 'spin-win-dialog'; winDialog.lang = 'en'; winDialog.dir = 'ltr';
   winDialog.setAttribute('aria-labelledby', 'spin-win-title');
   winDialog.setAttribute('aria-describedby', 'spin-win-amount spin-win-currency');
   const winClose = node('button', 'dialog-close icon-button spin-win__close');
-  winClose.type = 'button'; winClose.setAttribute('aria-label', 'Close reward and return to wheel');
+  winClose.type = 'button'; winClose.setAttribute('aria-label', 'Close Spin & Win');
   winClose.append(createUiIcon('close'));
   const winWalletArea = node('div', 'header-wallet-controls spin-win__wallet-area');
   const winWallet = node('button', 'wallet-switch wallet-balance-trigger spin-win__wallet');
@@ -208,7 +207,9 @@ export function initSpinWheel({ account, auth, router }) {
   const resultStatus = node('p', 'spin-wheel__result-status', 'Added to your balance'); resultStatus.setAttribute('role', 'status');
   const done = node('button', 'spin-wheel__spin', 'Back to wheel'); done.type = 'button';
   resultView.append(resultHeading, resultArt, resultAmount, resultCurrency, resultStatus, done);
-  winDialog.append(winWalletArea, winClose, resultView);
+  const winHeader = node('header', 'spin-win__header');
+  winHeader.append(winWalletArea, winClose);
+  winDialog.append(winHeader, resultView);
   body.append(wheelView, prizeView);
   dialog.append(controls, body); document.body.append(dialog);
   document.body.append(winDialog);
@@ -265,7 +266,7 @@ export function initSpinWheel({ account, auth, router }) {
     launchers.push(rewardsAction);
   }
 
-  let phase = 'wheel', spinning = false, animation = null, angle = 0, opener = null, dialogSession = 0;
+  let phase = 'wheel', spinning = false, animation = null, angle = 0, opener = null, dialogSession = 0, pendingWin = null;
   let sound = false, audio = null, ticking = 0, spinFrom = 0, spinTo = 0, tickSegment = 0, pointerAnimation = null;
   const spinDuration = SPIN_DURATION;
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || account.getMemberState().settings.reducedMotion;
@@ -358,6 +359,7 @@ export function initSpinWheel({ account, auth, router }) {
     winWalletTarget = null;
     view('wheel');
     winDialog.showModal();
+    pendingWin = null;
     updateWinWallet(from);
     done.focus({ preventScroll: true });
   }
@@ -397,9 +399,14 @@ export function initSpinWheel({ account, auth, router }) {
     delete dial.dataset.landed;
     try {
       const result = await account.spinWheel();
-      if (!stillOpen()) return;
       if (!result.ok) { message.textContent = result.reason; return; }
       const prize = SPIN_PRIZES[result.index];
+      if (!account.isSignedIn() || account.getSnapshot().playerId !== playerId) return;
+      pendingWin = { prize, transactionId: result.transactionId, playerId };
+      if (!stillOpen()) {
+        if (dialog.open) showResult(prize, result.transactionId);
+        return;
+      }
       const target = spinLanding(result.index, angle);
       if (stillOpen()) {
         spinFrom = angle; spinTo = target; tickSegment = Math.floor((angle + 22.5) / 45);
@@ -424,7 +431,12 @@ export function initSpinWheel({ account, auth, router }) {
     } catch { message.textContent = 'We could not save your spin. Please try again.'; }
     finally { spinning = false; delete dialog.dataset.spinning; prizesButton.disabled = false; stopTicks(); update(); }
   });
-  prizesButton.addEventListener('click', () => view(phase === 'wheel' ? 'prizes' : 'wheel'));
+  prizesButton.addEventListener('click', () => {
+    if (phase === 'wheel') {
+      view('prizes');
+      popupNavigation?.pushStep(dialog, { id: 'wheel-prizes', onBack: () => { view('wheel'); prizesButton.focus({ preventScroll: true }); } });
+    } else if (!popupNavigation?.backStep(dialog, 'wheel-prizes')) view('wheel');
+  });
   soundButton.addEventListener('click', async () => {
     if (!sound) {
       try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); await audio.resume(); }
@@ -437,7 +449,7 @@ export function initSpinWheel({ account, auth, router }) {
   });
   close.addEventListener('click', () => dialog.close());
   done.addEventListener('click', () => winDialog.close());
-  winClose.addEventListener('click', () => winDialog.close());
+  winClose.addEventListener('click', closeAll);
   winDialog.addEventListener('click', event => { if (event.target === winDialog) winDialog.close(); });
   winDialog.addEventListener('close', () => {
     if (winDialog.open) return;
@@ -454,10 +466,11 @@ export function initSpinWheel({ account, auth, router }) {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
   });
   dialog.addEventListener('close', () => {
+    if (dialog.open) return;
     dialogSession++;
     if (winDialog.open) winDialog.close();
     animation?.cancel(); stopTicks();
-    [opener, document.querySelector('#header-rewards'), document.querySelector('#mobile-nav-menu')]
+    if (!document.querySelector('dialog[open]')) [opener, document.querySelector('#header-rewards'), document.querySelector('#mobile-nav-menu')]
       .find(element => element?.getClientRects().length && !element.closest('[inert]'))?.focus({ preventScroll: true });
   });
   function openSpinWheel({ returnFocusTo = document.activeElement } = {}) {
@@ -467,6 +480,7 @@ export function initSpinWheel({ account, auth, router }) {
       dialogSession++;
       view('wheel');
       message.textContent = ''; dialog.showModal();
+      if (pendingWin?.playerId === account.getSnapshot().playerId) showResult(pendingWin.prize, pendingWin.transactionId);
     });
   }
   document.querySelector('#rewards-spin-wheel')?.addEventListener('click', () => {
@@ -479,7 +493,7 @@ export function initSpinWheel({ account, auth, router }) {
     if (dialog.open) dialog.close();
   }
   router.subscribe(closeAll);
-  account.subscribe(() => { if (!account.isSignedIn()) closeAll(); else updateWinWallet(); update(); });
+  account.subscribe(() => { if (!account.isSignedIn()) { pendingWin = null; closeAll(); } else updateWinWallet(); update(); });
   document.addEventListener('visibilitychange', () => {
     document.body.classList.toggle('spin-motion-paused', document.hidden);
     if (!document.hidden) { update(); updateWinWallet(); if (spinning && !reduced()) tick(); }

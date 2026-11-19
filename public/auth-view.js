@@ -1,6 +1,6 @@
 import { createAuthRouter, requiresAccount } from './auth-routing.js';
 
-export function initAuthView({ account, router } = {}) {
+export function initAuthView({ account, router, popupNavigation } = {}) {
   const dialog = document.querySelector('#auth-dialog');
   const form = document.querySelector('#auth-form');
   const email = document.querySelector('#auth-email');
@@ -12,6 +12,7 @@ export function initAuthView({ account, router } = {}) {
   const registerFields = document.querySelector('#auth-register-fields');
   const forgot = document.querySelector('#auth-forgot');
   const recovery = document.querySelector('#auth-recovery');
+  const recoveryBack = document.querySelector('#auth-recovery-back');
   const resumeButton = document.querySelector('#auth-resume-demo');
   const socialButtons = [...document.querySelectorAll('[data-auth-social]')];
   const toggle = document.querySelector('#auth-password-toggle');
@@ -22,6 +23,11 @@ export function initAuthView({ account, router } = {}) {
   function message(text = '', error = false) {
     feedback.textContent = text;
     feedback.dataset.error = String(error);
+  }
+  function resetScroll() {
+    dialog.scrollTop = 0;
+    const content = dialog.querySelector('.auth-layout');
+    if (content) content.scrollTop = 0;
   }
   function syncDemoAccess() {
     const saved = account.getSnapshot();
@@ -61,6 +67,8 @@ export function initAuthView({ account, router } = {}) {
     }
   }
   function select(next, focus = false) {
+    popupNavigation?.clearSteps(dialog);
+    resetScroll();
     mode = next;
     form.hidden = false;
     recovery.hidden = true;
@@ -150,12 +158,13 @@ export function initAuthView({ account, router } = {}) {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dismiss();
   });
   dialog.addEventListener('close', () => {
+    if (dialog.open) return;
     delete document.body.dataset.authDialog;
     pending = null;
     form.reset();
     password.type = 'password';
     message();
-    if (!completed && opener?.isConnected) opener.focus({ preventScroll: true });
+    if (!completed && opener?.isConnected && !document.querySelector('dialog[open]')) opener.focus({ preventScroll: true });
   });
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => { if (!busy) select(['login', 'register'][index]); });
@@ -178,9 +187,17 @@ export function initAuthView({ account, router } = {}) {
     terms.hidden = !terms.hidden;
     event.currentTarget.setAttribute('aria-expanded', String(!terms.hidden));
   });
-  forgot.addEventListener('click', () => { form.hidden = true; recovery.hidden = false; });
+  forgot.addEventListener('click', () => {
+    form.hidden = true;
+    recovery.hidden = false;
+    resetScroll();
+    popupNavigation?.pushStep(dialog, { id: 'recovery', onBack: () => select('login', true) });
+    recoveryBack.focus({ preventScroll: true });
+  });
   resumeButton.addEventListener('click', () => { void resumeDemo(); });
-  document.querySelector('#auth-recovery-back').addEventListener('click', () => select('login', true));
+  recoveryBack.addEventListener('click', () => {
+    if (!popupNavigation?.backStep(dialog, 'recovery')) select('login', true);
+  });
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy || !form.reportValidity()) return;

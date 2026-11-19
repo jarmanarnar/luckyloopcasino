@@ -160,11 +160,11 @@ test('last-spin win is a separate popup; dismissal and reopening always show the
   assert.equal(q('.spin-wheel__availability').textContent, 'No spins left');
 });
 
-test('closing a reward returns to remaining spins without spending one', async () => {
+test('Back to wheel returns to remaining spins without spending one', async () => {
   const page = wheelPage({ days: 2 }), q = page.query;
   page.api.openSpinWheel();
   await q('#spin-wheel-start').click();
-  await q('.spin-win__close').click();
+  await q('#spin-win-dialog').querySelector('.spin-wheel__spin').click();
   assert.equal(q('.spin-wheel__availability').textContent, '2 spins left');
   assert.equal(page.document.activeElement, q('#spin-wheel-start'));
   assert.equal(q('.spin-launcher__badge').hidden, true);
@@ -189,7 +189,7 @@ test('navigation and logout close both dialogs without reviving the wheel from a
   }
 });
 
-test('closing while a spin is saving prevents a late result popup, even if the wheel is reopened', async () => {
+test('reopening the wheel while a spin saves presents the committed reward once', async () => {
   let release;
   const page = wheelPage({ pauseSpin: new Promise(resolve => { release = resolve; }) }), q = page.query;
   page.api.openSpinWheel();
@@ -198,9 +198,38 @@ test('closing while a spin is saving prevents a late result popup, even if the w
   page.api.openSpinWheel();
   release(); await pending;
   assert.equal(q('#spin-wheel-dialog').open, true);
-  assert.equal(q('#spin-win-dialog').open, false);
+  assert.equal(q('#spin-win-dialog').open, true);
   assert.equal(q('.spin-wheel__availability').textContent, 'No spins left');
   assert.equal(page.account.getSnapshot().ledger.filter(item => item.source === 'spin-wheel').length, 1);
+});
+
+test('closing a reward exits the whole wheel flow and never spends another spin', async () => {
+  const page = wheelPage({ days: 2 }), q = page.query;
+  page.api.openSpinWheel();
+  await q('#spin-wheel-start').click();
+  const credits = page.account.getSnapshot().ledger.length;
+  await q('.spin-win__close').click();
+  assert.equal(q('#spin-win-dialog').open, false);
+  assert.equal(q('#spin-wheel-dialog').open, false);
+  assert.equal(page.account.getSnapshot().ledger.length, credits);
+  assert.equal(wheelState.spinStatus(page.account.getSnapshot()).spinsAvailable, 2);
+  page.api.openSpinWheel();
+  assert.equal(q('#spin-win-dialog').open, false);
+});
+
+test('a spin completed after dismissal waits until the wheel is reopened to show its result', async () => {
+  let release;
+  const page = wheelPage({ pauseSpin: new Promise(resolve => { release = resolve; }) }), q = page.query;
+  page.api.openSpinWheel();
+  const pending = q('#spin-wheel-start').click();
+  q('#spin-wheel-dialog').close(); await Promise.resolve();
+  release(); await pending;
+  assert.equal(q('#spin-win-dialog').open, false);
+  assert.equal(q('#spin-wheel-dialog').open, false);
+  const credits = page.account.getSnapshot().ledger.length;
+  page.api.openSpinWheel();
+  assert.equal(q('#spin-win-dialog').open, true);
+  assert.equal(page.account.getSnapshot().ledger.length, credits);
 });
 
 test('a failed spin leaves the wheel ready with its error and no celebration or cooldown badge', async () => {
@@ -217,7 +246,7 @@ test('the exhausted wheel counts down to midnight and becomes ready without reop
   page.api.openSpinWheel();
   assert.equal(q('.spin-wheel__cooldown').hidden, true);
   await q('#spin-wheel-start').click();
-  await q('.spin-win__close').click();
+  await q('#spin-win-dialog').querySelector('.spin-wheel__spin').click();
   assert.equal(q('.spin-wheel__actions').dataset.state, 'waiting');
   assert.equal(q('.spin-wheel__cooldown').hidden, false);
   assert.equal(q('#spin-wheel-next-time').textContent, '00:00:02');

@@ -10,7 +10,7 @@ const source = (await readFile(new URL('../public/site-menu.js', import.meta.url
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
 function menuPage({ desktop = false, routeFromGame = false, storage = new Map(), favorites = [],
-  reduced = false, siteReduced = false, sidebarDuration = '240ms' } = {}) {
+  reduced = false, siteReduced = false, sidebarDuration = '240ms', guest = false } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
   const timers = new Map();
   let timerId = 0;
@@ -116,6 +116,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   }
   document.body = new Node();
   document.body.dataset.view = 'lobby';
+  document.body.dataset.auth = guest ? 'guest' : 'member';
   if (siteReduced) document.body.dataset.reduceMotion = 'true';
   const ids = ['menu-toggle', 'site-menu', 'menu-navigation', 'menu-buy', 'menu-redeem',
     'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
@@ -137,13 +138,21 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   nodes['menu-tooltip'].bounds = { left: 0, right: 120, top: 0, bottom: 32, width: 120, height: 32 };
   const headerParent = new Node();
   headerParent.append(nodes['menu-toggle'], nodes['site-logo']);
+  const headerShell = guest ? new Node() : headerParent;
+  const headerActions = guest ? new Node() : null;
+  if (guest) {
+    headerActions.append(new Node('button'), new Node('button'));
+    headerShell.append(headerParent, headerActions);
+    nodes['menu-shortcuts'].visible = false;
+    nodes['mobile-nav'].visible = false;
+  }
   nodes['site-menu'].append(nodes['menu-mobile-header'], nodes['menu-content']);
   nodes['menu-mobile-header'].append(nodes['menu-shortcuts']);
   nodes['menu-shortcuts'].append(nodes['menu-buy'], nodes['menu-redeem']);
   nodes['menu-content'].append(nodes['menu-search'], nodes['menu-navigation']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
   nodes['mobile-nav'].append(...['menu', 'lobby', 'store', 'redeem', 'chat'].map(action => nodes[`mobile-nav-${action}`]));
-  document.body.append(headerParent, nodes['site-sidebar'], nodes['lobby-view'], nodes['game-view'], nodes['store-view'],
+  document.body.append(headerShell, nodes['site-sidebar'], nodes['lobby-view'], nodes['game-view'], nodes['store-view'],
     nodes['feature-view'], nodes['game-details-view'], nodes['mobile-nav'], nodes['site-menu']);
   const documentEvents = new Node();
   document.addEventListener = documentEvents.addEventListener.bind(documentEvents);
@@ -280,7 +289,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     if (settle) finishExit();
   };
   return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api, timers, motion, finishExit,
-    item, feature, socialCasino, casinoItems, flushClose, providerCalls, helpCalls, headerParent, resize, pageHeading,
+    item, feature, socialCasino, casinoItems, flushClose, providerCalls, helpCalls, headerParent, headerShell, headerActions, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     setFavorites(favorites) { memberState = createMemberState({ ...memberState, favorites }); memberListeners.forEach(listener => listener()); },
     flushLobby() { while (lobbyActions.length) lobbyActions.shift()(); } };
@@ -1106,6 +1115,70 @@ test('mobile focus cycles through the menu and the permanent bottom bar and docu
   page.flushClose();
   assert.equal(page.document.activeElement, opener);
   assert.equal(page.keydown('Tab').defaultPrevented, false, 'normal page focus resumes after dismissal');
+});
+
+test('guest hamburger opens and closes the menu while other header controls remain inert', () => {
+  const page = menuPage({ guest: true });
+  const trigger = page.nodes['menu-toggle'];
+  trigger.click();
+  assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-search'], 'hidden BUY and REDEEM shortcuts cannot receive focus');
+  assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+  assert.equal(trigger.getAttribute('aria-label'), 'Close menu');
+  assert.equal(page.headerShell.inert, false);
+  assert.equal(page.headerParent.inert, false);
+  assert.equal(page.nodes['site-logo'].inert, true);
+  assert.equal(page.headerActions.inert, true, 'guest login and registration controls remain blocked');
+  assert.equal(page.nodes['mobile-nav'].inert, true);
+  assert.equal(page.nodes['lobby-view'].inert, true);
+  page.nodes['site-logo'].focus();
+  page.headerActions.children[0].focus();
+  assert.equal(page.document.activeElement, page.nodes['menu-search']);
+  trigger.focus();
+  assert.equal(page.document.activeElement, trigger, 'the hamburger remains interactive through its nested header ancestors');
+  trigger.click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  page.flushClose();
+  assert.equal(page.document.activeElement, trigger);
+  assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(trigger.getAttribute('aria-label'), 'Open menu');
+  assert.equal(page.headerActions.inert, false);
+  assert.equal(page.nodes['site-logo'].inert, false);
+  assert.equal(page.nodes['lobby-view'].inert, false);
+});
+
+test('guest keyboard focus cycles between visible menu controls and the header hamburger', () => {
+  const page = menuPage({ guest: true });
+  const trigger = page.nodes['menu-toggle'];
+  trigger.click();
+  assert.equal(page.keydown('Tab', { shiftKey: true }).defaultPrevented, true);
+  assert.equal(page.document.activeElement, trigger);
+  page.keydown('Tab');
+  assert.equal(page.document.activeElement, page.nodes['menu-search']);
+  page.feature('how-to-play').focus();
+  page.keydown('Tab');
+  assert.equal(page.document.activeElement, trigger, 'the hidden bottom bar is excluded');
+  page.keydown('Tab', { shiftKey: true });
+  assert.equal(page.document.activeElement, page.feature('how-to-play'));
+  assert.equal(page.keydown('Escape').defaultPrevented, true);
+  page.flushClose();
+  assert.equal(page.document.activeElement, trigger);
+});
+
+test('guest menu skips a disabled first control and restores prior inert states before routing', () => {
+  const page = menuPage({ guest: true });
+  page.nodes['menu-search'].disabled = true;
+  page.nodes['site-logo'].inert = true;
+  page.nodes['menu-toggle'].click();
+  assert.equal(page.document.activeElement, page.item('lobby'));
+  page.item('lobby').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.equal(page.headerActions.inert, false);
+  assert.equal(page.nodes['site-logo'].inert, true, 'an existing inert state is preserved');
+  assert.equal(page.calls.includes('home:open'), false);
+  page.flushClose();
+  assert.equal(page.calls.at(-1), 'home:open');
+  assert.equal(page.document.activeElement, page.pageHeading, 'routing keeps destination focus');
 });
 
 test('switching to desktop releases mobile background inert state without moving the fixed bar', () => {

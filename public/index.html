@@ -64,6 +64,7 @@
   <link rel="stylesheet" href="site-footer.css">
   <link rel="stylesheet" href="spin-wheel.css">
   <link rel="stylesheet" href="lobby-promotions.css">
+  <link rel="stylesheet" href="mobile-dialogs.css">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -283,8 +284,8 @@
   <main id="game-details-view" class="page-content game-details-view" lang="en" dir="ltr" hidden></main>
   <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" lang="en" dir="ltr" hidden>
     <button id="mobile-nav-menu" class="mobile-nav__item" data-mobile-action="menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="3" rx="1.5"/><rect x="3" y="10.5" width="18" height="3" rx="1.5"/><rect x="3" y="16" width="18" height="3" rx="1.5"/></svg><span class="mobile-nav__label">Menu</span></button>
+    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2.5 2 10.8V13h2v6.8c0 .7.5 1.2 1.2 1.2H9v-6h6v6h3.8c.7 0 1.2-.5 1.2-1.2V13h2v-2.2L12 2.5Z"/></svg><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-store" class="mobile-nav__item" data-mobile-action="store" type="button" aria-haspopup="dialog" aria-controls="store-dialog" aria-expanded="false"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M20 4H4v2h16V4Zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1Zm-9 4H6v-4h6v4Z"/></svg><span class="mobile-nav__label">Store</span></button>
-    <button id="mobile-nav-lobby" class="mobile-nav__item" data-mobile-action="lobby" type="button" aria-controls="lobby-view"><span class="mobile-nav__icon mobile-nav__icon--brand" aria-hidden="true"><img src="assets/brand/cop-coin-cc.webp" width="1536" height="1024" alt="" draggable="false"></span><span class="mobile-nav__label">Lobby</span></button>
     <button id="mobile-nav-redeem" class="mobile-nav__item" data-mobile-action="redeem" type="button" aria-haspopup="dialog" aria-controls="redeem-dialog"><svg class="mobile-nav__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 3v3h16V6H4Zm8 5-5 4h3v4h4v-4h3l-5-4Z"/></svg><span class="mobile-nav__label">Redeem</span></button>
     <button id="mobile-nav-chat" class="mobile-nav__item" type="button" data-mobile-action="chat" aria-label="Open community chat" aria-controls="community-chat" aria-expanded="false"><svg class="mobile-nav__icon" data-ui-icon="chat" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span class="mobile-nav__label">Chat</span></button>
   </nav>
@@ -357,11 +358,13 @@
           <p id="redeem-error" class="redeem-error" role="alert" hidden></p>
           <div class="redeem-output"><span class="redeem-output__symbol" aria-hidden="true">$</span><div><label for="redeem-receive">You would receive</label><output id="redeem-receive" for="redeem-amount">$0.00</output></div></div>
           <p id="redeem-status" class="redeem-status" role="status" hidden></p>
-          <button id="redeem-submit" class="redeem-submit primary-button" type="submit">Redeem</button>
         </form>
-        <p class="redeem-preview-note">Preview only · No transfers are made.</p>
       </section>
     </div>
+    <footer class="redeem-dialog__footer" hidden>
+      <button id="redeem-submit" class="redeem-submit primary-button" type="submit" form="redeem-form">Redeem</button>
+      <p class="redeem-preview-note">Preview only · No transfers are made.</p>
+    </footer>
   </dialog>
   <dialog id="phone-verification-dialog" class="phone-verification" aria-labelledby="phone-verification-title" lang="en" dir="ltr">
     <header class="phone-verification__header dialog-header">
@@ -426,6 +429,7 @@
       </section>
     </div>
     <form id="profile-editor" class="profile-summary__body" hidden>
+      <div class="profile-editor__fields">
       <section class="profile-editor__photo" aria-labelledby="profile-photo-title">
         <span id="profile-photo-preview" class="profile-summary__avatar profile-editor__photo-preview" aria-hidden="true"></span>
         <div class="profile-editor__photo-controls">
@@ -453,6 +457,7 @@
           <button class="profile-editor__avatar" type="button" data-avatar="S" aria-label="Avatar S" aria-pressed="false">S</button>
         </div>
       </fieldset>
+      </div>
       <div class="profile-editor__actions">
         <button id="profile-editor-cancel" class="feature-button" type="button">Cancel</button>
         <button id="profile-editor-save" class="feature-button feature-button--primary" type="submit">Save profile</button>

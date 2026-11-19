@@ -89,7 +89,7 @@ export function formatRoute(route = { type: 'home' }) {
   return `#/${path}${params.size ? `?${params}` : ''}`;
 }
 
-export function initRouter({ window: scope = window } = {}) {
+export function initRouter({ window: scope = window, popupNavigation } = {}) {
   const { history, location } = scope;
   const subscribers = new Set();
   const positions = new Map();
@@ -138,6 +138,7 @@ export function initRouter({ window: scope = window } = {}) {
     });
   }
   function navigate(route, options = {}) {
+    if (popupNavigation?.beforeNavigate(() => navigate(route, options))) return;
     savePosition();
     const hash = formatRoute(route);
     const next = parseRoute(hash);
@@ -152,6 +153,7 @@ export function initRouter({ window: scope = window } = {}) {
     emit(previous, { ...options, source: 'navigate' });
   }
   function fromHistory() {
+    if (popupNavigation?.handleHistory({ url: currentUrl, routeId: entry.id })) return;
     if (currentUrl === location.href && history.state?.loopRoute?.id === entry.id) return;
     const previous = currentRoute;
     entry = history.state?.loopRoute || { id: ++serial, index: 0, scroll: { x: 0, y: 0 } };
@@ -164,6 +166,7 @@ export function initRouter({ window: scope = window } = {}) {
   }
   scope.addEventListener('popstate', fromHistory);
   scope.addEventListener('hashchange', fromHistory);
+  popupNavigation?.attachRouter();
   return {
     getRoute: () => currentRoute,
     restoreInitialScroll() {
@@ -176,6 +179,7 @@ export function initRouter({ window: scope = window } = {}) {
       return () => subscribers.delete(listener);
     },
     back(fallback = { type: 'home' }) {
+      if (popupNavigation?.back()) return;
       if (entry.index > 0) history.back();
       else navigate(fallback, { replace: true });
     },

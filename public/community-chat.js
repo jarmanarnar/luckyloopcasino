@@ -9,7 +9,7 @@ function node(tag, className, text) {
   return element;
 }
 
-export function initCommunityChat({ account, auth }) {
+export function initCommunityChat({ account, auth, router, popupNavigation }) {
   const panel = node('aside', 'community-chat');
   panel.id = 'community-chat';
   panel.lang = 'en'; panel.dir = 'ltr'; panel.hidden = true; panel.inert = true;
@@ -45,6 +45,7 @@ export function initCommunityChat({ account, auth }) {
   let storage; try { storage = localStorage; } catch { /* In-memory preview still works. */ }
   let messages = [], room = 'general', reply = null;
   let opened = false, opener = null, lastSent = 0, closeTimer = null;
+  const popup = popupNavigation?.register({ id: 'community-chat', element: panel, isOpen: () => opened, close });
   const inertNodes = new Map(), triggers = [];
   const readSaved = () => { try { return JSON.parse(storage?.getItem(storageKey) || '{}') || {}; } catch { return {}; } };
   function load() { const saved = readSaved(); messages = normalizeChatMessages(saved.messages); }
@@ -147,6 +148,7 @@ export function initCommunityChat({ account, auth }) {
     document.body.dataset.chat = 'open';
     triggers.forEach(item => { item.setAttribute('aria-expanded', 'true'); item.setAttribute('aria-label', 'Close community chat'); });
     load(); syncAccount(); renderMessages(true); layout();
+    popup?.opened();
     $('.chat-close').focus({ preventScroll: true });
   }
   function close() {
@@ -156,6 +158,7 @@ export function initCommunityChat({ account, auth }) {
     rooms.hidden = true; roomButton.setAttribute('aria-expanded', 'false');
     emojiPicker.hidden = true; emojiButton.setAttribute('aria-expanded', 'false');
     panel.inert = true; document.body.dataset.chat = 'closed'; layout();
+    popup?.closed();
     triggers.forEach(item => { item.setAttribute('aria-expanded', 'false'); item.setAttribute('aria-label', 'Open community chat'); });
     const target = opener?.getClientRects().length ? opener : triggers.find(item => item.getClientRects().length);
     target?.focus({ preventScroll: true });
@@ -226,6 +229,7 @@ export function initCommunityChat({ account, auth }) {
     }
   });
   desktop.addEventListener('change', layout);
+  router?.subscribe(() => { if (!desktop.matches) close(); });
   window.addEventListener('storage', event => { if (event.key === storageKey) { load(); if (opened) renderMessages(); } });
   account.subscribe(syncAccount); syncAccount();
   return { open, close };
