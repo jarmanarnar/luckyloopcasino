@@ -114,8 +114,8 @@ test('category, provider and search links retain their page and filters after re
 });
 
 test('new browse groups and existing exact-format links remain refresh-safe destinations', () => {
-  for (const categoryId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap',
-    'megaways', 'adventure', 'fruit', 'spooky', 'jackpot', 'table',
+  for (const categoryId of ['scratch-tap', 'arcade',
+    'megaways', 'adventure', 'spooky', 'jackpot', 'table',
     'instant-win', 'crash', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'picks']) {
     const route = { type: 'category', categoryId };
     const hash = `#/${categoryId}`;
@@ -345,4 +345,79 @@ test('old studio search filters migrate to provider filters and retain an explic
   assert.deepEqual(getCatalogPage(parseRoute(oldHash)).games.map(game => game.id), ['hacksaw-2491']);
   assert.deepEqual(parseRoute('#/search?category=hacksaw-gaming&provider=netent'), { type: 'search', query: '', providerId: 'netent' });
   assert.equal(formatRoute({ type: 'search', categoryId: 'hacksaw-gaming', providerId: 'netent' }), '#/search?provider=netent');
+});
+
+test('slot themes retain text, provider and sorting filters through refresh and round trips', () => {
+  for (const type of ['category', 'search']) {
+    for (const themeId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']) {
+      const route = { type, categoryId: 'slots', themeId, query: 'Gold & luck', providerId: 'netent', sort: 'newest' };
+      const hash = formatRoute(route);
+      assert.ok(hash.includes(`theme=${themeId}`));
+      assert.deepEqual(parseRoute(hash), route);
+      assert.deepEqual(initRouter({ window: browser(hash).scope }).getRoute(), route);
+    }
+  }
+});
+
+test('former theme pages become filtered Slots without adding a history entry', () => {
+  for (const themeId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']) {
+    const route = { type: 'category', categoryId: 'slots', themeId, query: 'gold', providerId: 'netent', sort: 'za' };
+    const oldHash = `#/${themeId}?q=gold&provider=netent&sort=za`;
+    assert.deepEqual(parseRoute(oldHash), route);
+    assert.equal(formatRoute({ ...route, categoryId: themeId }), formatRoute(route));
+    const page = browser(oldHash);
+    assert.deepEqual(initRouter({ window: page.scope }).getRoute(), route);
+    assert.equal(page.scope.location.hash, formatRoute(route));
+    assert.equal(page.entries.length, 1);
+  }
+  const search = { type: 'search', query: 'fruit', categoryId: 'slots', themeId: 'fruit', providerId: 'netent', sort: 'az' };
+  const oldHash = '#/search?category=fruit&q=fruit&provider=netent&sort=az';
+  assert.deepEqual(parseRoute(oldHash), search);
+  assert.equal(formatRoute({ ...search, categoryId: 'fruit' }), formatRoute(search));
+  const page = browser(oldHash);
+  initRouter({ window: page.scope });
+  assert.equal(page.scope.location.hash, formatRoute(search));
+});
+
+test('theme filters are discarded outside Slots and when the theme is unsupported', () => {
+  for (const route of [
+    { type: 'category', categoryId: 'table' },
+    { type: 'category', categoryId: 'arcade' },
+    { type: 'search', query: '' },
+    { type: 'search', query: '', categoryId: 'tap' },
+    { type: 'provider', providerId: 'netent', categoryId: 'slots' },
+    { type: 'favorites' },
+    { type: 'recent-games' },
+  ]) {
+    const hash = formatRoute(route);
+    assert.deepEqual(parseRoute(`${hash}${hash.includes('?') ? '&' : '?'}theme=egypt`), route);
+    assert.equal(formatRoute({ ...route, themeId: 'egypt' }), hash);
+  }
+  const slots = { type: 'category', categoryId: 'slots' };
+  for (const themeId of ['unknown', 'megaways', 'crash', '']) {
+    assert.deepEqual(parseRoute(`#/slots?theme=${themeId}`), slots);
+    assert.equal(formatRoute({ ...slots, themeId }), '#/slots');
+  }
+});
+
+test('manual theme links canonicalize and game details return to the same filtered Slots page', () => {
+  const page = browser('#/');
+  const router = initRouter({ window: page.scope });
+  const seen = [];
+  router.subscribe(route => seen.push(route));
+  page.manualHash('#/wild-west?q=dead&provider=nolimit-city&sort=az'); page.flush();
+  const slots = { type: 'category', categoryId: 'slots', query: 'dead', providerId: 'nolimit-city', themeId: 'wild-west', sort: 'az' };
+  assert.deepEqual(router.getRoute(), slots);
+  assert.equal(page.scope.location.hash, formatRoute(slots));
+  page.emit('popstate'); page.emit('hashchange');
+  assert.equal(seen.length, 1, 'canonicalization deduplicates native route events');
+  page.scroll(320);
+  const details = { type: 'game-details', gameId: 'Deadwood', from: formatRoute(slots) };
+  router.navigate(details); page.flush();
+  assert.deepEqual(parseRoute(formatRoute(details)), details);
+  assert.deepEqual(initRouter({ window: browser(formatRoute(details)).scope }).getRoute(), details);
+  assert.equal(parseRoute(`#/games/Deadwood?${new URLSearchParams({ from: '#/wild-west?q=dead&provider=nolimit-city&sort=az' })}`).from, formatRoute(slots));
+  router.back(); page.flush();
+  assert.deepEqual(router.getRoute(), slots);
+  assert.equal(page.scope.scrollY, 320);
 });

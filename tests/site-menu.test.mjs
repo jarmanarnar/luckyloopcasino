@@ -328,6 +328,8 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
   assert.ok(page.item('lobby'));
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
+  assert.equal(page.item('popular'), undefined, 'discovery shelves are not game types');
+  assert.equal(page.item('new-releases'), undefined, 'discovery shelves are not game types');
   assert.equal(page.categoryButtons.has('all'), false);
   for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
   assert.equal(page.feature('achievements').parentElement.nextSibling, page.nodes['menu-navigation']);
@@ -339,23 +341,23 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.categoryButtons.has('providers'), false);
 });
 
-test('sidebar keeps categories and Search without a Lobby destination', () => {
+test('sidebar highlights a game type and clears its selection when Search opens', () => {
   const page = menuPage({ desktop: true });
-  const popular = page.item('popular');
+  const arcade = page.item('arcade');
   assert.ok(page.item('lobby'));
   assert.equal(page.item('all'), undefined);
   page.socialCasino.click();
-  popular.click();
-  assert.equal(page.calls.at(-1), 'category:popular');
+  arcade.click();
+  assert.equal(page.calls.at(-1), 'category:arcade');
   assert.equal(page.document.body.dataset.page, 'category');
   page.observers[0].callback();
-  assert.equal(popular.getAttribute('aria-current'), 'page');
+  assert.equal(arcade.getAttribute('aria-current'), 'page');
   page.nodes['menu-search'].click();
   assert.equal(page.calls.at(-1), 'search:open');
   assert.equal(page.document.body.dataset.page, 'search');
   assert.equal(page.document.activeElement, page.nodes['site-search-input']);
   page.observers[0].callback();
-  assert.equal(popular.getAttribute('aria-current'), null);
+  assert.equal(arcade.getAttribute('aria-current'), null);
 });
 
 test('Escape closes the drawer, resets its trigger and restores focus', () => {
@@ -443,9 +445,9 @@ test('choosing a category from a caller-opened drawer keeps focus on that catego
   const page = menuPage();
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   page.socialCasino.click();
-  page.item('popular').click();
+  page.item('arcade').click();
   page.flushClose();
-  assert.equal(page.calls.at(-1), 'category:popular');
+  assert.equal(page.calls.at(-1), 'category:arcade');
   assert.equal(page.document.activeElement, page.pageHeading);
 });
 
@@ -588,22 +590,22 @@ test('REDEEM opens a separate preview destination instead of performing a transa
   assert.equal(page.calls.includes('store:open'), false);
 });
 
-test('Top Categories opens the desktop rail, toggles the categories in place and restores focus when closing', () => {
+test('Game Types opens the desktop rail, toggles the categories in place and restores focus when closing', () => {
   const page = menuPage({ desktop: true });
   const { socialCasino, casinoItems } = page;
   assert.equal(socialCasino.dataset.menuDisclosure, 'social-casino');
-  assert.equal(socialCasino.getAttribute('aria-label'), 'Top Categories');
+  assert.equal(socialCasino.getAttribute('aria-label'), 'Game Types');
   assert.equal(socialCasino.getAttribute('aria-expanded'), 'false');
   assert.equal(socialCasino.getAttribute('aria-controls'), casinoItems.id);
   assert.equal(casinoItems.hidden, true);
-  assert.equal(page.item('popular').getClientRects().length, 0);
+  assert.equal(page.item('slots').getClientRects().length, 0);
 
   socialCasino.click();
   assert.equal(page.document.body.dataset.sidebar, 'expanded');
   assert.equal(socialCasino.getAttribute('aria-expanded'), 'true');
-  assert.equal(page.item('popular').getClientRects().length, 1);
+  assert.equal(page.item('slots').getClientRects().length, 1);
 
-  page.item('popular').focus();
+  page.item('slots').focus();
   socialCasino.click();
   assert.equal(casinoItems.hidden, true);
   assert.equal(page.document.activeElement, socialCasino);
@@ -712,8 +714,8 @@ test('desktop collection, Providers and BUY actions run immediately without a dr
   const page = menuPage({ desktop: true });
   page.nodes['menu-toggle'].click();
   page.socialCasino.click();
-  page.item('popular').click();
-  assert.equal(page.calls.at(-1), 'category:popular');
+  page.item('arcade').click();
+  assert.equal(page.calls.at(-1), 'category:arcade');
   assert.equal(page.document.activeElement, page.pageHeading);
   page.item('providers').click();
   assert.equal(page.calls.at(-1), 'category:providers');
@@ -902,7 +904,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
   assert.equal(tooltip.hidden, true);
   sidebar.emit('pointerover', { target: item.children[0] });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Top Categories');
+  assert.equal(tooltip.textContent, 'Game Types');
   assert.equal(item.getAttribute('aria-describedby'), 'menu-tooltip');
   assert.ok(Number.parseFloat(tooltip.style.left) > item.bounds.right);
   sidebar.emit('pointerout', { target: item, relatedTarget: null });
@@ -911,7 +913,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
 
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, false);
-  assert.equal(tooltip.textContent, 'Top Categories');
+  assert.equal(tooltip.textContent, 'Game Types');
   sidebar.emit('focusout', { target: item, relatedTarget: null });
   assert.equal(tooltip.hidden, true);
 });
@@ -991,7 +993,7 @@ test('game shell menu preserves the game until BUY opens the Store page', () => 
 });
 
 test('game shell category and provider navigation opens its own destination after menu close', () => {
-  for (const id of ['popular', 'providers']) {
+  for (const id of ['arcade', 'providers']) {
     const page = menuPage({ routeFromGame: true });
     page.document.body.dataset.view = 'game';
     page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });

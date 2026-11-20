@@ -1,9 +1,9 @@
 import { PROVIDERS } from './catalog.js';
-import { CATEGORIES, FILTER_CATEGORIES, LEGACY_CATEGORIES, getGamesForCategory } from './collections.js';
+import { CATEGORIES, FILTER_CATEGORIES, DISCOVERY_CATEGORIES, SLOT_THEMES, LEGACY_CATEGORIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
-import { PAGE_SIZE, LOBBY_CATEGORIES, getCatalogPage, pageSlice } from './catalog-page-model.js';
+import { PAGE_SIZE, LOBBY_COLLECTIONS, getCatalogPage, pageSlice } from './catalog-page-model.js';
 import { createGameArt } from './game-artwork-view.js';
 import { enhanceCatalogSelect } from './catalog-select.js';
 
@@ -87,13 +87,14 @@ export function initCatalogView({ router, member } = {}) {
   const categoryRail = categories?.closest('.catalog-category-rail');
   const providerSelect = document.querySelector('#catalog-page-provider');
   const categorySelect = document.querySelector('#catalog-page-category');
+  const themeSelect = document.querySelector('#catalog-page-theme');
   const sortSelect = document.querySelector('#catalog-page-sort');
   const pagination = document.querySelector('#catalog-pagination');
   const details = document.querySelector('#catalog-provider-details');
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
   if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
-    providerSelect, categorySelect, sortSelect, pagination, details, lobbySearch, lobbyInput,
+    providerSelect, categorySelect, themeSelect, sortSelect, pagination, details, lobbySearch, lobbyInput,
     lobbySearchToggle, lobbySearchClose, categoryRail].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -111,7 +112,8 @@ export function initCatalogView({ router, member } = {}) {
   const collectionKeys = new Map(['favorites', 'recent-games'].map(type => [type, collectionKey(type)]));
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
-  const filterMenus = [providerSelect, sortSelect].map(enhanceCatalogSelect);
+  themeSelect.replaceChildren(option('', 'All themes'), ...SLOT_THEMES.map(theme => option(theme.id, theme.title)));
+  const filterMenus = [providerSelect, themeSelect, sortSelect].map(enhanceCatalogSelect);
   for (const category of CATEGORIES) {
     const button = node('button', 'catalog-category');
     button.type = 'button';
@@ -256,14 +258,16 @@ export function initCatalogView({ router, member } = {}) {
     input.setAttribute('aria-label', input.placeholder);
     providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search', 'favorites', 'recent-games'].includes(model.type);
     categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
+    themeSelect.closest('.catalog-page-filter').hidden = !['category', 'search'].includes(model.type) || route.categoryId !== 'slots';
     sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
     providerSelect.value = route.providerId || '';
     // Existing links can still filter an exact format without advertising tiny groups.
     const legacyFilter = !FILTER_CATEGORIES.some(category => category.id === route.categoryId)
-      ? LEGACY_CATEGORIES.find(category => category.id === route.categoryId) : null;
+      ? [...DISCOVERY_CATEGORIES, ...LEGACY_CATEGORIES].find(category => category.id === route.categoryId) : null;
     categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)),
       ...(legacyFilter ? [option(legacyFilter.id, legacyFilter.title)] : []));
     categorySelect.value = route.categoryId || 'all';
+    themeSelect.value = model.themeId || '';
     sortSelect.replaceChildren(...(model.allowedSorts || []).map(id => option(id, sortLabels[id])));
     sortSelect.value = model.sort || '';
     filterMenus.forEach(menu => menu.refresh());
@@ -281,7 +285,7 @@ export function initCatalogView({ router, member } = {}) {
     pagination.hidden = (home && !lobbyQuery) || model.type === 'not-found';
     if (home && !lobbyQuery) {
       shelves.replaceChildren(
-        ...LOBBY_CATEGORIES.map(id => rail(id, CATEGORIES.find(c => c.id === id).title, getGamesForCategory(id))),
+        ...LOBBY_COLLECTIONS.map(({ id, title }) => rail(id, title, getGamesForCategory(id))),
         rail('providers', 'Game Providers', PROVIDERS, true));
     } else if (model.type === 'not-found') {
       shelves.replaceChildren();
@@ -425,7 +429,8 @@ export function initCatalogView({ router, member } = {}) {
     updateFilters({ query: input.value });
   });
   providerSelect.addEventListener('change', () => updateFilters({ providerId: providerSelect.value }));
-  categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value }));
+  categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value, themeId: '' }));
+  themeSelect.addEventListener('change', () => updateFilters({ themeId: themeSelect.value }));
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
   new ResizeObserver(() => tracks.forEach(track => {
     scrollTargets.delete(track);

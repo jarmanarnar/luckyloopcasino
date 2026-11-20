@@ -54,16 +54,6 @@
 .profile-menu__item .game-shelf__icon { flex: none; width: 1.0625rem; height: 1.0625rem; color: var(--text-secondary); }
 .profile-menu__status { margin: .375rem .625rem; color: var(--text-secondary); font-size: .875rem; }
 .profile-menu__status:empty { display: none; }
-.profile-menu__badge {
-  flex: none;
-  margin-inline-start: auto;
-  padding: .1875rem .375rem;
-  border-radius: .3125rem;
-  border: 1px solid var(--border-default);
-  background: var(--surface-subtle);
-  color: var(--primary-accent);
-  font-size: .6875rem;
-}
 
 html:has(.profile-summary[open]) { overflow: hidden; }
 

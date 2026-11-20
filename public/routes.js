@@ -1,17 +1,31 @@
 import { isFeaturePage } from './feature-pages.js';
+import { SLOT_THEMES } from './collections.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
-const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'arcade', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
 const legacyStudioIds = new Set(['nolimit-city', 'hacksaw-gaming']);
+const slotThemeIds = new Set(SLOT_THEMES.map(theme => theme.id));
 const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
 const isLegacyHash = hash => {
   const [path, search = ''] = String(hash).replace(/^#/, '').split('?');
   const id = decode(path.replace(/^\//, '').replace(/\/$/, ''));
-  return ['all-games', 'all', 'free-money'].includes(id) || legacyStudioIds.has(id)
-    || legacyStudioIds.has(new URLSearchParams(search).get('category'));
+  const category = new URLSearchParams(search).get('category');
+  return ['all-games', 'all', 'free-money'].includes(id) || legacyStudioIds.has(id) || slotThemeIds.has(id)
+    || legacyStudioIds.has(category) || (id === 'search' && slotThemeIds.has(category));
 };
+
+// Themes narrow the Slots family; they never follow the user into another format.
+function normalizeSlotTheme(route) {
+  const supportsTheme = ['category', 'search'].includes(route.type);
+  const legacyTheme = supportsTheme && slotThemeIds.has(route.categoryId) ? route.categoryId : '';
+  const { themeId, ...normalized } = route;
+  if (legacyTheme) normalized.categoryId = 'slots';
+  const theme = legacyTheme || themeId;
+  return supportsTheme && normalized.categoryId === 'slots' && slotThemeIds.has(theme)
+    ? { ...normalized, themeId: theme } : normalized;
+}
 
 function detailsOrigin(value) {
   if (typeof value !== 'string' || !/^#(?:\/|$)/.test(value)) return '';
@@ -64,7 +78,9 @@ export function parseRoute(hash = '') {
   if (!['category', 'favorites', 'recent-games'].includes(route.type) && categoryIds.has(categoryId)) route.categoryId = categoryId;
   const sort = params.get('sort');
   if (sortIds.has(sort)) route.sort = sort;
-  return route;
+  const themeId = params.get('theme');
+  if (themeId) route.themeId = themeId;
+  return normalizeSlotTheme(route);
 }
 
 export function formatRoute(route = { type: 'home' }) {
@@ -73,6 +89,7 @@ export function formatRoute(route = { type: 'home' }) {
     route = route.type === 'category' ? { ...rest, type: 'provider', providerId: categoryId }
       : route.type === 'search' ? { ...rest, providerId: rest.providerId || categoryId } : rest;
   }
+  route = normalizeSlotTheme(route);
   if (route.type === 'home') return '#/';
   if (route.type === 'feature' && route.pageId === 'free-money') return '#/achievements';
   if (route.type === 'feature') return isFeaturePage(route.pageId) ? `#/${route.pageId}` : '#/';
@@ -97,6 +114,7 @@ export function formatRoute(route = { type: 'home' }) {
   if (route.query) params.set('q', route.query);
   if (route.providerId && route.type !== 'provider') params.set('provider', route.providerId);
   if (route.categoryId && route.categoryId !== 'all' && !['category', 'favorites', 'recent-games'].includes(route.type)) params.set('category', route.categoryId);
+  if (route.themeId) params.set('theme', route.themeId);
   if (route.sort && sortIds.has(route.sort)) params.set('sort', route.sort);
   return `#/${path}${params.size ? `?${params}` : ''}`;
 }

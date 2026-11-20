@@ -127,7 +127,6 @@
     <ul class="profile-menu__list">
       <li><button class="profile-menu__item" type="button" data-profile-icon="profile" data-profile-action="summary" aria-haspopup="dialog" aria-controls="profile-summary">My Profile</button></li>
       <li><a class="profile-menu__item" href="#/history" data-profile-icon="history" data-profile-page="history" data-profile-transactions>Transaction History</a></li>
-      <li><button class="profile-menu__item" type="button" data-profile-icon="scratchcards" disabled>Promo Codes<span class="profile-menu__badge">Coming soon</span></button></li>
       <li><a class="profile-menu__item" href="#/achievements" data-profile-icon="achievements" data-profile-page="achievements">Achievements</a></li>
       <li><button class="profile-menu__item" type="button" data-profile-icon="messages" data-profile-action="messages" aria-haspopup="dialog" aria-controls="notifications-drawer">Messages</button></li>
       <li><a class="profile-menu__item" href="#/settings" data-profile-icon="settings" data-profile-page="settings">Settings</a></li>
@@ -236,7 +235,8 @@
         <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
         <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
       </form>
-      <label class="catalog-page-filter"><span class="visually-hidden">Game category</span><select id="catalog-page-category" aria-label="Game category"></select></label>
+      <label class="catalog-page-filter"><span class="visually-hidden">Game type</span><select id="catalog-page-category" aria-label="Game type"></select></label>
+      <div class="catalog-page-filter" hidden><span class="visually-hidden" id="catalog-page-theme-label">Slot theme</span><select id="catalog-page-theme" aria-label="Slot theme"></select></div>
       <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-provider-label">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
       <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-sort-label">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></div>
     </div>
@@ -575,7 +575,6 @@
             <label class="auth-field" for="auth-password"><span>Password</span><span class="auth-input-wrap"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 9V7a5 5 0 0 1 10 0v2h1a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h1Zm2 0h6V7a3 3 0 0 0-6 0v2Zm3 5a2 2 0 0 0-1 3.7V19h2v-1.3a2 2 0 0 0-1-3.7Z"/></svg><input id="auth-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" minlength="8" maxlength="256" required><button id="auth-password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg data-ui-icon="eye-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><svg data-ui-icon="eye" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button></span></label>
             <button id="auth-forgot" class="auth-text-button auth-forgot" type="button">Forgot your password?</button>
             <div id="auth-register-fields" hidden>
-              <details class="auth-promo-code"><summary>Promo code <span>(Optional)</span></summary><label class="auth-field"><span class="visually-hidden">Promo code</span><input id="auth-promo" class="auth-plain-input" name="promoCode" placeholder="Enter code" maxlength="40" autocomplete="off"></label><small>Preview only. No extra reward is applied.</small></details>
               <label class="auth-accept"><input id="auth-accepted" name="accepted" type="checkbox"><span>I confirm I am 18+ and understand the <button id="auth-terms-toggle" class="auth-inline-link" type="button" aria-expanded="false" aria-controls="auth-terms">terms of service</button>.</span></label>
               <p id="auth-terms" class="auth-terms" hidden>Coins have no cash value. Purchases and prize redemptions are not available.</p>
             </div>

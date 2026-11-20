@@ -86,7 +86,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     return list;
   }
 
-  const casinoButton = menuButton('table', 'Top Categories');
+  const casinoButton = menuButton('table', 'Game Types');
   const casinoList = createDisclosure('social-casino', casinoButton);
   navigation.replaceChildren(casinoButton, casinoList);
   for (const category of CATEGORIES) {

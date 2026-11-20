@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
 import { GAMES, PROVIDERS } from '../public/catalog.js';
-import { CATEGORIES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, DISCOVERY_CATEGORIES, SLOT_THEMES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { PROVIDER_LOGOS } from '../public/provider-assets.js';
 import { getGameTypeId } from '../public/game-types.js';
 import { getCatalogPage } from '../public/catalog-page-model.js';
@@ -73,19 +73,23 @@ test('all 33 previously excluded games are restored once with their original dem
   }
 });
 
-test('primary categories provide substantial collections without duplicating providers', () => {
+test('five primary game families cover the complete catalog exactly once without duplicating providers', () => {
   assert.deepEqual(CATEGORIES.map(category => category.id), [
-    'popular', 'new-releases', 'wild-west',
-    'gold-rush', 'egypt', 'asian', 'fruit', 'megaways', 'scratch-tap', 'table', 'slots',
+    'slots', 'table', 'scratchcards', 'tap', 'arcade',
   ]);
+  const expectedCounts = { slots: 993, table: 10, scratchcards: 52, tap: 13, arcade: 12 };
   const covered = new Set();
   for (const category of CATEGORIES) {
     const games = getGamesForCategory(category.id);
-    assert.ok(games.length >= 10, `${category.id} needs enough games to browse`);
+    assert.equal(games.length, expectedCounts[category.id], category.id);
     assert.equal(new Set(games.map(game => game.id)).size, games.length, category.id);
     assert.ok(games.every(game => GAMES.includes(game)), category.id);
-    games.forEach(game => covered.add(game.id));
+    for (const game of games) {
+      assert.equal(covered.has(game.id), false, `${game.id} belongs to only one primary family`);
+      covered.add(game.id);
+    }
   }
+  assert.deepEqual(covered, new Set(GAMES.map(game => game.id)));
   const providerIds = new Set(PROVIDERS.map(provider => provider.id));
   assert.ok(CATEGORIES.every(category => !providerIds.has(category.id)));
   assert.deepEqual(new Set(getCatalogPage({ type: 'search' }).games.map(game => game.id)), new Set(GAMES.map(game => game.id)));
@@ -116,7 +120,7 @@ test('theme collections use relevant settings and fruit titles without ambiguous
     for (const id of included) assert.equal(members.has(id), true, `${categoryId}: ${id}`);
     for (const id of excluded) assert.equal(members.has(id), false, `${categoryId}: ${id}`);
   }
-  assert.equal(CATEGORIES.find(category => category.id === 'fruit').title, 'Fruit Games');
+  assert.equal(SLOT_THEMES.find(category => category.id === 'fruit').title, 'Fruit Games');
   assert.equal(getGamesForCategory('megaways').length, 56);
 });
 
@@ -130,10 +134,24 @@ test('provider pages retain their complete catalogs separately from editorial ch
     assert.deepEqual(new Set(highlighted.map(game => game.id)),
       new Set(GAMES.filter(game => game.providerId === providerId).map(game => game.id)), providerId);
   }
-  assert.equal(CATEGORIES.find(category => category.id === 'popular').title, 'COP COIN Picks');
+  assert.equal(DISCOVERY_CATEGORIES.find(category => category.id === 'popular').title, 'COP COIN Picks');
   assert.equal(getGamesForCategory('popular').length, 40);
   assert.equal(new Set(getGamesForCategory('popular').map(game => game.id)).size, 40);
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
+});
+
+test('discovery collections stay outside primary formats and preserve their editorial opening', () => {
+  assert.deepEqual(DISCOVERY_CATEGORIES.map(category => category.id), ['popular', 'new-releases']);
+  assert.deepEqual(SLOT_THEMES.map(theme => theme.id), ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']);
+  const primaryIds = new Set(CATEGORIES.map(category => category.id));
+  for (const collection of [...DISCOVERY_CATEGORIES, ...SLOT_THEMES]) assert.equal(primaryIds.has(collection.id), false);
+  assert.deepEqual(getGamesForCategory('popular').slice(0, 8).map(game => game.id), [
+    'SanQuentin', 'niptuck000000000', 'gonzosqumegaways', 'bonanzatacardsv1',
+    'gopnik0000000000', 'TombstoneBegins', 'fruitshopgrr96f1', 'bloodsuckerstapa',
+  ]);
+  assert.deepEqual(getGamesForCategory('new-releases').slice(0, 3).map(game => game.id), [
+    'nunchucksr96f100', 'monopolymneyv196', 'ouija00000000000',
+  ]);
 });
 
 test('new releases contain only active, dated games in descending release order', () => {

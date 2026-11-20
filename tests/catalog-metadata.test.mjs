@@ -67,7 +67,7 @@ test('Table & Cards groups ten table and card games without changing their exact
   assert.equal(new Set(FILTER_CATEGORIES.map(category => category.id)).size, FILTER_CATEGORIES.length);
 });
 
-test('instant-win and crash remain precise legacy formats without a primary Instant Games category', () => {
+test('Arcade & Crash groups quick mechanics but leaves card games in Table & Cards', () => {
   const instant = getGamesForCategory('instant-win');
   const crash = getGamesForCategory('crash');
   const combined = [...instant, ...crash];
@@ -78,8 +78,17 @@ test('instant-win and crash remain precise legacy formats without a primary Inst
   assert.ok(crash.every(game => getGameTypeId(game) === 'crash'));
   const speedCrash = GAMES.find(game => game.id === 'hacksaw-1632');
   assert.equal(getGameTypeId(speedCrash), 'instant-win', 'title wording must not override the provider format');
+  const arcade = getGamesForCategory('arcade');
+  assert.equal(arcade.length, 12);
+  const cardIds = new Set(['hacksaw-1446', 'hacksaw-1416', 'hacksaw-1328']);
+  assert.deepEqual(new Set(arcade.map(game => game.id)),
+    new Set(combined.filter(game => !cardIds.has(game.id)).map(game => game.id)));
+  assert.ok(arcade.includes(speedCrash));
+  assert.ok(arcade.includes(crash[0]));
   for (const game of combined) {
     const categories = getGameCategoryIds(game);
+    assert.equal(categories.includes('arcade'), !cardIds.has(game.id), game.id);
+    assert.equal(categories.includes('table'), cardIds.has(game.id), game.id);
     assert.equal(categories.includes('hacksaw-gaming'), false, game.id);
     assert.equal(game.providerId, 'hacksaw-gaming');
     assert.ok(categories.includes(getGameTypeId(game)), game.id);
@@ -94,13 +103,17 @@ test('instant-win and crash remain precise legacy formats without a primary Inst
   }
 });
 
-test('Scratch & Tap combines the complete scratchcard and tap collections without relabelling them', () => {
+test('Scratchcards and Tap Games are distinct primary families while their old combined link remains available', () => {
   const tap = getGamesForCategory('tap');
   const scratch = getGamesForCategory('scratchcards');
   const combined = getGamesForCategory('scratch-tap');
   assert.equal(tap.length, 13);
   assert.equal(scratch.length, 52);
   assert.equal(combined.length, 65);
+  assert.ok(CATEGORIES.some(category => category.id === 'scratchcards'));
+  assert.ok(CATEGORIES.some(category => category.id === 'tap'));
+  assert.equal(CATEGORIES.some(category => category.id === 'scratch-tap'), false);
+  assert.deepEqual(FILTER_CATEGORIES.map(category => category.id), ['slots', 'table', 'scratchcards', 'tap', 'arcade']);
   assert.deepEqual(new Set(combined.map(game => game.id)), new Set([...tap, ...scratch].map(game => game.id)));
   for (const game of combined) {
     const type = getGameTypeId(game);

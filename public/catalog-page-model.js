@@ -1,10 +1,12 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, LEGACY_CATEGORIES, getGamesForCategory, getGameReleaseDate } from './collections.js';
+import { CATEGORIES, DISCOVERY_CATEGORIES, SLOT_THEMES, LEGACY_CATEGORIES, getGamesForCategory, getGameReleaseDate } from './collections.js';
 
 export const PAGE_SIZE = 35;
-// One ordered category list drives both navigation and the lobby's game shelves.
-export const LOBBY_CATEGORIES = CATEGORIES.map(category => category.id);
-const categories = new Map([...LEGACY_CATEGORIES, ...CATEGORIES].map(category => [category.id, category]));
+// Discovery shelves lead the lobby; navigation groups games by how they play.
+export const LOBBY_COLLECTIONS = [...DISCOVERY_CATEGORIES, ...CATEGORIES];
+export const LOBBY_CATEGORIES = LOBBY_COLLECTIONS.map(category => category.id);
+const categories = new Map([...LEGACY_CATEGORIES, ...SLOT_THEMES, ...LOBBY_COLLECTIONS].map(category => [category.id, category]));
+const themeIds = new Set(SLOT_THEMES.map(theme => theme.id));
 const gamesById = new Map(GAMES.map(game => [game.id, game]));
 const byName = (a, b) => a.title.localeCompare(b.title);
 const matches = (value, query) => value.toLocaleLowerCase().includes(query.toLocaleLowerCase());
@@ -19,6 +21,9 @@ export function getRecentGames(history = []) {
 }
 
 export function getCatalogPage(route, { favoriteIds = [], history = [] } = {}) {
+  if (['category', 'search'].includes(route.type) && themeIds.has(route.categoryId)) {
+    route = { ...route, categoryId: 'slots', themeId: route.categoryId };
+  }
   const query = String(route.query || '').trim();
   if (route.type === 'home') return { type: 'home', title: 'Lobby', activeMenu: 'lobby' };
   if (route.type === 'providers') return { type: 'providers', title: 'Game Providers', activeMenu: 'providers', query,
@@ -34,7 +39,11 @@ export function getCatalogPage(route, { favoriteIds = [], history = [] } = {}) {
     : route.type === 'recent-games' ? getRecentGames(history)
     : route.type === 'category' ? getGamesForCategory(category.id)
     : route.type === 'search' && category ? getGamesForCategory(category.id) : GAMES;
-  const games = collection.filter(game => (!route.providerId || game.providerId === route.providerId)
+  const themeId = ['category', 'search'].includes(route.type) && category?.id === 'slots' && themeIds.has(route.themeId)
+    ? route.themeId : '';
+  const themeGames = themeId ? new Set(getGamesForCategory(themeId).map(game => game.id)) : null;
+  const games = collection.filter(game => (!themeGames || themeGames.has(game.id))
+    && (!route.providerId || game.providerId === route.providerId)
     && (!query || matches(`${game.title} ${game.providerName}`, query)));
   const defaultSort = route.type === 'favorites' ? 'saved'
     : route.type === 'recent-games' ? 'recent'
@@ -51,7 +60,7 @@ export function getCatalogPage(route, { favoriteIds = [], history = [] } = {}) {
     : route.type === 'recent-games' ? 'Recent Games'
     : route.type === 'category' ? category.title : route.type === 'provider' ? provider.name : 'Games',
     activeMenu: ['favorites', 'recent-games'].includes(route.type) ? route.type : route.type === 'provider' ? 'providers' : route.type === 'search' ? 'search' : category.id,
-    games, provider, query, sort, allowedSorts, ...(route.type === 'favorites' ? { savedCount: collection.length } : route.type === 'recent-games' ? { recentCount: collection.length } : {}) };
+    games, provider, query, sort, allowedSorts, ...(themeId ? { themeId } : {}), ...(route.type === 'favorites' ? { savedCount: collection.length } : route.type === 'recent-games' ? { recentCount: collection.length } : {}) };
 }
 
 export function pageSlice(items, limit = PAGE_SIZE) {

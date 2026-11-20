@@ -4,25 +4,36 @@ import { GAME_RELEASES } from './game-releases.js';
 import { THEME_GAME_IDS, HACKSAW_CARD_GAME_IDS } from './collection-picks.js';
 export { GAME_RELEASES, RELEASES_VERIFIED_ON } from './game-releases.js';
 
-// Game format and editorial collections are separate from the studio/provider.
-// Format mapping is documented in game-types.js. Shared browse categories power
-// the category bar, sidebar and lobby shelves; sparse formats stay in broader groups.
+// Browse by game format. Discovery collections, slot themes and providers stay
+// separate, while sparse table/card and arcade mechanics use broader families.
 export const CATEGORIES = [
+  { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
+  { id: 'table', title: 'Table & Cards', description: 'Roulette, blackjack, baccarat, poker and card games.' },
+  { id: 'scratchcards', title: 'Scratchcards', description: 'Scratch and reveal games from the catalog.' },
+  { id: 'tap', title: 'Tap Games', description: 'Tapcards and tap-and-reveal games.' },
+  { id: 'arcade', title: 'Arcade & Crash', description: 'Plinko, Mines, Dice, Wheel, Crash and other quick-play games.' },
+];
+
+export const DISCOVERY_CATEGORIES = [
   { id: 'popular', title: 'COP COIN Picks', description: 'Our handpicked mix of slots, card reveals and quick-play games.' },
   { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
+];
+
+export const SLOT_THEMES = [
   { id: 'wild-west', title: 'Wild West', description: 'Outlaws, saloons and frontier adventures.' },
   { id: 'gold-rush', title: 'Gold Rush', description: 'Gold, treasure and mining-themed games.' },
   { id: 'egypt', title: 'Egyptian Treasures', description: 'Pharaohs, pyramids and ancient Egyptian treasures.' },
   { id: 'asian', title: 'Asian Fortune', description: 'Explore games inspired by Asian settings and legends.' },
   { id: 'fruit', title: 'Fruit Games', description: 'Fruit-themed slots and tap games.' },
-  { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
-  { id: 'scratch-tap', title: 'Scratch & Tap', description: 'Scratchcards, Tapcards and tap-and-reveal games.' },
-  { id: 'table', title: 'Table & Cards', description: 'Roulette, blackjack, baccarat, poker and card games.' },
-  { id: 'slots', title: 'Slots', description: 'Browse the slot games in the catalog.' },
 ];
 
-// Keep existing links and exact game formats available without promoting tiny shelves.
+// Keep discovery pages, existing collection links and exact game formats available
+// without exposing them as top-level game families.
 export const LEGACY_CATEGORIES = [
+  ...DISCOVERY_CATEGORIES,
+  ...SLOT_THEMES,
+  { id: 'megaways', title: 'Megaways', description: 'Explore the Megaways collection.' },
+  { id: 'scratch-tap', title: 'Scratch & Tap', description: 'Scratchcards, Tapcards and tap-and-reveal games.' },
   { id: 'picks', title: 'Editor’s Favorites', description: 'A handpicked selection for you to try and review.' },
   { id: 'instant-games', title: 'Instant Games', description: 'Instant and crash games from the provider catalog.' },
   { id: 'adventure', title: 'Adventure', description: 'Explore temples, jungles, pirates and treasure.' },
@@ -122,6 +133,7 @@ const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
   ...Object.fromEntries([...themeIds].map(([id, ids]) => [id, game => ids.has(game.id)])),
   table: game => isTableGame(game) || getGameTypeId(game) === 'video-poker' || cardGameIds.has(game.id),
+  arcade: game => ['instant-win', 'crash'].includes(getGameTypeId(game)) && !cardGameIds.has(game.id),
   'scratch-tap': game => ['scratchcards', 'tap'].includes(getGameTypeId(game)),
   'instant-games': game => ['instant-win', 'crash'].includes(getGameTypeId(game)),
   popular: game => popular.has(game.id),
