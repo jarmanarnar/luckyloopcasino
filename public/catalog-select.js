@@ -1,7 +1,7 @@
 import { createUiIcon } from './ui-icons.js';
 
 // Keep the existing select as the value source for catalog filters and routing.
-export function enhanceCatalogSelect(select) {
+export function enhanceCatalogSelect(select, { commitReselection = false } = {}) {
   const wrapper = select.closest('.catalog-page-filter');
   const trigger = document.createElement('button');
   trigger.type = 'button';
@@ -109,7 +109,7 @@ export function enhanceCatalogSelect(select) {
     close();
     refresh();
     trigger.focus({ preventScroll: true });
-    if (changed) select.dispatchEvent(new Event('change', { bubbles: true }));
+    if (changed || commitReselection) select.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   trigger.addEventListener('click', event => {

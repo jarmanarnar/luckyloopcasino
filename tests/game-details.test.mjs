@@ -70,7 +70,7 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
     GAME_ARTWORK, createGameArt: (game, options) => createGameArt(game, { ...options, document }),
     PROVIDERS: [{ id: 'studio', name: 'Studio' }, { id: 'other', name: 'Other Studio' }],
     CATEGORIES: [{ id: 'all', title: 'All Games' }, { id: 'popular', title: 'Popular' }, { id: 'slots', title: 'Slots' }],
-    LEGACY_CATEGORIES: [], GAME_TYPES: [{ id: 'slots', title: 'Slots' }],
+    LEGACY_CATEGORIES: [], GAME_FAMILIES: [{ id: 'slots', title: 'Slots' }], GAME_TYPES: [{ id: 'slots', title: 'Slots' }],
     getGameTypeId: () => 'slots', getGameCategoryIds: () => ['all', 'popular', 'slots'],
     getGamesForCategory: id => id === 'popular' ? [games[2], games[0], games[1]] : [],
     getGameReleaseDate: game => game.id === 'beta' ? '2026-01-15' : null,

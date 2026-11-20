@@ -103,9 +103,9 @@ body[data-page="home"] > .page-content { margin-top: .5rem; }
 }
 /* Keep the dots close to the banners with a compact gap before the categories. */
 .hero-carousel__controls { display: flex; align-items: center; justify-content: center; gap: .5rem; box-sizing: border-box; min-height: 2.25rem; margin-top: 2px; padding-bottom: .25rem; }
-.hero-carousel:not([hidden]) + .catalog-toolbar {
-  /* Account for the toolbar's sticky padding: 20px from the dots to its buttons. */
-  margin-block-start: -.5rem;
+.hero-carousel:not([hidden]) + .catalog-page-header[hidden] + .catalog-browser {
+  /* The control box already reserves 16px below the visible dots. */
+  margin-block-start: .25rem;
 }
 .hero-carousel__dots { display: flex; align-items: center; }
 .hero-carousel__dot { display: grid; place-items: center; flex: none; width: auto; height: 2rem; padding: 0 .1875rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; }

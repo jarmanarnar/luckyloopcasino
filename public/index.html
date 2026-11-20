@@ -216,32 +216,34 @@
       </div>
       <p class="visually-hidden" id="hero-status" aria-live="polite" aria-atomic="true"></p>
     </section>
-    <section class="catalog-toolbar" aria-label="Game filters" lang="en" dir="ltr">
-      <button id="lobby-search-toggle" class="catalog-search-toggle" type="button" aria-label="Search games" aria-controls="lobby-search-form" aria-expanded="false"><svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
-      <div class="catalog-category-rail">
-        <nav id="catalog-categories" class="catalog-categories" aria-label="Game types and categories"></nav>
-      </div>
-      <form id="lobby-search-form" class="catalog-page-search lobby-search" role="search" aria-label="Search lobby games" hidden>
-        <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
-        <input id="lobby-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search">
-        <button id="lobby-search-close" class="catalog-search-close" type="button" aria-label="Close search"><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
-      </form>
-    </section>
     <header id="catalog-page-header" class="catalog-page-header" lang="en" dir="ltr" hidden>
       <h1 id="catalog-page-title" tabindex="-1"></h1>
     </header>
-    <div id="catalog-page-controls" class="catalog-page-controls" lang="en" dir="ltr" hidden>
-      <form id="catalog-page-search-form" class="catalog-page-search" role="search">
-        <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
-        <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off">
-      </form>
-      <label class="catalog-page-filter"><span class="visually-hidden">Game type</span><select id="catalog-page-category" aria-label="Game type"></select></label>
-      <div class="catalog-page-filter" hidden><span class="visually-hidden" id="catalog-page-theme-label">Slot theme</span><select id="catalog-page-theme" aria-label="Slot theme"></select></div>
-      <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-provider-label">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
-      <div class="catalog-page-filter"><span class="visually-hidden" id="catalog-page-sort-label">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></div>
-    </div>
+    <section id="catalog-browser" class="catalog-browser" aria-label="Browse games" lang="en" dir="ltr">
+      <div id="catalog-page-controls" class="catalog-page-controls">
+        <form id="catalog-page-search-form" class="catalog-page-search" role="search">
+          <svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg>
+          <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search">
+          <button id="catalog-search-clear" class="catalog-search-clear" type="button" aria-label="Clear search" hidden><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+        </form>
+        <button id="catalog-filters-toggle" class="catalog-filters-toggle" type="button" aria-controls="catalog-filter-panel" aria-expanded="false">Filters<span id="catalog-filters-count" class="catalog-filters-count" hidden></span><svg data-ui-icon="down" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+        <div id="catalog-filter-panel" class="catalog-filter-panel" data-expanded="false">
+          <div id="catalog-filter-fields" class="catalog-filter-fields">
+            <div class="catalog-page-filter catalog-page-filter--type"><span class="visually-hidden" id="catalog-page-game-type-label">Game type</span><select id="catalog-page-game-type" aria-label="Game type"></select></div>
+            <div class="catalog-page-filter catalog-page-filter--provider"><span class="visually-hidden" id="catalog-page-provider-label">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
+            <div class="catalog-page-filter catalog-page-filter--sort"><span class="visually-hidden" id="catalog-page-sort-label">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="catalog-toolbar">
+        <button id="lobby-search-link" class="catalog-search-toggle" type="button" aria-label="Search games" hidden><svg data-ui-icon="search" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
+        <div class="catalog-category-rail">
+          <nav id="catalog-categories" class="catalog-categories" aria-label="Game categories"></nav>
+        </div>
+      </div>
+    </section>
     <div id="catalog-shelves" class="catalog-shelves" lang="en" dir="ltr"></div>
-    <div id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, category or provider.</div>
+    <div id="catalog-empty" class="catalog-empty" role="status" lang="en" dir="ltr" hidden>No games found. Try another search, game type or provider.</div>
     <div id="catalog-pagination" class="catalog-pagination" lang="en" dir="ltr" hidden><button id="catalog-more" class="text-control" type="button" hidden>Show more</button></div>
     <section id="catalog-provider-details" class="catalog-provider-details" lang="en" dir="ltr" hidden></section>
   </main>
@@ -485,7 +487,7 @@
         <nav class="site-footer__links" aria-labelledby="footer-explore-title">
           <h2 id="footer-explore-title">Explore</h2>
           <a href="#/">Lobby</a>
-          <a href="#/popular">COP COIN Picks</a>
+          <a href="#/popular">Top Picks</a>
           <a href="#/slots">Slots</a>
           <a href="#/new-releases">New Releases</a>
           <a href="#/providers">Game Providers</a>

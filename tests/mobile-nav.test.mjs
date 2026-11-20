@@ -294,6 +294,28 @@ test('member feature pages select Menu without claiming that its drawer is open'
   assert.deepEqual(active(page), ['lobby']);
 });
 
+test('equivalent filtered Search and category pages share bottom navigation state', () => {
+  const page = navPage();
+  for (const destination of ['slots', 'popular', 'fruit']) {
+    for (const routeType of ['category', 'search']) {
+      page.body.dataset.page = routeType;
+      page.nodes['catalog-categories'].dataset.activeMenu = destination;
+      page.flush();
+      assert.deepEqual(active(page), [], `${routeType} scoped to ${destination}`);
+      assert.equal(page.button('lobby').getAttribute('aria-current'), null);
+      page.button('menu').click();
+      assert.deepEqual(active(page), ['menu']);
+      page.button('menu').click();
+      assert.deepEqual(active(page), [], 'closing Menu restores the effective catalog scope');
+    }
+  }
+  page.body.dataset.page = 'search';
+  page.nodes['catalog-categories'].dataset.activeMenu = 'search';
+  page.flush();
+  assert.deepEqual(active(page), ['menu'], 'global Search still belongs to Menu');
+  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+});
+
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {
   const page = navPage();
   for (const category of ['new-releases', 'popular', 'spooky', 'picks', 'slots']) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildReleaseData, releaseModule } from '../scripts/import-release-calendar.mjs';
 import { GAMES } from '../public/catalog.js';
-import { CATEGORIES, FILTER_CATEGORIES, getGameCategoryIds, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, GAME_FAMILIES, FILTER_CATEGORIES, getGameCategoryIds, getGamesForCategory } from '../public/collections.js';
 import { GAME_TYPES, getGameTypeId } from '../public/game-types.js';
 import { formatRoute, parseRoute } from '../public/routes.js';
 
@@ -54,7 +54,7 @@ test('Table & Cards groups ten table and card games without changing their exact
     const route = { type: 'category', categoryId: type };
     assert.deepEqual(parseRoute(formatRoute(route)), route);
   }
-  assert.equal(CATEGORIES.find(category => category.id === 'table').title, 'Table & Cards');
+  assert.equal(GAME_FAMILIES.find(category => category.id === 'table').title, 'Table & Cards');
   assert.deepEqual(new Set(getGamesForCategory('table').map(game => game.id)), new Set(Object.keys(cases)));
   for (const id of ['hacksaw-1590', 'hacksaw-1321', 'hacksaw-2491']) {
     assert.equal(getGamesForCategory('table').some(game => game.id === id), false, id);
@@ -110,10 +110,11 @@ test('Scratchcards and Tap Games are distinct primary families while their old c
   assert.equal(tap.length, 13);
   assert.equal(scratch.length, 52);
   assert.equal(combined.length, 65);
-  assert.ok(CATEGORIES.some(category => category.id === 'scratchcards'));
-  assert.ok(CATEGORIES.some(category => category.id === 'tap'));
+  assert.ok(GAME_FAMILIES.some(category => category.id === 'scratchcards'));
+  assert.ok(GAME_FAMILIES.some(category => category.id === 'tap'));
   assert.equal(CATEGORIES.some(category => category.id === 'scratch-tap'), false);
-  assert.deepEqual(FILTER_CATEGORIES.map(category => category.id), ['slots', 'table', 'scratchcards', 'tap', 'arcade']);
+  assert.deepEqual(GAME_FAMILIES.map(category => category.id), ['slots', 'table', 'scratchcards', 'tap', 'arcade']);
+  assert.equal(FILTER_CATEGORIES, CATEGORIES);
   assert.deepEqual(new Set(combined.map(game => game.id)), new Set([...tap, ...scratch].map(game => game.id)));
   for (const game of combined) {
     const type = getGameTypeId(game);

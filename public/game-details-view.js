@@ -1,5 +1,5 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
+import { CATEGORIES, GAME_FAMILIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -88,7 +88,10 @@ export function initGameDetails({ router, member } = {}) {
     };
     addAttribute('Provider', routeLink(providerNames.get(game.providerId) || game.providerName,
       { type: 'provider', providerId: game.providerId }));
-    addAttribute('Game type', routeLink(formatName, { type: 'category', categoryId: getGameTypeId(game) }));
+    const memberships = getGameCategoryIds(game);
+    const family = GAME_FAMILIES.find(type => memberships.includes(type.id));
+    addAttribute('Game type', routeLink(family?.title || formatName,
+      family ? { type: 'category', gameTypeId: family.id } : { type: 'category', categoryId: getGameTypeId(game) }));
     const releaseDate = getGameReleaseDate(game);
     if (releaseDate) {
       const time = node('time', '', new Intl.DateTimeFormat('en', {
@@ -97,12 +100,12 @@ export function initGameDetails({ router, member } = {}) {
       time.dateTime = releaseDate;
       addAttribute('Release date', time);
     }
-    const categories = getGameCategoryIds(game).filter(id => categoryNames.has(id) && !['all', getGameTypeId(game)].includes(id));
+    const categories = memberships.filter(id => categoryNames.has(id));
     if (categories.length) {
       const links = node('div', 'game-details-collections');
       for (const categoryId of categories) links.append(routeLink(categoryNames.get(categoryId) || categoryId,
         { type: 'category', categoryId }));
-      addAttribute('Collections', links);
+      addAttribute('Categories', links);
     }
     content.append(node('h3', '', 'Game attributes'), attributes);
     return content;

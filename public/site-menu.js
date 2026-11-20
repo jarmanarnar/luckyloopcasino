@@ -1,4 +1,4 @@
-import { CATEGORIES, getGamesForCategory } from './collections.js';
+import { GAME_FAMILIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 
 let initialized = false;
@@ -88,8 +88,15 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
 
   const casinoButton = menuButton('table', 'Game Types');
   const casinoList = createDisclosure('social-casino', casinoButton);
-  navigation.replaceChildren(casinoButton, casinoList);
-  for (const category of CATEGORIES) {
+  navigation.replaceChildren();
+  for (const [id, title] of [['popular', 'Top Picks'], ['new-releases', 'New Releases']]) {
+    const button = menuButton(id, title);
+    button.dataset.menuCategory = id;
+    items.set(id, button);
+    navigation.append(button);
+  }
+  navigation.append(casinoButton, casinoList);
+  for (const category of GAME_FAMILIES) {
     if (getGamesForCategory(category.id).length === 0) continue;
     const button = menuButton(category.id, category.title);
     button.dataset.menuCategory = category.id;
@@ -108,7 +115,8 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   gamesNavigation.className = 'site-menu__navigation site-menu__feature-group';
   gamesNavigation.setAttribute('aria-label', 'Games');
   for (const [id, title, icon] of [
-    ['lobby', 'Lobby', 'lobby'], ['recent-games', 'Recent Games', 'history'], ['favorites', 'Favorite Games', 'favorites'],
+    ['lobby', 'Lobby', 'lobby'],
+    ['recent-games', 'Recent Games', 'history'], ['favorites', 'Favorite Games', 'favorites'],
   ]) {
     const button = menuButton(icon, title);
     button.dataset.menuCategory = id;

@@ -1,15 +1,48 @@
 import { PROVIDERS } from './catalog.js';
-import { CATEGORIES, FILTER_CATEGORIES, DISCOVERY_CATEGORIES, SLOT_THEMES, LEGACY_CATEGORIES, getGamesForCategory } from './collections.js';
+import { GAME_FAMILIES, getGamesForCategory } from './collections.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { PROVIDER_LOGOS } from './provider-assets.js';
 import { getProviderDetails } from './provider-details.js';
 import { PAGE_SIZE, LOBBY_COLLECTIONS, getCatalogPage, pageSlice } from './catalog-page-model.js';
 import { createGameArt } from './game-artwork-view.js';
 import { enhanceCatalogSelect } from './catalog-select.js';
+import { changeCatalogGameType, resetCatalogFilters } from './catalog-filter-state.js';
 
 let controller;
 const SHELF_GAME_LIMIT = 24;
-const sortLabels = { featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved', recent: 'Recently played' };
+const sortLabels = { relevance: 'Best match', featured: 'Featured', az: 'Name: A–Z', za: 'Name: Z–A', newest: 'Newest first', saved: 'Recently saved', recent: 'Recently played' };
+
+export function getCatalogSearchPlaceholder(model) {
+  if (model.type === 'providers') return 'Search providers';
+  if (model.type === 'favorites') return 'Search favorites';
+  if (model.type === 'recent-games') return 'Search recent games';
+  if (model.type === 'provider') return `Search ${model.provider.name} games`;
+  if (model.categoryId || model.gameTypeId) return `Search in ${model.title}`;
+  if (model.provider) return `Search ${model.provider.name} games`;
+  return 'Search all games';
+}
+
+export function getCatalogEmptyState(model) {
+  const personal = ['favorites', 'recent-games'].includes(model.type);
+  const noSaved = model.type === 'favorites' && model.savedCount === 0 && !model.query;
+  const noRecent = model.type === 'recent-games' && model.recentCount === 0 && !model.query;
+  const directory = model.type === 'providers';
+  const scoped = personal || model.type === 'provider' || Boolean(model.categoryId || model.gameTypeId || model.provider);
+  const searchAll = !directory && scoped && Boolean(model.query);
+  const title = noSaved ? 'Your favorites start here' : noRecent ? 'No recent games yet'
+    : model.type === 'favorites' ? 'No matching favorites'
+    : model.type === 'recent-games' ? 'No matching recent games'
+    : directory ? 'No matching providers' : 'No matching games';
+  const description = noSaved ? 'Save games with the heart to keep them all in one place.'
+    : noRecent ? 'Games you open while signed in will appear here.'
+    : directory ? 'Try another name or clear your search.'
+    : scoped ? `No games match your filters in ${model.title}. Try another search or remove a filter.`
+    : 'Try another name or remove a filter to see more games.';
+  const actions = searchAll ? [{ action: 'search-all', label: 'Search all games' }, { action: 'clear', label: 'Clear filters' }]
+    : noSaved || noRecent ? [{ action: 'browse', label: 'Explore games' }]
+    : [{ action: 'clear', label: 'Clear filters' }];
+  return { title, description, actions };
+}
 
 export function getShelfScrollTarget(track, direction, position = track.scrollLeft) {
   const first = track.firstElementChild;
@@ -80,47 +113,57 @@ export function initCatalogView({ router, member } = {}) {
   const title = document.querySelector('#catalog-page-title');
   const controls = document.querySelector('#catalog-page-controls');
   const input = document.querySelector('#catalog-page-search-input');
-  const lobbySearch = document.querySelector('#lobby-search-form');
-  const lobbyInput = document.querySelector('#lobby-search-input');
-  const lobbySearchToggle = document.querySelector('#lobby-search-toggle');
-  const lobbySearchClose = document.querySelector('#lobby-search-close');
-  const categoryRail = categories?.closest('.catalog-category-rail');
+  const lobbySearchLink = document.querySelector('#lobby-search-link');
+  const browser = document.querySelector('#catalog-browser');
+  const searchClear = document.querySelector('#catalog-search-clear');
+  const filterToggle = document.querySelector('#catalog-filters-toggle');
+  const filterCount = document.querySelector('#catalog-filters-count');
+  const filterPanel = document.querySelector('#catalog-filter-panel');
   const providerSelect = document.querySelector('#catalog-page-provider');
-  const categorySelect = document.querySelector('#catalog-page-category');
-  const themeSelect = document.querySelector('#catalog-page-theme');
+  const gameTypeSelect = document.querySelector('#catalog-page-game-type');
   const sortSelect = document.querySelector('#catalog-page-sort');
   const pagination = document.querySelector('#catalog-pagination');
   const details = document.querySelector('#catalog-provider-details');
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
   if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
-    providerSelect, categorySelect, themeSelect, sortSelect, pagination, details, lobbySearch, lobbyInput,
-    lobbySearchToggle, lobbySearchClose, categoryRail].every(Boolean)) return;
+    providerSelect, gameTypeSelect, sortSelect, pagination, details, browser, searchClear, filterToggle, lobbySearchLink,
+    filterCount, filterPanel, hero, toolbar].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', lobbyQuery = '';
-  let lobbySearchOpen = false;
-  function setLobbySearchOpen(open) {
-    lobbySearchOpen = open;
-    lobbySearch.hidden = !open;
-    categoryRail.hidden = open;
-    lobbySearchToggle.hidden = open;
-    lobbySearchToggle.setAttribute('aria-expanded', String(open));
+  const compactFilters = window.matchMedia('(max-width: 48rem)');
+  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', filtersOpen = false, composing = false;
+  function syncFilterPanel() {
+    const expanded = !compactFilters.matches || filtersOpen;
+    filterPanel.dataset.expanded = String(expanded);
+    filterPanel.inert = !expanded;
+    filterPanel.setAttribute('aria-hidden', String(!expanded));
+    filterToggle.setAttribute('aria-expanded', String(expanded));
+    if (!expanded) filterMenus.forEach(menu => menu.close());
   }
-  const viewKey = route => JSON.stringify(route.type === 'home' ? { ...route, query: lobbyQuery } : route);
+  const viewKey = route => JSON.stringify(route);
   const collectionKey = (type, state = member?.getState()) => JSON.stringify(type === 'favorites' ? state?.favorites || [] : state?.history || []);
   const collectionKeys = new Map(['favorites', 'recent-games'].map(type => [type, collectionKey(type)]));
   const option = (value, text) => Object.assign(node('option', '', text), { value });
   providerSelect.replaceChildren(option('', 'All providers'), ...PROVIDERS.map(p => option(p.id, p.name)));
-  themeSelect.replaceChildren(option('', 'All themes'), ...SLOT_THEMES.map(theme => option(theme.id, theme.title)));
-  const filterMenus = [providerSelect, themeSelect, sortSelect].map(enhanceCatalogSelect);
-  for (const category of CATEGORIES) {
+  gameTypeSelect.replaceChildren(option('', 'All game types'), ...GAME_FAMILIES.map(type => option(type.id, type.title)));
+  const filterMenus = [gameTypeSelect, providerSelect, sortSelect].map(select =>
+    enhanceCatalogSelect(select));
+  for (const category of LOBBY_COLLECTIONS) {
     const button = node('button', 'catalog-category');
     button.type = 'button';
     button.dataset.category = category.id;
-    button.setAttribute('aria-pressed', 'false');
-    button.append(createShelfIcon(category.id), node('span', '', category.title));
+    button.append(createShelfIcon(category.id));
+    button.append(node('span', '', category.title));
     categories.append(button);
+  }
+  function updateFilterBadge(route, model) {
+    const additionalCount = Number(Boolean(route.providerId && route.type !== 'provider'))
+      + Number(Boolean(model.gameTypeId))
+      + Number(Boolean(route.sort && route.sort === model.sort));
+    filterCount.textContent = String(additionalCount);
+    filterCount.hidden = !additionalCount;
+    filterToggle.setAttribute('aria-label', additionalCount ? `Filters, ${additionalCount} active` : 'Filters');
   }
   function updateArrows(track) {
     const section = track.closest('.game-shelf');
@@ -218,11 +261,6 @@ export function initCatalogView({ router, member } = {}) {
   function render(route, meta = {}) {
     window.clearTimeout(inputTimer);
     filterMenus.forEach(menu => menu.close());
-    if (route.type !== 'home') {
-      lobbyQuery = '';
-      lobbyInput.value = '';
-      setLobbySearchOpen(false);
-    }
     if (route.type === 'game') {
       categories.dataset.activeMenu = '';
       return;
@@ -233,44 +271,48 @@ export function initCatalogView({ router, member } = {}) {
       document.body.dataset.page = route.type;
       categories.dataset.activeMenu = route.type === 'store' ? 'store'
         : route.type === 'game-details' ? '' : route.pageId;
-      for (const button of categories.querySelectorAll('[data-category]')) button.setAttribute('aria-pressed', 'false');
       return;
     }
     const home = route.type === 'home';
     const { favorites: favoriteIds, history } = member?.getState() || {};
-    const model = getCatalogPage(home && lobbyQuery ? { type: 'search', query: lobbyQuery } : route, { favoriteIds, history });
-    const favorites = model.type === 'favorites';
+    const model = getCatalogPage(route, { favoriteIds, history });
+    const overview = home;
+    const filterModel = model;
+    const directory = model.type === 'providers';
     if (collectionKeys.has(model.type)) collectionKeys.set(model.type, collectionKey(model.type));
     document.body.dataset.page = home ? 'home' : model.type;
     root.hidden = false;
-    hero.hidden = toolbar.hidden = !home;
-    lobbySearch.hidden = !home || !lobbySearchOpen;
+    hero.hidden = !home;
+    browser.hidden = model.type === 'not-found';
+    browser.classList.toggle('catalog-browser--lobby', home);
+    browser.classList.toggle('catalog-browser--results', !overview);
+    toolbar.hidden = !home;
     header.hidden = home;
-    controls.hidden = home || model.type === 'not-found';
+    controls.hidden = home;
+    lobbySearchLink.hidden = !home;
     title.textContent = model.title;
     document.title = home ? 'COP COIN' : `${model.title} · COP COIN`;
     categories.dataset.activeMenu = home ? 'lobby' : model.activeMenu;
-    for (const button of categories.querySelectorAll('[data-category]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.category === model.activeMenu));
-    }
+    categories.setAttribute('aria-label', 'Browse game categories');
     if (input.value !== (route.query || '')) input.value = route.query || '';
-    input.placeholder = model.type === 'providers' ? 'Search providers' : 'Search games';
+    input.placeholder = getCatalogSearchPlaceholder(model);
     input.setAttribute('aria-label', input.placeholder);
-    providerSelect.closest('.catalog-page-filter').hidden = !['category', 'search', 'favorites', 'recent-games'].includes(model.type);
-    categorySelect.closest('.catalog-page-filter').hidden = model.type !== 'search';
-    themeSelect.closest('.catalog-page-filter').hidden = !['category', 'search'].includes(model.type) || route.categoryId !== 'slots';
-    sortSelect.closest('.catalog-page-filter').hidden = model.type === 'providers';
+    searchClear.hidden = !input.value;
+    filterPanel.hidden = filterToggle.hidden = home || directory;
+    providerSelect.closest('.catalog-page-filter').hidden = directory || model.type === 'provider';
+    gameTypeSelect.closest('.catalog-page-filter').hidden = directory;
+    sortSelect.closest('.catalog-page-filter').hidden = directory;
+    providerSelect.replaceChildren(option('', 'All providers'), ...(filterModel.providerFacets || []).map(provider => option(provider.id, provider.name)));
+    providerSelect.disabled = !filterModel.providerFacets?.length;
     providerSelect.value = route.providerId || '';
-    // Existing links can still filter an exact format without advertising tiny groups.
-    const legacyFilter = !FILTER_CATEGORIES.some(category => category.id === route.categoryId)
-      ? [...DISCOVERY_CATEGORIES, ...LEGACY_CATEGORIES].find(category => category.id === route.categoryId) : null;
-    categorySelect.replaceChildren(option('all', 'All Games'), ...FILTER_CATEGORIES.map(c => option(c.id, c.title)),
-      ...(legacyFilter ? [option(legacyFilter.id, legacyFilter.title)] : []));
-    categorySelect.value = route.categoryId || 'all';
-    themeSelect.value = model.themeId || '';
-    sortSelect.replaceChildren(...(model.allowedSorts || []).map(id => option(id, sortLabels[id])));
-    sortSelect.value = model.sort || '';
+    gameTypeSelect.replaceChildren(option('', 'All game types'), ...(filterModel.gameTypeFacets || []).map(type => option(type.id, type.title)));
+    gameTypeSelect.disabled = !filterModel.gameTypeFacets?.length;
+    gameTypeSelect.value = filterModel.gameTypeId || '';
+    sortSelect.replaceChildren(...(filterModel.allowedSorts || []).map(id => option(id, sortLabels[id])));
+    sortSelect.value = filterModel.sort || '';
     filterMenus.forEach(menu => menu.refresh());
+    syncFilterPanel();
+    updateFilterBadge(route, filterModel);
     providerDetails(model.type === 'provider' ? model.provider : null);
     renderedRoute = route;
     const key = viewKey(route);
@@ -282,8 +324,8 @@ export function initCatalogView({ router, member } = {}) {
     empty.replaceChildren();
     empty.hidden = true;
     more.hidden = true;
-    pagination.hidden = (home && !lobbyQuery) || model.type === 'not-found';
-    if (home && !lobbyQuery) {
+    pagination.hidden = overview || model.type === 'not-found';
+    if (overview) {
       shelves.replaceChildren(
         ...LOBBY_COLLECTIONS.map(({ id, title }) => rail(id, title, getGamesForCategory(id))),
         rail('providers', 'Game Providers', PROVIDERS, true));
@@ -296,12 +338,7 @@ export function initCatalogView({ router, member } = {}) {
       const items = providers ? model.providers : model.games;
       const slice = pageSlice(items, limits.get(key) || PAGE_SIZE);
       const section = node('section', 'game-shelf catalog-result-shelf');
-      section.setAttribute('aria-labelledby', home ? 'lobby-search-results-title' : 'catalog-page-title');
-      if (home) {
-        const heading = node('h2', 'game-shelf__title lobby-search-results-heading', 'Games');
-        heading.id = 'lobby-search-results-title';
-        section.append(heading);
-      }
+      section.setAttribute('aria-labelledby', 'catalog-page-title');
       const track = node('ul', `${providers ? 'provider-track' : 'game-track'} is-grid`);
       track.setAttribute('aria-label', providers ? 'Game providers' : model.title);
       track.dir = 'ltr';
@@ -309,23 +346,18 @@ export function initCatalogView({ router, member } = {}) {
       section.append(track);
       shelves.replaceChildren(section);
       empty.hidden = items.length !== 0;
-      if (favorites && !items.length) {
-        const noSavedGames = model.savedCount === 0;
+      if (!items.length) {
+        const state = getCatalogEmptyState(model);
         empty.className = 'catalog-empty catalog-empty--favorites';
-        const browse = node('button', 'text-control', noSavedGames ? 'Explore games' : 'Clear filters');
-        browse.type = 'button';
-        browse.dataset.catalogEmptyAction = noSavedGames ? 'browse' : 'clear';
-        empty.append(node('h2', '', noSavedGames ? 'Your favorites start here' : 'No matching favorites'),
-          node('p', '', noSavedGames ? 'Save games with the heart to keep them all in one place.' : 'Try a different search or provider.'), browse);
-      } else if (model.type === 'recent-games' && !items.length) {
-        const noRecentGames = model.recentCount === 0;
-        empty.className = 'catalog-empty catalog-empty--favorites';
-        const browse = node('button', 'text-control', noRecentGames ? 'Explore games' : 'Clear filters');
-        browse.type = 'button';
-        browse.dataset.catalogEmptyAction = noRecentGames ? 'browse' : 'clear';
-        empty.append(node('h2', '', noRecentGames ? 'No recent games yet' : 'No matching recent games'),
-          node('p', '', noRecentGames ? 'Games you open while signed in will appear here.' : 'Try a different search or provider.'), browse);
-      } else empty.textContent = providers ? 'No providers found. Try another name.' : 'No games found. Try another search or filter.';
+        const actions = node('div', 'catalog-empty__actions');
+        for (const { action, label } of state.actions) {
+          const button = node('button', 'text-control', label);
+          button.type = 'button';
+          button.dataset.catalogEmptyAction = action;
+          actions.append(button);
+        }
+        empty.append(node('h2', '', state.title), node('p', '', state.description), actions);
+      }
       pagination.hidden = !slice.hasMore;
       more.hidden = !slice.hasMore;
     }
@@ -335,17 +367,30 @@ export function initCatalogView({ router, member } = {}) {
     }
   }
   const openHome = () => router.navigate({ type: 'home' });
-  const openCategory = id => router.navigate({ type: 'category', categoryId: id });
+  const openCategory = id => router.navigate(GAME_FAMILIES.some(type => type.id === id)
+    ? { type: 'category', gameTypeId: id } : { type: 'category', categoryId: id });
   const openRecentGames = () => router.navigate({ type: 'recent-games' });
   const openFavorites = () => router.navigate({ type: 'favorites' });
   const openProviders = () => router.navigate({ type: 'providers' });
   const openProvider = id => router.navigate({ type: 'provider', providerId: id });
   const openStore = () => router.navigate({ type: 'store' });
-  const openSearch = () => { router.navigate({ type: 'search', query: '' }); input.focus({ preventScroll: true }); };
+  const focusSearch = () => {
+    input.focus({ preventScroll: true });
+    input.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  };
+  const openSearch = () => {
+    window.clearTimeout(inputTimer);
+    input.value = '';
+    searchClear.hidden = true;
+    router.navigate({ type: 'search', query: '' });
+    focusSearch();
+  };
   const searchGames = query => router.navigate({ type: 'search', query: String(query).trim() });
+  lobbySearchLink.addEventListener('click', openSearch);
   categories.addEventListener('click', event => {
     const button = event.target.closest('[data-category]');
-    if (button) openCategory(button.dataset.category);
+    if (!button) return;
+    if (router.getRoute().type === 'home') openCategory(button.dataset.category);
   });
   shelves.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
@@ -369,7 +414,8 @@ export function initCatalogView({ router, member } = {}) {
     const action = event.target.closest('[data-catalog-empty-action]');
     if (!action) return;
     if (action.dataset.catalogEmptyAction === 'browse') openSearch();
-    else router.navigate({ type: router.getRoute().type }, { replace: true });
+    else if (action.dataset.catalogEmptyAction === 'search-all') searchGames(input.value);
+    else resetFilters();
   });
   more.addEventListener('click', () => {
     const key = viewKey(renderedRoute);
@@ -378,50 +424,42 @@ export function initCatalogView({ router, member } = {}) {
     render(renderedRoute, { focus: false });
     if (!more.hidden) more.focus({ preventScroll: true });
   });
-  function updateFilters(changes) {
+  function updateFilters(changes, { replace = false } = {}) {
     const route = router.getRoute();
     if (!['category', 'provider', 'providers', 'search', 'favorites', 'recent-games'].includes(route.type)) return;
-    router.navigate({ ...route, ...changes }, { replace: true, preserveScroll: true, focus: false });
+    window.clearTimeout(inputTimer);
+    navigateFilters({ ...route, query: input.value, ...changes }, { replace, preserveScroll: true, focus: false });
   }
-  function searchLobby() {
-    if (router.getRoute().type !== 'home') return;
-    const query = lobbyInput.value.trim();
-    if (query === lobbyQuery) return;
-    lobbyQuery = query;
-    render(router.getRoute(), { focus: false });
-    if (lobbyQuery) shelves.scrollIntoView({ block: 'start', behavior: 'instant' });
+  function navigateFilters(next, options) {
+    if (next.type === 'category' && !next.gameTypeId && !next.categoryId) next.type = 'search';
+    // Removing a query or changing collection can retire its ordering choice.
+    if (next.sort) {
+      const { favorites: favoriteIds, history } = member?.getState() || {};
+      if (!getCatalogPage(next, { favoriteIds, history }).allowedSorts?.includes(next.sort)) delete next.sort;
+    }
+    router.navigate(next, options);
   }
-  lobbySearchToggle.addEventListener('click', () => {
-    setLobbySearchOpen(true);
-    lobbyInput.focus({ preventScroll: true });
-  });
-  function closeLobbySearch() {
+  function resetFilters() {
     window.clearTimeout(inputTimer);
-    lobbyInput.value = '';
-    lobbyQuery = '';
-    setLobbySearchOpen(false);
-    render(router.getRoute(), { focus: false });
-    lobbySearchToggle.focus({ preventScroll: true });
+    input.value = '';
+    searchClear.hidden = true;
+    const route = router.getRoute();
+    router.navigate(resetCatalogFilters(route), { preserveScroll: true, focus: false });
+    input.focus({ preventScroll: true });
   }
-  lobbySearchClose.addEventListener('click', closeLobbySearch);
-  lobbySearch.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    event.stopPropagation();
-    closeLobbySearch();
-  });
-  lobbyInput.addEventListener('input', () => {
+  function queueSearch() {
     window.clearTimeout(inputTimer);
-    inputTimer = window.setTimeout(searchLobby, 120);
-  });
-  lobbySearch.addEventListener('submit', event => {
-    event.preventDefault();
-    window.clearTimeout(inputTimer);
-    searchLobby();
-  });
-  input.addEventListener('input', () => {
-    window.clearTimeout(inputTimer);
-    inputTimer = window.setTimeout(() => updateFilters({ query: input.value }), 120);
+    searchClear.hidden = !input.value;
+    if (!composing) inputTimer = window.setTimeout(() => updateFilters({ query: input.value }, { replace: true }), 180);
+  }
+  input.addEventListener('input', queueSearch);
+  input.addEventListener('compositionstart', () => { composing = true; window.clearTimeout(inputTimer); });
+  input.addEventListener('compositionend', () => { composing = false; queueSearch(); });
+  searchClear.addEventListener('click', () => {
+    input.value = '';
+    searchClear.hidden = true;
+    updateFilters({ query: '' });
+    input.focus({ preventScroll: true });
   });
   document.querySelector('#catalog-page-search-form').addEventListener('submit', event => {
     event.preventDefault();
@@ -429,9 +467,25 @@ export function initCatalogView({ router, member } = {}) {
     updateFilters({ query: input.value });
   });
   providerSelect.addEventListener('change', () => updateFilters({ providerId: providerSelect.value }));
-  categorySelect.addEventListener('change', () => updateFilters({ categoryId: categorySelect.value, themeId: '' }));
-  themeSelect.addEventListener('change', () => updateFilters({ themeId: themeSelect.value }));
+  gameTypeSelect.addEventListener('change', () => {
+    window.clearTimeout(inputTimer);
+    const { favorites: favoriteIds, history } = member?.getState() || {};
+    const next = changeCatalogGameType({ ...router.getRoute(), query: input.value }, gameTypeSelect.value, { favoriteIds, history });
+    navigateFilters(next, { preserveScroll: true, focus: false });
+  });
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
+  filterToggle.addEventListener('click', () => { filtersOpen = !filtersOpen; syncFilterPanel(); });
+  compactFilters.addEventListener('change', () => {
+    if (compactFilters.matches && !filtersOpen && filterPanel.contains(document.activeElement)) filterToggle.focus({ preventScroll: true });
+    syncFilterPanel();
+  });
+  filterPanel.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !compactFilters.matches || !filtersOpen || event.defaultPrevented) return;
+    event.preventDefault();
+    filtersOpen = false;
+    syncFilterPanel();
+    filterToggle.focus({ preventScroll: true });
+  });
   new ResizeObserver(() => tracks.forEach(track => {
     scrollTargets.delete(track);
     updateArrows(track);

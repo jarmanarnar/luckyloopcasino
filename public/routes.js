@@ -1,30 +1,50 @@
 import { isFeaturePage } from './feature-pages.js';
-import { SLOT_THEMES } from './collections.js';
+import { GAME_FAMILIES, CATEGORIES, LEGACY_CATEGORIES, SLOT_THEMES } from './collections.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
-const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'arcade', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const gameTypeIds = new Set(GAME_FAMILIES.map(type => type.id));
+const categoryIds = new Set([...CATEGORIES, ...LEGACY_CATEGORIES]
+  .map(category => category.id).filter(id => !gameTypeIds.has(id)));
 const legacyStudioIds = new Set(['nolimit-city', 'hacksaw-gaming']);
 const slotThemeIds = new Set(SLOT_THEMES.map(theme => theme.id));
-const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent']);
+const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent', 'relevance']);
+const gameCatalogTypes = new Set(['home', 'category', 'search', 'provider', 'favorites', 'recent-games']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
 const isLegacyHash = hash => {
-  const [path, search = ''] = String(hash).replace(/^#/, '').split('?');
-  const id = decode(path.replace(/^\//, '').replace(/\/$/, ''));
-  const category = new URLSearchParams(search).get('category');
-  return ['all-games', 'all', 'free-money'].includes(id) || legacyStudioIds.has(id) || slotThemeIds.has(id)
-    || legacyStudioIds.has(category) || (id === 'search' && slotThemeIds.has(category));
+  const source = String(hash).replace(/^#/, '');
+  if (source.startsWith('game=')) return false;
+  const route = parseRoute(hash);
+  const path = source.split('?')[0];
+  // Preserve unknown addresses rather than silently rewriting them as home.
+  return (route.type !== 'home' || path === '/' || path === '') && `#${source}` !== formatRoute(route);
 };
 
-// Themes narrow the Slots family; they never follow the user into another format.
-function normalizeSlotTheme(route) {
-  const supportsTheme = ['category', 'search'].includes(route.type);
-  const legacyTheme = supportsTheme && slotThemeIds.has(route.categoryId) ? route.categoryId : '';
-  const { themeId, ...normalized } = route;
-  if (legacyTheme) normalized.categoryId = 'slots';
-  const theme = legacyTheme || themeId;
-  return supportsTheme && normalized.categoryId === 'slots' && slotThemeIds.has(theme)
-    ? { ...normalized, themeId: theme } : normalized;
+// The lobby is always the homepage. Temporary filtered-lobby links now open
+// the Games catalog while retaining their effective filters.
+function normalizeCatalogRoute(route) {
+  const { themeId, gameTypeId, categoryId, ...normalized } = route;
+  if (!gameCatalogTypes.has(route.type)) return normalized;
+  const family = gameTypeIds.has(gameTypeId) ? gameTypeId
+    : gameTypeIds.has(categoryId) ? categoryId : '';
+  const category = categoryIds.has(categoryId) ? categoryId
+    : (!categoryId || gameTypeIds.has(categoryId)) && slotThemeIds.has(themeId) ? themeId : '';
+  if (family) normalized.gameTypeId = family;
+  if (category) normalized.categoryId = category;
+  if (legacyStudioIds.has(categoryId)) {
+    if (route.type === 'category') normalized.type = 'provider';
+    if (!normalized.providerId) normalized.providerId = categoryId;
+  }
+  if (normalized.type === 'category' && !family && !category) {
+    normalized.type = 'search';
+    normalized.query ||= '';
+  }
+  if (normalized.type !== 'home') return normalized;
+  const filtered = String(normalized.query || '').trim()
+    || validId(normalized.providerId)
+    || family || category
+    || sortIds.has(normalized.sort);
+  return filtered ? { ...normalized, type: 'search', query: normalized.query || '' } : { type: 'home' };
 }
 
 function detailsOrigin(value) {
@@ -35,7 +55,7 @@ function detailsOrigin(value) {
   // Check before parsing so nested/encoded game paths cannot recurse.
   if (first === 'games') return '';
   const route = parseRoute(value);
-  if (route.type === 'home' && value !== '#/' && value !== '#') return '';
+  if (route.type === 'home' && path !== '/' && path !== '') return '';
   return formatRoute(route);
 }
 
@@ -57,10 +77,12 @@ export function parseRoute(hash = '') {
     const from = detailsOrigin(params.get('from'));
     return { type: 'game-details', gameId: segments[1], ...(from ? { from } : {}) };
   }
-  if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
+  if (path === '/' || path === '') route = { type: 'home' };
+  else if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
   else if (segments.length === 1 && segments[0] === 'recent-games') route = { type: 'recent-games' };
   else if (segments.length === 1 && segments[0] === 'favorites') route = { type: 'favorites' };
   else if (segments.length === 1 && legacyStudioIds.has(segments[0])) route = { type: 'provider', providerId: segments[0] };
+  else if (segments.length === 1 && gameTypeIds.has(segments[0])) route = { type: 'category', gameTypeId: segments[0] };
   else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
   else if (segments.length === 1 && segments[0] === 'free-money') return { type: 'feature', pageId: 'achievements' };
   else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
@@ -73,23 +95,22 @@ export function parseRoute(hash = '') {
   if (query) route.query = query;
   const providerId = params.get('provider');
   if (route.type !== 'provider' && validId(providerId)) route.providerId = providerId;
+  const gameTypeId = params.get('type');
+  if (!route.gameTypeId && gameTypeIds.has(gameTypeId)) route.gameTypeId = gameTypeId;
   const categoryId = params.get('category');
-  if (route.type === 'search' && legacyStudioIds.has(categoryId) && !route.providerId) route.providerId = categoryId;
-  if (!['category', 'favorites', 'recent-games'].includes(route.type) && categoryIds.has(categoryId)) route.categoryId = categoryId;
+  if (gameCatalogTypes.has(route.type) && legacyStudioIds.has(categoryId) && !route.providerId) route.providerId = categoryId;
+  // Former category=slots links referred to the format, not an editorial category.
+  if (!route.gameTypeId && gameTypeIds.has(categoryId)) route.gameTypeId = categoryId;
+  if (!route.categoryId && categoryIds.has(categoryId)) route.categoryId = categoryId;
   const sort = params.get('sort');
   if (sortIds.has(sort)) route.sort = sort;
   const themeId = params.get('theme');
-  if (themeId) route.themeId = themeId;
-  return normalizeSlotTheme(route);
+  if (!route.categoryId && slotThemeIds.has(themeId) && (!categoryId || gameTypeIds.has(categoryId))) route.categoryId = themeId;
+  return normalizeCatalogRoute(route);
 }
 
 export function formatRoute(route = { type: 'home' }) {
-  if (legacyStudioIds.has(route.categoryId)) {
-    const { categoryId, ...rest } = route;
-    route = route.type === 'category' ? { ...rest, type: 'provider', providerId: categoryId }
-      : route.type === 'search' ? { ...rest, providerId: rest.providerId || categoryId } : rest;
-  }
-  route = normalizeSlotTheme(route);
+  route = normalizeCatalogRoute(route);
   if (route.type === 'home') return '#/';
   if (route.type === 'feature' && route.pageId === 'free-money') return '#/achievements';
   if (route.type === 'feature') return isFeaturePage(route.pageId) ? `#/${route.pageId}` : '#/';
@@ -107,14 +128,14 @@ export function formatRoute(route = { type: 'home' }) {
     return `#${params}`;
   }
   const path = ['favorites', 'recent-games'].includes(route.type) ? route.type
-    : route.type === 'category' ? route.categoryId === 'all' ? 'search' : route.categoryId
+    : route.type === 'category' ? route.categoryId || route.gameTypeId
     : route.type === 'provider' ? `providers/${encodeURIComponent(route.providerId)}`
       : route.type === 'providers' ? 'providers' : 'search';
   const params = new URLSearchParams();
   if (route.query) params.set('q', route.query);
   if (route.providerId && route.type !== 'provider') params.set('provider', route.providerId);
-  if (route.categoryId && route.categoryId !== 'all' && !['category', 'favorites', 'recent-games'].includes(route.type)) params.set('category', route.categoryId);
-  if (route.themeId) params.set('theme', route.themeId);
+  if (route.gameTypeId && (route.type !== 'category' || route.categoryId)) params.set('type', route.gameTypeId);
+  if (route.categoryId && route.type !== 'category') params.set('category', route.categoryId);
   if (route.sort && sortIds.has(route.sort)) params.set('sort', route.sort);
   return `#/${path}${params.size ? `?${params}` : ''}`;
 }

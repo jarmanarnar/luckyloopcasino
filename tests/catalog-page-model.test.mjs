@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GAMES } from '../public/catalog.js';
-import { CATEGORIES, FILTER_CATEGORIES, SLOT_THEMES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
+import { CATEGORIES, GAME_FAMILIES, LOBBY_SECTIONS, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { getProviderDetails } from '../public/provider-details.js';
 import { getCatalogPage, LOBBY_CATEGORIES, PAGE_SIZE, pageSlice } from '../public/catalog-page-model.js';
+import { parseRoute } from '../public/routes.js';
 
 const ids = page => page.games.map(game => game.id);
 
@@ -38,14 +39,14 @@ test('Favorites distinguishes an empty collection from a search with no matches 
   assert.deepEqual(getCatalogPage({ type: 'favorites' }, { favoriteIds: [] }).games, []);
 });
 
-test('home keeps discovery shelves before the five game types used by navigation', () => {
+test('home shelves combine discovery sections and the five fixed game types', () => {
   assert.deepEqual(getCatalogPage({ type: 'home' }), {
     type: 'home', title: 'Lobby', activeMenu: 'lobby',
   });
-  assert.deepEqual(LOBBY_CATEGORIES, ['popular', 'new-releases', ...CATEGORIES.map(category => category.id)]);
-  assert.deepEqual(FILTER_CATEGORIES.map(category => category.id), LOBBY_CATEGORIES.slice(2));
+  assert.deepEqual(LOBBY_CATEGORIES, LOBBY_SECTIONS.map(section => section.id));
+  assert.deepEqual(LOBBY_CATEGORIES, ['popular', 'new-releases', 'slots', 'table', 'scratchcards', 'tap', 'arcade']);
   assert.equal(new Set(LOBBY_CATEGORIES).size, LOBBY_CATEGORIES.length);
-  for (const categoryId of ['nolimit-city', 'hacksaw-gaming', 'instant-games', 'instant-win', 'crash', 'video-poker', 'wild-west', 'egypt', 'megaways']) {
+  for (const categoryId of ['nolimit-city', 'hacksaw-gaming', 'instant-games', 'instant-win', 'crash', 'video-poker', 'fruit', 'megaways']) {
     assert.equal(LOBBY_CATEGORIES.includes(categoryId), false, categoryId);
   }
   for (const category of CATEGORIES) {
@@ -80,10 +81,10 @@ test('Search is the complete searchable catalog distinct from the Lobby overview
   assert.deepEqual(ids(filtered), ['bloodsuckerstapa']);
 });
 
-test('COP COIN Picks preserves its editorial order before optional sorting', () => {
+test('Top Picks preserves its editorial order before optional sorting', () => {
   const page = getCatalogPage({ type: 'category', categoryId: 'popular' });
   assert.equal(page.type, 'category');
-  assert.equal(page.title, 'COP COIN Picks');
+  assert.equal(page.title, 'Top Picks');
   assert.equal(page.activeMenu, 'popular');
   assert.equal(page.sort, 'featured');
   assert.notEqual(page.games[0].id, getGamesForCategory('new-releases')[0].id, 'editorial and chronological shelves have distinct openings');
@@ -104,7 +105,7 @@ test('category provider and text filters intersect without spilling into the ful
   });
   assert.deepEqual(ids(page), ['ouija00000000000']);
   assert.equal(page.query, 'OuIjA');
-  assert.equal(page.title, 'COP COIN Picks');
+  assert.equal(page.title, 'Top Picks');
   assert.equal(page.activeMenu, 'popular');
 
   const slots = getCatalogPage({ type: 'category', categoryId: 'slots', providerId: 'taparoo' });
@@ -117,7 +118,7 @@ test('new browse groups intersect provider and text filters on category and sear
     { categoryId: 'table', providerId: 'netent', query: 'jacks', expected: ['jacksmultihandn1'] },
     { categoryId: 'table', providerId: 'hacksaw-gaming', query: 'baccarat', expected: ['hacksaw-1446'] },
     { categoryId: 'scratch-tap', providerId: 'taparoo', query: 'blood', expected: ['bloodsuckerstapa'] },
-    { categoryId: 'fruit', providerId: 'taparoo', query: 'fruit', expected: [] },
+    { categoryId: 'fruit', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
     { categoryId: 'tap', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
     { categoryId: 'megaways', providerId: 'red-tiger', query: 'gonzo', expected: ['gonzosqumegaways'] },
     { categoryId: 'wild-west', providerId: 'hacksaw-gaming', query: 'duel', expected: ['hacksaw-1620'] },
@@ -130,19 +131,21 @@ test('new browse groups intersect provider and text filters on category and sear
   }
 });
 
-test('slot themes intersect the Slots family and preserve provider, search and sorting filters', () => {
+test('collections compose with a game family and preserve provider, search and sorting filters', () => {
   const slotIds = new Set(getGamesForCategory('slots').map(game => game.id));
-  for (const theme of SLOT_THEMES) {
-    const expected = getGamesForCategory(theme.id).filter(game => slotIds.has(game.id)).map(game => game.id);
+  for (const category of CATEGORIES) {
+    const expected = getGamesForCategory(category.id).filter(game => slotIds.has(game.id)).map(game => game.id);
     for (const type of ['category', 'search']) {
-      const page = getCatalogPage({ type, categoryId: 'slots', themeId: theme.id });
-      assert.deepEqual(new Set(ids(page)), new Set(expected), `${type}: ${theme.id}`);
-      assert.equal(page.themeId, theme.id);
-      assert.equal(page.activeMenu, type === 'category' ? 'slots' : 'search');
-      assert.deepEqual(ids(getCatalogPage({ type, categoryId: theme.id })), ids(page), 'legacy theme opens the same Slots filter');
+      const page = getCatalogPage({ type, gameTypeId: 'slots', categoryId: category.id });
+      assert.deepEqual(new Set(ids(page)), new Set(expected), `${type}: ${category.id}`);
+      assert.equal(page.gameTypeId, 'slots');
+      assert.equal(page.categoryId, category.id);
+      assert.equal('themeId' in page, false);
+      assert.equal(page.activeMenu, category.id);
+      assert.deepEqual(new Set(ids(getCatalogPage({ type, categoryId: category.id }))), new Set(category.games.map(game => game.id)), 'a collection alone does not imply a game type');
     }
   }
-  const filters = { type: 'category', categoryId: 'slots', themeId: 'fruit', providerId: 'netent', query: 'shop' };
+  const filters = { type: 'category', gameTypeId: 'slots', categoryId: 'fruit', providerId: 'netent', query: 'shop' };
   const ascending = getCatalogPage({ ...filters, sort: 'az' });
   const descending = getCatalogPage({ ...filters, sort: 'za' });
   assert.ok(ascending.games.length > 1);
@@ -151,17 +154,27 @@ test('slot themes intersect the Slots family and preserve provider, search and s
   assert.equal(getCatalogPage({ type: 'category', categoryId: 'slots' }).games.length, 993, 'clearing the theme restores all slots');
 });
 
-test('themes do not leak into non-slot categories or constrain results when invalid', () => {
-  for (const route of [
-    { type: 'category', categoryId: 'table' },
-    { type: 'category', categoryId: 'tap' },
-    { type: 'search' },
-    { type: 'provider', providerId: 'taparoo' },
-  ]) {
-    assert.deepEqual(ids(getCatalogPage({ ...route, themeId: 'fruit' })), ids(getCatalogPage(route)));
+test('family and collection can be selected or cleared independently without an all-game fallback', () => {
+  const fruit = getCatalogPage({ type: 'search', categoryId: 'fruit' });
+  const fruitSlots = getCatalogPage({ type: 'search', gameTypeId: 'slots', categoryId: 'fruit' });
+  const fruitTap = getCatalogPage({ type: 'search', gameTypeId: 'tap', categoryId: 'fruit' });
+  assert.equal(fruit.games.length, 30);
+  assert.equal(fruitSlots.games.length, 28);
+  assert.deepEqual(ids(fruitTap), ['mysteryfruittapa']);
+  assert.deepEqual(ids(getCatalogPage({ type: 'search', gameTypeId: 'table', categoryId: 'fruit' })), []);
+  assert.equal(getCatalogPage({ type: 'search', gameTypeId: 'slots' }).games.length, 993);
+  assert.equal(getCatalogPage({ type: 'search' }).games.length, GAMES.length);
+  for (const filters of [{ gameTypeId: 'missing' }, { categoryId: 'missing' }]) {
+    for (const type of ['search', 'favorites', 'recent-games']) assert.equal(getCatalogPage({ type, ...filters }).type, 'not-found');
   }
-  const slots = { type: 'category', categoryId: 'slots' };
-  assert.deepEqual(ids(getCatalogPage({ ...slots, themeId: 'unknown' })), ids(getCatalogPage(slots)));
+  assert.deepEqual(ids(getCatalogPage({ type: 'search', categoryId: 'slots', themeId: 'fruit' })), ids(fruitSlots), 'old direct callers normalize to separate facets');
+  for (const family of GAME_FAMILIES) {
+    const page = getCatalogPage({ type: 'category', gameTypeId: family.id });
+    assert.equal(page.title, family.title);
+    assert.equal(page.gameTypeId, family.id);
+    assert.equal(page.categoryId, '');
+    assert.deepEqual(new Set(ids(page)), new Set(getGamesForCategory(family.id).map(game => game.id)));
+  }
 });
 
 test('provider directory search and individual provider pages have separate identities', () => {
@@ -183,8 +196,8 @@ test('provider directory search and individual provider pages have separate iden
 test('search is its own page and can find names across studios or restrict a category', () => {
   const page = getCatalogPage({ type: 'search', query: '  DRAGON  ', providerId: 'taparoo' });
   assert.equal(page.type, 'search');
-  assert.equal(page.title, 'Games');
-  assert.equal(page.activeMenu, 'search');
+  assert.equal(page.title, 'Taparoo');
+  assert.equal(page.activeMenu, 'providers');
   assert.deepEqual(ids(page), ['dragonslucktapar']);
 
   const categorySearch = getCatalogPage({ type: 'search', categoryId: 'popular', query: 'dragon' });
@@ -304,4 +317,186 @@ test('Recent Games uses actual play history, latest first, without duplicates', 
   assert.deepEqual(ids(filtered), ['ouija00000000000']);
   assert.equal(filtered.recentCount, 2);
   assert.deepEqual(ids(getCatalogPage({ type: 'recent-games' })), []);
+});
+
+test('a query defaults to relevance, an explicit sort wins, and clearing restores collection ordering', () => {
+  const page = getCatalogPage({ type: 'search', query: 'STARBUŔST' });
+  assert.equal(page.sort, 'relevance');
+  assert.equal(page.allowedSorts[0], 'relevance');
+  assert.equal(page.games[0].id, 'starburst', 'the exact title ranks ahead of longer names');
+  assert.equal(ids(getCatalogPage({ type: 'search', query: 'nunchcuks' }))[0], 'nunchucksr96f100');
+  const alphabetical = getCatalogPage({ type: 'search', query: 'starburst', sort: 'az' });
+  assert.equal(alphabetical.sort, 'az');
+  assert.deepEqual(alphabetical.games, alphabetical.games.toSorted((a, b) => a.title.localeCompare(b.title)));
+  for (const [type, sort, categoryId] of [['search', 'az'], ['favorites', 'saved'], ['recent-games', 'recent'], ['category', 'featured', 'popular']]) {
+    const cleared = getCatalogPage({ type, categoryId, query: '', sort: 'relevance' });
+    assert.equal(cleared.sort, sort);
+    assert.equal(cleared.allowedSorts.includes('relevance'), false);
+  }
+});
+
+test('home always keeps its shelf identity and never becomes an inline results page', () => {
+  for (const filters of [{}, { categoryId: 'all', query: '  ' },
+    { categoryId: 'slots', themeId: 'fruit', query: 'shop', providerId: 'netent', sort: 'za' },
+    { query: 'nunchucks' }, { providerId: 'taparoo' }, { categoryId: 'tap' }, { sort: 'newest' }]) {
+    assert.deepEqual(getCatalogPage({ type: 'home', ...filters }), {
+      type: 'home', title: 'Lobby', activeMenu: 'lobby',
+    });
+  }
+});
+
+test('provider choices count the family and collection scope without narrowing as text is entered', () => {
+  const filters = { type: 'search', gameTypeId: 'slots', categoryId: 'fruit', query: 'fruit' };
+  const all = getCatalogPage(filters);
+  assert.ok(all.games.length > 0);
+  const expected = new Map();
+  for (const game of getCatalogPage({ ...filters, query: '' }).games) expected.set(game.providerId, (expected.get(game.providerId) || 0) + 1);
+  assert.deepEqual(new Map(all.providerFacets.map(({ id, count }) => [id, count])), expected);
+  assert.ok(all.providerFacets.every(facet => facet.name && facet.count > 0));
+  const selected = getCatalogPage({ ...filters, providerId: 'netent' });
+  assert.deepEqual(selected.providerFacets, all.providerFacets);
+  assert.deepEqual(ids(selected), all.games.filter(game => game.providerId === 'netent').map(game => game.id));
+  const impossible = getCatalogPage({ type: 'search', gameTypeId: 'tap', providerId: 'nolimit-city' });
+  assert.deepEqual(impossible.games, []);
+  assert.deepEqual(impossible.providerFacets.find(facet => facet.id === 'nolimit-city'), {
+    id: 'nolimit-city', name: 'Nolimit City', count: 0,
+  });
+  assert.ok(impossible.providerFacets.filter(facet => facet.id !== 'nolimit-city').every(facet => facet.count > 0));
+});
+
+test('family and collection filters stay within saved, recent and provider scopes', () => {
+  const slotIds = new Set(getGamesForCategory('slots').map(game => game.id));
+  const fruitSlot = getGamesForCategory('fruit').find(game => slotIds.has(game.id));
+  const tapGame = getGamesForCategory('tap')[0];
+  const favoriteIds = [fruitSlot.id, tapGame.id];
+  const state = { favoriteIds, history: favoriteIds.map(gameId => ({ type: 'game', gameId })) };
+  for (const type of ['favorites', 'recent-games']) {
+    const page = getCatalogPage({ type, gameTypeId: 'slots', categoryId: 'fruit' }, state);
+    assert.deepEqual(ids(page), [fruitSlot.id]);
+    assert.equal(page[type === 'favorites' ? 'savedCount' : 'recentCount'], 2);
+    assert.equal(page.providerFacets.reduce((total, facet) => total + facet.count, 0), 1);
+    assert.deepEqual(ids(getCatalogPage({ type, gameTypeId: 'tap' }, state)), [tapGame.id]);
+    assert.deepEqual(ids(getCatalogPage({ type, gameTypeId: 'slots', query: 'not-a-saved-game' }, state)), []);
+    assert.deepEqual(ids(getCatalogPage({ type, gameTypeId: 'slots' })), []);
+    assert.deepEqual(ids(getCatalogPage({ type, categoryId: 'fruit' }, state)), [fruitSlot.id]);
+  }
+  const provider = getCatalogPage({ type: 'provider', providerId: fruitSlot.providerId, gameTypeId: 'slots', categoryId: 'fruit' });
+  assert.ok(provider.games.length > 0);
+  assert.ok(provider.games.every(game => game.providerId === fruitSlot.providerId && slotIds.has(game.id)
+    && getGamesForCategory('fruit').some(fruit => fruit.id === game.id)));
+});
+
+test('headings and selected navigation describe the same selection regardless of entry route', () => {
+  for (const [direct, search, title, activeMenu] of [
+    ['#/slots', '#/search?type=slots', 'Slots', 'slots'],
+    ['#/fruit', '#/search?category=fruit', 'Fruit Games', 'fruit'],
+    ['#/fruit?type=slots', '#/search?type=slots&category=fruit', 'Fruit Games', 'fruit'],
+    ['#/popular', '#/search?category=popular', 'Top Picks', 'popular'],
+  ]) {
+    const first = getCatalogPage(parseRoute(direct));
+    const second = getCatalogPage(parseRoute(search));
+    assert.equal(first.title, title);
+    assert.equal(second.title, title);
+    assert.equal(first.activeMenu, activeMenu);
+    assert.equal(second.activeMenu, activeMenu);
+    assert.deepEqual(ids(first), ids(second));
+    for (const field of ['gameTypeFacets', 'providerFacets']) assert.deepEqual(first[field], second[field]);
+  }
+  const providerFilter = getCatalogPage({ type: 'search', providerId: 'netent' });
+  assert.equal(providerFilter.title, 'NetEnt');
+  assert.equal(providerFilter.activeMenu, 'providers');
+  const fixedProvider = getCatalogPage({ type: 'provider', providerId: 'netent', gameTypeId: 'slots', categoryId: 'fruit' });
+  assert.equal(fixedProvider.title, 'NetEnt');
+  assert.equal(fixedProvider.activeMenu, 'providers');
+});
+
+test('all five game types remain available in restricted and empty browse scopes', () => {
+  const familyIds = GAME_FAMILIES.map(family => family.id);
+  for (const route of [
+    { type: 'search' },
+    { type: 'search', gameTypeId: 'slots', categoryId: 'megaways' },
+    { type: 'search', gameTypeId: 'table', categoryId: 'fruit' },
+    { type: 'search', gameTypeId: 'arcade', query: 'san quentin' },
+    { type: 'provider', providerId: 'taparoo' },
+    { type: 'favorites' },
+    { type: 'recent-games' },
+  ]) {
+    const page = getCatalogPage(route);
+    assert.deepEqual(page.gameTypeFacets.map(family => family.id), familyIds, JSON.stringify(route));
+    assert.equal('categoryFacets' in page, false, 'category routes remain supported without a category dropdown');
+  }
+  const arcade = getCatalogPage({ type: 'search', gameTypeId: 'arcade' });
+  assert.deepEqual(arcade.providerFacets, [{ id: 'hacksaw-gaming', name: 'Hacksaw Gaming', count: 12 }]);
+});
+
+test('provider alternatives ignore their own selection and search text but respect browse scope', () => {
+  const route = { type: 'search', gameTypeId: 'slots', categoryId: 'fruit', providerId: 'netent' };
+  const page = getCatalogPage(route);
+  assert.ok(page.providerFacets.length > 1);
+  const allProviders = getCatalogPage({ ...route, providerId: '' });
+  assert.deepEqual(page.providerFacets, allProviders.providerFacets);
+  for (const option of page.providerFacets) {
+    assert.equal(option.count, getCatalogPage({ ...route, providerId: option.id }).games.length, option.id);
+  }
+  const query = getCatalogPage({ ...route, query: 'fruit shop' });
+  assert.ok(query.games.length > 0 && query.games.length < page.games.length);
+  for (const text of ['fruit shop', 'san quentin', 'no-such-catalog-game']) {
+    const searched = getCatalogPage({ ...route, query: text });
+    assert.deepEqual(searched.gameTypeFacets, page.gameTypeFacets, text);
+    assert.deepEqual(searched.providerFacets, page.providerFacets, text);
+  }
+  const categoryCleared = getCatalogPage({ ...route, categoryId: '' });
+  assert.ok(categoryCleared.providerFacets.reduce((sum, provider) => sum + provider.count, 0)
+    > page.providerFacets.reduce((sum, provider) => sum + provider.count, 0));
+});
+
+test('zero-result queries preserve browse choices and legacy category scope', () => {
+  const page = getCatalogPage({ type: 'search', gameTypeId: 'arcade', categoryId: 'fruit', providerId: 'red-tiger', query: 'no-such-catalog-game' });
+  assert.deepEqual(page.games, []);
+  assert.deepEqual(page.gameTypeFacets.map(family => family.id), GAME_FAMILIES.map(family => family.id));
+  assert.deepEqual(page.providerFacets, [{ id: 'red-tiger', name: 'Red Tiger', count: 0 }]);
+  assert.equal(page.categoryId, 'fruit');
+  const legacy = getCatalogPage({ type: 'search', categoryId: 'blackjack', query: 'no-such-catalog-game' });
+  const browseLegacy = getCatalogPage({ type: 'search', categoryId: 'blackjack' });
+  assert.deepEqual(legacy.games, []);
+  assert.equal(legacy.categoryId, 'blackjack');
+  assert.equal(legacy.title, 'Blackjack');
+  assert.deepEqual(legacy.gameTypeFacets, browseLegacy.gameTypeFacets);
+  assert.deepEqual(legacy.providerFacets, browseLegacy.providerFacets);
+  assert.ok(legacy.providerFacets.length > 0);
+});
+
+test('stable choices preserve saved, recent and fixed-provider data boundaries', () => {
+  const fruitSlot = getGamesForCategory('fruit').find(game => game.providerId === 'netent');
+  const tapGame = GAMES.find(game => game.id === 'mysteryfruittapa');
+  const tableGame = getGamesForCategory('table').find(game => game.providerId === 'netent');
+  const favoriteIds = [fruitSlot.id, tapGame.id, tableGame.id];
+  const state = { favoriteIds, history: favoriteIds.map(gameId => ({ type: 'game', gameId })) };
+  for (const type of ['favorites', 'recent-games']) {
+    const page = getCatalogPage({ type, categoryId: 'fruit' }, state);
+    assert.equal(page.title, type === 'favorites' ? 'Favorite Games' : 'Recent Games');
+    assert.equal(page.activeMenu, type);
+    assert.deepEqual(page.gameTypeFacets.filter(family => family.count > 0), [
+      { id: 'slots', title: 'Slots', count: 1 }, { id: 'tap', title: 'Tap Games', count: 1 },
+    ]);
+    assert.deepEqual(page.gameTypeFacets.map(family => family.id), GAME_FAMILIES.map(family => family.id));
+    assert.equal(page.providerFacets.reduce((sum, item) => sum + item.count, 0), 2);
+    const searched = getCatalogPage({ type, categoryId: 'fruit', query: 'no-such-catalog-game' }, state);
+    assert.deepEqual(searched.games, []);
+    assert.deepEqual(searched.gameTypeFacets, page.gameTypeFacets);
+    assert.deepEqual(searched.providerFacets, page.providerFacets);
+    const empty = getCatalogPage({ type });
+    assert.deepEqual(empty.providerFacets, []);
+    assert.deepEqual(empty.gameTypeFacets.map(family => family.id), GAME_FAMILIES.map(family => family.id));
+    assert.ok(empty.gameTypeFacets.every(family => family.count === 0));
+  }
+  const fixedProvider = getCatalogPage({ type: 'provider', providerId: 'taparoo' });
+  assert.deepEqual(fixedProvider.gameTypeFacets.filter(family => family.count > 0), [{ id: 'tap', title: 'Tap Games', count: 8 }]);
+  assert.deepEqual(fixedProvider.providerFacets, [{ id: 'taparoo', name: 'Taparoo', count: 8 }]);
+  assert.ok(getCatalogPage({ type: 'search', providerId: 'taparoo' }).providerFacets.length > 1,
+    'a removable provider filter differs from a fixed provider page scope');
+  const impossible = getCatalogPage({ type: 'provider', providerId: 'taparoo', gameTypeId: 'table' });
+  assert.deepEqual(impossible.games, []);
+  assert.deepEqual(impossible.gameTypeFacets, fixedProvider.gameTypeFacets);
+  assert.deepEqual(impossible.providerFacets, [{ id: 'taparoo', name: 'Taparoo', count: 0 }]);
 });

@@ -13,24 +13,32 @@
   min-width: 0;
   margin: 0;
   color: var(--text-primary);
-  font-size: var(--shelf-title-size);
+  font-size: 1.375rem;
+  font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
+.catalog-browser {
+  min-width: 0;
+  margin-bottom: 2rem;
+}
+.catalog-browser--results { margin-bottom: 1rem; }
 .catalog-page-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
   gap: .75rem;
   min-width: 0;
-  margin-bottom: 1.5rem;
+  margin: 0;
 }
+.catalog-filter-panel { flex: 2 1 34rem; min-width: 0; }
+.catalog-filter-fields { display: flex; gap: .75rem; min-width: 0; height: 100%; }
 
 .catalog-page-search {
   box-sizing: border-box;
   display: flex;
-  flex: 2 1 24rem;
+  flex: 1 1 18rem;
   align-items: center;
   gap: .625rem;
   min-width: 0;
@@ -61,27 +69,15 @@
   outline: 0;
   background: transparent;
   color: var(--text-primary);
-  font-size: .875rem;
+  font-size: 1rem;
+  font-weight: 400;
   line-height: 1.25;
 }
 
 .catalog-page-search input::placeholder { color: var(--text-secondary); opacity: 1; }
 
-.catalog-toolbar .lobby-search {
-  flex: 1;
-  width: 100%;
-  height: var(--catalog-control-size);
-  min-height: 0;
-  margin: 0;
-  padding-inline: .875rem 0;
-  border: 0;
-  border-radius: .625rem;
-  box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
-}
-.catalog-toolbar .lobby-search input { height: 100%; min-height: 0; font-size: 1rem; font-weight: 400; }
-.catalog-toolbar .lobby-search input::-webkit-search-cancel-button { display: none; }
-.catalog-toolbar:has(.lobby-search:not([hidden])) ~ .catalog-shelves { min-height: 0; }
-.catalog-search-close {
+.catalog-page-search input::-webkit-search-cancel-button { display: none; }
+.catalog-search-clear {
   display: grid;
   place-items: center;
   flex: none;
@@ -94,10 +90,52 @@
   color: var(--text-secondary);
   cursor: pointer;
 }
-.catalog-search-close svg { width: 18px; height: 18px; }
-.catalog-search-close:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
-.catalog-search-close:active { background: var(--surface-control); }
-.lobby-search-results-heading { margin-block: 1.5rem .875rem; }
+.catalog-search-clear svg { width: 18px; height: 18px; }
+.catalog-search-clear:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
+.catalog-search-clear:active { background: var(--surface-control); }
+.catalog-filters-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: .375rem;
+  min-height: var(--touch-target);
+  padding: .625rem .75rem;
+  border: 1px solid var(--border-default);
+  border-radius: .75rem;
+  background: var(--surface-inset), var(--surface-glow);
+  color: var(--text-primary);
+  font-size: .875rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+.catalog-filters-toggle > svg { width: 14px; height: 14px; color: var(--text-secondary); transition: transform 200ms ease; }
+.catalog-filters-toggle[aria-expanded="true"] > svg { transform: rotate(180deg); }
+.catalog-filters-toggle:is(:hover, :focus-visible, [aria-expanded="true"]) { background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow); }
+.catalog-filters-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding-inline: .125rem;
+  border-radius: 50%;
+  background: var(--surface-active);
+  color: var(--text-primary);
+  font-size: .75rem;
+  line-height: 1;
+}
+.catalog-browser .catalog-toolbar {
+  position: static;
+  z-index: auto;
+  isolation: auto;
+  height: auto;
+  margin-block-start: .75rem;
+  padding: 0;
+}
+.catalog-browser .catalog-toolbar::before { content: none; }
+.catalog-browser--lobby .catalog-toolbar { margin-block-start: 0; }
+.catalog-browser .catalog-category { font-size: .9375rem; font-weight: 400; }
+body[data-page="home"] #lobby-view .catalog-browser + .catalog-shelves > .game-shelf:first-child:not(.catalog-result-shelf) { margin-block-start: 0; }
+.catalog-browser--results + .catalog-shelves { min-height: 0; }
 
 .catalog-page-filter {
   display: flex;
@@ -117,17 +155,18 @@
   background: var(--surface-inset), var(--surface-glow);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
   color: var(--text-primary);
-  font-size: .875rem;
-  font-weight: 600;
+  font-size: .9375rem;
+  font-weight: 400;
   line-height: 1.25;
   cursor: pointer;
 }
 
 .catalog-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: .625rem; text-align: start; }
+.catalog-select-trigger:disabled { opacity: .45; cursor: default; }
 .catalog-select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .catalog-select-chevron { flex: none; width: 14px; height: 14px; color: var(--text-secondary); transition: transform 150ms ease; }
 .catalog-select-trigger[aria-expanded="true"] .catalog-select-chevron { transform: rotate(180deg); }
-.catalog-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]) {
+.catalog-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]):not(:disabled) {
   border-color: color-mix(in srgb, var(--redeem-accent) 22%, var(--border-default));
   background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow);
 }
@@ -158,8 +197,8 @@
   padding: .625rem .75rem;
   border-radius: .5rem;
   color: var(--text-secondary);
-  font-size: .875rem;
-  font-weight: 500;
+  font-size: .9375rem;
+  font-weight: 400;
   line-height: 1.4;
   cursor: pointer;
 }
@@ -196,6 +235,7 @@ body:not([data-page="home"]) .catalog-empty--favorites {
 .catalog-empty--favorites h2 { margin: 0; color: var(--text-primary); font-size: 1.25rem; }
 .catalog-empty--favorites p { max-width: 24rem; margin: .5rem 0 1.5rem; font-size: .875rem; }
 .catalog-empty--favorites .text-control { padding-inline: 1.25rem; border: 0; }
+.catalog-empty__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
 
 .catalog-pagination {
   display: flex;
@@ -289,12 +329,40 @@ body:not([data-page="home"]) #catalog-empty {
 }
 
 @media (max-width: 32rem) {
-  .catalog-page-controls { gap: .625rem; margin-bottom: 1rem; }
-  .catalog-page-search { flex-basis: 100%; }
-  .catalog-page-filter { flex: 1 1 calc(50% - .3125rem); }
-  .catalog-page-filter select, .catalog-select-trigger { padding-inline: .625rem; font-size: .8125rem; }
+  .catalog-page-filter select, .catalog-select-trigger { padding-inline: .625rem; font-size: .875rem; }
   .catalog-provider-details { margin-block-start: 2rem; }
 }
+
+@media (max-width: 48rem) {
+  .catalog-browser { margin-bottom: 1.5rem; }
+  .catalog-browser--results { margin-bottom: 1rem; }
+  .catalog-page-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 .625rem; }
+  .catalog-page-search { grid-column: 1; }
+  .catalog-page-search:has(+ .catalog-filters-toggle[hidden]) { grid-column: 1 / -1; }
+  .catalog-filters-toggle { display: inline-flex; grid-column: 2; }
+  .catalog-filter-panel {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: grid-template-rows 220ms ease, margin-top 220ms ease, opacity 160ms ease, visibility 220ms;
+  }
+  .catalog-filter-panel[data-expanded="true"] { grid-template-rows: 1fr; margin-top: .75rem; opacity: 1; visibility: visible; }
+  .catalog-filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; min-height: 0; height: auto; overflow: hidden; }
+  .catalog-page-filter--type { grid-column: 1 / -1; }
+  .catalog-filter-fields:has(.catalog-page-filter--provider[hidden]) .catalog-page-filter--sort { grid-column: 1 / -1; }
+  .catalog-browser:not(.catalog-browser--lobby) .catalog-toolbar { margin-block-start: .75rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-filter-panel, .catalog-filters-toggle > svg { transition: none; }
+}
+@media (width <= 599px) {
+  /* Leave the floating promotions clear of the mobile Filters button. */
+  body:has(.lobby-promotions:not([hidden])) .catalog-filters-toggle { margin-inline-end: 2.5rem; }
+}
+body[data-reduce-motion="true"] :is(.catalog-filter-panel, .catalog-filters-toggle > svg) { transition: none; }
 
 @media (max-width: 24rem) {
   /* Provider marks stay in pairs even on compact phones. */
@@ -307,15 +375,6 @@ body:is([data-page="favorites"], [data-page="recent-games"], [data-page="provide
   --shelf-title-size: 1.375rem;
   --game-title-size: .9375rem;
 }
-body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #catalog-page-title { font-weight: 600; }
-body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .catalog-page-search input {
-  font-size: 1rem;
-  font-weight: 400;
-}
-body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-page-filter select, .catalog-select-trigger, .catalog-select-option) {
-  font-size: .9375rem;
-  font-weight: 400;
-}
 body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-empty, .catalog-empty--favorites p, .catalog-provider-details) { font-size: 1rem; }
 body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .catalog-empty--favorites h2 {
   font-size: 1.375rem;
@@ -325,9 +384,7 @@ body:is([data-page="favorites"], [data-page="recent-games"], [data-page="provide
 body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-pagination .text-control, #provider-details-toggle, .catalog-provider-details h2, .provider-facts dd, .game-launch__art) { font-weight: 500; }
 body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) .game-provider-badge { font-size: .75rem; }
 
-@media (max-width: 32rem) {
-  body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) :is(.catalog-page-filter select, .catalog-select-trigger) { font-size: .875rem; }
-}
 @media (min-width: 48rem) {
+  #catalog-page-title { font-size: 1.625rem; }
   body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #lobby-view { --shelf-title-size: 1.625rem; }
 }

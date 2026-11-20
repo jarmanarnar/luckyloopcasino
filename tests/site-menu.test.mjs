@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { CATEGORIES, getGamesForCategory } from '../public/collections.js';
+import { GAME_FAMILIES, getGamesForCategory } from '../public/collections.js';
 import { createMemberState } from '../public/member-state.js';
 import { getFavoriteGames } from '../public/catalog-page-model.js';
 
@@ -162,7 +162,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   motion.matches = reduced;
   nodes['coin-wallet'].dataset.currency = 'GC';
   nodes['catalog-categories'].dataset.activeMenu = 'lobby';
-  const categoryButtons = new Map(CATEGORIES.map(category => category.id).map(id => {
+  const categoryButtons = new Map(GAME_FAMILIES.map(category => category.id).map(id => {
     const button = new Node();
     button.dataset.category = id;
     button.setAttribute('aria-pressed', 'false');
@@ -255,7 +255,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     lobbyActions.push(() => { document.body.dataset.view = 'lobby'; action?.(); });
   };
   const context = {
-    document, Element: Node, CATEGORIES, getGamesForCategory, getFavoriteGames, catalog,
+    document, Element: Node, GAME_FAMILIES, getGamesForCategory, getFavoriteGames, catalog,
     getComputedStyle: () => ({ getPropertyValue: property => property === '--sidebar-duration' ? sidebarDuration : '' }),
     setTimeout(action, delay) { timers.set(++timerId, { action, delay }); return timerId; },
     clearTimeout(id) { timers.delete(id); },
@@ -280,7 +280,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-content'].descendants().find(node => node.dataset.menuCategory === id);
   const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
-  const socialCasino = nodes['menu-navigation'].children[0];
+  const socialCasino = nodes['menu-navigation'].children.find(node => node.dataset.menuDisclosure === 'social-casino');
   const casinoItems = socialCasino?.nextSibling;
   const finishExit = () => nodes['site-sidebar'].emit('transitionend', { propertyName: 'transform' });
   const resize = (matches, { settle = true } = {}) => {
@@ -327,11 +327,19 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.nodes['menu-toggle'].listeners.get('click').length, 1);
   assert.ok(page.item('lobby'));
+  assert.equal(page.item('search'), undefined, 'the Search shortcut replaces a separate Games destination');
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
-  assert.equal(page.item('popular'), undefined, 'discovery shelves are not game types');
-  assert.equal(page.item('new-releases'), undefined, 'discovery shelves are not game types');
+  for (const id of ['popular', 'new-releases']) {
+    assert.ok(page.item(id), 'discovery shelves have direct navigation shortcuts');
+    assert.equal(page.casinoItems.contains(page.item(id)), false, 'discovery shelves are not game types');
+  }
   assert.equal(page.categoryButtons.has('all'), false);
-  for (const category of CATEGORIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
+  for (const category of GAME_FAMILIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
+  assert.deepEqual(page.casinoItems.children.map(button => button.dataset.menuCategory),
+    ['slots', 'table', 'scratchcards', 'tap', 'arcade'], 'Game Types remains independent of flexible lobby categories');
+  for (const id of ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit', 'megaways']) {
+    assert.equal(page.item(id), undefined, `${id} is a collection, not a game type`);
+  }
   assert.equal(page.feature('achievements').parentElement.nextSibling, page.nodes['menu-navigation']);
   const providersGroup = page.nodes['menu-navigation'].nextSibling;
   assert.equal(providersGroup.getAttribute('aria-label'), 'Game providers');
@@ -358,6 +366,54 @@ test('sidebar highlights a game type and clears its selection when Search opens'
   assert.equal(page.document.activeElement, page.nodes['site-search-input']);
   page.observers[0].callback();
   assert.equal(arcade.getAttribute('aria-current'), null);
+  assert.equal(page.item('search'), undefined);
+  assert.equal(page.item('lobby').getAttribute('aria-current'), null);
+});
+
+test('discovery shortcuts route and highlight consistently for guests and members on desktop and mobile', () => {
+  for (const guest of [true, false]) {
+    for (const desktop of [true, false]) {
+      const page = menuPage({ guest, desktop });
+      for (const id of ['popular', 'new-releases']) {
+        if (!desktop) page.api.openMenu();
+        assert.equal(page.item(id).getClientRects().length, 1);
+        page.item(id).click();
+        page.flushClose();
+        assert.equal(page.calls.at(-1), `category:${id}`);
+        assert.equal(page.document.body.dataset.page, 'category');
+        assert.equal(page.nodes['site-menu'].open, false, 'the drawer closes before navigating');
+        if (desktop) page.observers[0].callback();
+        else page.api.openMenu();
+        assert.equal(page.item(id).getAttribute('aria-current'), 'page');
+        assert.equal(page.item('lobby').getAttribute('aria-current'), null);
+        assert.equal(page.item(id === 'popular' ? 'new-releases' : 'popular').getAttribute('aria-current'), null);
+        if (!desktop) { page.api.closeMenu(); page.flushClose(); }
+      }
+    }
+  }
+});
+
+test('Search remains available without a separate Games destination for guests and members', () => {
+  for (const guest of [true, false]) {
+    for (const desktop of [true, false]) {
+      const page = menuPage({ guest, desktop });
+      page.api.openMenu();
+      assert.equal(page.item('search'), undefined, 'Games must not duplicate the Search shortcut');
+      const search = page.nodes['menu-search'];
+      assert.equal(search.getClientRects().length, 1);
+      search.click();
+      if (!desktop) assert.equal(page.calls.includes('search:open'), false, 'wait for drawer close before opening Search');
+      page.flushClose();
+      assert.equal(page.calls.at(-1), 'search:open');
+      assert.equal(page.document.body.dataset.page, 'search');
+      assert.equal(page.document.activeElement, page.nodes['site-search-input']);
+      assert.equal(page.calls.includes('category:search'), false);
+      if (desktop) page.observers[0].callback();
+      else page.api.openMenu();
+      assert.equal(page.item('search'), undefined);
+      assert.equal(page.item('lobby').getAttribute('aria-current'), null);
+    }
+  }
 });
 
 test('Escape closes the drawer, resets its trigger and restores focus', () => {
@@ -557,13 +613,17 @@ test('member destinations navigate after the mobile drawer closes', () => {
   assert.ok(page.item('lobby'));
 });
 
-test('Lobby, Recent Games and Favorite Games occupy one separate group above Achievements', () => {
+test('Lobby and personal collections stay above Achievements while discovery shortcuts sit immediately above Game Types', () => {
   for (const desktop of [true, false]) {
     const page = menuPage({ desktop });
     const group = page.item('lobby').parentElement;
     assert.equal(group.getAttribute('aria-label'), 'Games');
     assert.equal(group.nextSibling, page.feature('achievements').parentElement);
-    assert.deepEqual(group.children.map(button => button.getAttribute('aria-label')), ['Lobby', 'Recent Games', 'Favorite Games']);
+    assert.deepEqual(group.children.map(button => button.getAttribute('aria-label')),
+      ['Lobby', 'Recent Games', 'Favorite Games']);
+    assert.deepEqual(page.nodes['menu-navigation'].children,
+      [page.item('popular'), page.item('new-releases'), page.socialCasino, page.casinoItems]);
+    assert.equal(page.feature('achievements').parentElement.nextSibling, page.nodes['menu-navigation']);
     assert.equal(page.casinoItems.contains(page.item('favorites')), false);
     assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
     page.api.openMenu();

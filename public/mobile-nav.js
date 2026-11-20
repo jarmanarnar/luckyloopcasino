@@ -22,7 +22,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
       : document.body.dataset.view === 'game' || document.body.dataset.page === 'game-details' ? null
         : categories.dataset.activeMenu === 'redeem' ? 'redeem'
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
-        : ['feature', 'search', 'providers'].includes(document.body.dataset.page)
+        : document.body.dataset.page === 'feature'
           || ['search', 'providers'].includes(categories.dataset.activeMenu) ? 'menu'
         : document.body.dataset.page === 'home' ? 'lobby' : null;
     for (const [action, button] of buttons) {
