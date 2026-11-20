@@ -2,7 +2,7 @@ import { ACHIEVEMENTS, formatAchievementRewards } from './achievement-catalog.js
 import { getAchievements } from './rewards-pages.js';
 import { createUiIcon } from './ui-icons.js';
 
-// Each lobby icon owns one promotion. Campaign copy and artwork live here,
+// Each side icon owns one promotion. Campaign copy and artwork live here,
 // while reward amounts and eligibility come from the existing achievement catalog.
 export const LOBBY_PROMOTIONS = Object.freeze([
   { id: 'welcome', label: 'Welcome reward', title: 'Welcome to the squad.',
@@ -27,8 +27,8 @@ export function initLobbyPromotions({ router, account, auth, document: doc = doc
     return img;
   };
   const dock = node('aside', 'lobby-promotions');
-  dock.id = 'lobby-promotions'; dock.lang = 'en'; dock.dir = 'ltr'; dock.hidden = true;
-  dock.setAttribute('aria-label', 'Lobby promotions');
+  dock.id = 'lobby-promotions'; dock.lang = 'en'; dock.dir = 'ltr';
+  dock.setAttribute('aria-label', 'Promotions');
   const dialog = node('dialog', 'promotion-dialog');
   dialog.id = 'promotion-dialog'; dialog.lang = 'en'; dialog.dir = 'ltr';
   dialog.setAttribute('aria-labelledby', 'promotion-title');
@@ -40,6 +40,10 @@ export function initLobbyPromotions({ router, account, auth, document: doc = doc
   const action = node('button', 'primary-button promotion-dialog__action'); action.type = 'button';
   dialog.append(close, content, action); doc.body.append(dock, dialog);
   let selected = null, opener = null, handoff = false;
+  const immersivePlayer = () => doc.body.dataset.playerMobile === 'true'
+    || doc.body.dataset.playerFullscreen === 'true';
+  const canOpen = () => !immersivePlayer() && doc.body.dataset.chat !== 'open'
+    && !doc.querySelector('dialog[open]');
 
   const triggers = LOBBY_PROMOTIONS.map(promotion => {
     const trigger = node('button', 'lobby-promotions__trigger'); trigger.type = 'button';
@@ -48,7 +52,7 @@ export function initLobbyPromotions({ router, account, auth, document: doc = doc
     trigger.setAttribute('aria-controls', dialog.id); trigger.setAttribute('aria-expanded', 'false');
     trigger.append(artwork(promotion, 'lobby-promotions__image'));
     trigger.addEventListener('click', () => {
-      if (router.getRoute().type !== 'home' || doc.querySelector('dialog[open]')) return;
+      if (!canOpen()) return;
       selected = promotion; opener = trigger; handoff = false;
       render(); trigger.setAttribute('aria-expanded', 'true'); dialog.showModal();
       close.focus({ preventScroll: true });
@@ -97,11 +101,10 @@ export function initLobbyPromotions({ router, account, auth, document: doc = doc
   });
   dialog.addEventListener('close', () => {
     triggers.forEach(trigger => trigger.setAttribute('aria-expanded', 'false'));
-    if (!handoff && !dock.hidden && !doc.querySelector('dialog[open]')) opener?.focus({ preventScroll: true });
+    if (!handoff && canOpen()) opener?.focus({ preventScroll: true });
     selected = null;
   });
-  const syncRoute = route => {
-    dock.hidden = route.type !== 'home';
+  const syncRoute = () => {
     if (dialog.open) { handoff = true; dialog.close(); }
   };
   router.subscribe(syncRoute); syncRoute(router.getRoute());

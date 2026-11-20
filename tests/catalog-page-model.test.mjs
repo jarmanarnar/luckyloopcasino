@@ -45,7 +45,7 @@ test('home exposes every toolbar category as a browsable lobby shelf in the same
   assert.deepEqual(LOBBY_CATEGORIES, CATEGORIES.map(category => category.id));
   assert.deepEqual(FILTER_CATEGORIES.map(category => category.id), LOBBY_CATEGORIES);
   assert.equal(new Set(LOBBY_CATEGORIES).size, LOBBY_CATEGORIES.length);
-  for (const categoryId of ['instant-games', 'instant-win', 'crash', 'video-poker', 'tap', 'scratchcards']) {
+  for (const categoryId of ['nolimit-city', 'hacksaw-gaming', 'instant-games', 'instant-win', 'crash', 'video-poker', 'tap', 'scratchcards']) {
     assert.equal(LOBBY_CATEGORIES.includes(categoryId), false, categoryId);
   }
   for (const category of CATEGORIES) {
@@ -57,12 +57,13 @@ test('home exposes every toolbar category as a browsable lobby shelf in the same
   }
 });
 
-test('all instant and crash games are visible within Picks, Hacksaw or Table shelves', () => {
+test('instant and crash games remain accessible through providers and search with selected games in Picks', () => {
   const quickGames = [...getGamesForCategory('instant-win'), ...getGamesForCategory('crash')];
   assert.equal(quickGames.length, 15);
-  const visible = new Set(['popular', 'hacksaw-gaming', 'table']
-    .flatMap(categoryId => getGamesForCategory(categoryId).slice(0, 24).map(game => game.id)));
-  for (const game of quickGames) assert.ok(visible.has(game.id), `${game.title} needs a visible lobby home`);
+  for (const type of ['provider', 'search']) {
+    const visible = new Set(ids(getCatalogPage({ type, providerId: 'hacksaw-gaming' })));
+    for (const game of quickGames) assert.ok(visible.has(game.id), `${game.title} remains accessible through ${type}`);
+  }
   const picks = getGamesForCategory('popular').slice(0, 24).map(game => game.id);
   for (const id of ['hacksaw-1294', 'hacksaw-1321', 'hacksaw-2491']) assert.ok(picks.includes(id), id);
 });
@@ -85,14 +86,15 @@ test('COP COIN Picks preserves its editorial order before optional sorting', () 
   assert.equal(page.title, 'COP COIN Picks');
   assert.equal(page.activeMenu, 'popular');
   assert.equal(page.sort, 'featured');
+  assert.notEqual(page.games[0].id, getGamesForCategory('new-releases')[0].id, 'editorial and chronological shelves have distinct openings');
   assert.equal(page.games.length, 40);
   assert.equal(pageSlice(page.games).hasMore, true);
   assert.equal(pageSlice(page.games, 70).visible.length, 40);
   assert.equal(pageSlice(page.games, 70).hasMore, false);
   const additions = new Set(['hacksaw-1294', 'hacksaw-1321', 'hacksaw-2491']);
   assert.deepEqual(ids(page).filter(id => !additions.has(id)).slice(0, 5), [
-    'nunchucksr96f100', 'SanQuentin', 'monopolymneyv196',
-    'niptuck000000000', 'bloodsuckerstapa',
+    'SanQuentin', 'niptuck000000000', 'gonzosqumegaways',
+    'bonanzatacardsv1', 'gopnik0000000000',
   ]);
 });
 
@@ -112,15 +114,12 @@ test('category provider and text filters intersect without spilling into the ful
 
 test('new browse groups intersect provider and text filters on category and search pages', () => {
   const cases = [
-    { categoryId: 'hacksaw-gaming', providerId: 'hacksaw-gaming', query: '  MoNeYpLaNe ', expected: ['hacksaw-2491'] },
-    { categoryId: 'nolimit-city', providerId: 'nolimit-city', query: 'san quentin', expected: ['SanQuentin2', 'SanQuentinManhunt', 'SanQuentin'] },
     { categoryId: 'table', providerId: 'netent', query: 'jacks', expected: ['jacksmultihandn1'] },
     { categoryId: 'table', providerId: 'hacksaw-gaming', query: 'baccarat', expected: ['hacksaw-1446'] },
     { categoryId: 'scratch-tap', providerId: 'taparoo', query: 'blood', expected: ['bloodsuckerstapa'] },
     { categoryId: 'fruit', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
     { categoryId: 'megaways', providerId: 'red-tiger', query: 'gonzo', expected: ['gonzosqumegaways'] },
     { categoryId: 'wild-west', providerId: 'hacksaw-gaming', query: 'duel', expected: ['hacksaw-1620'] },
-    { categoryId: 'hacksaw-gaming', providerId: 'netent', query: '', expected: [] },
   ];
   for (const { expected, ...filters } of cases) {
     for (const type of ['category', 'search']) {
@@ -173,7 +172,7 @@ test('A–Z and Z–A change only order, leave source data intact, and do not ca
   assert.equal(popular.provider, undefined);
   assert.equal(popular.query, '');
   assert.equal(popular.sort, 'featured');
-  assert.equal(popular.games[0].id, 'nunchucksr96f100');
+  assert.equal(popular.games[0].id, 'SanQuentin');
 });
 
 test('unsupported ranking choices fall back to real available ordering', () => {

@@ -40,21 +40,6 @@ export const THEME_GAME_IDS = {
   ],
 };
 
-// Mix different formats into the studio showcase instead of an Instant Games shelf.
-export const HACKSAW_HIGHLIGHT_IDS = [
-  'hacksaw-1067', 'hacksaw-1309', 'hacksaw-1632', 'hacksaw-1867',
-  'hacksaw-1624', 'hacksaw-1233', 'hacksaw-1590', 'hacksaw-1685',
-  'hacksaw-1386', 'hacksaw-1482', 'hacksaw-1380', 'hacksaw-1172',
-  'hacksaw-1334', 'hacksaw-1562', 'hacksaw-1148', 'hacksaw-1084',
-  'hacksaw-1126', 'hacksaw-1225', 'hacksaw-1154', 'hacksaw-1243',
-  'hacksaw-1164', 'hacksaw-1494', 'hacksaw-1620', 'hacksaw-1209',
-];
-
-export const NOLIMIT_HIGHLIGHT_IDS = [
-  'SanQuentin', 'SixFeetUnder', 'GatorHunters2', 'TombstoneBegins',
-  'DeadwoodRip', 'FireInTheHole3', 'DeadCanary', 'DuckHunters2',
-];
-
 // Official rules describe card play; keep provider formatId unchanged.
 // https://www.hacksawgaming.com/games/baccarat
 // https://www.hacksawgaming.com/games/twenty-one

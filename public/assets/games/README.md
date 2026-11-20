@@ -1,5 +1,7 @@
 # Game artwork sample
 
+Display selection: 816 original provider covers are enabled after visual review. The remaining games retain their title/provider placeholders. This includes the original 62 covers, 201 additions, and 553 further posters reviewed on 2026-11-20. All 257 downloaded Hacksaw thumbnails remain excluded after the portrait-format review.
+
 Retrieved 2026-11-01 from official Playin game pages and their referenced provider CDN.
 Each page's tableId matches the existing local game ID. Source artwork was converted losslessly to WebP; decoded RGBA pixels were verified identical. No artwork was generated, cropped or redrawn in these files.
 
@@ -31,7 +33,7 @@ All 257 Hacksaw Gaming thumbnails and their original source URLs are documented 
 
 Added 46 official Playin thumbnails to complete the first 12 cards of Fruit Games, Wild West, Egypt, Asian and Gold Rush shelves. The published `tableId` was checked against each local game ID; the asset IDs below identify `data.logo.id` in the public page metadata. Sources use the provider CDN referenced by those pages.
 
-Source images were converted to lossless WebP without resizing, cropping, recoloring or redrawing. Every decoded RGBA pixel, including transparency, was verified identical to its source; embedded ICC profiles were retained when present. These square thumbnails use `fit: contain` so the interface shows the full artwork. Existing Playin and Hacksaw entries remain unchanged.
+Source images were converted to lossless WebP without resizing, cropping, recoloring or redrawing. Every decoded RGBA pixel, including transparency, was verified identical to its source; embedded ICC profiles were retained when present. All 46 thumbnails passed the visual review below and are displayed. Approved covers use proportional `object-fit: cover` sizing, with no stretching; stored image pixels remain unchanged.
 
 | Table ID | Game | Source asset ID | Local file | Official page | Source image | Source bytes | WebP bytes |
 | --- | --- | --- | --- | --- | --- | ---: | ---: |
@@ -81,3 +83,27 @@ Source images were converted to lossless WebP without resizing, cropping, recolo
 | easygold00000000 | Easy Gold | 6672 | easygold00000000.webp | https://playin.com/games/easy-gold | https://fan-cdn.nolimitcity.com/small_easy_gold_logo2_3d71235ccf.png | 142960 | 80516 |
 | godsofgold000000 | Gods of Gold: InfiniReelsâ„¢ | 5754 | godsofgold000000.webp | https://playin.com/games/gods-of-gold-infini-reels | https://fan-cdn.nolimitcity.com/small_gods_of_gold_logo2_e4f8e3212b.png | 83506 | 62924 |
 | GaelicGold | Gaelic Gold  | 7313 | GaelicGold.webp | https://playin.com/games/gaelic-gold | https://fan-cdn.nolimitcity.com/small_gaelic_gold_logo2_9250b559ab.png | 135137 | 80426 |
+
+## Portrait-card review � 2026-11-19
+
+All 46 theme covers in the table above were visually checked with the existing centered 8:11 crop at 128 x 176 pixels, including the 34 reviewed after the initial 12-cover shortlist. Their printed game titles and bottom provider marks remain readable and uncut. No per-game positioning or sizing overrides were added. The 257 Hacksaw downloads remain excluded because they have not passed the same portrait-card review.
+
+Demon Beats was additionally retrieved from its official page, with `tableId` checked against the local catalog. The PNG was converted to lossless WebP and decoded RGBA pixels verified identical. It passed the same 128 � 176 portrait-card review.
+
+| Game | Local file | Official page | Source image | Source asset ID |
+| --- | --- | --- | --- | --- |
+| Demon Beats | demonbeatsr96f10.webp | https://playin.com/games/demon-beats | https://fan-cdn.nolimitcity.com/small_demon_beats_ne_thumbnail_512x512_89dfbd2303.png | 16087 |
+
+## Additional reviewed posters — 2026-11-20
+
+201 additional official Playin posters are enabled. Each page was matched by tableId to an existing catalog entry, and each image was visually checked at the shared centered 128 × 176 card crop. The full printed title and provider signature remain visible. Official artwork variants containing both title and provider were selected instead of character-only icons. Conversion preserves the source image’s decoded RGBA pixels.
+
+All 257 existing Hacksaw thumbnails were also reviewed. None meet the requested title-and-provider portrait format, so they remain disabled. No card geometry, cropping rules, category membership, or catalog order changed.
+
+[Per-game source provenance and review](review-2026-11-20.md).
+
+## Remaining provider catalog review — 2026-11-20
+
+Reviewed the remaining 560 catalog entries for NetEnt, Red Tiger and Nolimit City. Added 553 official provider posters; 7 did not pass the same full-title-and-provider portrait crop requirement. All accepted images preserve the source decoded RGBA pixels and use the existing lazy card renderer.
+
+[Complete source provenance and rejected candidates](review-2026-11-20-complete.md).

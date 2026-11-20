@@ -80,7 +80,8 @@ test('instant-win and crash remain precise legacy formats without a primary Inst
   assert.equal(getGameTypeId(speedCrash), 'instant-win', 'title wording must not override the provider format');
   for (const game of combined) {
     const categories = getGameCategoryIds(game);
-    assert.ok(categories.includes('hacksaw-gaming'), game.id);
+    assert.equal(categories.includes('hacksaw-gaming'), false, game.id);
+    assert.equal(game.providerId, 'hacksaw-gaming');
     assert.ok(categories.includes(getGameTypeId(game)), game.id);
     assert.equal(categories.includes('slots'), false, game.id);
     assert.equal(categories.includes('scratchcards'), false, game.id);

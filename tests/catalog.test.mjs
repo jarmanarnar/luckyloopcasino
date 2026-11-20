@@ -5,6 +5,7 @@ import { GAMES, PROVIDERS } from '../public/catalog.js';
 import { CATEGORIES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { PROVIDER_LOGOS } from '../public/provider-assets.js';
 import { getGameTypeId } from '../public/game-types.js';
+import { getCatalogPage } from '../public/catalog-page-model.js';
 import { getProviderDetails } from '../public/provider-details.js';
 
 // The user explicitly restored every prior exclusion on 2026-11-01.
@@ -72,9 +73,9 @@ test('all 33 previously excluded games are restored once with their original dem
   }
 });
 
-test('primary categories provide substantial collections and cover every available game', () => {
+test('primary categories provide substantial collections without duplicating providers', () => {
   assert.deepEqual(CATEGORIES.map(category => category.id), [
-    'popular', 'new-releases', 'nolimit-city', 'hacksaw-gaming', 'wild-west',
+    'popular', 'new-releases', 'wild-west',
     'gold-rush', 'egypt', 'asian', 'fruit', 'megaways', 'scratch-tap', 'table', 'slots',
   ]);
   const covered = new Set();
@@ -85,7 +86,9 @@ test('primary categories provide substantial collections and cover every availab
     assert.ok(games.every(game => GAMES.includes(game)), category.id);
     games.forEach(game => covered.add(game.id));
   }
-  assert.deepEqual(covered, new Set(GAMES.map(game => game.id)));
+  const providerIds = new Set(PROVIDERS.map(provider => provider.id));
+  assert.ok(CATEGORIES.every(category => !providerIds.has(category.id)));
+  assert.deepEqual(new Set(getCatalogPage({ type: 'search' }).games.map(game => game.id)), new Set(GAMES.map(game => game.id)));
 });
 
 test('theme collections use relevant settings and fruit titles without ambiguous keyword matches', () => {
@@ -117,9 +120,12 @@ test('theme collections use relevant settings and fruit titles without ambiguous
   assert.equal(getGamesForCategory('megaways').length, 56);
 });
 
-test('provider highlights include their complete catalogs and Picks retains distinct editorial choices', () => {
+test('provider pages retain their complete catalogs separately from editorial choices', () => {
   for (const [providerId, count] of [['nolimit-city', 141], ['hacksaw-gaming', 257]]) {
-    const highlighted = getGamesForCategory(providerId);
+    assert.deepEqual(getGamesForCategory(providerId), []);
+    const page = getCatalogPage({ type: 'provider', providerId });
+    assert.equal(page.activeMenu, 'providers');
+    const highlighted = page.games;
     assert.equal(highlighted.length, count, providerId);
     assert.deepEqual(new Set(highlighted.map(game => game.id)),
       new Set(GAMES.filter(game => game.providerId === providerId).map(game => game.id)), providerId);

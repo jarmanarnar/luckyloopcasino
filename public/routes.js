@@ -1,12 +1,17 @@
 import { isFeaturePage } from './feature-pages.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
-const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'nolimit-city', 'hacksaw-gaming', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const categoryIds = new Set(['all', 'popular', 'slots', 'new-releases', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap', 'spooky', 'picks', 'tap', 'instant-games', 'instant-win', 'scratchcards', 'crash', 'table', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'megaways', 'jackpot', 'fruit', 'adventure']);
+const legacyStudioIds = new Set(['nolimit-city', 'hacksaw-gaming']);
 const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent']);
 const validId = value => /^[a-z0-9][a-z0-9_-]*$/i.test(value || '');
 const decode = value => { try { return decodeURIComponent(value); } catch { return ''; } };
-const isLegacyHash = hash => ['all-games', 'all', 'free-money'].includes(
-  decode(String(hash).replace(/^#/, '').split('?')[0].replace(/^\//, '').replace(/\/$/, '')));
+const isLegacyHash = hash => {
+  const [path, search = ''] = String(hash).replace(/^#/, '').split('?');
+  const id = decode(path.replace(/^\//, '').replace(/\/$/, ''));
+  return ['all-games', 'all', 'free-money'].includes(id) || legacyStudioIds.has(id)
+    || legacyStudioIds.has(new URLSearchParams(search).get('category'));
+};
 
 function detailsOrigin(value) {
   if (typeof value !== 'string' || !/^#(?:\/|$)/.test(value)) return '';
@@ -41,6 +46,7 @@ export function parseRoute(hash = '') {
   if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
   else if (segments.length === 1 && segments[0] === 'recent-games') route = { type: 'recent-games' };
   else if (segments.length === 1 && segments[0] === 'favorites') route = { type: 'favorites' };
+  else if (segments.length === 1 && legacyStudioIds.has(segments[0])) route = { type: 'provider', providerId: segments[0] };
   else if (segments.length === 1 && categoryIds.has(segments[0])) route = { type: 'category', categoryId: segments[0] };
   else if (segments.length === 1 && segments[0] === 'free-money') return { type: 'feature', pageId: 'achievements' };
   else if (segments.length === 1 && isFeaturePage(segments[0])) return { type: 'feature', pageId: segments[0] };
@@ -54,6 +60,7 @@ export function parseRoute(hash = '') {
   const providerId = params.get('provider');
   if (route.type !== 'provider' && validId(providerId)) route.providerId = providerId;
   const categoryId = params.get('category');
+  if (route.type === 'search' && legacyStudioIds.has(categoryId) && !route.providerId) route.providerId = categoryId;
   if (!['category', 'favorites', 'recent-games'].includes(route.type) && categoryIds.has(categoryId)) route.categoryId = categoryId;
   const sort = params.get('sort');
   if (sortIds.has(sort)) route.sort = sort;
@@ -61,6 +68,11 @@ export function parseRoute(hash = '') {
 }
 
 export function formatRoute(route = { type: 'home' }) {
+  if (legacyStudioIds.has(route.categoryId)) {
+    const { categoryId, ...rest } = route;
+    route = route.type === 'category' ? { ...rest, type: 'provider', providerId: categoryId }
+      : route.type === 'search' ? { ...rest, providerId: rest.providerId || categoryId } : rest;
+  }
   if (route.type === 'home') return '#/';
   if (route.type === 'feature' && route.pageId === 'free-money') return '#/achievements';
   if (route.type === 'feature') return isFeaturePage(route.pageId) ? `#/${route.pageId}` : '#/';

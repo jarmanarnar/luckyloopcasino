@@ -1,7 +1,7 @@
 import { GAMES } from './catalog.js';
 import { GAME_TYPES, getGameTypeId, isTableGame } from './game-types.js';
 import { GAME_RELEASES } from './game-releases.js';
-import { THEME_GAME_IDS, HACKSAW_HIGHLIGHT_IDS, NOLIMIT_HIGHLIGHT_IDS, HACKSAW_CARD_GAME_IDS } from './collection-picks.js';
+import { THEME_GAME_IDS, HACKSAW_CARD_GAME_IDS } from './collection-picks.js';
 export { GAME_RELEASES, RELEASES_VERIFIED_ON } from './game-releases.js';
 
 // Game format and editorial collections are separate from the studio/provider.
@@ -10,8 +10,6 @@ export { GAME_RELEASES, RELEASES_VERIFIED_ON } from './game-releases.js';
 export const CATEGORIES = [
   { id: 'popular', title: 'COP COIN Picks', description: 'Our handpicked mix of slots, card reveals and quick-play games.' },
   { id: 'new-releases', title: 'New Releases', description: 'Recently released titles with verified provider release dates.' },
-  { id: 'nolimit-city', title: 'Nolimit City', description: 'Explore the Nolimit City collection.' },
-  { id: 'hacksaw-gaming', title: 'Hacksaw Gaming', description: 'A mix of Hacksaw slots, scratch games and quick-play games.' },
   { id: 'wild-west', title: 'Wild West', description: 'Outlaws, saloons and frontier adventures.' },
   { id: 'gold-rush', title: 'Gold Rush', description: 'Gold, treasure and mining-themed games.' },
   { id: 'egypt', title: 'Egyptian Treasures', description: 'Pharaohs, pyramids and ancient Egyptian treasures.' },
@@ -41,30 +39,31 @@ export function getGameReleaseDate(gameOrId) {
   return GAME_RELEASES[typeof gameOrId === 'string' ? gameOrId : gameOrId?.id]?.date || '';
 }
 
-// Editorial starter selection for the prototype, not a usage-based ranking.
+// Editorial starter selection, deliberately distinct from chronological New Releases.
+// This is not a usage-based ranking.
 const POPULAR_IDS = [
-  'nunchucksr96f100',
   'SanQuentin',
-  'monopolymneyv196',
   'niptuck000000000',
-  'hacksaw-1294',
-  'bloodsuckerstapa',
   'gonzosqumegaways',
   'bonanzatacardsv1',
+  'gopnik0000000000',
+  'TombstoneBegins',
+  'fruitshopgrr96f1',
+  'bloodsuckerstapa',
+  'nunchucksr96f100',
+  'monopolymneyv196',
+  'hacksaw-1294',
   'ouija00000000000',
   'starbursttaparoo',
   'SixFeetUnder',
   'hacksaw-1321',
-  'gopnik0000000000',
   'freakshowrevelat',
   'cashvolttaparoo0',
   'extrachilrdsv186',
   'gonzosquesttapar',
   'GatorHunters2',
   'jackbeanstar96f1',
-  'fruitshopgrr96f1',
   'divinegoldr96f10',
-  'TombstoneBegins',
   'hacksaw-2491',
   'GatorHunters',
   'starburstgar96f1',
@@ -123,8 +122,6 @@ const rules = {
   ...Object.fromEntries(GAME_TYPES.map(type => [type.id, game => getGameTypeId(game) === type.id])),
   ...Object.fromEntries([...themeIds].map(([id, ids]) => [id, game => ids.has(game.id)])),
   table: game => isTableGame(game) || getGameTypeId(game) === 'video-poker' || cardGameIds.has(game.id),
-  'nolimit-city': game => game.providerId === 'nolimit-city',
-  'hacksaw-gaming': game => game.providerId === 'hacksaw-gaming',
   'scratch-tap': game => ['scratchcards', 'tap'].includes(getGameTypeId(game)),
   'instant-games': game => ['instant-win', 'crash'].includes(getGameTypeId(game)),
   popular: game => popular.has(game.id),
@@ -141,14 +138,9 @@ const today = new Date().toISOString().slice(0, 10);
 const latestReleases = GAMES.filter(game => getGameReleaseDate(game) && getGameReleaseDate(game) <= today)
   .sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a))).slice(0, 100);
 const latestReleaseIds = new Set(latestReleases.map(game => game.id));
-const providerOrder = (providerId, highlights) => [...new Set([
-  ...highlights, ...GAMES.filter(game => game.providerId === providerId).map(game => game.id),
-])];
 const orderedCollections = new Map([
   ['popular', POPULAR_IDS], ['picks', PICK_IDS],
   ['new-releases', latestReleases.map(game => game.id)],
-  ['nolimit-city', providerOrder('nolimit-city', NOLIMIT_HIGHLIGHT_IDS)],
-  ['hacksaw-gaming', providerOrder('hacksaw-gaming', HACKSAW_HIGHLIGHT_IDS)],
   ...Object.entries(THEME_GAME_IDS),
 ]);
 const collections = new Map(allCategories.map(category => [category.id,

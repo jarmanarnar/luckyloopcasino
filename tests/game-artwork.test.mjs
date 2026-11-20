@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { GAMES } from '../public/catalog.js';
-import { getGamesForCategory } from '../public/collections.js';
 import { GAME_ARTWORK } from '../public/game-artwork.js';
 import { createGameArt } from '../public/game-artwork-view.js';
 import { waitForPageAssets } from '../public/app-readiness.js';
@@ -15,14 +14,9 @@ function documentStub() {
   }; } };
 }
 
-test('every official cover belongs to an available game and is a valid local image file', async () => {
+test('the reviewed covers belong to available games and are valid local image files', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  assert.equal(Object.keys(GAME_ARTWORK).length, 318);
-  for (const category of ['popular']) {
-    for (const game of getGamesForCategory(category).slice(0, 8)) {
-      assert.ok(GAME_ARTWORK[game.id], `The first row of ${category} needs artwork for ${game.title}`);
-    }
-  }
+  assert.equal(Object.keys(GAME_ARTWORK).length, 816);
   for (const [id, artwork] of Object.entries(GAME_ARTWORK)) {
     assert.ok(active.has(id), `Artwork cannot reintroduce ${id}`);
     assert.ok(artwork.width > 0 && artwork.height > 0);
@@ -32,16 +26,6 @@ test('every official cover belongs to an available game and is a valid local ima
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
       assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
     } else assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
-  }
-});
-
-test('each curated theme opens with twelve games that have cover artwork', () => {
-  for (const categoryId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']) {
-    const openingGames = getGamesForCategory(categoryId).slice(0, 12);
-    assert.equal(openingGames.length, 12, `${categoryId} needs a complete opening selection`);
-    for (const game of openingGames) {
-      assert.ok(GAME_ARTWORK[game.id], `${categoryId} needs artwork for ${game.title}`);
-    }
   }
 });
 
@@ -65,6 +49,20 @@ test('unsampled games keep the existing text card and do not request arbitrary a
   assert.equal(art.children.length, 1);
   assert.equal(art.children[0].textContent, 'Existing title');
   assert.equal(art.children[0].hidden, false);
+});
+
+test('games without reviewed covers use visible names without requesting images', () => {
+  for (const id of ['hacksaw-1294', 'hacksaw-2491', 'aftermathr96f100', 'judgementalr96f1']) {
+    const game = GAMES.find(game => game.id === id);
+    assert.ok(game, id);
+    assert.equal(GAME_ARTWORK[id], undefined, id);
+    const art = createGameArt(game, { document: documentStub(), eager: true });
+    assert.equal(art.children.length, 1, id);
+    assert.equal(art.children[0].tag, 'span', id);
+    assert.equal(art.children[0].textContent, game.title, id);
+    assert.equal(art.children[0].hidden, false, id);
+    assert.equal(art.dataset.artwork, undefined, id);
+  }
 });
 
 test('missing artwork never blocks startup or promotes lazy requests', async () => {

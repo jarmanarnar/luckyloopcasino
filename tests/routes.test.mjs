@@ -114,7 +114,7 @@ test('category, provider and search links retain their page and filters after re
 });
 
 test('new browse groups and existing exact-format links remain refresh-safe destinations', () => {
-  for (const categoryId of ['nolimit-city', 'hacksaw-gaming', 'wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap',
+  for (const categoryId of ['wild-west', 'gold-rush', 'egypt', 'asian', 'scratch-tap',
     'megaways', 'adventure', 'fruit', 'spooky', 'jackpot', 'table',
     'instant-win', 'crash', 'blackjack', 'roulette', 'baccarat', 'poker', 'video-poker', 'picks']) {
     const route = { type: 'category', categoryId };
@@ -127,7 +127,7 @@ test('new browse groups and existing exact-format links remain refresh-safe dest
     assert.equal(page.type, 'category', categoryId);
     assert.ok(page.games.length > 0, categoryId);
   }
-  const filtered = { type: 'search', categoryId: 'hacksaw-gaming', providerId: 'hacksaw-gaming', query: 'Moneyplane' };
+  const filtered = { type: 'search', providerId: 'hacksaw-gaming', query: 'Moneyplane' };
   assert.deepEqual(parseRoute(formatRoute(filtered)), filtered);
   assert.deepEqual(getCatalogPage(parseRoute(formatRoute(filtered))).games.map(game => game.id), ['hacksaw-2491']);
 });
@@ -317,4 +317,32 @@ test('distinct history entries with identical search URLs still restore their ow
   router.back(); page.flush();
   assert.equal(page.scope.scrollY, 320);
   assert.deepEqual(seen, ['gold'], 'deduplicate event pairs, not separate history entries');
+});
+
+
+test('former studio categories redirect to provider pages without adding history entries', () => {
+  for (const providerId of ['nolimit-city', 'hacksaw-gaming']) {
+    const expected = { type: 'provider', providerId, query: 'gold', sort: 'az' };
+    const oldHash = `#/${providerId}?q=gold&sort=az`;
+    assert.deepEqual(parseRoute(oldHash), expected);
+    assert.equal(formatRoute({ type: 'category', categoryId: providerId }), `#/providers/${providerId}`);
+    const page = browser(oldHash);
+    assert.deepEqual(initRouter({ window: page.scope }).getRoute(), expected);
+    assert.equal(page.scope.location.hash, formatRoute(expected));
+    assert.equal(page.entries.length, 1);
+    assert.equal(getCatalogPage(expected).activeMenu, 'providers');
+  }
+});
+
+test('old studio search filters migrate to provider filters and retain an explicit provider', () => {
+  const expected = { type: 'search', query: 'Moneyplane', providerId: 'hacksaw-gaming', sort: 'az' };
+  const oldHash = '#/search?category=hacksaw-gaming&q=Moneyplane&sort=az';
+  assert.deepEqual(parseRoute(oldHash), expected);
+  assert.equal(formatRoute({ ...expected, categoryId: 'hacksaw-gaming' }), formatRoute(expected));
+  const page = browser(oldHash);
+  initRouter({ window: page.scope });
+  assert.equal(page.scope.location.hash, formatRoute(expected));
+  assert.deepEqual(getCatalogPage(parseRoute(oldHash)).games.map(game => game.id), ['hacksaw-2491']);
+  assert.deepEqual(parseRoute('#/search?category=hacksaw-gaming&provider=netent'), { type: 'search', query: '', providerId: 'netent' });
+  assert.equal(formatRoute({ type: 'search', categoryId: 'hacksaw-gaming', providerId: 'netent' }), '#/search?provider=netent');
 });

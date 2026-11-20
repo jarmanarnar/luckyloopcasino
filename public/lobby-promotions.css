@@ -9,6 +9,7 @@
 }
 body[data-chat="open"] .lobby-promotions,
 body:has(dialog[open]) .lobby-promotions { visibility: hidden; }
+body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .lobby-promotions { display: none; }
 .lobby-promotions__trigger {
   --promotion-color: 0, 159, 232;
   position: relative;
