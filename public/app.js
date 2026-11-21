@@ -58,8 +58,8 @@ export async function initApplication() {
   const help = initHowToPlay({ router });
   initSiteFooter({ router, openHowToPlay: help.openHowToPlay, openStore: store.openStore });
   const menu = initSiteMenu({ ...catalog, ...features, ...help, ...wheel, openStore: store.openStore });
-  const chat = initCommunityChat({ account, auth, router, popupNavigation });
-  initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore, openChat: chat.open });
+  initCommunityChat({ account, auth, router, popupNavigation });
+  initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore });
   initHeroCarousel({ account, ...catalog, ...wheel, openFeature: features.openFeature, openStore: store.openStore });
   initLobbyPromotions({ router, account, auth });
 

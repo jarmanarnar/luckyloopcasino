@@ -4,7 +4,6 @@ export const STORE_PACKAGES = Object.freeze([
   { id: 'gc-180k-new', goldCoins: 180000, sweepsCoins: 18, priceCents: 699, originalPriceCents: 1800, badge: 'New', offer: 'new' },
   { id: 'gc-400k-popular', goldCoins: 400000, sweepsCoins: 40, priceCents: 1599, originalPriceCents: 4000, badge: 'Popular', offer: 'popular' },
   { id: 'gc-600k-sale', goldCoins: 600000, sweepsCoins: 60, priceCents: 2399, originalPriceCents: 6000, badge: 'Sale', offer: 'sale' },
-  { id: 'gc-150k-new', goldCoins: 150000, sweepsCoins: 15, priceCents: 999, originalPriceCents: 1500, badge: 'New', offer: 'new' },
   { id: 'gc-50k', goldCoins: 50000, sweepsCoins: 5, priceCents: 499 },
   { id: 'gc-500k', goldCoins: 500000, sweepsCoins: 50, priceCents: 4999 },
   { id: 'gc-1m', goldCoins: 1000000, sweepsCoins: 101, priceCents: 9999, originalPriceCents: 10100 },

@@ -122,7 +122,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     'catalog-categories', 'coin-wallet', 'site-logo', 'other-dialog',
     'site-sidebar', 'sidebar-header', 'sidebar-content', 'menu-content', 'menu-shortcuts',
     'menu-mobile-header', 'menu-search', 'menu-tooltip', 'site-search', 'site-search-input',
-    'bottom-menu', 'mobile-nav', 'mobile-nav-menu', 'mobile-nav-lobby', 'mobile-nav-store', 'mobile-nav-redeem', 'mobile-nav-chat',
+    'bottom-menu', 'mobile-nav', 'mobile-nav-menu', 'mobile-nav-lobby', 'mobile-nav-store', 'mobile-nav-redeem',
     'lobby-view', 'game-view', 'store-view', 'feature-view', 'game-details-view'];
   const nodes = Object.fromEntries(ids.map(id => {
     const tagName = id === 'site-menu' || id === 'other-dialog' || id === 'site-search' ? 'dialog'
@@ -151,7 +151,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   nodes['menu-shortcuts'].append(nodes['menu-buy'], nodes['menu-redeem']);
   nodes['menu-content'].append(nodes['menu-search'], nodes['menu-navigation']);
   nodes['site-sidebar'].append(nodes['sidebar-header'], nodes['sidebar-content']);
-  nodes['mobile-nav'].append(...['menu', 'lobby', 'store', 'redeem', 'chat'].map(action => nodes[`mobile-nav-${action}`]));
+  nodes['mobile-nav'].append(...['lobby', 'store', 'redeem', 'menu'].map(action => nodes[`mobile-nav-${action}`]));
   document.body.append(headerShell, nodes['site-sidebar'], nodes['lobby-view'], nodes['game-view'], nodes['store-view'],
     nodes['feature-view'], nodes['game-details-view'], nodes['mobile-nav'], nodes['site-menu']);
   const documentEvents = new Node();
@@ -1103,7 +1103,9 @@ test('mobile menu leaves one persistent bottom navigation in place through open,
 
   page.api.openMenu({ returnFocusTo: opener });
   assert.equal(nav.parentElement, page.document.body);
-  assert.equal(nav.children[0], opener, 'the same controls remain in the fixed application bar');
+  assert.deepEqual(nav.children.map(button => button.id),
+    ['mobile-nav-lobby', 'mobile-nav-store', 'mobile-nav-redeem', 'mobile-nav-menu']);
+  assert.equal(nav.children[3], opener, 'the same controls remain in the fixed application bar');
   assert.equal(nav.nextSibling, page.nodes['site-menu']);
   assert.equal(page.nodes['site-menu'].contains(nav), false, 'the menu must not acquire a separate bottom navigation');
 
@@ -1140,8 +1142,8 @@ test('mobile menu makes only the background inert and restores each prior state 
   assert.equal(page.nodes['mobile-nav'].inert, false);
   page.nodes['site-logo'].focus();
   assert.equal(page.document.activeElement, page.nodes['menu-buy'], 'the background cannot acquire focus');
-  page.nodes['mobile-nav-chat'].focus();
-  assert.equal(page.document.activeElement, page.nodes['mobile-nav-chat'], 'the fixed navigation remains interactive');
+  page.nodes['mobile-nav-redeem'].focus();
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-redeem'], 'the fixed navigation remains interactive');
 
   let actionRan = false;
   page.api.closeMenu(() => {
@@ -1163,15 +1165,16 @@ test('mobile focus cycles through the menu and the permanent bottom bar and docu
   page.api.openMenu({ returnFocusTo: opener });
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
   assert.equal(page.keydown('Tab', { shiftKey: true }).defaultPrevented, true);
-  assert.equal(page.document.activeElement, page.nodes['mobile-nav-chat']);
+  assert.equal(page.document.activeElement, page.nodes['mobile-nav-menu']);
   assert.equal(page.keydown('Tab').defaultPrevented, true);
   assert.equal(page.document.activeElement, page.nodes['menu-buy']);
 
-  page.nodes['mobile-nav-chat'].disabled = true;
+  page.nodes['mobile-nav-menu'].disabled = true;
   page.nodes['mobile-nav-redeem'].visible = false;
   page.keydown('Tab', { shiftKey: true });
   assert.equal(page.document.activeElement, page.nodes['mobile-nav-store'], 'skip hidden and disabled controls');
   assert.equal(page.keydown('Tab', { ctrlKey: true }).defaultPrevented, false, 'browser shortcuts stay available');
+  page.nodes['mobile-nav-menu'].disabled = false;
   assert.equal(page.keydown('Escape').defaultPrevented, true);
   assert.equal(page.nodes['site-menu'].open, false);
   page.flushClose();

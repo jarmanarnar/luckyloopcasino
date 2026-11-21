@@ -63,6 +63,9 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .lobby-pro
   .promotion-dialog { padding: 1.25rem; }
   .promotion-dialog__title { font-size: 1.5rem; }
 }
+body:has(#lobby-view:not([hidden]) #catalog-page-controls:not([hidden])) .lobby-promotions {
+  top: var(--catalog-promotions-top, calc(var(--top-bar-height) + 8rem));
+}
 @media (prefers-reduced-motion: reduce) {
   .lobby-promotions__trigger { transition: none; }
 }

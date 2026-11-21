@@ -132,7 +132,8 @@ test('a claim credits once, blocks concurrent clicks and removes the claimed row
   assert.equal(view.saved().ledger.filter(entry => entry.operationKey === `task:${id}`).length, 1);
   assert.ok(view.missions.children.every(row => row.dataset.rewardId !== id));
   assert.equal(view.missions.children.length, 2, 'the next ready reward fills the vacancy');
-  assert.equal(view.query('.rewards-popover__notice').textContent, '2,500 GC + 0.25 SC claimed.');
+  assert.equal(view.query('.rewards-popover__notice').textContent, '');
+  assert.equal(view.query('.rewards-popover__notice').hidden, true);
   assert.equal(view.trigger.querySelector('.rewards-count').textContent, '54');
   assert.equal(view.query('.rewards-count').textContent, '54');
 });

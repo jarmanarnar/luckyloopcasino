@@ -29,14 +29,14 @@
   /* One content-width decision is shared with keyboard/focus handling. */
   --catalog-filters-compact: 0;
   display: grid;
-  grid-template-columns: minmax(18rem, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: .75rem;
   min-width: 0;
   margin: 0;
 }
 .catalog-filter-panel { min-width: 0; }
-.catalog-filter-fields { display: flex; gap: .75rem; min-width: 0; }
+.catalog-filter-fields { display: grid; grid-auto-flow: column; grid-auto-columns: 11rem; gap: .75rem; min-width: 0; }
 
 .catalog-page-search {
   box-sizing: border-box;
@@ -142,30 +142,6 @@ body[data-page="home"] #lobby-view .catalog-browser + .catalog-shelves > .game-s
   flex: 1 1 12rem;
   min-width: 0;
 }
-.catalog-field-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-  min-height: 1.5rem;
-  color: var(--text-secondary);
-  font-size: .75rem;
-  font-weight: 400;
-  line-height: 1.25;
-}
-.catalog-filter-reset {
-  flex: none;
-  min-height: 1.5rem;
-  padding: 0 .25rem;
-  border: 0;
-  border-radius: .25rem;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-}
-.catalog-filter-reset:is(:hover, :focus-visible):not(:disabled) { background: var(--surface-subtle); }
-.catalog-filter-reset:disabled { opacity: .4; cursor: default; }
 
 .catalog-page-filter select,
 .catalog-select-trigger {
@@ -362,7 +338,6 @@ body:not([data-page="home"]) #catalog-empty {
   .catalog-browser:not(.catalog-browser--lobby) .catalog-toolbar { margin-block-start: .75rem; }
 }
 .catalog-page-controls:has(.catalog-filter-panel[hidden]) { grid-template-columns: minmax(0, 1fr); }
-body:has(.lobby-promotions:not([hidden])) .catalog-browser { --catalog-promo-clearance: 2.5rem; }
 
 /* Collapse before the available content lane forces an accidental second row. */
 @container catalog-controls (width < 54rem) {
@@ -370,7 +345,7 @@ body:has(.lobby-promotions:not([hidden])) .catalog-browser { --catalog-promo-cle
   .catalog-page-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 .625rem; }
   .catalog-page-search { grid-column: 1; }
   .catalog-page-search:has(+ .catalog-filters-toggle[hidden]) { grid-column: 1 / -1; }
-  .catalog-filters-toggle { display: grid; grid-column: 2; margin-inline-end: var(--catalog-promo-clearance, 0px); }
+  .catalog-filters-toggle { display: grid; grid-column: 2; }
   .catalog-filter-panel {
     display: grid;
     grid-column: 1 / -1;
@@ -381,7 +356,7 @@ body:has(.lobby-promotions:not([hidden])) .catalog-browser { --catalog-promo-cle
     transition: grid-template-rows 220ms ease, margin-top 220ms ease, opacity 160ms ease, visibility 220ms;
   }
   .catalog-filter-panel[data-expanded="true"] { grid-template-rows: 1fr; margin-top: .75rem; opacity: 1; visibility: visible; }
-  .catalog-filter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; min-height: 0; overflow: hidden; }
+  .catalog-filter-fields { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; min-height: 0; overflow: hidden; }
   .catalog-filter-fields:has(.catalog-page-filter--provider[hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container catalog-controls (width < 34rem) {

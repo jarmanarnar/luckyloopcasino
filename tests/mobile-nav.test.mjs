@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.url), 'utf8'))
   .replace('export function initMobileNav', 'function initMobileNav');
-const actions = ['menu', 'lobby', 'store', 'redeem', 'chat'];
+const actions = ['lobby', 'store', 'redeem', 'menu'];
 
 function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
@@ -59,7 +59,6 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     openHome() { calls.push({ action: 'home' }); nodes['catalog-categories'].dataset.activeMenu = 'lobby'; body.dataset.page = 'home'; body.dataset.view = 'lobby'; },
     openStore() { calls.push({ action: 'store' }); nodes['store-dialog'].open = true; },
     openFeature(pageId) { calls.push({ action: 'feature', pageId }); nodes['catalog-categories'].dataset.activeMenu = pageId; body.dataset.page = 'feature'; body.dataset.view = 'lobby'; },
-    openChat(button) { calls.push({ action: 'chat', button }); body.dataset.chat = 'open'; },
   };
   if (routeFromGame) api.returnToLobby = action => {
     calls.push({ action: 'lobby:return' });
@@ -122,14 +121,6 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.button('redeem').getAttribute('aria-expanded'), null);
   assert.equal(page.body.dataset.page, 'feature');
 
-  page.button('chat').click();
-  assert.deepEqual(page.calls.at(-1), { action: 'chat', button: page.button('chat') });
-  assert.deepEqual(active(page), ['chat']);
-  assert.equal(page.button('chat').getAttribute('aria-current'), null);
-  assert.equal(page.body.dataset.page, 'feature', 'chat preserves the current page');
-  page.body.dataset.chat = 'closed';
-  page.flush();
-  assert.deepEqual(active(page), ['redeem']);
 });
 
 test('the mobile Menu button closes the menu instead of trying to open it again', () => {
@@ -144,7 +135,7 @@ test('the mobile Menu button closes the menu instead of trying to open it again'
 });
 
 test('menu destinations wait for the menu close handoff and update the active destination', () => {
-  const expected = { lobby: 'home', store: 'store', redeem: 'feature', chat: 'chat' };
+  const expected = { lobby: 'home', store: 'store', redeem: 'feature' };
   for (const action of Object.keys(expected)) {
     const page = navPage();
     page.button('menu').click();
@@ -182,7 +173,7 @@ test('desktop and other open dialogs prevent hidden or overlapping actions', () 
 });
 
 test('overlays preserve the current game while page destinations use their router entry point', () => {
-  for (const action of ['menu', 'store', 'chat']) {
+  for (const action of ['menu', 'store']) {
     const page = navPage({ routeFromGame: true });
     page.body.dataset.view = 'game';
     page.button(action).click();
@@ -210,7 +201,7 @@ test('game details and active games clear every bottom destination even when the
       page.nodes['catalog-categories'].dataset.activeMenu = previous;
       page.body.dataset.page = ['redeem', 'profile', 'achievements'].includes(previous) ? 'feature' : previous;
       page.flush();
-      assert.deepEqual(active(page), [['store', 'redeem'].includes(previous) ? previous : 'menu']);
+      assert.deepEqual(active(page), ['store', 'redeem'].includes(previous) ? [previous] : []);
 
       if (gamePage === 'game-details') page.body.dataset.page = 'game-details';
       else page.body.dataset.view = 'game';
@@ -250,7 +241,7 @@ test('Menu opens over either game page and closing it restores no selection unti
 });
 
 test('Store popup selects Store, blocks actions, and restores the underlying destination on dismissal', () => {
-  for (const [destination, pageId, selection] of [['providers', 'providers', 'menu'], ['achievements', 'feature', 'menu'], ['redeem', 'feature', 'redeem'], ['new-releases', 'category', null]]) {
+  for (const [destination, pageId, selection] of [['providers', 'providers', null], ['achievements', 'feature', null], ['redeem', 'feature', 'redeem'], ['new-releases', 'category', null]]) {
     const page = navPage();
     page.body.dataset.page = pageId;
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
@@ -272,12 +263,12 @@ test('Store popup selects Store, blocks actions, and restores the underlying des
   }
 });
 
-test('member feature pages select Menu without claiming that its drawer is open', () => {
+test('member feature pages select Menu only while its drawer is open', () => {
   const page = navPage();
   page.body.dataset.page = 'feature';
   page.nodes['catalog-categories'].dataset.activeMenu = 'settings';
   page.flush();
-  assert.deepEqual(active(page), ['menu']);
+  assert.deepEqual(active(page), []);
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
   assert.equal(page.button('menu').getAttribute('aria-current'), null, 'Menu remains a dialog action, not a page link');
@@ -285,11 +276,12 @@ test('member feature pages select Menu without claiming that its drawer is open'
 
   page.button('menu').click();
   assert.equal(page.nodes['site-menu'].open, true);
+  assert.deepEqual(active(page), ['menu']);
   assert.equal(page.button('menu').getAttribute('aria-expanded'), 'true');
   page.button('menu').click();
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
-  assert.deepEqual(active(page), ['menu'], 'dismissing the drawer preserves the current feature destination');
+  assert.deepEqual(active(page), [], 'dismissing the drawer removes Menu selection on a feature page');
   page.button('lobby').click();
   assert.deepEqual(active(page), ['lobby']);
 });
@@ -312,8 +304,43 @@ test('equivalent filtered Search and category pages share bottom navigation stat
   page.body.dataset.page = 'search';
   page.nodes['catalog-categories'].dataset.activeMenu = 'search';
   page.flush();
-  assert.deepEqual(active(page), ['menu'], 'global Search still belongs to Menu');
+  assert.deepEqual(active(page), [], 'global Search is not the Menu drawer');
   assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+});
+
+test('Search, Menu dismissal and returning to Lobby never leave Menu selected alongside a page', () => {
+  const page = navPage();
+  page.button('menu').click();
+  assert.deepEqual(active(page), ['menu']);
+  assert.equal(page.button('lobby').getAttribute('aria-current'), null);
+
+  // Search can be entered through the drawer or another navigation surface.
+  page.nodes['site-menu'].open = false;
+  page.body.dataset.page = 'search';
+  page.nodes['catalog-categories'].dataset.activeMenu = 'search';
+  page.flush();
+  assert.deepEqual(active(page), []);
+  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+
+  page.button('menu').click();
+  assert.deepEqual(active(page), ['menu']);
+  page.button('menu').click();
+  assert.deepEqual(active(page), []);
+
+  page.button('menu').click();
+  page.button('lobby').click();
+  assert.deepEqual(active(page), [], 'closing the drawer clears Menu before the pending Lobby action');
+  page.flushClose();
+  assert.deepEqual(active(page), ['lobby']);
+  assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
+  assert.equal(page.button('menu').dataset.active, 'false');
+  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+  assert.equal(page.button('menu').getAttribute('aria-current'), null);
+
+  page.button('menu').click();
+  assert.deepEqual(active(page), ['menu'], 'an open Menu temporarily replaces Lobby selection');
+  page.button('menu').click();
+  assert.deepEqual(active(page), ['lobby']);
 });
 
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {
@@ -342,7 +369,7 @@ test('state follows navigation from other surfaces and distinguishes destination
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
     page.body.dataset.page = destination;
     page.flush();
-    assert.deepEqual(active(page), ['menu']);
+    assert.deepEqual(active(page), []);
     assert.equal(page.button('menu').getAttribute('aria-current'), null);
     assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
   }
@@ -366,23 +393,23 @@ test('state follows navigation from other surfaces and distinguishes destination
   }
   page.nodes['catalog-categories'].dataset.activeMenu = 'profile';
   page.flush();
-  assert.deepEqual(active(page), ['menu']);
+  assert.deepEqual(active(page), []);
   page.nodes['catalog-categories'].dataset.activeMenu = 'achievements';
   page.flush();
-  assert.deepEqual(active(page), ['menu']);
+  assert.deepEqual(active(page), []);
   page.body.dataset.page = 'home';
   page.flush();
   assert.deepEqual(active(page), ['lobby'], 'a stale achievements category alone does not claim the current page');
 });
 
-test('dialog state takes precedence over chat and restores the page selection on dismissal', () => {
+test('header chat leaves the bottom destination intact while dialogs still take precedence', () => {
   const page = navPage();
   page.nodes['catalog-categories'].dataset.activeMenu = 'redeem';
   page.body.dataset.page = 'feature';
   page.body.dataset.chat = 'open';
   page.flush();
-  assert.deepEqual(active(page), ['chat']);
-  assert.equal(page.button('chat').getAttribute('aria-current'), null);
+  assert.deepEqual(active(page), ['redeem']);
+  assert.equal(page.button('redeem').getAttribute('aria-current'), 'page');
   page.nodes['store-dialog'].open = true;
   page.flush();
   assert.deepEqual(active(page), ['store']);
@@ -398,7 +425,7 @@ test('dialog state takes precedence over chat and restores the page selection on
   assert.equal(page.button('menu').getAttribute('aria-current'), null);
   page.nodes['store-dialog'].open = false;
   page.flush();
-  assert.deepEqual(active(page), ['chat']);
+  assert.deepEqual(active(page), ['redeem']);
   assert.equal(page.button('store').getAttribute('aria-expanded'), 'false');
   page.body.dataset.chat = 'closed';
   page.flush();
@@ -415,7 +442,8 @@ test('initialization is idempotent, requires a complete shell and watches only r
 
   const page = navPage();
   assert.equal(page.nodes['mobile-nav-achievements'], undefined);
-  assert.equal(page.nodes['mobile-nav'].hidden, false, 'initialization requires the five navigation buttons');
+  assert.equal(page.nodes['mobile-nav-chat'], undefined);
+  assert.equal(page.nodes['mobile-nav'].hidden, false, 'the four navigation buttons initialize without a Chat button');
   page.initialize();
   assert.equal(page.observers.length, 1);
   assert.equal(page.observations.length, 4);
@@ -423,7 +451,7 @@ test('initialization is idempotent, requires a complete shell and watches only r
     assert.equal(observation.options.attributes, true);
     assert.equal(observation.options.childList, undefined);
     assert.equal(observation.options.subtree, undefined);
-    const expected = observation.target === page.body ? ['data-view', 'data-page', 'data-chat']
+    const expected = observation.target === page.body ? ['data-view', 'data-page']
       : observation.target === page.nodes['catalog-categories'] ? ['data-active-menu'] : ['open'];
     assert.deepEqual(Array.from(observation.options.attributeFilter), expected);
   }

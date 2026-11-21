@@ -68,8 +68,6 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
     trigger.addEventListener('click', () => opened ? close() : open(trigger));
     memberActions.append(trigger); triggers.push(trigger);
   }
-  const mobileTrigger = document.querySelector('#mobile-nav-chat');
-  if (mobileTrigger) triggers.push(mobileTrigger);
   function setBackgroundInert(value) {
     if (value) {
       for (const element of document.body.children) {

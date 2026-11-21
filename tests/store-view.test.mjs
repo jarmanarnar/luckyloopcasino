@@ -56,7 +56,7 @@ test('Package rows expose full accessible amounts, real discounts and no empty f
   vm.runInNewContext(`${source}\nrenderPackages(list, 'h3');`, {
     ...packages, list, document: { createElement: tag => new Node(tag) },
   });
-  assert.equal(list.children.length, 17);
+  assert.equal(list.children.length, 16);
   for (const row of list.children) {
     const entry = packages.getStorePackage(row.dataset.packageId);
     const bonus = row.children.find(child => child.className === 'store-package__bonus');

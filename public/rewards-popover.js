@@ -135,8 +135,7 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
     render();
     try {
       const result = await account.claimTask(id);
-      if (account.isSignedIn()) notice.textContent = result.ok
-        ? `${formatAchievementRewards(result.rewards || { GC: result.amount })} claimed.` : result.reason || 'Unable to claim this reward. Please try again.';
+      if (account.isSignedIn() && !result.ok) notice.textContent = result.reason || 'Unable to claim this reward. Please try again.';
     } catch {
       if (account.isSignedIn()) notice.textContent = 'Unable to claim this reward. Please try again.';
     } finally {

@@ -1,6 +1,6 @@
 let initialized = false;
 
-export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFeature, openChat } = {}) {
+export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFeature } = {}) {
   if (initialized) return;
   const nav = document.querySelector('#mobile-nav');
   const categories = document.querySelector('#catalog-categories');
@@ -8,7 +8,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
     menu: document.querySelector('#site-menu'),
     store: document.querySelector('#store-dialog'),
   };
-  const buttons = new Map(['menu', 'lobby', 'store', 'redeem', 'chat']
+  const buttons = new Map(['lobby', 'store', 'redeem', 'menu']
     .map(action => [action, document.querySelector(`#mobile-nav-${action}`)]));
   if (![nav, categories, ...Object.values(dialogs), ...buttons.values()].every(Boolean)) return;
   initialized = true;
@@ -18,17 +18,14 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
       : dialogs.store.open ? 'store'
-      : document.body.dataset.chat === 'open' ? 'chat'
       : document.body.dataset.view === 'game' || document.body.dataset.page === 'game-details' ? null
         : categories.dataset.activeMenu === 'redeem' ? 'redeem'
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
-        : document.body.dataset.page === 'feature'
-          || ['search', 'providers'].includes(categories.dataset.activeMenu) ? 'menu'
         : document.body.dataset.page === 'home' ? 'lobby' : null;
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);
-      if (active && !['menu', 'store', 'chat'].includes(action)) button.setAttribute('aria-current', 'page');
+      if (active && !['menu', 'store'].includes(action)) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
       if (dialogs[action]) button.setAttribute('aria-expanded', String(dialogs[action].open));
     }
@@ -47,9 +44,6 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
         break;
       case 'redeem':
         openFeature?.(action);
-        break;
-      case 'chat':
-        openChat?.(button);
         break;
     }
     sync();
@@ -71,7 +65,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
 
   const observer = new MutationObserver(sync);
   observer.observe(categories, { attributes: true, attributeFilter: ['data-active-menu'] });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['data-view', 'data-page', 'data-chat'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['data-view', 'data-page'] });
   for (const dialog of Object.values(dialogs)) {
     observer.observe(dialog, { attributes: true, attributeFilter: ['open'] });
   }
