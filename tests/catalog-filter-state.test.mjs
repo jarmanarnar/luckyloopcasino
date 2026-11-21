@@ -173,3 +173,49 @@ test('clearing global and provider-directory filters keeps their destinations', 
     { type: 'search' });
   assert.deepEqual(resetCatalogFilters(Object.freeze({ type: 'providers', query: 'netent' })), { type: 'providers' });
 });
+
+test('panel reset keeps the query while clearing global filters and family-only destinations', () => {
+  for (const scope of [
+    { type: 'search', gameTypeId: 'table' },
+    { type: 'category', gameTypeId: 'table' },
+    { type: 'category', categoryId: 'table' },
+  ]) {
+    const route = Object.freeze({ ...scope, query: 'starburst', providerId: 'netent', sort: 'za' });
+    const next = resetCatalogFilters(route, { preserveQuery: true });
+    assert.deepEqual(next, { type: 'search', query: 'starburst' });
+    assert.ok(getCatalogPage(next).games.length > 0);
+    assert.equal(route.providerId, 'netent', 'the original route is not mutated');
+    assert.equal(route.sort, 'za');
+  }
+});
+
+test('panel reset preserves query and collection, fixed-provider, or personal scope together', () => {
+  const game = getGamesForCategory('fruit').find(item => item.providerId === 'taparoo');
+  assert.ok(game);
+  const state = { favoriteIds: [game.id], history: [{ type: 'game', gameId: game.id }] };
+  for (const type of ['category', 'provider', 'favorites', 'recent-games']) {
+    const route = Object.freeze({ type, categoryId: 'fruit', providerId: 'taparoo', gameTypeId: 'table',
+      query: game.title, sort: 'za' });
+    assert.equal(getCatalogPage(route, state).games.length, 0);
+    const next = resetCatalogFilters(route, { preserveQuery: true });
+    assert.deepEqual(next, { type, categoryId: 'fruit', query: game.title,
+      ...(type === 'provider' ? { providerId: 'taparoo' } : {}) });
+    const page = getCatalogPage(next, state);
+    assert.ok(page.games.some(item => item.id === game.id));
+    assert.equal(page.categoryId, 'fruit');
+    if (type === 'provider') assert.ok(page.games.every(item => item.providerId === 'taparoo'));
+    if (type === 'favorites' || type === 'recent-games') assert.deepEqual(page.games.map(item => item.id), [game.id]);
+  }
+});
+
+test('query-preserving reset retains legacy named themes and exact input without changing default reset', () => {
+  const route = Object.freeze({ type: 'category', categoryId: 'slots', themeId: 'fruit',
+    gameTypeId: 'slots', query: '  gold  ', providerId: 'netent', sort: 'za' });
+  const scope = { type: 'category', categoryId: 'fruit', themeId: 'fruit' };
+  assert.deepEqual(resetCatalogFilters(route, { preserveQuery: true }), { ...scope, query: '  gold  ' });
+  assert.deepEqual(resetCatalogFilters(route), scope);
+  assert.deepEqual(resetCatalogFilters(route, {}), scope);
+  assert.deepEqual(resetCatalogFilters(route, { preserveQuery: false }), scope);
+  assert.deepEqual(resetCatalogFilters({ type: 'search', query: '' }, { preserveQuery: true }), { type: 'search', query: '' });
+  assert.deepEqual(resetCatalogFilters({ type: 'search' }, { preserveQuery: true }), { type: 'search' });
+});

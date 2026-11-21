@@ -226,12 +226,12 @@
           <input id="catalog-page-search-input" type="search" placeholder="Search games" aria-label="Search games" autocomplete="off" enterkeyhint="search">
           <button id="catalog-search-clear" class="catalog-search-clear" type="button" aria-label="Clear search" hidden><svg data-ui-icon="close" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
         </form>
-        <button id="catalog-filters-toggle" class="catalog-filters-toggle" type="button" aria-controls="catalog-filter-panel" aria-expanded="false">Filters<span id="catalog-filters-count" class="catalog-filters-count" hidden></span><svg data-ui-icon="down" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg></button>
-        <div id="catalog-filter-panel" class="catalog-filter-panel" data-expanded="false">
+        <button id="catalog-filters-toggle" class="catalog-search-toggle catalog-filters-toggle" type="button" aria-label="Filters" aria-controls="catalog-filter-panel" aria-expanded="false"><svg data-ui-icon="filters" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"></svg><span id="catalog-filters-count" class="catalog-filters-count" aria-hidden="true" hidden></span></button>
+        <div id="catalog-filter-panel" class="catalog-filter-panel" role="group" aria-label="Game filters" data-expanded="false">
           <div id="catalog-filter-fields" class="catalog-filter-fields">
-            <div class="catalog-page-filter catalog-page-filter--type"><span class="visually-hidden" id="catalog-page-game-type-label">Game type</span><select id="catalog-page-game-type" aria-label="Game type"></select></div>
-            <div class="catalog-page-filter catalog-page-filter--provider"><span class="visually-hidden" id="catalog-page-provider-label">Game provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
-            <div class="catalog-page-filter catalog-page-filter--sort"><span class="visually-hidden" id="catalog-page-sort-label">Sort games</span><select id="catalog-page-sort" aria-label="Sort games"></select></div>
+            <div class="catalog-page-filter catalog-page-filter--type"><span class="catalog-field-label" id="catalog-page-game-type-label">Game type</span><select id="catalog-page-game-type" aria-label="Game type"></select></div>
+            <div class="catalog-page-filter catalog-page-filter--provider"><span class="catalog-field-label" id="catalog-page-provider-label">Provider</span><select id="catalog-page-provider" aria-label="Game provider"></select></div>
+            <div class="catalog-page-filter catalog-page-filter--sort"><div class="catalog-field-label"><span id="catalog-page-sort-label">Sort by</span><button id="catalog-filter-reset" class="catalog-filter-reset" type="button" aria-label="Clear filters" disabled>Reset</button></div><select id="catalog-page-sort" aria-label="Sort games"></select></div>
           </div>
         </div>
       </div>

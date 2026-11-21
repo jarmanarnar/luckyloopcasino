@@ -30,9 +30,9 @@ export function changeCatalogGameType(route, gameTypeId, { favoriteIds = [], his
   return next;
 }
 
-export function resetCatalogFilters(route) {
+export function resetCatalogFilters(route, { preserveQuery = false } = {}) {
   const next = copyCollectionScope(route);
-  delete next.query;
+  if (!preserveQuery) delete next.query;
   delete next.gameTypeId;
   delete next.sort;
   if (next.type !== 'provider') delete next.providerId;

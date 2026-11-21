@@ -119,6 +119,7 @@ export function initCatalogView({ router, member } = {}) {
   const filterToggle = document.querySelector('#catalog-filters-toggle');
   const filterCount = document.querySelector('#catalog-filters-count');
   const filterPanel = document.querySelector('#catalog-filter-panel');
+  const filterReset = document.querySelector('#catalog-filter-reset');
   const providerSelect = document.querySelector('#catalog-page-provider');
   const gameTypeSelect = document.querySelector('#catalog-page-game-type');
   const sortSelect = document.querySelector('#catalog-page-sort');
@@ -128,13 +129,16 @@ export function initCatalogView({ router, member } = {}) {
   const toolbar = document.querySelector('.catalog-toolbar');
   if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
     providerSelect, gameTypeSelect, sortSelect, pagination, details, browser, searchClear, filterToggle, lobbySearchLink,
-    filterCount, filterPanel, hero, toolbar].every(Boolean)) return;
+    filterCount, filterPanel, filterReset, hero, toolbar].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const compactFilters = window.matchMedia('(max-width: 48rem)');
+  let compactFilters = false;
   let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', filtersOpen = false, composing = false;
   function syncFilterPanel() {
-    const expanded = !compactFilters.matches || filtersOpen;
+    compactFilters = getComputedStyle(controls).getPropertyValue('--catalog-filters-compact').trim() === '1';
+    const expanded = !compactFilters || filtersOpen;
+    if (!expanded && filterPanel.contains(document.activeElement)) filterToggle.focus({ preventScroll: true });
+    if (!compactFilters && document.activeElement === filterToggle) input.focus({ preventScroll: true });
     filterPanel.dataset.expanded = String(expanded);
     filterPanel.inert = !expanded;
     filterPanel.setAttribute('aria-hidden', String(!expanded));
@@ -158,9 +162,12 @@ export function initCatalogView({ router, member } = {}) {
     categories.append(button);
   }
   function updateFilterBadge(route, model) {
+    const { favorites: favoriteIds, history } = member?.getState() || {};
+    const defaults = getCatalogPage(resetCatalogFilters(route, { preserveQuery: true }), { favoriteIds, history });
     const additionalCount = Number(Boolean(route.providerId && route.type !== 'provider'))
       + Number(Boolean(model.gameTypeId))
-      + Number(Boolean(route.sort && route.sort === model.sort));
+      + Number(Boolean(route.sort && route.sort === model.sort && model.sort !== defaults.sort));
+    filterReset.disabled = !additionalCount;
     filterCount.textContent = String(additionalCount);
     filterCount.hidden = !additionalCount;
     filterToggle.setAttribute('aria-label', additionalCount ? `Filters, ${additionalCount} active` : 'Filters');
@@ -453,6 +460,12 @@ export function initCatalogView({ router, member } = {}) {
     if (!composing) inputTimer = window.setTimeout(() => updateFilters({ query: input.value }, { replace: true }), 180);
   }
   input.addEventListener('input', queueSearch);
+  input.addEventListener('blur', () => {
+    // Commit before a filter opens so a pending search cannot close its menu.
+    if (!composing && input.value !== (router.getRoute().query || '')) {
+      updateFilters({ query: input.value }, { replace: true });
+    }
+  });
   input.addEventListener('compositionstart', () => { composing = true; window.clearTimeout(inputTimer); });
   input.addEventListener('compositionend', () => { composing = false; queueSearch(); });
   searchClear.addEventListener('click', () => {
@@ -474,13 +487,16 @@ export function initCatalogView({ router, member } = {}) {
     navigateFilters(next, { preserveScroll: true, focus: false });
   });
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
-  filterToggle.addEventListener('click', () => { filtersOpen = !filtersOpen; syncFilterPanel(); });
-  compactFilters.addEventListener('change', () => {
-    if (compactFilters.matches && !filtersOpen && filterPanel.contains(document.activeElement)) filterToggle.focus({ preventScroll: true });
-    syncFilterPanel();
+  filterReset.addEventListener('click', () => {
+    window.clearTimeout(inputTimer);
+    const next = resetCatalogFilters({ ...router.getRoute(), query: input.value }, { preserveQuery: true });
+    navigateFilters(next, { preserveScroll: true, focus: false });
+    filterPanel.querySelector('.catalog-page-filter:not([hidden]) .catalog-select-trigger:not(:disabled)')?.focus({ preventScroll: true });
   });
+  filterToggle.addEventListener('click', () => { filtersOpen = !filtersOpen; syncFilterPanel(); });
+  new ResizeObserver(syncFilterPanel).observe(browser);
   filterPanel.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !compactFilters.matches || !filtersOpen || event.defaultPrevented) return;
+    if (event.key !== 'Escape' || !compactFilters || !filtersOpen || event.defaultPrevented) return;
     event.preventDefault();
     filtersOpen = false;
     syncFilterPanel();

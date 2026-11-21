@@ -20,37 +20,41 @@
 }
 
 .catalog-browser {
+  container: catalog-controls / inline-size;
   min-width: 0;
   margin-bottom: 2rem;
 }
 .catalog-browser--results { margin-bottom: 1rem; }
 .catalog-page-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  /* One content-width decision is shared with keyboard/focus handling. */
+  --catalog-filters-compact: 0;
+  display: grid;
+  grid-template-columns: minmax(18rem, 1fr) minmax(0, 2fr);
+  align-items: end;
   gap: .75rem;
   min-width: 0;
   margin: 0;
 }
-.catalog-filter-panel { flex: 2 1 34rem; min-width: 0; }
-.catalog-filter-fields { display: flex; gap: .75rem; min-width: 0; height: 100%; }
+.catalog-filter-panel { min-width: 0; }
+.catalog-filter-fields { display: flex; gap: .75rem; min-width: 0; }
 
 .catalog-page-search {
   box-sizing: border-box;
+  position: relative;
   display: flex;
-  flex: 1 1 18rem;
   align-items: center;
-  gap: .625rem;
+  gap: .5rem;
   min-width: 0;
-  min-height: var(--touch-target);
+  height: var(--catalog-control-size);
   margin: 0;
-  padding-inline: .875rem;
+  padding-inline: .75rem;
   border: 1px solid var(--border-default);
-  border-radius: .75rem;
+  border-radius: .625rem;
   background: var(--surface-inset), var(--surface-glow);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
   color: var(--text-secondary);
 }
+.catalog-page-search:has(.catalog-search-clear:not([hidden])) { padding-inline-end: var(--catalog-control-size); }
 
 .catalog-page-search > svg {
   flex: none;
@@ -63,7 +67,7 @@
   flex: 1;
   width: 100%;
   min-width: 0;
-  min-height: var(--touch-target);
+  height: 100%;
   padding: .5rem 0;
   border: 0;
   outline: 0;
@@ -78,11 +82,14 @@
 
 .catalog-page-search input::-webkit-search-cancel-button { display: none; }
 .catalog-search-clear {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
   display: grid;
   place-items: center;
   flex: none;
   width: var(--catalog-control-size);
-  height: var(--catalog-control-size);
+  height: 100%;
   padding: 0;
   border: 0;
   border-radius: .625rem;
@@ -94,31 +101,22 @@
 .catalog-search-clear:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
 .catalog-search-clear:active { background: var(--surface-control); }
 .catalog-filters-toggle {
+  position: relative;
   display: none;
-  align-items: center;
-  justify-content: center;
-  gap: .375rem;
-  min-height: var(--touch-target);
-  padding: .625rem .75rem;
-  border: 1px solid var(--border-default);
-  border-radius: .75rem;
-  background: var(--surface-inset), var(--surface-glow);
-  color: var(--text-primary);
-  font-size: .875rem;
-  font-weight: 400;
-  cursor: pointer;
 }
-.catalog-filters-toggle > svg { width: 14px; height: 14px; color: var(--text-secondary); transition: transform 200ms ease; }
-.catalog-filters-toggle[aria-expanded="true"] > svg { transform: rotate(180deg); }
-.catalog-filters-toggle:is(:hover, :focus-visible, [aria-expanded="true"]) { background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow); }
+.catalog-filters-toggle[aria-expanded="true"] { background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow); color: var(--text-primary); }
 .catalog-filters-count {
+  position: absolute;
+  inset-block-start: -.25rem;
+  inset-inline-end: -.25rem;
   display: inline-grid;
   place-items: center;
   min-width: 1.125rem;
   height: 1.125rem;
   padding-inline: .125rem;
   border-radius: 50%;
-  background: var(--surface-active);
+  background: var(--surface-control);
+  border: 1px solid var(--border-default);
   color: var(--text-primary);
   font-size: .75rem;
   line-height: 1;
@@ -139,19 +137,45 @@ body[data-page="home"] #lobby-view .catalog-browser + .catalog-shelves > .game-s
 
 .catalog-page-filter {
   display: flex;
+  flex-direction: column;
+  gap: .375rem;
   flex: 1 1 12rem;
   min-width: 0;
 }
+.catalog-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 1.5rem;
+  color: var(--text-secondary);
+  font-size: .75rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+.catalog-filter-reset {
+  flex: none;
+  min-height: 1.5rem;
+  padding: 0 .25rem;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.catalog-filter-reset:is(:hover, :focus-visible):not(:disabled) { background: var(--surface-subtle); }
+.catalog-filter-reset:disabled { opacity: .4; cursor: default; }
 
 .catalog-page-filter select,
 .catalog-select-trigger {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  min-height: var(--touch-target);
+  height: var(--catalog-control-size);
   padding: .625rem .875rem;
   border: 1px solid var(--border-default);
-  border-radius: .75rem;
+  border-radius: .625rem;
   background: var(--surface-inset), var(--surface-glow);
   box-shadow: inset 0 1px 0 var(--surface-subtle);
   color: var(--text-primary);
@@ -329,17 +353,24 @@ body:not([data-page="home"]) #catalog-empty {
 }
 
 @media (max-width: 32rem) {
-  .catalog-page-filter select, .catalog-select-trigger { padding-inline: .625rem; font-size: .875rem; }
   .catalog-provider-details { margin-block-start: 2rem; }
 }
 
 @media (max-width: 48rem) {
   .catalog-browser { margin-bottom: 1.5rem; }
   .catalog-browser--results { margin-bottom: 1rem; }
+  .catalog-browser:not(.catalog-browser--lobby) .catalog-toolbar { margin-block-start: .75rem; }
+}
+.catalog-page-controls:has(.catalog-filter-panel[hidden]) { grid-template-columns: minmax(0, 1fr); }
+body:has(.lobby-promotions:not([hidden])) .catalog-browser { --catalog-promo-clearance: 2.5rem; }
+
+/* Collapse before the available content lane forces an accidental second row. */
+@container catalog-controls (width < 54rem) {
+  .catalog-page-controls { --catalog-filters-compact: 1; }
   .catalog-page-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 .625rem; }
   .catalog-page-search { grid-column: 1; }
   .catalog-page-search:has(+ .catalog-filters-toggle[hidden]) { grid-column: 1 / -1; }
-  .catalog-filters-toggle { display: inline-flex; grid-column: 2; }
+  .catalog-filters-toggle { display: grid; grid-column: 2; margin-inline-end: var(--catalog-promo-clearance, 0px); }
   .catalog-filter-panel {
     display: grid;
     grid-column: 1 / -1;
@@ -350,17 +381,19 @@ body:not([data-page="home"]) #catalog-empty {
     transition: grid-template-rows 220ms ease, margin-top 220ms ease, opacity 160ms ease, visibility 220ms;
   }
   .catalog-filter-panel[data-expanded="true"] { grid-template-rows: 1fr; margin-top: .75rem; opacity: 1; visibility: visible; }
-  .catalog-filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; min-height: 0; height: auto; overflow: hidden; }
+  .catalog-filter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; min-height: 0; overflow: hidden; }
+  .catalog-filter-fields:has(.catalog-page-filter--provider[hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container catalog-controls (width < 34rem) {
+  .catalog-filter-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .catalog-page-filter--type { grid-column: 1 / -1; }
   .catalog-filter-fields:has(.catalog-page-filter--provider[hidden]) .catalog-page-filter--sort { grid-column: 1 / -1; }
-  .catalog-browser:not(.catalog-browser--lobby) .catalog-toolbar { margin-block-start: .75rem; }
+}
+@container catalog-controls (width < 20rem) {
+  .catalog-filter-fields { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   .catalog-filter-panel, .catalog-filters-toggle > svg { transition: none; }
-}
-@media (width <= 599px) {
-  /* Leave the floating promotions clear of the mobile Filters button. */
-  body:has(.lobby-promotions:not([hidden])) .catalog-filters-toggle { margin-inline-end: 2.5rem; }
 }
 body[data-reduce-motion="true"] :is(.catalog-filter-panel, .catalog-filters-toggle > svg) { transition: none; }
 
@@ -369,8 +402,7 @@ body[data-reduce-motion="true"] :is(.catalog-filter-panel, .catalog-filters-togg
   .catalog-result-shelf .provider-track.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Collections and provider pages follow the lobby's lighter typography.
-   Retain the existing 48rem title and 32rem compact-filter breakpoints. */
+/* Collections and provider pages follow the lobby's lighter typography. */
 body:is([data-page="favorites"], [data-page="recent-games"], [data-page="providers"], [data-page="provider"]) #lobby-view {
   --shelf-title-size: 1.375rem;
   --game-title-size: .9375rem;
