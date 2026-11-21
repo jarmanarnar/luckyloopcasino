@@ -47,7 +47,8 @@ export function initHeroCarousel({ account, openHome, openCategory, openProvider
   let progressIndex = -1;
   let progressReduced = motionReduced();
   let hovered = false;
-  let focused = root.contains(document.activeElement);
+  const hasKeyboardFocus = target => root.contains(target) && target.matches(':focus-visible');
+  let focused = hasKeyboardFocus(document.activeElement);
   let dragging = false;
   let dragStart = carousel.selectedScrollSnap();
   let suspended = false;
@@ -93,7 +94,7 @@ export function initHeroCarousel({ account, openHome, openCategory, openProvider
     signedIn = next;
     slides = audienceSlides();
     renderDots();
-    focused = root.contains(document.activeElement) && !selectedSlide?.hidden;
+    focused = hasKeyboardFocus(document.activeElement) && !selectedSlide?.hidden;
     dragging = false;
     status.textContent = '';
     // Supply visible nodes explicitly: hidden DOM children must not become empty snaps.
@@ -200,9 +201,9 @@ export function initHeroCarousel({ account, openHome, openCategory, openProvider
     scheduleRotation();
   });
   root.addEventListener('pointerleave', () => { hovered = false; scheduleRotation(); });
-  root.addEventListener('focusin', () => { focused = true; scheduleRotation(); });
+  root.addEventListener('focusin', event => { focused = hasKeyboardFocus(event.target); scheduleRotation(); });
   root.addEventListener('focusout', event => {
-    focused = root.contains(event.relatedTarget);
+    focused = hasKeyboardFocus(event.relatedTarget);
     scheduleRotation();
   });
 

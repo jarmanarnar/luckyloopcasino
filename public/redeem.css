@@ -46,7 +46,9 @@ html:has(#redeem-dialog[open]) { overflow: hidden; }
 .redeem-method strong { font-size: 1.0625rem; font-weight: 500; }
 .redeem-method small { color: var(--text-secondary); font-size: .875rem; }
 .redeem-method__arrow { width: .875rem; height: .875rem; margin-left: auto; flex: none; color: var(--text-secondary); }
-.redeem-method:hover { background: var(--surface-subtle), var(--surface-glow); border-color: color-mix(in srgb, var(--redeem-accent) 25%, var(--border-default)); }
+@media (hover: hover) and (pointer: fine) {
+  .redeem-method:hover { background: var(--surface-subtle), var(--surface-glow); border-color: color-mix(in srgb, var(--redeem-accent) 25%, var(--border-default)); }
+}
 .redeem-method:active { transform: translateY(1px); }
 .redeem-method:focus-visible, .redeem-change:focus-visible, .redeem-max:focus-visible, .redeem-submit:focus-visible { outline: 2px solid var(--text-secondary); outline-offset: 3px; }
 .redeem-preview-note { margin: 1.25rem 0 0; color: var(--text-secondary); font-size: .8125rem; line-height: 1.6; text-align: center; }
@@ -54,7 +56,10 @@ html:has(#redeem-dialog[open]) { overflow: hidden; }
 .redeem-selected strong { font-size: 1rem; font-weight: 500; }
 .redeem-change, .redeem-max { min-height: var(--touch-target); padding: .5rem .75rem; border: 1px solid var(--border-default); border-radius: .5rem; color: var(--text-primary); background: var(--surface-inset), var(--surface-panel); font: 500 .875rem var(--header-font-family); cursor: pointer; }
 .redeem-change { border-color: transparent; color: var(--text-secondary); background: transparent; }
-.redeem-change:hover, .redeem-max:hover:not(:disabled) { color: var(--text-primary); background: var(--surface-control); }
+@media (hover: hover) and (pointer: fine) {
+  .redeem-change:hover,
+  .redeem-max:hover:not(:disabled) { color: var(--text-primary); background: var(--surface-control); }
+}
 .redeem-max:disabled { opacity: .45; cursor: default; }
 .redeem-balance { padding: 1rem; border: 1px solid var(--border-default); border-radius: .875rem; background: var(--surface-inset), var(--surface-panel); }
 .redeem-balance__total, .redeem-balance__line, .redeem-rate { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .9375rem; }

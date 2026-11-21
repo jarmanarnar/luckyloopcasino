@@ -36,6 +36,7 @@ function heroPage({ reduced = false, intersection = true, starting = false, welc
       for (let node = this.parent; node; node = node.parent) node.emit('click', event);
     }
     contains(node) { for (let next = node; next; next = next.parent) if (next === this) return true; return false; }
+    matches(selector) { assert.equal(selector, ':focus-visible'); return this.focusVisible === true; }
     closest(selector) {
       const property = { '[data-hero-index]': 'heroIndex', '[data-hero-category]': 'heroCategory' }[selector];
       if (!property) throw new Error(`Unexpected selector: ${selector}`);
@@ -444,11 +445,14 @@ test('one six-second timer rotates without live announcements and stops for game
 test('hover, focus, and dragging suspend rotation until all temporary pause states clear', () => {
   const page = heroPage(); page.visible();
   const root = page.nodes['hero-carousel'];
+  const dot = page.nodes['hero-dots'].children[0];
+  root.focusVisible = true;
+  dot.focusVisible = true;
   root.emit('pointerenter', { pointerType: 'mouse' }); assert.equal(page.timers.size, 0);
   root.emit('pointerleave'); assert.equal(page.timers.size, 1);
   root.emit('pointerenter', { pointerType: 'touch' }); assert.equal(page.timers.size, 1);
   root.emit('focusin'); assert.equal(page.timers.size, 0);
-  root.emit('focusout', { relatedTarget: page.nodes['hero-dots'].children[0] }); assert.equal(page.timers.size, 0);
+  root.emit('focusout', { relatedTarget: dot }); assert.equal(page.timers.size, 0);
   root.emit('focusout', { relatedTarget: null }); assert.equal(page.timers.size, 1);
   page.emit('pointerDown'); assert.equal(page.timers.size, 0);
   page.select(2); assert.equal(page.timers.size, 0);
@@ -464,6 +468,32 @@ test('a tap without a slide change does not make a later autoplay movement annou
   page.emit('pointerDown'); page.emit('pointerUp'); page.emit('settle');
   page.fireTimer(); page.emit('settle');
   assert.equal(page.nodes['hero-status'].textContent, '');
+});
+
+test('touch focus keeps autoplay running after dot taps and audience changes', () => {
+  const page = heroPage({ welcomeGuest: true }); page.visible();
+  const root = page.nodes['hero-carousel'];
+  const dot = page.nodes['hero-dots'].children[1];
+  page.document.activeElement = dot;
+  root.emit('focusin', { target: dot });
+  dot.click();
+  assert.equal(page.api.selectedScrollSnap(), 1);
+  assert.equal(page.timers.size, 1, 'touch-focused dots must not leave autoplay paused');
+  page.fireTimer();
+  assert.equal(page.api.selectedScrollSnap(), 2);
+
+  const cta = page.slides[2].children[0];
+  page.document.activeElement = cta;
+  root.emit('focusin', { target: cta });
+  page.setSignedIn(true);
+  assert.equal(page.timers.size, 1, 'audience updates must not promote touch focus to a keyboard pause');
+
+  cta.focusVisible = true;
+  root.emit('focusin', { target: cta });
+  assert.equal(page.timers.size, 0, 'keyboard focus still pauses the carousel');
+  const touchDot = page.nodes['hero-dots'].children[0];
+  root.emit('focusout', { relatedTarget: touchDot });
+  assert.equal(page.timers.size, 1, 'moving from keyboard focus to touch focus releases the pause');
 });
 
 test('reduced motion disables autoplay, jumps manual navigation, and updates without a page reload', () => {
@@ -571,6 +601,7 @@ test('page suspension and carousel destruction clear timers; a restored page res
 test('white fill and rotation share one countdown, including pauses with overlapping reasons', () => {
   const page = heroPage(); page.visible();
   const root = page.nodes['hero-carousel'];
+  root.focusVisible = true;
   const fill = page.animations.at(-1);
   assert.equal(fill.target.className, 'hero-carousel__dot-fill');
   assert.equal(fill.options.duration, 6000);

@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { formatBalance } from './wallet-state.js';
 import { redemptionAmount } from './redeem-state.js';
 
@@ -120,7 +122,7 @@ export function initRedeemView({ router, account, auth, popupNavigation }) {
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(dialog);
   });
   router.subscribe(close);
   account.subscribe(() => {
@@ -143,3 +145,4 @@ export function initRedeemView({ router, account, auth, popupNavigation }) {
     },
   };
 }
+

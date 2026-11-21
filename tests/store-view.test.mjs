@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -5,7 +6,7 @@ import vm from 'node:vm';
 import * as packages from '../public/store-packages.js';
 
 const source = (await readFile(new URL('../public/store-view.js', import.meta.url), 'utf8'))
-  .replace(/^import .*;\r?\n/, '')
+  .replace(/^import .*;\r?\n/gm, '')
   .replace('export function initStoreView', 'function initStoreView');
 
 function storePage({ desktop = false, signedIn = true } = {}) {
@@ -28,7 +29,7 @@ function storePage({ desktop = false, signedIn = true } = {}) {
   };
   const account = { isSignedIn: () => signedIn, subscribe(fn) { subscribers.push(fn); } };
   const auth = { require(action) { if (signedIn) action(); else pending.push(action); } };
-  const context = {
+  const context = { requestDialogClose,
     STORE_PACKAGES: [], router, account, auth,
     document: {
       body: { dataset: {} },

@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -35,7 +36,7 @@ function page({ hold, failure = false, signedIn = true, member = { attendance: {
     async claimTask(taskId) { calls++; if (hold) await hold; if (failure) throw new Error('Storage unavailable'); const outcome = applyAccountCommand(saved, { type: 'claim-task', taskId }); saved = outcome.account; listeners.forEach(fn => fn()); return outcome.result; },
   };
   const icon = () => new Element('svg');
-  const context = { document, account, getAchievements, achievementMedal, format, formatAchievementRewards, createShelfIcon: icon, createUiIcon: icon,
+  const context = { requestDialogClose, document, account, getAchievements, achievementMedal, format, formatAchievementRewards, createShelfIcon: icon, createUiIcon: icon,
     openVerification: metric => verifications.push(metric),
     auth: { require: fn => { authRequired++; return fn(); }, open: mode => registrations.push({ mode, detailOpen: document.getElementById('achievement-dialog').open }) },
     router: { subscribe() {}, navigate: route => navigations.push(route) } };

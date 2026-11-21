@@ -27,7 +27,10 @@ html:has(#how-to-play-dialog[open]) { overflow: hidden; }
   color: var(--text-secondary);
   transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
-.how-to-play-dialog .how-to-play-arrow.icon-button:is(:hover, :focus-visible) { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+.how-to-play-dialog .how-to-play-arrow.icon-button:focus-visible { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .how-to-play-dialog .how-to-play-arrow.icon-button:hover { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+}
 .how-to-play-dialog .how-to-play-arrow.icon-button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px var(--shadow-color); }
 .how-to-play-body { min-height: 0; padding: 1.25rem; overflow-y: auto; overscroll-behavior: contain; text-align: center; scrollbar-width: thin; scrollbar-color: var(--surface-active) transparent; }
 .how-to-play-mode { margin: 0; font-size: 1.0625rem; line-height: 1.5; font-weight: 500; }

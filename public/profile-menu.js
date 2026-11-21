@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { getDiscoveredGameCount } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { prepareProfilePhoto, renderProfileAvatar } from './profile-photo.js';
@@ -240,11 +242,11 @@ export function initProfileMenu({ router, account, auth, popupNavigation, openNo
   }
   menu.addEventListener('click', navigate);
   summary.addEventListener('click', navigate);
-  summary.querySelector('.profile-summary__close').addEventListener('click', closeSummary);
+  summary.querySelector('.profile-summary__close').addEventListener('click', () => requestDialogClose(summary));
   summary.addEventListener('click', event => {
     if (event.target !== summary) return;
     const bounds = summary.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeSummary();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) requestDialogClose(summary);
   });
 
   const actions = {
@@ -283,3 +285,4 @@ export function initProfileMenu({ router, account, auth, popupNavigation, openNo
   });
   return { open };
 }
+

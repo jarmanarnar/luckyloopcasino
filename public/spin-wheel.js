@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { SPIN_PRIZES, SPIN_DURATION, spinStatus, spinCountdown, spinClockParts, spinLanding, spinProgress } from './spin-wheel-state.js';
 import { createUiIcon } from './ui-icons.js';
 import { createWalletCounter } from './wallet-counter.js';
@@ -447,10 +449,10 @@ export function initSpinWheel({ account, auth, router, popupNavigation }) {
     soundButton.setAttribute('aria-label', sound ? 'Turn wheel sound off' : 'Turn wheel sound on');
     if (sound) tone();
   });
-  close.addEventListener('click', () => dialog.close());
-  done.addEventListener('click', () => winDialog.close());
-  winClose.addEventListener('click', closeAll);
-  winDialog.addEventListener('click', event => { if (event.target === winDialog) winDialog.close(); });
+  close.addEventListener('click', () => requestDialogClose(dialog));
+  done.addEventListener('click', () => requestDialogClose(winDialog));
+  winClose.addEventListener('click', () => requestDialogClose(winDialog, { onClosed: closeAll }));
+  winDialog.addEventListener('click', event => { if (event.target === winDialog) requestDialogClose(winDialog); });
   winDialog.addEventListener('close', () => {
     if (winDialog.open) return;
     winWalletMenu.close();
@@ -463,7 +465,7 @@ export function initSpinWheel({ account, auth, router, popupNavigation }) {
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(dialog);
   });
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
@@ -503,3 +505,4 @@ export function initSpinWheel({ account, auth, router, popupNavigation }) {
   update(); view('wheel');
   return { openSpinWheel };
 }
+

@@ -27,7 +27,10 @@ body:is([data-player-mobile="true"], [data-player-fullscreen="true"]) .lobby-pro
   transition: transform 180ms ease, border-color 180ms ease;
 }
 .lobby-promotions__trigger[data-tone="red"] { --promotion-color: 229, 54, 71; }
-.lobby-promotions__trigger:is(:hover, :focus-visible) { transform: translateX(-3px); border-color: rgba(var(--promotion-color), .85); }
+.lobby-promotions__trigger:focus-visible { transform: translateX(-3px); border-color: rgba(var(--promotion-color), .85); }
+@media (hover: hover) and (pointer: fine) {
+  .lobby-promotions__trigger:hover { transform: translateX(-3px); border-color: rgba(var(--promotion-color), .85); }
+}
 .lobby-promotions__trigger:active { transform: translateX(-2px) scale(.95); }
 .lobby-promotions__image { display: block; width: 2.125rem; height: 2.125rem; object-fit: contain; filter: drop-shadow(0 2px 2px #0008); }
 .promotion-dialog {

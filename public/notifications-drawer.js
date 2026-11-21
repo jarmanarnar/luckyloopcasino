@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
 
@@ -121,11 +123,11 @@ export function initNotificationsDrawer({ router, account, auth }) {
   function close() {
     if (dialog.open) dialog.close();
   }
-  dialog.querySelector('.notifications-drawer__close').addEventListener('click', close);
+  dialog.querySelector('.notifications-drawer__close').addEventListener('click', () => requestDialogClose(dialog));
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const bounds = dialog.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) requestDialogClose(dialog);
   });
   router.subscribe(close);
   account.subscribe(() => {
@@ -145,3 +147,4 @@ export function initNotificationsDrawer({ router, account, auth }) {
   trigger.addEventListener('click', open);
   return { open };
 }
+

@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -52,7 +53,7 @@ function authPage() {
     async register() { throw new Error('Not expected'); },
   };
   const router = { subscribe() {}, getRoute: () => ({ type: 'home' }), navigate() {} };
-  const context = { document, account, router, popupNavigation, createAuthRouter, requiresAccount, queueMicrotask };
+  const context = { requestDialogClose, document, account, router, popupNavigation, createAuthRouter, requiresAccount, queueMicrotask };
   const api = vm.runInNewContext(`${source}\ninitAuthView({account, router, popupNavigation});`, context);
   return { api, nodes, popupNavigation, steps, opener, otherDialog, document, writes, focused: () => focused };
 }

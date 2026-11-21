@@ -35,14 +35,9 @@
     overflow: hidden;
     overscroll-behavior: contain;
     color: var(--text-primary);
-    opacity: 0;
-    translate: 0 1rem;
-    transition: opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing),
-      translate var(--mobile-dialog-duration) var(--mobile-dialog-easing);
-    transition: opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing),
-      translate var(--mobile-dialog-duration) var(--mobile-dialog-easing),
-      display var(--mobile-dialog-duration) allow-discrete,
-      overlay var(--mobile-dialog-duration) allow-discrete;
+    opacity: 1;
+    translate: 0 0;
+    transition: none;
   }
 
   dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
@@ -185,14 +180,8 @@
   #spin-win-dialog > .spin-wheel__result { flex: 1 1 auto; width: 100%; max-width: none; margin: 0; }
   #spin-wheel-dialog .spin-wheel__stage { width: min(100%, 22rem, 42dvh); }
 
-  :is(#redeem-methods, #redeem-details, #auth-form, #auth-recovery,
-    #profile-summary-overview, #profile-editor, .spin-wheel__play, .spin-wheel__prizes):not([hidden]) {
-    animation: mobile-dialog-step-in var(--mobile-dialog-step-duration) var(--mobile-dialog-easing) both;
-  }
-  @keyframes mobile-dialog-step-in {
-    from { opacity: 0; transform: translateY(.375rem); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  /* Shell and genuine internal step motion are coordinated by dialog-motion.js.
+     The first visible form must not animate again inside the entering shell. */
 
   .community-chat {
     top: var(--popup-viewport-top, 0px);
@@ -211,26 +200,19 @@
   dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
     #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
     #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)::backdrop {
-    opacity: 0;
+    opacity: 1;
     background: var(--overlay-backdrop);
     backdrop-filter: none;
-    transition: opacity var(--mobile-dialog-duration) ease;
-    transition: opacity var(--mobile-dialog-duration) ease,
-      display var(--mobile-dialog-duration) allow-discrete,
-      overlay var(--mobile-dialog-duration) allow-discrete;
+    transition: none;
   }
   dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
     #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
     #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open]::backdrop { opacity: 1; }
 
-  @starting-style {
-    dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
-      #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
-      #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open] { opacity: 0; translate: 0 1rem; }
-    dialog:is(#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary,
-      #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
-      #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open]::backdrop { opacity: 0; }
-  }
+  dialog[data-dialog-motion="opening"]::backdrop { animation: mobile-dialog-backdrop-in 280ms var(--mobile-dialog-easing) both; }
+  dialog[data-dialog-motion="closing"]::backdrop { animation: mobile-dialog-backdrop-out 200ms var(--mobile-dialog-easing) both; }
+  @keyframes mobile-dialog-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes mobile-dialog-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
 
   body[data-reduce-motion="true"] { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; }
   @media (prefers-reduced-motion: reduce) { :root { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; } }

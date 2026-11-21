@@ -3,7 +3,7 @@ import test from 'node:test';
 import { initPopupNavigation } from '../public/popup-navigation.js';
 import { initRouter } from '../public/routes.js';
 
-function browser({ desktop = false, snapshot, deferRouter = false } = {}) {
+function browser({ desktop = false, snapshot, deferRouter = false, dismissDialog } = {}) {
   const listeners = new Map(), documentListeners = new Map(), frames = new Map();
   const microtasks = [], tasks = [], dialogs = [];
   let frameId = 0, index = snapshot?.index || 0;
@@ -81,7 +81,7 @@ function browser({ desktop = false, snapshot, deferRouter = false } = {}) {
     nativeClose(dialog) { dialog.open = false; closeEvent(dialog); },
     snapshot: () => structuredClone({ entries, index }),
   };
-  page.navigation = initPopupNavigation({ window: scope });
+  page.navigation = initPopupNavigation({ window: scope, dismissDialog });
   page.attachRouter = () => { page.router = initRouter({ window: scope, popupNavigation: page.navigation }); };
   if (!deferRouter) page.attachRouter();
   return page;
@@ -94,6 +94,29 @@ function onAchievements(options) {
 }
 const marker = page => page.scope.history.state?.loopPopup;
 const assertAchievements = page => assert.deepEqual(page.router.getRoute(), { type: 'feature', pageId: 'achievements' });
+
+test('browser Back consumes its history entry while the modal waits for its animated dismissal', () => {
+  let finish;
+  const page = onAchievements({ dismissDialog(dialog, { onClosed }) { finish = () => { dialog.close(); onClosed(); }; } });
+  const dialog = new page.Dialog('store-dialog'); dialog.showModal(); page.settle();
+  page.back();
+  assert.equal(dialog.open, true, 'the shell keeps native modal state until its exit ends');
+  assert.equal(marker(page), undefined); assertAchievements(page);
+  const index = page.index;
+  finish(); page.settle();
+  assert.equal(dialog.open, false); assert.equal(page.index, index);
+  assert.equal(page.scope.scrollY, 420);
+});
+
+test('navigation closes an in-flight Back dismissal synchronously instead of leaving a modal on the new page', () => {
+  let dismissals = 0;
+  const page = onAchievements({ dismissDialog() { dismissals++; } });
+  const dialog = new page.Dialog('store-dialog'); dialog.showModal(); page.settle();
+  page.back(); assert.equal(dialog.open, true); assert.equal(dismissals, 1);
+  page.router.navigate({ type: 'search', query: '' }); page.settle();
+  assert.equal(dialog.open, false); assert.equal(page.router.getRoute().type, 'search');
+  assert.equal(dismissals, 1, 'route changes never start another delayed dismissal');
+});
 
 test('browser Back closes a popup without navigating its page or losing scroll', () => {
   const page = onAchievements(), store = new page.Dialog('store-dialog'), routes = [];

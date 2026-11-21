@@ -45,6 +45,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
       return event;
     }
     focus() { document.activeElement = this; }
+    matches(selector) { assert.equal(selector, ':focus-visible'); return this.focusVisible === true; }
     contains(node) {
       for (let candidate = node; candidate; candidate = candidate.parent) if (candidate === this) return true;
       return false;
@@ -551,9 +552,16 @@ test('coin tooltip supports hover, keyboard dismissal and the first touch tap', 
  trigger.emit('pointerenter', { pointerType: 'touch' });
  assert.equal(answer.hidden, true);
  trigger.emit('focus');
+ assert.equal(answer.hidden, true, 'touch focus alone must not reveal the tooltip');
  trigger.emit('click');
  assert.equal(answer.hidden, false, 'focus preceding a touch click must not immediately close it');
  trigger.emit('click');
+ assert.equal(answer.hidden, true);
+ trigger.focusVisible = true;
+ trigger.emit('focus');
+ assert.equal(answer.hidden, false, 'keyboard focus still reveals the help without a click');
+ trigger.emit('blur', { relatedTarget: null });
+ trigger.focusVisible = false;
  assert.equal(answer.hidden, true);
  trigger.emit('pointerenter', { pointerType: 'mouse' });
  assert.equal(answer.hidden, false);

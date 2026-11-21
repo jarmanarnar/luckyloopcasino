@@ -86,7 +86,10 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
   cursor: pointer;
 }
 
-.phone-verification__submit:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.07); }
+.phone-verification__submit:focus-visible:not(:disabled) { filter: brightness(1.07); }
+@media (hover: hover) and (pointer: fine) {
+  .phone-verification__submit:hover:not(:disabled) { filter: brightness(1.07); }
+}
 .phone-verification__submit:disabled {
   border-color: var(--border-default);
   background: var(--surface-subtle);
@@ -107,7 +110,10 @@ html:has(#phone-verification-dialog[open]) { overflow: hidden; }
   cursor: pointer;
 }
 
-.phone-verification__back:is(:hover, :focus-visible) { color: var(--text-primary); }
+.phone-verification__back:focus-visible { color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .phone-verification__back:hover { color: var(--text-primary); }
+}
 
 .phone-verification__status {
   margin: 0;

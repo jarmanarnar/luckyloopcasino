@@ -112,7 +112,10 @@ body[data-page="home"] > .page-content { margin-top: .5rem; }
 .hero-carousel__dot-mark { display: block; width: .5rem; height: .5rem; overflow: hidden; border-radius: 999px; background: var(--surface-control); transition: width 320ms cubic-bezier(.22, 1, .36, 1); }
 .hero-carousel__dot-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--achievement-silver) 55%, var(--surface-panel)); transform: scaleX(0); transform-origin: left center; }
 .hero-carousel__dot[aria-pressed="true"] .hero-carousel__dot-mark { width: 1.75rem; background: color-mix(in srgb, var(--achievement-silver) 18%, var(--surface-panel)); }
-.hero-carousel__dot:is(:hover, :focus-visible):not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
+.hero-carousel__dot:focus-visible:not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
+@media (hover: hover) and (pointer: fine) {
+  .hero-carousel__dot:hover:not([aria-pressed="true"]) .hero-carousel__dot-mark { background: var(--surface-active); }
+}
 .hero-carousel__dot:not([aria-pressed="true"]) .hero-carousel__dot-fill { visibility: hidden; }
 body[data-reduce-motion="true"] .hero-carousel__dot-mark { transition: none; }
 body[data-reduce-motion="true"] .hero-carousel[data-ready] .hero-carousel__slide { transition: none; }

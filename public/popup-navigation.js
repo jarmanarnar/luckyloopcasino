@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 const HISTORY_KEY = 'loopPopup';
 const instances = new WeakMap();
 let nextSession = 0;
@@ -18,11 +20,13 @@ function readPopup(state) {
 // Popup entries retain the page URL and route ID. The router delegates history
 // events here before deciding whether a real page navigation has occurred.
 export function initPopupNavigation({ window: scope = window, document: doc = scope.document,
+  dismissDialog = requestDialogClose,
   enabled = () => scope.matchMedia?.('(width <= 1024px)').matches ?? true } = {}) {
   if (instances.has(scope)) return instances.get(scope);
   const { history, location } = scope;
   const session = `popup-${Date.now()}-${++nextSession}`;
   const records = new Map();
+  const dismissing = new Set();
   const restorers = [];
   let layers = [], sequence = 0, scheduled = false, traversing = false;
   let pendingNavigation = null, navigating = false, disposed = false, routerReady = false;
@@ -67,12 +71,17 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
     if (typeof history.go === 'function') history.go(-count);
     else history.back();
   }
-  function removeFrom(index, invoke = true, alreadyClosed = null) {
+  function removeFrom(index, invoke = true, alreadyClosed = null, animated = false) {
     const removed = layers.splice(index);
     for (const layer of removed.reverse()) {
       if (!invoke || layer.owner === alreadyClosed) continue;
       if (layer.kind === 'step') layer.onBack();
-      else if (layer.record.isOpen()) layer.record.close();
+      else if (layer.record.isOpen()) {
+        if (animated && layer.record.dismiss) {
+          dismissing.add(layer.record);
+          layer.record.dismiss({ onClosed: () => dismissing.delete(layer.record) });
+        } else layer.record.close();
+      }
     }
   }
   function reconcile() {
@@ -110,6 +119,7 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
     }
   }
   function opened(record, scroll = position()) {
+    dismissing.delete(record);
     if (!record.isOpen() || layers.some(layer => layer.kind === 'popup' && layer.owner === record.owner)) return;
     if (!enabled() && !layers.length && !traversing && !readPopup(history.state)) return;
     if (!layers.length && !readPopup(history.state) && !traversing) {
@@ -133,9 +143,9 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
     }
     schedule();
   }
-  function register({ id, element, isOpen, close }) {
+  function register({ id, element, isOpen, close, dismiss }) {
     const owner = element || {};
-    const record = { id, owner, isOpen, close };
+    const record = { id, owner, isOpen, close, dismiss };
     records.set(owner, record);
     const handle = {
       opened: () => opened(record),
@@ -149,6 +159,7 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
     if (!records.has(dialog)) records.set(dialog, {
       id: dialog.id || 'dialog', owner: dialog, isOpen: () => dialog.open,
       close: () => dialog.close(),
+      dismiss: options => dismissDialog(dialog, options),
     });
     return records.get(dialog);
   }
@@ -174,7 +185,7 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
   // Native Escape, form[method=dialog], and platform close requests do not
   // necessarily invoke the JavaScript close() method.
   function nativeClosed(event) {
-    if (!event.target.open) closed(event.target);
+    if (!event.target.open) { dismissing.delete(records.get(event.target)); closed(event.target); }
   }
   doc?.addEventListener('close', nativeClosed, true);
   for (const dialog of doc?.querySelectorAll('dialog[open]') || []) {
@@ -210,6 +221,10 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
       return true;
     },
     beforeNavigate(action) {
+      // Browser Back may already have consumed an entry while its visual exit
+      // is finishing. A real navigation must still close that shell immediately.
+      for (const record of dismissing) if (record.isOpen()) record.close();
+      dismissing.clear();
       if (navigating || (!layers.length && !traversing && !readPopup(history.state))) return false;
       pendingNavigation = action;
       if (layers.length) removeFrom(0);
@@ -219,7 +234,7 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
     back() {
       if (traversing) return true;
       if (!layers.length) return false;
-      removeFrom(layers.length - 1);
+      removeFrom(layers.length - 1, true, null, true);
       schedule();
       return true;
     },
@@ -246,7 +261,7 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
       if (samePage && (layers.length || marker)) {
         const target = marker?.keys || [];
         const common = commonLength(layers.map(layer => layer.key), target);
-        if (common < layers.length) removeFrom(common);
+        if (common < layers.length) removeFrom(common, true, null, true);
         // A Forward entry whose popup has already been dismissed is stale.
         // Never resurrect forms, wins, or authentication from history state.
         if (target.length > common) traverse(target.length - common);
@@ -271,3 +286,4 @@ export function initPopupNavigation({ window: scope = window, document: doc = sc
   if (readPopup(history.state)) schedule();
   return controller;
 }
+

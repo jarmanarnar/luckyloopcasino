@@ -89,13 +89,9 @@ body:is([data-sidebar="expanded"], [data-sidebar="collapsed"]) .site-sidebar { t
   opacity: 0;
   transform: translateX(-100%);
   pointer-events: none;
-  transition: transform var(--sidebar-duration) var(--sidebar-easing), opacity var(--sidebar-duration) ease,
-    display var(--sidebar-duration) allow-discrete;
 }
 .site-menu[open] { display: flex; flex-direction: column; opacity: 1; transform: translateX(0); pointer-events: auto; }
-@starting-style {
-  .site-menu[open] { opacity: 0; transform: translateX(-100%); }
-}
+.site-menu[data-menu-motion] { will-change: transform; }
 .site-menu__mobile-header {
   /* The fixed top bar already includes the phone's top safe area. */
   height: var(--menu-header-height);

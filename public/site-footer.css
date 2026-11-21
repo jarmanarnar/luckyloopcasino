@@ -40,9 +40,15 @@ body[data-view="game"] .site-footer { display: none; }
   text-decoration: none;
   cursor: pointer;
 }
-.site-footer :is(a, button):is(:hover, :focus-visible) { color: var(--text-primary); }
-.site-footer__links :is(a, button):is(:hover, :focus-visible),
+.site-footer :is(a, button):focus-visible { color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .site-footer :is(a, button):hover { color: var(--text-primary); }
+}
+.site-footer__links :is(a, button):focus-visible,
 .site-footer__back:focus-visible { text-decoration: underline; text-underline-offset: .25rem; }
+@media (hover: hover) and (pointer: fine) {
+  .site-footer__links :is(a, button):hover { text-decoration: underline; text-underline-offset: .25rem; }
+}
 .site-footer__services {
   display: flex;
   align-items: center;

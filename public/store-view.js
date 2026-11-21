@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { STORE_PACKAGES, getStorePackage, formatPackagePrice, formatOriginalPrice, formatPackageCoins } from './store-packages.js';
 
 let controller;
@@ -68,7 +70,7 @@ export function initStoreView({ router, account, auth, verifyPhone } = {}) {
   storeDialog.addEventListener('click', event => {
     if (event.target !== storeDialog) return;
     const rect = storeDialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) storeDialog.close();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(storeDialog);
   });
 
   const entryPoints = document.querySelectorAll('#menu-buy, #wallet-add, #mobile-nav-store');
@@ -101,3 +103,4 @@ export function initStoreView({ router, account, auth, verifyPhone } = {}) {
   controller = { openStore };
   return controller;
 }
+

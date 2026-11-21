@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 const steps = [
   {
     mode: 'both', label: 'Two ways to play',
@@ -61,8 +63,8 @@ export function initHowToPlay({ router } = {}) {
 
   previous.addEventListener('click', () => move(-1));
   next.addEventListener('click', () => move(1));
-  close.addEventListener('click', () => dialog.close());
-  finish.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => requestDialogClose(dialog));
+  finish.addEventListener('click', () => requestDialogClose(dialog));
   dialog.addEventListener('keydown', event => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
@@ -72,7 +74,7 @@ export function initHowToPlay({ router } = {}) {
     if (event.target !== dialog) return;
     const bounds = dialog.getBoundingClientRect();
     if (event.clientX < bounds.left || event.clientX > bounds.right
-      || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+      || event.clientY < bounds.top || event.clientY > bounds.bottom) requestDialogClose(dialog);
   });
   dialog.addEventListener('close', () => {
     [opener, document.querySelector('#mobile-nav-menu'), document.querySelector('.site-logo')]
@@ -91,3 +93,4 @@ export function initHowToPlay({ router } = {}) {
   };
   return controller;
 }
+

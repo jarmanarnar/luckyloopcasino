@@ -9,7 +9,7 @@ test('mobile popup height follows the keyboard viewport, while desktop and pinch
   const viewport = { ...events(), height: 844, offsetTop: 0, scale: 1 };
   const scope = { ...events(), innerHeight: 844, visualViewport: viewport, matchMedia: () => media,
     requestAnimationFrame(fn) { frames.push(fn); return frames.length; }, cancelAnimationFrame() {} };
-  const doc = { documentElement: { style: { setProperty: (key, value) => values.set(key, value), removeProperty: key => values.delete(key) } } };
+  const doc = { ...events(), body: { dataset: {} }, documentElement: { style: { setProperty: (key, value) => values.set(key, value), removeProperty: key => values.delete(key) } } };
   const flush = () => { while (frames.length) frames.shift()(); };
   const controller = initMobileDialogs({ window: scope, document: doc });
   assert.equal(values.get('--popup-viewport-height'), '844px');

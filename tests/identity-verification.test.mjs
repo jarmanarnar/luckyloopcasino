@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -30,7 +31,7 @@ function page({ hold } = {}) {
     },
   };
   let viewed;
-  const context = { document, account, auth: { require: fn => fn() }, router: { subscribe() {} }, createUiIcon: () => new Element('svg'),
+  const context = { requestDialogClose, document, account, auth: { require: fn => fn() }, router: { subscribe() {} }, createUiIcon: () => new Element('svg'),
     setInterval: () => 1, clearInterval() {}, Date: { now: () => time }, onVerified: channel => { viewed = channel; } };
   const api = vm.runInNewContext(`${source}\ninitIdentityVerification({document, account, auth, router, onVerified});`, context);
   return { api, stats, get sent() { return sent; }, get requested() { return requested; }, get viewed() { return viewed; },

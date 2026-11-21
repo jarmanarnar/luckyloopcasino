@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { createUiIcon } from './ui-icons.js';
 
 export function initIdentityVerification({ account, auth, router, onVerified, document: doc = document }) {
@@ -62,9 +64,9 @@ export function initIdentityVerification({ account, auth, router, onVerified, do
     void run(false);
   });
   done.addEventListener('click', () => { const completed = channel; dialog.close(); doc.querySelector('#store-dialog[open]')?.close(); onVerified?.(completed); });
-  close.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => requestDialogClose(dialog));
   dialog.addEventListener('click', event => { if (event.target === dialog) {
-    const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(dialog);
   } });
   dialog.addEventListener('close', () => { generation++; clearInterval(timer); timer = null; code.value = ''; contact.value = ''; if (!doc.querySelector('dialog[open]') && opener?.isConnected) opener.focus({ preventScroll: true }); });
   router.subscribe(() => { if (dialog.open) dialog.close(); });
@@ -84,3 +86,4 @@ export function initIdentityVerification({ account, auth, router, onVerified, do
     timer = setInterval(() => { if (dialog.open) render(); }, 1000);
   }); } };
 }
+

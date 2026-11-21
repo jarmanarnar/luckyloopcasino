@@ -33,7 +33,9 @@ h2 { font-size: 22px; line-height: 1.4; margin-bottom: 0; }
 h3 { font-size: 22px; margin: 0; }
 .lab-lead { margin: 0; color: var(--text-secondary); font-size: 16px; }
 .lab-back { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
-.lab-back:hover { color: white; }
+@media (hover: hover) and (pointer: fine) {
+  .lab-back:hover { color: white; }
+}
 .lab-back span { margin-inline-start: 10px; }
 .lab-tuning { display: grid; grid-template-columns: repeat(3, 1fr) auto; align-items: center; gap: 38px; padding: 22px 24px; border: 1px solid var(--lab-edge); border-radius: 14px; background: #0d1014; }
 .lab-tune { display: grid; gap: 10px; font-size: 13px; }
@@ -41,7 +43,9 @@ h3 { font-size: 22px; margin: 0; }
 .lab-tune output { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 input[type="range"] { width: 100%; margin: 0; height: 24px; accent-color: #c9d6e4; cursor: pointer; direction: ltr; }
 .lab-reset { background: none; border: 0; padding: 10px 12px; color: var(--text-secondary); min-height: 44px; }
-.lab-reset:hover { color: white; }
+@media (hover: hover) and (pointer: fine) {
+  .lab-reset:hover { color: white; }
+}
 .lab-section { padding: 40px 0; border-bottom: 1px solid var(--border-default); }
 .lab-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
 .lab-section-heading > p { color: var(--text-secondary); font-size: 13px; margin: 0; max-width: 360px; }

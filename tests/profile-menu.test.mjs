@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -47,7 +48,7 @@ function profilePage({ preparePhoto = async () => 'test-photo', popupNavigation 
   };
   const document = { querySelector: selector => selector === 'dialog[open]' ? nodes['#profile-summary'].open ? nodes['#profile-summary'] : null : nodes[selector] };
   const router = { subscribe() {}, getRoute: () => ({ type: 'category', categoryId: 'popular' }), navigate: route => navigations.push(route) };
-  const context = { document, window: { addEventListener() {} }, router, account, popupNavigation, getDiscoveredGameCount, createShelfIcon() {},
+  const context = { requestDialogClose, document, window: { addEventListener() {} }, router, account, popupNavigation, getDiscoveredGameCount, createShelfIcon() {},
     prepareProfilePhoto: preparePhoto,
     renderProfileAvatar(element, profile) { element.textContent = profile.avatar; element.photo = profile.photo || null; } };
   const api = vm.runInNewContext(`${source}\ninitProfileMenu({router, account, popupNavigation});`, context);

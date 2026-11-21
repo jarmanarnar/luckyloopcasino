@@ -43,13 +43,13 @@ export function initCoinChooser({ document: doc = document, onPlay, onSelect = a
   positionInfo();
  }
  function leaveInfo() {
-  if (pinned || doc.activeElement === trigger) return;
+  if (pinned || (doc.activeElement === trigger && trigger.matches(':focus-visible'))) return;
   clearTimeout(closeTimer);
   // Keep the tooltip reachable across the small gap above the icon.
   closeTimer = setTimeout(hideInfo, 120);
  }
  trigger?.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') showInfo(); });
- trigger?.addEventListener('focus', showInfo);
+ trigger?.addEventListener('focus', () => { if (trigger.matches(':focus-visible')) showInfo(); });
  trigger?.addEventListener('blur', event => { if (!pinned && !anchor?.contains(event.relatedTarget)) hideInfo(); });
  trigger?.addEventListener('click', () => {
   if (pinned) hideInfo();

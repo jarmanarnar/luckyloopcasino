@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { createAuthRouter, requiresAccount } from './auth-routing.js';
 
 export function initAuthView({ account, router, popupNavigation } = {}) {
@@ -115,7 +117,7 @@ export function initAuthView({ account, router, popupNavigation } = {}) {
     // Clear intent synchronously; background tabs may receive their close event later.
     pending = null;
     completed = false;
-    dialog.close();
+    requestDialogClose(dialog);
   }
   function sync() {
     const next = account.isSignedIn();
@@ -221,3 +223,4 @@ export function initAuthView({ account, router, popupNavigation } = {}) {
     require(action) { if (account.isSignedIn()) return action(); open('login', action); return false; },
   };
 }
+

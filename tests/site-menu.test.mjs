@@ -10,11 +10,12 @@ const source = (await readFile(new URL('../public/site-menu.js', import.meta.url
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
 
 function menuPage({ desktop = false, routeFromGame = false, storage = new Map(), favorites = [],
-  reduced = false, siteReduced = false, sidebarDuration = '240ms', guest = false } = {}) {
+  reduced = false, siteReduced = false, sidebarDuration = '240ms', guest = false, animations = false, hidden = false, hover = true } = {}) {
   const calls = [], closeEvents = [], observers = [], windowEvents = {}, providerCalls = [], lobbyActions = [], helpCalls = [];
+  const menuAnimations = [];
   const timers = new Map();
   let timerId = 0;
-  const document = { body: { dataset: { view: 'lobby' } }, activeElement: null };
+  const document = { body: { dataset: { view: 'lobby' } }, activeElement: null, hidden };
   let memberState = createMemberState({ favorites });
   const memberListeners = [];
   class Node {
@@ -31,6 +32,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       this.hidden = false;
       this.inert = false;
       this.style = {};
+      this.focusVisible = false;
     }
     get parentElement() { return this.parent || null; }
     get nextSibling() {
@@ -72,7 +74,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     }
     emit(type, details = {}) {
       const event = {
-        target: this, defaultPrevented: false,
+        type, target: this, defaultPrevented: false,
         preventDefault() { this.defaultPrevented = true; }, stopPropagation() {}, ...details,
       };
       for (const listener of this.listeners.get(type) || []) listener(event);
@@ -93,6 +95,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       return this.dataset[property] ? this : this.parent?.closest(selector) || null;
     }
     contains(node) { for (let next = node; next; next = next.parent) if (next === this) return true; return false; }
+    matches(selector) { assert.equal(selector, ':focus-visible'); return this.focusVisible; }
     querySelectorAll(selector) {
       assert.equal(selector, 'button, a[href], input, select, textarea, summary, [tabindex]');
       const descendants = this.children.flatMap(child => [child, ...child.descendants()]);
@@ -114,6 +117,34 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     showModal() { throw new Error('Mobile Menu must not create a modal above the persistent bottom navigation'); }
     close() { this.open = false; calls.push('menu:close'); closeEvents.push(() => this.emit('close')); }
   }
+  if (animations) Node.prototype.animate = function (keyframes, options) {
+    let resolve, reject, settled = false;
+    const listeners = new Map();
+    const animation = {
+      target: this, keyframes, options, playState: 'running', cancelled: false,
+      finished: new Promise((done, failed) => { resolve = done; reject = failed; }),
+      addEventListener(type, callback) { const list = listeners.get(type) || []; list.push(callback); listeners.set(type, list); },
+      finish() {
+        if (settled) return;
+        settled = true;
+        this.playState = 'finished';
+        resolve(this);
+        this.onfinish?.();
+        for (const callback of listeners.get('finish') || []) callback();
+      },
+      cancel() {
+        this.cancelled = true;
+        this.playState = 'idle';
+        if (settled) return;
+        settled = true;
+        reject(new Error('Animation cancelled'));
+        this.oncancel?.();
+        for (const callback of listeners.get('cancel') || []) callback();
+      },
+    };
+    menuAnimations.push(animation);
+    return animation;
+  };
   document.body = new Node();
   document.body.dataset.view = 'lobby';
   document.body.dataset.auth = guest ? 'guest' : 'member';
@@ -160,6 +191,8 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   breakpoint.matches = desktop;
   const motion = new Node();
   motion.matches = reduced;
+  const hoverPointer = new Node();
+  hoverPointer.matches = hover;
   nodes['coin-wallet'].dataset.currency = 'GC';
   nodes['catalog-categories'].dataset.activeMenu = 'lobby';
   const categoryButtons = new Map(GAME_FAMILIES.map(category => category.id).map(id => {
@@ -256,7 +289,10 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
   };
   const context = {
     document, Element: Node, GAME_FAMILIES, getGamesForCategory, getFavoriteGames, catalog,
-    getComputedStyle: () => ({ getPropertyValue: property => property === '--sidebar-duration' ? sidebarDuration : '' }),
+    getComputedStyle: element => ({
+      transform: element.computedTransform || 'matrix(1, 0, 0, 1, 0, 0)',
+      getPropertyValue: property => property === '--sidebar-duration' ? sidebarDuration : '',
+    }),
     setTimeout(action, delay) { timers.set(++timerId, { action, delay }); return timerId; },
     clearTimeout(id) { timers.delete(id); },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
@@ -266,6 +302,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       addEventListener(type, callback) { windowEvents[type] = callback; },
       matchMedia(query) {
         if (query === '(width > 1024px)') return breakpoint;
+        if (query === '(hover: hover) and (pointer: fine)') return hoverPointer;
         assert.equal(query, '(prefers-reduced-motion: reduce)');
         return motion;
       },
@@ -288,7 +325,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     breakpoint.emit('change', { matches });
     if (settle) finishExit();
   };
-  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api, timers, motion, finishExit,
+  return { nodes, document, calls, categoryButtons, observers, windowEvents, context, api, timers, motion, finishExit, menuAnimations,
     item, feature, socialCasino, casinoItems, flushClose, providerCalls, helpCalls, headerParent, headerShell, headerActions, resize, pageHeading,
     keydown: (key, options = {}) => documentEvents.emit('keydown', { key, ...options }),
     setFavorites(favorites) { memberState = createMemberState({ ...memberState, favorites }); memberListeners.forEach(listener => listener()); },
@@ -528,6 +565,149 @@ test('a quick reopen waits until the previous native close event finishes', () =
   assert.equal(page.nodes['site-menu'].open, true);
   assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'true');
   assert.ok(page.observers[0].targets.length > 0);
+});
+
+const settleAnimation = async animation => {
+  animation.finish();
+  await Promise.resolve();
+  await Promise.resolve();
+};
+
+test('animated menu waits for its exit before native close and destination handoff', async () => {
+  const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
+  assert.equal(page.menuAnimations.length, 1);
+  assert.equal(page.menuAnimations[0].target, dialog);
+  assert.equal(dialog.open, true);
+  assert.equal(page.nodes['lobby-view'].inert, true);
+  assert.equal(page.nodes['mobile-nav'].inert, false);
+  await settleAnimation(page.menuAnimations[0]);
+  page.nodes['menu-buy'].click();
+  assert.equal(page.menuAnimations.length, 2);
+  assert.equal(dialog.open, true, 'the native dialog remains open while it leaves the viewport');
+  assert.equal(dialog.inert, true, 'outgoing menu controls cannot accept another action');
+  assert.equal(page.nodes['lobby-view'].inert, true, 'the covered page stays inert throughout exit');
+  assert.equal(page.calls.includes('menu:close'), false);
+  assert.equal(page.calls.includes('store:open'), false);
+  page.flushClose();
+  assert.equal(page.calls.includes('store:open'), false);
+  await settleAnimation(page.menuAnimations[1]);
+  assert.equal(dialog.open, false);
+  assert.equal(page.calls.includes('store:open'), false, 'handoff still belongs to the native close event');
+  page.flushClose();
+  assert.equal(page.nodes['lobby-view'].inert, false);
+  assert.equal(dialog.inert, false);
+  assert.equal(page.document.activeElement, page.pageHeading);
+  assert.deepEqual(page.calls.slice(-2), ['menu:close', 'store:open']);
+  page.flushClose();
+  assert.equal(page.calls.filter(call => call === 'store:open').length, 1);
+  assert.equal(page.timers.size, 0);
+});
+
+test('closing during menu entry cancels the old animation and repeated close requests cannot replace its action', async () => {
+  const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
+  page.api.openMenu();
+  const entry = page.menuAnimations[0];
+  dialog.computedTransform = 'matrix(1, 0, 0, 1, -160, 0)';
+  page.nodes['menu-buy'].click();
+  assert.equal(entry.cancelled, true);
+  assert.equal(page.menuAnimations.length, 2);
+  assert.equal(page.menuAnimations[1].keyframes[0].transform, dialog.computedTransform,
+    'reversing an unfinished entry starts from its current position instead of jumping');
+  assert.equal(dialog.open, true);
+  page.api.closeMenu(() => page.calls.push('unexpected:replacement'));
+  page.keydown('Escape');
+  page.api.openMenu();
+  assert.equal(page.menuAnimations.length, 2, 'repeated commands do not restart the exit');
+  await Promise.resolve();
+  assert.equal(dialog.open, true, 'cancellation of entry cannot finish the newer exit');
+  await settleAnimation(page.menuAnimations[1]);
+  page.flushClose();
+  assert.equal(page.calls.filter(call => call === 'menu:open').length, 1);
+  assert.equal(page.calls.filter(call => call === 'menu:close').length, 1);
+  assert.equal(page.calls.filter(call => call === 'store:open').length, 1);
+  assert.equal(page.calls.includes('unexpected:replacement'), false);
+  page.api.openMenu();
+  assert.equal(dialog.open, true, 'the next menu session remains usable after the handoff');
+  await settleAnimation(page.menuAnimations[2]);
+});
+
+test('mobile menu skips entry and exit motion for either reduced-motion preference or a hidden document', () => {
+  for (const preference of [{ reduced: true }, { siteReduced: true }, { hidden: true }]) {
+    const page = menuPage({ animations: true, ...preference });
+    page.api.openMenu();
+    page.nodes['menu-buy'].click();
+    assert.equal(page.menuAnimations.length, 0);
+    assert.equal(page.nodes['site-menu'].open, false);
+    assert.equal(page.calls.includes('store:open'), false);
+    page.flushClose();
+    assert.equal(page.calls.filter(call => call === 'store:open').length, 1);
+    assert.equal(page.nodes['lobby-view'].inert, false);
+    assert.equal(page.timers.size, 0);
+  }
+});
+
+test('switching to desktop during menu entry or exit cancels motion and discards stale actions', async () => {
+  for (const duringExit of [false, true]) {
+    const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
+    page.api.openMenu();
+    if (duringExit) {
+      await settleAnimation(page.menuAnimations[0]);
+      page.nodes['menu-buy'].click();
+    }
+    const active = page.menuAnimations.at(-1);
+    page.resize(true);
+    assert.equal(active.cancelled, true);
+    assert.equal(dialog.open, false);
+    assert.equal(dialog.inert, false);
+    assert.equal(page.nodes['lobby-view'].inert, false);
+    assert.equal(page.nodes['sidebar-content'].contains(page.nodes['menu-content']), true);
+    await Promise.resolve();
+    page.flushClose();
+    assert.equal(page.calls.filter(call => call === 'menu:close').length, 1);
+    assert.equal(page.calls.includes('store:open'), false);
+    assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+    assert.equal(page.timers.size, 0);
+  }
+});
+
+test('enabling reduced motion settles the active menu animation without duplicate close or navigation', async () => {
+  for (const duringExit of [false, true]) {
+    const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
+    page.api.openMenu();
+    if (duringExit) {
+      await settleAnimation(page.menuAnimations[0]);
+      page.nodes['menu-buy'].click();
+    }
+    page.motion.matches = true;
+    page.motion.emit('change', { matches: true });
+    await Promise.resolve();
+    page.flushClose();
+    assert.equal(dialog.open, !duringExit);
+    assert.equal(dialog.inert, false);
+    assert.equal(page.calls.filter(call => call === 'menu:close').length, duringExit ? 1 : 0);
+    assert.equal(page.calls.filter(call => call === 'store:open').length, duringExit ? 1 : 0);
+    assert.equal(page.nodes['lobby-view'].inert, !duringExit);
+    assert.equal(page.timers.size, 0);
+  }
+});
+
+test('menu exit fallback closes and hands off only once if the animation never finishes', async () => {
+  const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
+  page.api.openMenu();
+  await settleAnimation(page.menuAnimations[0]);
+  page.nodes['menu-buy'].click();
+  const exit = page.menuAnimations[1];
+  assert.equal(page.timers.size, 1);
+  [...page.timers.values()][0].action();
+  await Promise.resolve();
+  assert.equal(dialog.open, false);
+  page.flushClose();
+  await settleAnimation(exit);
+  page.flushClose();
+  assert.equal(page.calls.filter(call => call === 'menu:close').length, 1);
+  assert.equal(page.calls.filter(call => call === 'store:open').length, 1);
+  assert.equal(page.timers.size, 0);
 });
 
 test('category and Providers page navigation runs only after the drawer closes', () => {
@@ -962,7 +1142,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
 
   assert.equal(item.getAttribute('title'), null, 'the custom label must not compete with a native title');
   assert.equal(tooltip.hidden, true);
-  sidebar.emit('pointerover', { target: item.children[0] });
+  sidebar.emit('pointerover', { target: item.children[0], pointerType: 'mouse' });
   assert.equal(tooltip.hidden, false);
   assert.equal(tooltip.textContent, 'Game Types');
   assert.equal(item.getAttribute('aria-describedby'), 'menu-tooltip');
@@ -971,6 +1151,7 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
   assert.equal(tooltip.hidden, true);
   assert.equal(item.getAttribute('aria-describedby'), null);
 
+  item.focusVisible = true;
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, false);
   assert.equal(tooltip.textContent, 'Game Types');
@@ -978,11 +1159,46 @@ test('collapsed desktop navigation shows one custom tooltip for pointer and keyb
   assert.equal(tooltip.hidden, true);
 });
 
+test('wide touch screens suppress tap tooltips while retaining keyboard-accessible labels', () => {
+  const page = menuPage({ desktop: true, hover: false });
+  const item = page.socialCasino, sidebar = page.nodes['site-sidebar'], tooltip = page.nodes['menu-tooltip'];
+  sidebar.emit('pointerover', { target: item.children[0], pointerType: 'touch' });
+  sidebar.emit('focusin', { target: item });
+  assert.equal(tooltip.hidden, true, 'touch pointer entry and its focus must not leave a sticky tooltip');
+  assert.equal(item.getAttribute('aria-describedby'), null);
+  sidebar.emit('pointerover', { target: item, pointerType: 'mouse' });
+  assert.equal(tooltip.hidden, true, 'a synthesized pointer event cannot bypass the device hover capability');
+  item.focusVisible = true;
+  sidebar.emit('focusin', { target: item });
+  assert.equal(tooltip.hidden, false, 'a connected keyboard can still reveal the collapsed label');
+  assert.equal(tooltip.textContent, 'Game Types');
+  assert.equal(item.getAttribute('aria-describedby'), 'menu-tooltip');
+  sidebar.emit('focusout', { target: item });
+  assert.equal(tooltip.hidden, true);
+});
+
+test('hybrid devices distinguish touch input from a real mouse hover', () => {
+  const page = menuPage({ desktop: true, hover: true });
+  const item = page.socialCasino, sidebar = page.nodes['site-sidebar'], tooltip = page.nodes['menu-tooltip'];
+  sidebar.emit('pointerover', { target: item, pointerType: 'touch' });
+  sidebar.emit('focusin', { target: item });
+  assert.equal(tooltip.hidden, true);
+  assert.equal(item.getAttribute('aria-describedby'), null);
+  sidebar.emit('pointerover', { target: item, pointerType: 'mouse' });
+  assert.equal(tooltip.hidden, false);
+  assert.equal(tooltip.textContent, 'Game Types');
+  sidebar.emit('pointerout', { target: item, relatedTarget: null });
+  assert.equal(tooltip.hidden, true);
+  sidebar.emit('focusin', { target: item });
+  assert.equal(tooltip.hidden, true, 'mouse- or touch-induced focus is not keyboard focus');
+});
+
 test('expanded and mobile navigation never show collapsed-rail tooltips', () => {
   const page = menuPage({ desktop: true });
   const item = page.socialCasino;
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
+  item.focusVisible = true;
   sidebar.emit('focusin', { target: item });
   assert.equal(tooltip.hidden, false);
 
@@ -1006,6 +1222,7 @@ test('collapsed tooltips are dismissed by navigation but remain available in the
   const item = page.socialCasino;
   const sidebar = page.nodes['site-sidebar'];
   const tooltip = page.nodes['menu-tooltip'];
+  item.focusVisible = true;
   sidebar.emit('pointerover', { target: item });
   assert.equal(tooltip.hidden, false);
   page.nodes['menu-content'].emit('scroll');

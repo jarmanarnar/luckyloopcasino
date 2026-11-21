@@ -98,7 +98,10 @@
   cursor: pointer;
 }
 .catalog-search-clear svg { width: 18px; height: 18px; }
-.catalog-search-clear:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
+.catalog-search-clear:focus-visible { background: var(--surface-subtle); color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .catalog-search-clear:hover { background: var(--surface-subtle); color: var(--text-primary); }
+}
 .catalog-search-clear:active { background: var(--surface-control); }
 .catalog-filters-toggle {
   position: relative;
@@ -166,9 +169,15 @@ body[data-page="home"] #lobby-view .catalog-browser + .catalog-shelves > .game-s
 .catalog-select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .catalog-select-chevron { flex: none; width: 14px; height: 14px; color: var(--text-secondary); transition: transform 150ms ease; }
 .catalog-select-trigger[aria-expanded="true"] .catalog-select-chevron { transform: rotate(180deg); }
-.catalog-select-trigger:is(:hover, :focus-visible, [aria-expanded="true"]):not(:disabled) {
+.catalog-select-trigger:is(:focus-visible, [aria-expanded="true"]):not(:disabled) {
   border-color: color-mix(in srgb, var(--redeem-accent) 22%, var(--border-default));
   background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow);
+}
+@media (hover: hover) and (pointer: fine) {
+  .catalog-select-trigger:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--redeem-accent) 22%, var(--border-default));
+    background: linear-gradient(var(--surface-subtle), var(--surface-subtle)), var(--surface-glow);
+  }
 }
 .catalog-select-menu {
   box-sizing: border-box;
@@ -261,10 +270,17 @@ body:not([data-page="home"]) .catalog-empty--favorites {
   box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
 
-.catalog-empty--favorites .text-control:is(:hover, :focus-visible):not(:disabled),
-.catalog-pagination .text-control:is(:hover, :focus-visible):not(:disabled) {
+.catalog-empty--favorites .text-control:focus-visible:not(:disabled),
+.catalog-pagination .text-control:focus-visible:not(:disabled) {
   background: var(--surface-subtle), var(--surface-glow);
   color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .catalog-empty--favorites .text-control:hover:not(:disabled),
+  .catalog-pagination .text-control:hover:not(:disabled) {
+    background: var(--surface-subtle), var(--surface-glow);
+    color: var(--text-primary);
+  }
 }
 
 body:not([data-page="home"]) #catalog-empty {
@@ -323,9 +339,15 @@ body:not([data-page="home"]) #catalog-empty {
   font-weight: 700;
 }
 
-#provider-details-toggle:is(:hover, :focus-visible) {
+#provider-details-toggle:focus-visible {
   background: var(--surface-subtle), var(--surface-glow);
   color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  #provider-details-toggle:hover {
+    background: var(--surface-subtle), var(--surface-glow);
+    color: var(--text-primary);
+  }
 }
 
 @media (max-width: 32rem) {

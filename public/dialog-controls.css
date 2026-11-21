@@ -23,7 +23,10 @@
   color: var(--text-secondary);
   transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
-.dialog-close.icon-button:is(:hover, :focus-visible) { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+.dialog-close.icon-button:focus-visible { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .dialog-close.icon-button:hover { background: var(--surface-subtle), var(--surface-glow); color: var(--text-primary); }
+}
 .dialog-close.icon-button:active { transform: translateY(1px); box-shadow: inset 0 2px 4px var(--shadow-color); }
 .dialog-close.icon-button svg { width: 1.125rem; height: 1.125rem; }
 @media (width <= 480px) {
@@ -31,4 +34,19 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .dialog-close.icon-button { transition: none; }
+}
+
+@keyframes mobile-popover-enter {
+  from { opacity: 0; translate: 0 -6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (width <= 1024px) and (prefers-reduced-motion: no-preference) {
+  body:not([data-reduce-motion="true"]) :is(
+    .rewards-popover:popover-open,
+    .profile-menu:popover-open,
+    .wallet-currency-menu:not([hidden]),
+    .catalog-select-menu:popover-open
+  ) {
+    animation: mobile-popover-enter 180ms cubic-bezier(.22, 1, .36, 1);
+  }
 }

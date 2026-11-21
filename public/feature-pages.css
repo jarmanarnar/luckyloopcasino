@@ -21,7 +21,10 @@
 .feature-button, .feature-tab { display: inline-flex; box-sizing: border-box; justify-content: center; align-items: center; gap: .5rem; min-height: var(--touch-target); max-width: 100%; padding: .625rem 1rem; border: 0; border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font: inherit; font-size: .8125rem; font-weight: 700; line-height: 1.4; text-align: center; text-decoration: none; cursor: pointer; }
 .feature-stack > .feature-button { align-self: flex-start; }
 .feature-button--primary { color: var(--catalog-accent); }
-.feature-button:hover, .feature-tab:hover { background: var(--control-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .feature-button:hover,
+  .feature-tab:hover { background: var(--control-hover); }
+}
 .feature-button:disabled { color: var(--text-secondary); cursor: default; }
 .feature-input { box-sizing: border-box; display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--touch-target); padding: .75rem; border: 1px solid var(--top-bar-divider); border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font: inherit; font-size: 1rem; line-height: 1.4; }
 textarea.feature-input { resize: vertical; }
@@ -82,7 +85,9 @@ textarea.feature-input { resize: vertical; }
   background: var(--surface-inset);
 }
 .settings-panel .feature-setting > span { min-width: 0; }
-.settings-panel .feature-setting:hover { background: var(--surface-subtle); }
+@media (hover: hover) and (pointer: fine) {
+  .settings-panel .feature-setting:hover { background: var(--surface-subtle); }
+}
 .settings-panel .feature-setting input {
   appearance: none;
   box-sizing: border-box;
@@ -116,13 +121,18 @@ textarea.feature-input { resize: vertical; }
   box-shadow: inset 0 1px 0 var(--text-primary), 0 2px 0 var(--primary-button-edge);
   color: var(--on-accent);
 }
-.settings-panel > .feature-button:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.04); }
+.settings-panel > .feature-button:focus-visible:not(:disabled) { filter: brightness(1.04); }
+@media (hover: hover) and (pointer: fine) {
+  .settings-panel > .feature-button:hover:not(:disabled) { filter: brightness(1.04); }
+}
 .settings-panel > .feature-button:disabled { background: var(--surface-subtle); border-color: var(--border-default); box-shadow: none; color: var(--text-secondary); }
 .feature-view:has(.settings-panel) .feature-status { border: 1px solid var(--border-default); border-radius: .75rem; background: var(--surface-glow); box-shadow: 0 .5rem 1.5rem var(--shadow-color); font-size: .875rem; }
 .settings-account { border: 1px solid var(--border-default); border-radius: 1.25rem; background: var(--surface-glow); box-shadow: inset 0 1px 0 var(--surface-subtle); }
 .settings-account .feature-button { border: 1px solid var(--border-default); border-radius: .625rem; background: var(--surface-subtle); }
 .settings-account .settings-account__delete { color: var(--text-error); border-color: color-mix(in srgb, var(--text-error) 25%, transparent); }
-.settings-account .feature-button:hover:not(:disabled) { background: var(--surface-control); }
+@media (hover: hover) and (pointer: fine) {
+  .settings-account .feature-button:hover:not(:disabled) { background: var(--surface-control); }
+}
 .settings-account__confirmation { padding-top: 1rem; border-top: 1px solid var(--border-default); }
 .settings-account__error { margin: 0; color: var(--text-error); font-size: .875rem; font-weight: 400; }
 .settings-account__error:empty { display: none; }
@@ -161,7 +171,10 @@ textarea.feature-input { resize: vertical; }
   background: var(--surface-glow);
   box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
-.activity-history .feature-tab:is(:hover, :focus-visible) { background: var(--surface-subtle); color: var(--text-primary); }
+.activity-history .feature-tab:focus-visible { background: var(--surface-subtle); color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .activity-history .feature-tab:hover { background: var(--surface-subtle); color: var(--text-primary); }
+}
 .activity-history .feature-tab[aria-pressed="true"] {
   background: var(--action-surface);
   color: var(--on-accent);
@@ -171,11 +184,17 @@ textarea.feature-input { resize: vertical; }
   background: var(--surface-inset), var(--surface-panel);
   box-shadow: inset 0 0 0 1px var(--border-default), inset 0 1px 0 var(--surface-subtle);
 }
-.activity-history .feature-button:is(:hover, :focus-visible),
+.activity-history .feature-button:focus-visible,
 .activity-history .feature-button[aria-pressed="true"] { background: var(--surface-control); }
+@media (hover: hover) and (pointer: fine) {
+  .activity-history .feature-button:hover { background: var(--surface-control); }
+}
 .activity-history .feature-disclosure > summary { color: var(--text-secondary); }
-.activity-history .feature-disclosure > summary:is(:hover, :focus-visible),
+.activity-history .feature-disclosure > summary:focus-visible,
 .activity-history .feature-disclosure[open] > summary { color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .activity-history .feature-disclosure > summary:hover { color: var(--text-primary); }
+}
 .feature-view:has(.activity-history) .feature-status {
   background: var(--surface-glow);
   box-shadow: inset 0 0 0 1px var(--border-default), 0 .5rem 1.5rem var(--shadow-color);
@@ -203,8 +222,11 @@ textarea.feature-input { resize: vertical; }
 .support-page .feature-input::placeholder { color: var(--text-secondary); opacity: 1; }
 .support-page select.feature-input option { background: var(--surface-panel); color: var(--text-primary); }
 .support-page .feature-disclosure > summary { color: var(--text-secondary); font-size: .9375rem; font-weight: 500; }
-.support-page .feature-disclosure > summary:is(:hover, :focus-visible),
+.support-page .feature-disclosure > summary:focus-visible,
 .support-page .feature-disclosure[open] > summary { color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .support-page .feature-disclosure > summary:hover { color: var(--text-primary); }
+}
 .support-page .feature-button {
   font-size: .9375rem;
   font-weight: 500;
@@ -212,7 +234,10 @@ textarea.feature-input { resize: vertical; }
   box-shadow: inset 0 1px 0 var(--button-inner-highlight);
   color: var(--on-accent);
 }
-.support-page .feature-button:is(:hover, :focus-visible):not(:disabled) { filter: brightness(1.04); }
+.support-page .feature-button:focus-visible:not(:disabled) { filter: brightness(1.04); }
+@media (hover: hover) and (pointer: fine) {
+  .support-page .feature-button:hover:not(:disabled) { filter: brightness(1.04); }
+}
 .support-page [role="status"] .feature-message { color: var(--text-secondary); font-size: 1rem; }
 .feature-message { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; font-size: .875rem; }
 .feature-status { position: sticky; bottom: 1rem; width: fit-content; max-width: 100%; box-sizing: border-box; padding: .75rem 1rem; border-radius: var(--radius-card); background: var(--surface-control); color: var(--text-primary); font-size: .8125rem; line-height: 1.5; z-index: 5; }

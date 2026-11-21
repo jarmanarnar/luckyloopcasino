@@ -1,6 +1,7 @@
 import { CHAT_LIMIT, CHAT_ROOMS, SAMPLE_MESSAGES, cleanChatText, normalizeChatMessages } from './chat-state.js';
 import { renderProfileAvatar } from './profile-photo.js';
 import { uiIconMarkup as icon } from './ui-icons.js';
+import { requestDialogClose } from './dialog-motion.js';
 
 function node(tag, className, text) {
   const element = document.createElement(tag);
@@ -41,11 +42,13 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
   const replyPreview = $('.chat-reply-preview'), emojiPicker = $('.chat-emoji'), emojiButton = $('[aria-label="Choose emoji"]');
   const sheet = $('.chat-sheet'), sheetBody = $('.chat-sheet__body');
   const desktop = matchMedia('(min-width: 75rem)');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let storageKey = 'luckyloop-chat-v1:' + account.getSnapshot().playerId;
   let storage; try { storage = localStorage; } catch { /* In-memory preview still works. */ }
   let messages = [], room = 'general', reply = null;
-  let opened = false, opener = null, lastSent = 0, closeTimer = null;
-  const popup = popupNavigation?.register({ id: 'community-chat', element: panel, isOpen: () => opened, close });
+  let opened = false, opener = null, lastSent = 0, closing = null;
+  const popup = popupNavigation?.register({ id: 'community-chat', element: panel, isOpen: () => opened,
+    close: () => close({ immediate: true }), dismiss: options => close(options) });
   const inertNodes = new Map(), triggers = [];
   const readSaved = () => { try { return JSON.parse(storage?.getItem(storageKey) || '{}') || {}; } catch { return {}; } };
   function load() { const saved = readSaved(); messages = normalizeChatMessages(saved.messages); }
@@ -65,7 +68,7 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
     trigger.type = 'button'; trigger.innerHTML = icon('chat'); trigger.title = 'Community chat';
     trigger.setAttribute('aria-label', 'Open community chat');
     trigger.setAttribute('aria-controls', panel.id); trigger.setAttribute('aria-expanded', 'false');
-    trigger.addEventListener('click', () => opened ? close() : open(trigger));
+    trigger.addEventListener('click', () => opened && !closing ? close() : open(trigger));
     memberActions.append(trigger); triggers.push(trigger);
   }
   function setBackgroundInert(value) {
@@ -131,7 +134,7 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
     const signed = account.isSignedIn();
     form.hidden = !signed; $('#chat-count').hidden = !signed;
     if (!signed) {
-      close(); clearTimeout(closeTimer); panel.hidden = true;
+      close({ immediate: true });
       input.value = ''; clearReply(); emojiPicker.hidden = true; emojiButton.setAttribute('aria-expanded', 'false');
     }
     updateComposer();
@@ -140,7 +143,7 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
   function open(trigger = triggers.find(item => item.getClientRects().length)) {
     if (!account.isSignedIn()) { login(); return; }
     if (document.querySelector('dialog[open]')) return;
-    clearTimeout(closeTimer); opener = trigger || opener; opened = true;
+    cancelClose(); opener = trigger || opener; opened = true;
     panel.hidden = false; panel.inert = false;
     panel.getBoundingClientRect(); // Commit the off-screen position before animating.
     document.body.dataset.chat = 'open';
@@ -149,20 +152,57 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
     popup?.opened();
     $('.chat-close').focus({ preventScroll: true });
   }
-  function close() {
-    if (!opened) return;
+  function cancelClose() {
+    const previous = closing;
+    closing = null;
+    if (!previous) return;
+    clearTimeout(previous.timer);
+    panel.removeEventListener('transitionend', previous.onTransitionEnd);
+  }
+  function finishClose(state) {
+    if (closing !== state) return;
+    cancelClose();
     opened = false;
-    if (sheet.open) sheet.close();
-    rooms.hidden = true; roomButton.setAttribute('aria-expanded', 'false');
-    emojiPicker.hidden = true; emojiButton.setAttribute('aria-expanded', 'false');
-    panel.inert = true; document.body.dataset.chat = 'closed'; layout();
+    panel.hidden = true;
+    layout();
     popup?.closed();
     triggers.forEach(item => { item.setAttribute('aria-expanded', 'false'); item.setAttribute('aria-label', 'Open community chat'); });
     const target = opener?.getClientRects().length ? opener : triggers.find(item => item.getClientRects().length);
-    target?.focus({ preventScroll: true });
-    closeTimer = setTimeout(() => { if (!opened) panel.hidden = true; }, 260);
+    if (!document.querySelector('dialog[open]')) target?.focus({ preventScroll: true });
+    state.callbacks.forEach(callback => callback());
   }
-  function login() { close(); auth.open('login'); }
+  function exitDuration() {
+    if (reducedMotion.matches || document.body.dataset.reduceMotion === 'true' || document.hidden) return 0;
+    const style = getComputedStyle(panel);
+    const milliseconds = value => (parseFloat(value) || 0) * (value.trim().endsWith('ms') ? 1 : 1000);
+    const properties = style.transitionProperty.split(',').map(value => value.trim());
+    const durations = style.transitionDuration.split(',').map(milliseconds);
+    const delays = style.transitionDelay.split(',').map(milliseconds);
+    return Math.max(0, ...properties.map((property, index) => property === 'transform' || property === 'all'
+      ? durations[index % durations.length] + delays[index % delays.length] : 0));
+  }
+  function close({ immediate = false, onClosed } = {}) {
+    if (!opened) { onClosed?.(); return; }
+    if (closing) {
+      if (onClosed) closing.callbacks.push(onClosed);
+      if (immediate) finishClose(closing);
+      return;
+    }
+    if (sheet.open) sheet.close();
+    rooms.hidden = true; roomButton.setAttribute('aria-expanded', 'false');
+    emojiPicker.hidden = true; emojiButton.setAttribute('aria-expanded', 'false');
+    panel.inert = true; document.body.dataset.chat = 'closed';
+    const state = { timer: null, callbacks: onClosed ? [onClosed] : [], onTransitionEnd: null };
+    closing = state;
+    const duration = immediate ? 0 : exitDuration();
+    if (!duration) { finishClose(state); return; }
+    state.onTransitionEnd = event => {
+      if (event.target === panel && event.propertyName === 'transform') finishClose(state);
+    };
+    panel.addEventListener('transitionend', state.onTransitionEnd);
+    state.timer = setTimeout(() => finishClose(state), duration + 80);
+  }
+  function login() { close({ immediate: true }); auth.open('login'); }
   function openRules() {
     $('#chat-sheet-title').textContent = 'Chat rules';
     sheetBody.replaceChildren(node('p', '', 'A good conversation starts with a little respect.'));
@@ -175,12 +215,12 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
     const action = event.target.closest('[data-chat-action]')?.dataset.chatAction;
     if (action === 'close') close(); else if (action === 'rules') openRules();
   });
-  backdrop.addEventListener('click', close);
-  sheet.querySelector('header button').addEventListener('click', () => sheet.close());
+  backdrop.addEventListener('click', () => close());
+  sheet.querySelector('header button').addEventListener('click', () => requestDialogClose(sheet));
   sheet.addEventListener('click', event => {
     if (event.target !== sheet) return;
     const rect = sheet.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) sheet.close();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(sheet);
   });
   roomButton.addEventListener('click', () => { rooms.hidden = !rooms.hidden; roomButton.setAttribute('aria-expanded', String(!rooms.hidden)); });
   rooms.addEventListener('click', event => {
@@ -226,8 +266,9 @@ export function initCommunityChat({ account, auth, router, popupNavigation }) {
       else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
     }
   });
-  desktop.addEventListener('change', layout);
-  router?.subscribe(() => { if (!desktop.matches) close(); });
+  desktop.addEventListener('change', () => { if (closing) finishClose(closing); else layout(); });
+  reducedMotion.addEventListener('change', () => { if (closing && reducedMotion.matches) finishClose(closing); });
+  router?.subscribe(() => { if (!desktop.matches) close({ immediate: true }); });
   window.addEventListener('storage', event => { if (event.key === storageKey) { load(); if (opened) renderMessages(); } });
   account.subscribe(syncAccount); syncAccount();
   return { open, close };

@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 import { getAchievements } from './rewards-pages.js';
 import { achievementMedal, formatAchievementProgress as format } from './achievements-view.js';
 import { formatAchievementRewards } from './achievement-catalog.js';
@@ -35,12 +37,12 @@ export function initAchievementDialog({ account, auth, router, openVerification,
     }
     body.replaceChildren(medal, title, description, progress, node('h3', '', 'Rewards'), rewards); actions.replaceChildren();
     if (!account.isSignedIn()) {
-      actions.append(button('Close', 'achievement-dialog__secondary', () => dialog.close()),
+      actions.append(button('Close', 'achievement-dialog__secondary', () => requestDialogClose(dialog)),
         button('Join & Unlock', 'achievement-claim', () => { dialog.close(); auth.open('register'); }));
     } else if (entry.ready) {
       const claim = button(pending ? 'Claiming…' : 'Claim', 'achievement-claim', () => claimReward(entry.id)); claim.disabled = pending; actions.append(claim);
     } else {
-      actions.append(button('Close', 'achievement-dialog__secondary', () => dialog.close()));
+      actions.append(button('Close', 'achievement-dialog__secondary', () => requestDialogClose(dialog)));
       if (!entry.claimed) {
         const verification = ['email', 'phone'].includes(entry.metric);
         const action = button(entry.action || 'Go to lobby', 'achievement-claim', () => {
@@ -67,9 +69,9 @@ export function initAchievementDialog({ account, auth, router, openVerification,
       if (dialog.open) { render(); if (current === session) actions.querySelector('button')?.focus({ preventScroll: true }); }
     }
   }
-  close.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => requestDialogClose(dialog));
   dialog.addEventListener('click', event => { if (event.target === dialog) {
-    const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(dialog);
   } });
   dialog.addEventListener('close', () => {
     if (dialog.open) return;
@@ -88,3 +90,4 @@ export function initAchievementDialog({ account, auth, router, openVerification,
     selected = id; opener = doc.activeElement; session++; notice.textContent = ''; render(); dialog.showModal(); scroll.scrollTop = 0; close.focus({ preventScroll: true });
   } };
 }
+

@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -90,7 +91,7 @@ function wheelPage({ days = 0, pauseSpin, failSpin = false, now = Date.now(), wa
       saved = outcome.account; notify(); return outcome.result;
     },
   };
-  const context = { ...wheelState, document, account, Intl, setTimeout, CURRENCIES, formatBalance, initWalletMenu,
+  const context = { requestDialogClose, ...wheelState, document, account, Intl, setTimeout, CURRENCIES, formatBalance, initWalletMenu,
     createWalletCounter: options => createWalletCounter({ ...options, requestFrame, cancelFrame, now: () => now }),
     spinStatus: snapshot => wheelState.spinStatus(snapshot, now),
     setInterval: callback => intervals.push(callback),

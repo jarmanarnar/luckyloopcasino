@@ -1,3 +1,4 @@
+import { requestDialogClose } from '../public/dialog-motion.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -52,7 +53,7 @@ function redeemPage() {
   const router = { subscribe() {}, navigate(route) { navigations.push(route); } };
   const auth = { require(action) { return action(); } };
   const document = { activeElement: opener, querySelector: selector => selector === 'dialog[open]' ? dialog.open ? dialog : null : nodes[selector] };
-  const context = { document, router, account, auth, popupNavigation, formatBalance, redemptionAmount };
+  const context = { requestDialogClose, document, router, account, auth, popupNavigation, formatBalance, redemptionAmount };
   const api = vm.runInNewContext(`${source}\ninitRedeemView({router, account, auth, popupNavigation});`, context);
   return { api, nodes, steps, popupNavigation, backCalls, snapshot, accountWrites, navigations, opener, focused: () => focused };
 }

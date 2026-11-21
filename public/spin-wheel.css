@@ -34,7 +34,9 @@ html:has(.spin-wheel[open], .spin-win[open]) { overflow: hidden; }
 .spin-wheel__controls .dialog-close.icon-button { flex: none; width: 2.75rem; height: 2.75rem; }
 .spin-wheel__sound svg { width: 1.125rem; height: 1.125rem; }
 .spin-wheel__sound[aria-pressed="false"] .spin-sound-on, .spin-wheel__sound[aria-pressed="true"] .spin-sound-off { display: none; }
-.spin-wheel__controls :is(.spin-wheel__text-button, .spin-wheel__sound, .dialog-close.icon-button):hover { background: var(--surface-subtle); color: var(--text-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .spin-wheel__controls :is(.spin-wheel__text-button, .spin-wheel__sound, .dialog-close.icon-button):hover { background: var(--surface-subtle); color: var(--text-primary); }
+}
 .spin-wheel__controls :is(.spin-wheel__text-button, .spin-wheel__sound, .dialog-close.icon-button):active { transform: translateY(1px); }
 .spin-wheel__text-button:disabled { opacity: .4; cursor: default; }
 .spin-wheel__play, .spin-wheel__result { text-align: center; }
@@ -81,7 +83,9 @@ html:has(.spin-wheel[open], .spin-win[open]) { overflow: hidden; }
 .spin-wheel__next-label { color: var(--text-secondary); font-size: .8125rem; line-height: 1.4; }
 .spin-wheel__next-time { color: var(--text-primary); font-size: 1.0625rem; font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 :is(.spin-wheel, .spin-win) .spin-wheel__spin { box-sizing: border-box; width: min(100%, 22rem); min-height: 3rem; padding: .75rem 1.25rem; border: 1px solid #e9c580; border-radius: .625rem; background: linear-gradient(135deg, #f6dda1, #ecc573 58%, #e1b05c); color: #30200e; box-shadow: inset 0 1px 0 #fff4d270, 0 2px 0 #8a642c, 0 6px 16px #0005; font: 500 1rem/1.3 var(--header-font-family); cursor: pointer; transition: transform 120ms ease, filter 150ms ease; }
-:is(.spin-wheel, .spin-win) .spin-wheel__spin:not(:disabled):hover { filter: brightness(1.06); }
+@media (hover: hover) and (pointer: fine) {
+  :is(.spin-wheel, .spin-win) .spin-wheel__spin:not(:disabled):hover { filter: brightness(1.06); }
+}
 :is(.spin-wheel, .spin-win) .spin-wheel__spin:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 1px 3px #54381130, 0 1px 0 #8a642c; }
 :is(.spin-wheel, .spin-win) .spin-wheel__spin:disabled { opacity: 1; border-color: var(--border-default); background: var(--surface-inset), var(--surface-subtle); color: var(--text-secondary); box-shadow: inset 0 1px 0 var(--surface-subtle); cursor: default; transform: none; }
 .spin-wheel__actions[data-state="spinning"] .spin-wheel__spin { border-color: #e9c58040; color: var(--wheel-gold-light); }
@@ -117,7 +121,9 @@ html:has(.spin-wheel[open], .spin-win[open]) { overflow: hidden; }
 .spin-win[open] .spin-wheel__result-amount { animation: spin-reward-reveal 550ms 120ms cubic-bezier(.2,.8,.2,1) both; }
 @keyframes spin-reward-reveal { from { opacity: 0; transform: translateY(18px) scale(.75) rotate(-12deg); } to { opacity: 1; transform: none; } }
 .spin-launcher { position: relative; isolation: isolate; display: flex; align-items: center; box-sizing: border-box; width: 100%; min-height: 6rem; margin: 1rem 0 .75rem; padding: .75rem .625rem; border: 1px solid var(--border-default); border-radius: .75rem; background: radial-gradient(ellipse at 95% 0%, var(--redeem-button-tonal), transparent 65%), var(--surface-panel); box-shadow: inset 0 1px 0 var(--surface-subtle); color: var(--text-primary); cursor: pointer; text-align: left; font-family: var(--header-font-family); }
-.spin-launcher:hover { border-color: #a9d9ef45; }
+@media (hover: hover) and (pointer: fine) {
+  .spin-launcher:hover { border-color: #a9d9ef45; }
+}
 .spin-launcher__badge { position: absolute; z-index: 3; top: -.5rem; left: .625rem; padding: .125rem .375rem; border: 1px solid #a9d9ef26; border-radius: .25rem; background: #0d1b24; color: #bdd9e6; font-size: .6875rem; font-weight: 500; line-height: 1.25; }
 .spin-launcher__copy { position: relative; z-index: 2; max-width: calc(100% - 3.5rem); min-width: 0; }
 .spin-launcher__copy > strong { display: block; font-size: 1rem; font-weight: 500; line-height: 1.4; text-shadow: 0 2px 5px #000; }

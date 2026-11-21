@@ -1,3 +1,5 @@
+import { requestDialogClose } from './dialog-motion.js';
+
 export function initPhoneVerification({ router, account, verifyIdentity }) {
   const dialog = document.querySelector('#phone-verification-dialog');
   const numberForm = document.querySelector('#phone-verification-number-form');
@@ -31,7 +33,7 @@ export function initPhoneVerification({ router, account, verifyIdentity }) {
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
-    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestDialogClose(dialog);
   });
   router.subscribe(close);
   account.subscribe(() => { if (!account.isSignedIn()) close(); });
@@ -46,3 +48,4 @@ export function initPhoneVerification({ router, account, verifyIdentity }) {
     },
   };
 }
+

@@ -32,6 +32,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   const menuBackground = new Map();
   const desktopMedia = window.matchMedia('(width > 1024px)');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const hoverPointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   let desktop = false;
   let sidebarExitTimer = null;
   let finishSidebarExit = null;
@@ -40,6 +41,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   try { expanded = localStorage.getItem(sidebarStorageKey) === 'true'; } catch { /* Keep the default when storage is unavailable. */ }
   let afterClose = null;
   let pendingClose = false;
+  let menuMotion = null;
   let tooltipTarget = null;
   let menuOpener = trigger;
   const items = new Map();
@@ -250,12 +252,53 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     finishSidebarExit = null;
   }
 
+  function cancelMenuMotion() {
+    const previous = menuMotion;
+    menuMotion = null;
+    if (previous) {
+      clearTimeout(previous.timer);
+      previous.animation.cancel();
+    }
+    delete dialog.dataset.menuMotion;
+  }
+
+  function animateMenu(entering, complete = () => {}) {
+    const interrupted = Boolean(menuMotion);
+    const currentTransform = interrupted ? getComputedStyle(dialog).transform : 'translateX(0)';
+    cancelMenuMotion();
+    if (typeof dialog.animate !== 'function' || reducedMotion.matches
+      || document.body.dataset.reduceMotion === 'true' || document.hidden) { complete(); return; }
+    const duration = entering ? 320 : 240;
+    const start = entering && !interrupted ? 'translateX(-100%)' : currentTransform;
+    let animation;
+    try {
+      animation = dialog.animate([{ transform: start }, { transform: entering ? 'translateX(0)' : 'translateX(-100%)' }],
+        { duration, easing: entering ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, 1, 1)', fill: 'both' });
+    } catch { complete(); return; }
+    const motion = { animation, timer: null, finish: null };
+    const finish = () => {
+      if (menuMotion !== motion) return;
+      menuMotion = null;
+      clearTimeout(motion.timer);
+      delete dialog.dataset.menuMotion;
+      complete();
+      animation.cancel();
+    };
+    motion.finish = finish;
+    menuMotion = motion;
+    dialog.dataset.menuMotion = entering ? 'opening' : 'closing';
+    animation.finished.then(finish, finish);
+    motion.timer = setTimeout(finish, duration + 80);
+  }
+
   sidebar.addEventListener('transitionend', event => {
     if (event.target === sidebar && event.propertyName === 'transform') finishSidebarExit?.();
   });
 
   function applyLayout() {
     hideTooltip();
+    cancelMenuMotion();
+    dialog.inert = false;
     const restoreFocus = trigger === document.activeElement || (bottomTrigger && bottomTrigger === document.activeElement)
       || dialog.contains(document.activeElement)
       || sidebar.contains(document.activeElement);
@@ -321,6 +364,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     // while the rest of the covered page is inert.
     dialog.show();
     setMenuBackgroundInert(true);
+    animateMenu(true);
     trigger.setAttribute('aria-expanded', 'true');
     trigger.setAttribute('aria-label', 'Close menu');
     availableControls(dialog)[0]?.focus({ preventScroll: true });
@@ -333,11 +377,14 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       if (action) action();
       return;
     }
-    if (!dialog.open) return;
+    if (!dialog.open || pendingClose) return;
     afterClose = action;
     pendingClose = true;
-    setMenuBackgroundInert(false);
-    dialog.close();
+    dialog.inert = true;
+    animateMenu(false, () => {
+      setMenuBackgroundInert(false);
+      dialog.close();
+    });
   }
 
   function chooseCategory(id) {
@@ -396,6 +443,8 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
       || event.clientY < bounds.top || event.clientY > bounds.bottom) closeMenu();
   });
   dialog.addEventListener('close', () => {
+    cancelMenuMotion();
+    dialog.inert = false;
     pendingClose = false;
     setMenuBackgroundInert(false);
     if (desktop) {
@@ -445,6 +494,8 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   function showTooltip(event) {
     if (!tooltip || !desktop || expanded
       || document.querySelector('dialog[open]') || !(event.target instanceof Element)) return;
+    if (event.type === 'pointerover' && (!hoverPointer.matches || event.pointerType === 'touch')) return;
+    if (event.type === 'focusin' && !event.target.matches(':focus-visible')) return;
     const target = event.target.closest('[data-tooltip]');
     if (!target || !sidebar.contains(target)) return;
     hideTooltip();
@@ -467,6 +518,7 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   window.addEventListener('resize', hideTooltip, { passive: true });
   window.addEventListener('hashchange', () => closeMenu());
   desktopMedia.addEventListener('change', applyLayout);
+  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) menuMotion?.finish(); });
   applyLayout();
   menuController = { openMenu, closeMenu };
   return menuController;

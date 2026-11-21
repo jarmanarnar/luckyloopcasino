@@ -1,6 +1,9 @@
+import { initDialogMotion } from './dialog-motion.js';
+
 // Keep fullscreen mobile dialogs inside the visible area when a keyboard opens.
-// This changes only layout; native dialogs retain their focus and modal behavior.
+// Shared motion retains native focus/modal behavior through each dismissal.
 export function initMobileDialogs({ window: scope = window, document: doc = document } = {}) {
+  const motion = initDialogMotion({ window: scope, document: doc });
   const mobile = scope.matchMedia('(width <= 599px)');
   const viewport = scope.visualViewport;
   const style = doc.documentElement.style;
@@ -27,6 +30,7 @@ export function initMobileDialogs({ window: scope = window, document: doc = docu
   viewport?.addEventListener('scroll', schedule);
   update();
   return { destroy() {
+    motion.destroy();
     if (frame !== null) scope.cancelAnimationFrame(frame);
     mobile.removeEventListener('change', schedule);
     scope.removeEventListener('resize', schedule);
@@ -36,3 +40,4 @@ export function initMobileDialogs({ window: scope = window, document: doc = docu
     style.removeProperty('--popup-viewport-top');
   } };
 }
+
