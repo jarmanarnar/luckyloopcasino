@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <link rel="stylesheet" href="touch-controls.css">
+  <link rel="stylesheet" href="touch-controls.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
   <script type="module" src="touch-controls.js"></script>
   <meta name="theme-color" content="#070708">
   <meta name="application-name" content="COP COIN">
@@ -17,10 +17,12 @@
   <title>COP COIN</title>
   <link rel="icon" type="image/png" href="assets/brand/app-icons/icon-192.png">
   <link rel="modulepreload" href="bootstrap.js">
-  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="theme.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
   <style id="app-loader-styles">
+    html { background: #070708; }
+    body:is([data-app-state="loading"], [data-app-state="error"]) { margin: 0; }
     body:is([data-app-state="loading"], [data-app-state="error"]) > :not(#app-loader) { visibility: hidden; }
-    .app-loader { position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; background: var(--surface-page, #070708); color: var(--text-primary, #fff); text-align: center; touch-action: none; }
+    .app-loader { box-sizing: border-box; position: fixed; z-index: 1000; inset: 0; display: grid; place-content: center; justify-items: center; gap: 1.25rem; padding: 1.5rem; background: #070708; color: #f3f4f6; text-align: center; touch-action: none; }
     .app-loader[hidden] { display: none !important; }
     .app-loader__brand { --app-loader-duration: 1800ms; position: relative; display: grid; place-items: center; width: min(10rem, calc(100vw - 3rem)); aspect-ratio: 3 / 2; }
     .app-loader__fallback { font: italic 900 1.5rem/1 system-ui, sans-serif; letter-spacing: -.05em; }
@@ -29,42 +31,49 @@
     .app-loader__brand[data-art-ready="true"] .app-loader__image { visibility: visible; }
     .app-loader__brand[data-paused="true"] .app-loader__image { animation-play-state: paused; }
     .app-loader__brand[data-reduced="true"] .app-loader__image { animation: none; }
-    .app-loader__message { margin: 0; color: var(--text-secondary, #a8a8b0); font: .875rem var(--app-font-family, system-ui, sans-serif); }
-    .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: var(--surface-control); color: var(--text-primary); font-weight: 700; cursor: pointer; }
+    .loading-spinner { box-sizing: border-box; display: block; width: 1.75rem; height: 1.75rem; margin-inline: auto; border: 2px solid #393c42; border-top-color: #f1f3f7; border-right-color: #aeb4c0; border-radius: 50%; animation: app-loader-spin .8s linear infinite; }
+    .game-loading .loading-spinner { margin-bottom: 1rem; }
+    #game-view[data-load-state="error"] .loading-spinner { display: none; }
+    .app-loader__message { margin: 0; color: #bec2ca; font: 400 .875rem/1.5 system-ui, sans-serif; }
+    .app-loader__retry { min-height: 2.75rem; padding: .625rem 1.25rem; border: 0; border-radius: .5rem; background: #d0d4dc; color: #111216; font: 700 .875rem/1.5 system-ui, sans-serif; cursor: pointer; }
+    .app-loader__retry[hidden] { display: none; }
+    body[data-app-state="error"] .app-loader .loading-spinner { display: none; }
+    body[data-reduce-motion="true"] :is(.app-loader__image, .loading-spinner) { animation: none; }
+    @keyframes app-loader-spin { to { transform: rotate(1turn); } }
     @keyframes app-loader-glow { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) {
-      .app-loader__image { animation: none; }
+      .app-loader__image, .loading-spinner { animation: none; }
     }
   </style>
   <link rel="preload" href="assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/poppins-700-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="typography.css">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="wallet.css">
-  <link rel="stylesheet" href="site-menu.css">
-  <link rel="stylesheet" href="mobile-nav.css">
-  <link rel="stylesheet" href="hero-carousel.css">
-  <link rel="stylesheet" href="catalog-pages.css">
-  <link rel="stylesheet" href="store.css">
-  <link rel="stylesheet" href="phone-verification.css">
-  <link rel="stylesheet" href="redeem.css">
-  <link rel="stylesheet" href="notifications-drawer.css">
-  <link rel="stylesheet" href="rewards-popover.css">
-  <link rel="stylesheet" href="profile-menu.css">
-  <link rel="stylesheet" href="feature-pages.css">
-  <link rel="stylesheet" href="achievements.css">
-  <link rel="stylesheet" href="game-details.css">
-  <link rel="stylesheet" href="how-to-play.css">
-  <link rel="stylesheet" href="auth.css">
-  <link rel="stylesheet" href="dialog-controls.css">
-  <link rel="stylesheet" href="wallet-header.css">
-  <link rel="stylesheet" href="community-chat.css">
-  <link rel="stylesheet" href="player-display.css">
-  <link rel="stylesheet" href="primary-button.css">
-  <link rel="stylesheet" href="site-footer.css">
-  <link rel="stylesheet" href="spin-wheel.css">
-  <link rel="stylesheet" href="lobby-promotions.css">
-  <link rel="stylesheet" href="mobile-dialogs.css">
+  <link rel="stylesheet" href="typography.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="styles.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="wallet.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="site-menu.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="mobile-nav.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="hero-carousel.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="catalog-pages.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="store.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="phone-verification.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="redeem.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="notifications-drawer.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="rewards-popover.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="profile-menu.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="feature-pages.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="achievements.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="game-details.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="how-to-play.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="auth.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="dialog-controls.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="wallet-header.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="community-chat.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="player-display.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="primary-button.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="site-footer.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="spin-wheel.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="lobby-promotions.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
+  <link rel="stylesheet" href="mobile-dialogs.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">
 </head>
 <body data-sidebar="collapsed" data-app-state="loading" data-app-starting="true" data-auth="guest" data-wallet-layout="currency-menu">
   <div id="app-loader" class="app-loader" role="status" aria-live="polite" lang="en" dir="ltr">
@@ -72,7 +81,8 @@
       <span class="app-loader__fallback" aria-hidden="true">COP COIN</span>
       <img class="app-loader__image" src="assets/brand/cop-coin-beacons.webp" width="1536" height="1024" alt="" decoding="async">
     </div>
-    <p id="app-load-status" class="visually-hidden">Loading COP COIN…</p>
+    <span class="loading-spinner" aria-hidden="true"></span>
+    <p id="app-load-status" class="app-loader__message">Loading COP COIN…</p>
     <button id="app-load-retry" class="app-loader__retry" type="button" hidden>Try again</button>
     <noscript><p>Enable JavaScript to load the site.</p></noscript>
   </div>
@@ -272,6 +282,7 @@
       </div>
       <div class="game-loading" id="game-loading" hidden>
         <div class="game-loading__content">
+          <span class="loading-spinner" aria-hidden="true"></span>
           <p class="game-load-status" id="game-load-status" role="status" aria-live="polite">Loading game…</p>
           <button class="game-loading__reveal" id="game-loading-reveal" type="button" hidden>Show game window</button>
         </div>
@@ -609,14 +620,13 @@
       image.addEventListener('load', showArt);
       image.addEventListener('error', showArt);
       if (image.complete) showArt();
-      retry.addEventListener('click', reload);
+      retry.onclick = reload;
       const slow = setTimeout(() => {
         if (document.body.dataset.appState === 'loading') showStatus('Taking longer than usual. Still loading…');
       }, 15_000);
       import('./bootstrap.js').then(() => {
         clearTimeout(slow);
-        // The loaded bootstrap now owns the retry action and loading status.
-        retry.removeEventListener('click', reload);
+        // Bootstrap replaces the single retry handler and owns the status now.
       }).catch(error => {
         clearTimeout(slow);
         document.body.dataset.appState = 'error';

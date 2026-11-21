@@ -36,17 +36,17 @@
   .dialog-close.icon-button { transition: none; }
 }
 
-@keyframes mobile-popover-enter {
-  from { opacity: 0; translate: 0 -6px; }
-  to { opacity: 1; translate: 0 0; }
+:root { --popup-motion-duration: 280ms; --popup-motion-easing: cubic-bezier(.4, 0, .2, 1); }
+/* The shared JS lifecycle supplies both directions, including on browsers
+   without discrete display transitions. Feature geometry stays unchanged. */
+dialog[open][data-dialog-motion],
+:is(.rewards-popover, .profile-menu, .wallet-currency-menu, .catalog-select-menu)[data-popover-motion] {
+  animation: none;
+  transition: none;
+  translate: 0 0;
+  will-change: transform, opacity;
 }
-@media (width <= 1024px) and (prefers-reduced-motion: no-preference) {
-  body:not([data-reduce-motion="true"]) :is(
-    .rewards-popover:popover-open,
-    .profile-menu:popover-open,
-    .wallet-currency-menu:not([hidden]),
-    .catalog-select-menu:popover-open
-  ) {
-    animation: mobile-popover-enter 180ms cubic-bezier(.22, 1, .36, 1);
-  }
-}
+dialog[data-dialog-motion="opening"]::backdrop { animation: popup-backdrop-in var(--popup-motion-duration) var(--popup-motion-easing) both; }
+dialog[data-dialog-motion="closing"]::backdrop { animation: popup-backdrop-out var(--popup-motion-duration) var(--popup-motion-easing) both; }
+@keyframes popup-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popup-backdrop-out { from { opacity: 1; } to { opacity: 0; } }

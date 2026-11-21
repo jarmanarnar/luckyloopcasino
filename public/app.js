@@ -30,6 +30,7 @@ import { initAchievementDialog } from './achievement-dialog.js';
 import { initLobbyPromotions } from './lobby-promotions.js';
 import { initPopupNavigation } from './popup-navigation.js';
 import { initMobileDialogs } from './mobile-dialogs.js';
+import { initPageMotion } from './page-motion.js';
 
 export async function initApplication() {
   initUiIcons();
@@ -62,6 +63,7 @@ export async function initApplication() {
   initMobileNav({ ...catalog, ...features, ...menu, openStore: store.openStore });
   initHeroCarousel({ account, ...catalog, ...wheel, openFeature: features.openFeature, openStore: store.openStore });
   initLobbyPromotions({ router, account, auth });
+  initPageMotion({ router });
 
   document.querySelector('.site-logo')?.addEventListener('click', event => {
     event.preventDefault();

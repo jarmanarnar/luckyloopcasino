@@ -1,3 +1,45 @@
+export function waitForAppStyles(doc) {
+  const pending = new Set(doc.querySelectorAll('link[data-app-styles]'));
+  if (!pending.size) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const listeners = new Map();
+    let finished = false;
+    function cleanup(link) {
+      const handlers = listeners.get(link);
+      if (!handlers) return;
+      link.removeEventListener('load', handlers.load);
+      link.removeEventListener('error', handlers.error);
+      listeners.delete(link);
+    }
+    function settle(link, failed = false) {
+      if (finished || !pending.has(link)) return;
+      cleanup(link);
+      pending.delete(link);
+      link.dataset.styleState = failed ? 'error' : 'loaded';
+      if (failed) {
+        finished = true;
+        for (const remaining of pending) cleanup(remaining);
+        reject(new Error(`Unable to load stylesheet: ${link.getAttribute('href')}`));
+      } else {
+        link.media = 'all';
+        if (!pending.size) { finished = true; resolve(); }
+      }
+    }
+    for (const link of pending) {
+      const handlers = { load: () => settle(link), error: () => settle(link, true) };
+      listeners.set(link, handlers);
+      link.addEventListener('load', handlers.load);
+      link.addEventListener('error', handlers.error);
+    }
+    // The link's inline handlers remember errors before bootstrap arrives.
+    // sheet also covers a cached load whose event has already been delivered.
+    for (const link of [...pending]) {
+      if (link.dataset.styleState === 'error') settle(link, true);
+      else if (link.dataset.styleState === 'loaded' || link.sheet) settle(link);
+    }
+  });
+}
+
 export function waitForPageAssets(doc, scope = globalThis, { timeout = 600 } = {}) {
   // Images already reserve their geometry. Let their normal loading and error
   // fallbacks work without turning artwork into a prerequisite for opening the app.

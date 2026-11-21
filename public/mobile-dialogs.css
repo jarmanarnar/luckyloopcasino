@@ -9,9 +9,9 @@
 
 @media (width <= 599px) {
   :root {
-    --mobile-dialog-duration: 220ms;
+    --mobile-dialog-duration: 280ms;
     --mobile-dialog-step-duration: 180ms;
-    --mobile-dialog-easing: cubic-bezier(.2, .7, .2, 1);
+    --mobile-dialog-easing: cubic-bezier(.4, 0, .2, 1);
     --mobile-dialog-inset-left: max(1rem, env(safe-area-inset-left, 0px));
     --mobile-dialog-inset-right: max(1rem, env(safe-area-inset-right, 0px));
     --mobile-dialog-footer-space: calc(1rem + env(safe-area-inset-bottom, 0px));
@@ -189,7 +189,7 @@
     height: var(--popup-viewport-height, 100dvh);
     border: 0;
     opacity: 0;
-    transform: translateY(1rem);
+    transform: translateY(20px);
     transition: transform var(--mobile-dialog-duration) var(--mobile-dialog-easing), opacity var(--mobile-dialog-duration) var(--mobile-dialog-easing);
   }
   body[data-chat="open"] .community-chat { opacity: 1; transform: translateY(0); }
@@ -209,10 +209,6 @@
     #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog,
     #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet)[open]::backdrop { opacity: 1; }
 
-  dialog[data-dialog-motion="opening"]::backdrop { animation: mobile-dialog-backdrop-in 280ms var(--mobile-dialog-easing) both; }
-  dialog[data-dialog-motion="closing"]::backdrop { animation: mobile-dialog-backdrop-out 200ms var(--mobile-dialog-easing) both; }
-  @keyframes mobile-dialog-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes mobile-dialog-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
 
   body[data-reduce-motion="true"] { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; }
   @media (prefers-reduced-motion: reduce) { :root { --mobile-dialog-duration: 0s; --mobile-dialog-step-duration: 0s; } }

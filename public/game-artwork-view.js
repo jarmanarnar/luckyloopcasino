@@ -9,17 +9,34 @@ export function createGameArt(game, { document: doc = document, eager = false } 
   const artwork = GAME_ARTWORK[game.id];
   if (!artwork) return art;
   const image = doc.createElement('img');
-  Object.assign(image, { className: 'game-cover', src: artwork.src, alt: '',
+  Object.assign(image, { className: 'game-cover', alt: '',
     width: artwork.width, height: artwork.height, loading: eager ? 'eager' : 'lazy', decoding: 'async' });
   image.dataset.optionalArtwork = 'true';
   image.setAttribute('aria-hidden', 'true');
-  title.hidden = true;
-  art.dataset.artwork = 'true';
-  image.addEventListener('error', () => {
+  let revision = 0;
+  function failed() {
+    revision++;
     image.hidden = true;
     title.hidden = false;
     delete art.dataset.artwork;
-  }, { once: true });
+  }
+  async function ready() {
+    const current = ++revision, source = image.src;
+    try { await image.decode?.(); }
+    catch { /* A loaded image can still display when explicit decoding is unavailable. */ }
+    if (current !== revision || image.src !== source || image.parentNode !== art) return;
+    if (!image.complete || !image.naturalWidth) return;
+    image.hidden = false;
+    title.hidden = true;
+    art.dataset.artwork = 'true';
+  }
+  image.addEventListener('load', ready);
+  image.addEventListener('error', failed);
   art.append(image);
+  image.src = artwork.src;
+  if (image.complete) {
+    if (image.naturalWidth) void ready();
+    else failed();
+  }
   return art;
 }

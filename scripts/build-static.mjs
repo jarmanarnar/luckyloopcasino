@@ -24,7 +24,7 @@ async function bundleIndexStyles(html, source, output) {
     if (attribute(tag, 'rel') !== 'stylesheet') continue;
     const href = attribute(tag, 'href');
     if (!href || /^(?:[a-z]+:|\/)/i.test(href) || /\b(?:disabled|title)\b/i.test(tag)) continue;
-    const media = attribute(tag, 'media');
+    const media = /\bdata-app-styles\b/i.test(tag) ? null : attribute(tag, 'media');
     parts.push(`@import ${JSON.stringify(`./${href}`)}${media ? ` ${media}` : ''};`);
     links.push(tag);
   }
@@ -51,8 +51,12 @@ async function bundleIndexStyles(html, source, output) {
   });
   // Keep the inline loader styles available before any network stylesheet arrives.
   // Repeating them in the bundle preserves their original place in the full cascade.
+  const applicationStyles = links.some(tag => /\bdata-app-styles\b/i.test(tag));
+  const bundleLink = applicationStyles
+    ? `<link rel="stylesheet" href="app-styles.css" data-app-styles media="print" onload="this.media='all';this.dataset.styleState='loaded'" onerror="this.dataset.styleState='error'">`
+    : '<link rel="stylesheet" href="app-styles.css">';
   for (const [index, tag] of links.entries()) {
-    html = html.replace(tag, index === links.length - 1 ? '<link rel="stylesheet" href="app-styles.css">' : '');
+    html = html.replace(tag, index === links.length - 1 ? bundleLink : '');
   }
   return { html, stylesheets: links.length, bytes: Object.values(result.metafile.outputs)[0].bytes };
 }

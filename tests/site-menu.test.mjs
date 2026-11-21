@@ -573,7 +573,7 @@ const settleAnimation = async animation => {
   await Promise.resolve();
 };
 
-test('animated menu waits for its exit before native close and destination handoff', async () => {
+test('menu uses symmetric entry and exit motion and waits before destination handoff', async () => {
   const page = menuPage({ animations: true }), dialog = page.nodes['site-menu'];
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   assert.equal(page.menuAnimations.length, 1);
@@ -584,6 +584,11 @@ test('animated menu waits for its exit before native close and destination hando
   await settleAnimation(page.menuAnimations[0]);
   page.nodes['menu-buy'].click();
   assert.equal(page.menuAnimations.length, 2);
+  assert.equal(page.menuAnimations[0].options.duration, 280);
+  assert.equal(page.menuAnimations[0].options.easing, 'cubic-bezier(.4, 0, .2, 1)');
+  assert.equal(page.menuAnimations[1].options.duration, page.menuAnimations[0].options.duration);
+  assert.equal(page.menuAnimations[1].options.easing, page.menuAnimations[0].options.easing,
+    'closing follows the same acceleration curve as opening');
   assert.equal(dialog.open, true, 'the native dialog remains open while it leaves the viewport');
   assert.equal(dialog.inert, true, 'outgoing menu controls cannot accept another action');
   assert.equal(page.nodes['lobby-view'].inert, true, 'the covered page stays inert throughout exit');

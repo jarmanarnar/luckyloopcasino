@@ -29,7 +29,7 @@ function browser({ mobile = true, reduced = false, animate = true } = {}) {
   if (!animate) Dialog.prototype.animate = undefined;
   const scope = { HTMLDialogElement: Dialog,
     matchMedia: query => query.includes('reduced') ? preference : media,
-    getComputedStyle: dialog => ({ opacity: dialog.opacity, transform: dialog.transform }),
+    getComputedStyle: dialog => ({ opacity: dialog.opacity, transform: dialog.transform, translate: dialog.translate }),
     setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); },
     MutationObserver: class { constructor(callback) { this.callback = callback; observers.push(this); } observe() {} disconnect() { this.disconnected = true; } },
   };
@@ -47,11 +47,14 @@ test('opening animates without deferring native modal state; dismissal holds the
   const page = browser(), dialog = new page.Dialog();
   dialog.showModal();
   assert.equal(dialog.open, true);
-  assert.deepEqual(page.animations[0].frames, [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'translateY(0)' }]);
+  assert.deepEqual(page.animations[0].frames, [{ opacity: 0, translate: '0 20px' }, { opacity: 1, translate: '0 0' }]);
   await page.finish();
   assert.equal(dialog.dataset.dialogMotion, undefined);
   let completed = 0;
   requestDialogClose(dialog, { returnValue: 'done', onClosed: () => completed++ });
+  assert.equal(page.animations.at(-1).options.duration, page.animations[0].options.duration);
+  assert.equal(page.animations.at(-1).options.easing, 'cubic-bezier(.4, 0, .2, 1)');
+  assert.equal(page.animations.at(-1).frames.at(-1).translate, '0 20px');
   assert.equal(dialog.open, true, 'native modal/inert/focus lifecycle remains intact during exit');
   assert.equal(dialog.inert, true, 'buttons cannot trigger another action while the shell exits');
   assert.equal(completed, 0);
@@ -79,25 +82,31 @@ test('native close stays synchronous for close/open handoffs and does not animat
 
 test('early dismissal starts from the visible frame; repeated close and rapid reopen cannot finish a stale exit', async () => {
   const page = browser(), dialog = new page.Dialog();
-  dialog.showModal(); dialog.opacity = '.45'; dialog.transform = 'matrix(1, 0, 0, 1, 0, 11)';
+  dialog.showModal(); dialog.opacity = '.45'; dialog.translate = '0px 11px';
   requestDialogClose(dialog);
   const exit = page.animations.at(-1);
-  assert.deepEqual(exit.frames[0], { opacity: '.45', transform: 'matrix(1, 0, 0, 1, 0, 11)' });
+  assert.deepEqual(exit.frames[0], { opacity: '.45', translate: '0px 11px' });
   requestDialogClose(dialog); assert.equal(page.animations.at(-1), exit);
   dialog.showModal(); assert.equal(exit.cancelled, true);
+  assert.deepEqual(page.animations.at(-1).frames[0], { opacity: '.45', translate: '0px 11px' });
   assert.equal(dialog.inert, false, 'a reopened dialog is interactive again');
   exit.finish(); await page.microtasks();
   assert.equal(dialog.open, true); assert.equal(dialog.closes, 0);
   page.controller.destroy();
 });
 
-test('reduced motion, desktop and missing WAAPI immediately use native close', () => {
-  for (const options of [{ reduced: true }, { mobile: false }, { animate: false }]) {
+test('reduced motion and missing WAAPI immediately use native close, while desktop shares the same motion', async () => {
+  for (const options of [{ reduced: true }, { animate: false }]) {
     const page = browser(options), dialog = new page.Dialog();
     dialog.showModal(); requestDialogClose(dialog);
     assert.equal(dialog.open, false); assert.equal(page.animations.length, 0);
     page.controller.destroy();
   }
+  const desktop = browser({ mobile: false }), dialog = new desktop.Dialog();
+  dialog.showModal(); requestDialogClose(dialog);
+  assert.equal(dialog.open, true); assert.equal(desktop.animations.length, 2);
+  await desktop.finish(); assert.equal(dialog.open, false);
+  desktop.controller.destroy();
 });
 
 test('timeout, motion preference, visibility and teardown all settle a pending exit exactly once', async () => {

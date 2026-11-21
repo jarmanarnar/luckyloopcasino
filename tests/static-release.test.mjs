@@ -85,7 +85,7 @@ test('index styles become one request with cascade, early loader fallback and re
     await mkdir(path.join(source, 'nested'), { recursive: true });
     await writeFile(path.join(source, 'first.css'), '.first { --phase: first; }');
     await writeFile(path.join(source, 'nested', 'last.css'), '.last { --phase: last; background: url(../assets/card.webp); } @font-face { font-family: Test; src: url(../assets/test.woff2) format("woff2"); }');
-    const html = '<head><meta charset="utf-8"><link rel="stylesheet" href="first.css"><style id="app-loader-styles">.probe { --phase: inline; }</style><link href="nested/last.css" rel="stylesheet"></head>';
+    const html = '<head><meta charset="utf-8"><link rel="stylesheet" href="first.css" data-app-styles media="print"><style id="app-loader-styles">.probe { --phase: inline; }</style><link href="nested/last.css" rel="stylesheet" data-app-styles media="print"></head>';
     await writeFile(path.join(source, 'index.html'), html);
     await writeFile(path.join(source, 'other.html'), html);
     const result = await buildStatic(root, 'ddddddd');
@@ -93,9 +93,11 @@ test('index styles become one request with cascade, early loader fallback and re
     const index = await readFile(path.join(root, 'dist', 'index.html'), 'utf8');
     assert.equal([...index.matchAll(/<link\b[^>]*rel="stylesheet"/g)].length, 1);
     assert.match(index, /href="app-styles\.css\?v=ddddddd"/);
+    assert.match(index, /data-app-styles media="print" onload="this\.media='all';this\.dataset\.styleState='loaded'" onerror="this\.dataset\.styleState='error'"/);
     assert.match(index, /<style id="app-loader-styles">\.probe \{ --phase: inline; \}<\/style>/);
     assert.ok(index.indexOf('id="app-loader-styles"') < index.indexOf('href="app-styles.css'));
     const css = await readFile(path.join(root, 'dist', 'app-styles.css'), 'utf8');
+    assert.doesNotMatch(css, /@media\s*print/, 'temporary async-loading media never limits application CSS to printing');
     const phasePositions = ['first', 'inline', 'last'].map(value => css.search(new RegExp(`--phase:\\s*${value}`)));
     assert.ok(phasePositions.every(position => position >= 0));
     assert.ok(phasePositions[0] < phasePositions[1]);

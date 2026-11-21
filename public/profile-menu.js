@@ -1,4 +1,5 @@
 import { requestDialogClose } from './dialog-motion.js';
+import { initPopoverMotion } from './popover-motion.js';
 
 import { getDiscoveredGameCount } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -283,6 +284,7 @@ export function initProfileMenu({ router, account, auth, popupNavigation, openNo
       if (summary.open) renderSummary();
     }
   });
+  if (hasPopover) initPopoverMotion(menu, { trigger, document, window });
   return { open };
 }
 

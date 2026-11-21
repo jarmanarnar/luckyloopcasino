@@ -1,3 +1,4 @@
+import { initPopoverMotion } from '../public/popover-motion.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -54,7 +55,7 @@ function page({ member = {}, hold, failure, signedIn = true, details = false, na
       saved = outcome.account; emit(); return outcome.result;
     },
   };
-  const context = { document, account, getAchievements, ACHIEVEMENTS, formatAchievementRewards, sortAchievements, Intl, createShelfIcon: () => new Element('svg'),
+  const context = { initPopoverMotion, document, account, getAchievements, ACHIEVEMENTS, formatAchievementRewards, sortAchievements, Intl, createShelfIcon: () => new Element('svg'),
     window: { addEventListener() {} }, router: { navigate: route => navigations.push(route), subscribe() {} },
     openAchievement: details ? id => opened.push(id) : undefined,
     openRegistration: () => registrations.push({ popoverOpen: Boolean(panel.open) }) };

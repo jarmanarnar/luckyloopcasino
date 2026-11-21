@@ -268,12 +268,12 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
     cancelMenuMotion();
     if (typeof dialog.animate !== 'function' || reducedMotion.matches
       || document.body.dataset.reduceMotion === 'true' || document.hidden) { complete(); return; }
-    const duration = entering ? 320 : 240;
+    const duration = 280;
     const start = entering && !interrupted ? 'translateX(-100%)' : currentTransform;
     let animation;
     try {
       animation = dialog.animate([{ transform: start }, { transform: entering ? 'translateX(0)' : 'translateX(-100%)' }],
-        { duration, easing: entering ? 'cubic-bezier(.22, 1, .36, 1)' : 'cubic-bezier(.4, 0, 1, 1)', fill: 'both' });
+        { duration, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'both' });
     } catch { complete(); return; }
     const motion = { animation, timer: null, finish: null };
     const finish = () => {

@@ -1,4 +1,5 @@
 import { createUiIcon } from './ui-icons.js';
+import { initPopoverMotion } from './popover-motion.js';
 
 // Keep the existing select as the value source for catalog filters and routing.
 export function enhanceCatalogSelect(select, { commitReselection = false } = {}) {
@@ -31,6 +32,7 @@ export function enhanceCatalogSelect(select, { commitReselection = false } = {})
   let typed = '';
   let typedAt = 0;
   const isOpen = () => menu.matches(':popover-open');
+  const motion = initPopoverMotion(menu, { trigger, document, window, bindTrigger: false });
 
   function close() {
     if (isOpen()) menu.hidePopover();
@@ -116,7 +118,7 @@ export function enhanceCatalogSelect(select, { commitReselection = false } = {})
     // The custom toggle also refreshes options and positions the list; avoid a
     // second native toggle after this handler.
     event.preventDefault();
-    if (isOpen()) close();
+    if (isOpen() && !motion.isClosing()) motion.dismiss({ restoreFocus: true });
     else open();
   });
   trigger.addEventListener('keydown', event => {
@@ -124,10 +126,10 @@ export function enhanceCatalogSelect(select, { commitReselection = false } = {})
     if (event.key === 'Escape' && isOpen()) {
       event.preventDefault();
       event.stopPropagation();
-      close();
+      motion.dismiss({ restoreFocus: true });
       return;
     }
-    if (event.key === 'Tab') { close(); return; }
+    if (event.key === 'Tab') { motion.dismiss(); return; }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (isOpen()) choose(activeIndex);

@@ -1,5 +1,6 @@
 import { CURRENCIES, formatBalance } from './wallet-state.js';
 import { renderProfileAvatar } from './profile-photo.js';
+import { initPopoverMotion } from './popover-motion.js';
 
 export function initWalletMenu({ account, router, selectCurrency, document: doc = document, elements,
   getCurrency = () => account.getSnapshot().wallet.currency,
@@ -20,9 +21,11 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     amount: doc.querySelector(`#wallet-amount-${code}`),
   }]));
   let busy = false;
+  const motion = initPopoverMotion(panel, { trigger, document: doc, native: false, bindTrigger: false,
+    isOpen: () => !panel.hidden, show: () => { panel.hidden = false; }, hide: () => { panel.hidden = true; } });
 
   function close(focus = false) {
-    panel.hidden = true;
+    motion.close();
     trigger.setAttribute('aria-expanded', 'false');
     if (focus) trigger.focus({ preventScroll: true });
   }
@@ -53,8 +56,8 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
   }
   function toggle() {
     if (!account.isSignedIn()) return;
-    const opening = panel.hidden;
-    panel.hidden = !opening;
+    const opening = panel.hidden || motion.isClosing();
+    motion.toggle();
     trigger.setAttribute('aria-expanded', String(opening));
     feedback.textContent = '';
   }
@@ -66,7 +69,7 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     try {
       const result = await action();
       if (result === false || result?.ok === false) throw new Error('Save failed');
-      if (dismiss) close(true);
+      if (dismiss) motion.dismiss({ restoreFocus: true });
     } catch { feedback.textContent = 'Unable to save. Please try again.'; }
     finally { busy = false; render(); }
   }
@@ -80,9 +83,9 @@ export function initWalletMenu({ account, router, selectCurrency, document: doc 
     if (panel.hidden) toggle();
     options.get(getCurrency()).button.focus();
   });
-  doc.addEventListener('pointerdown', event => { if (!panel.hidden && !shell.contains(event.target)) close(); });
+  doc.addEventListener('pointerdown', event => { if (!panel.hidden && !shell.contains(event.target)) motion.dismiss(); });
   doc.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !panel.hidden) { event.preventDefault(); close(true); }
+    if (event.key === 'Escape' && !panel.hidden) { event.preventDefault(); motion.dismiss({ restoreFocus: true }); }
   });
   account.subscribe(render);
   router?.subscribe(() => close());

@@ -1,7 +1,9 @@
+import { POPUP_MOTION, closePopovers } from './popover-motion.js';
+
 const controllers = new WeakMap();
 const dialogs = '#store-dialog, #redeem-dialog, #auth-dialog, #profile-summary, #how-to-play-dialog, #phone-verification-dialog, #identity-verification-dialog, #notifications-drawer, #spin-wheel-dialog, #spin-win-dialog, #achievement-dialog, .chat-sheet';
 const steps = '#redeem-methods, #redeem-details, #auth-form, #auth-recovery, #profile-summary-overview, #profile-editor, .spin-wheel__play, .spin-wheel__prizes';
-const easing = 'cubic-bezier(.2, .7, .2, 1)';
+const easing = POPUP_MOTION.easing;
 const nativeClose = (dialog, value) => value === undefined ? dialog.close() : dialog.close(value);
 
 // Only user dismissals use this path. Native close() stays synchronous for
@@ -15,14 +17,13 @@ export function requestDialogClose(dialog, options = {}) {
 
 export function initDialogMotion({ window: scope = window, document: doc = document } = {}) {
   if (controllers.has(doc)) return controllers.get(doc);
-  const mobile = scope.matchMedia('(width <= 599px)');
   const reduced = scope.matchMedia('(prefers-reduced-motion: reduce)');
   const running = new Map(), stepAnimations = new Map(), restorers = [], cancelTargets = new Set();
   const later = scope.setTimeout?.bind(scope) || setTimeout;
   const clear = scope.clearTimeout?.bind(scope) || clearTimeout;
   let destroyed = false;
   const eligible = dialog => dialog?.matches?.(dialogs) === true;
-  const enabled = dialog => !destroyed && mobile.matches && !reduced.matches
+  const enabled = dialog => !destroyed && !reduced.matches
     && doc.body?.dataset.reduceMotion !== 'true' && !doc.hidden && typeof dialog.animate === 'function';
 
   function stop(dialog) {
@@ -59,10 +60,13 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
   }
   function enter(dialog) {
     if (!eligible(dialog) || !enabled(dialog)) return;
-    animate(dialog, [{ opacity: 0, transform: 'translateY(20px)' },
-      { opacity: 1, transform: 'translateY(0)' }], 280);
+    const style = running.has(dialog) ? scope.getComputedStyle?.(dialog) : null;
+    const from = style ? { opacity: style.opacity || '1', translate: style.translate && style.translate !== 'none' ? style.translate : '0 0' }
+      : { opacity: 0, translate: `0 ${POPUP_MOTION.offset}px` };
+    animate(dialog, [from, { opacity: 1, translate: '0 0' }], POPUP_MOTION.duration);
   }
   function dismiss(dialog, options = {}) {
+    closePopovers(doc);
     if (!eligible(dialog) || !dialog.open || !enabled(dialog)) {
       stop(dialog);
       if (dialog?.open) nativeClose(dialog, options.returnValue);
@@ -76,11 +80,11 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
     }
     const current = scope.getComputedStyle?.(dialog);
     const opacity = current?.opacity || '1';
-    const transform = current?.transform && current.transform !== 'none' ? current.transform : 'translateY(0)';
+    const translate = current?.translate && current.translate !== 'none' ? current.translate : '0 0';
     for (const [element, animation] of stepAnimations) {
       if (dialog.contains(element)) { animation.cancel(); stepAnimations.delete(element); }
     }
-    animate(dialog, [{ opacity, transform }, { opacity: 0, transform: 'translateY(16px)' }], 200,
+    animate(dialog, [{ opacity, translate }, { opacity: 0, translate: `0 ${POPUP_MOTION.offset}px` }], POPUP_MOTION.duration,
       { ...options, closing: true });
   }
 
@@ -93,6 +97,7 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
     const original = descriptor.value;
     const wrapped = function (...args) {
       const wasOpen = this.open;
+      closePopovers(doc);
       const result = original.apply(this, args);
       if (eligible(this) && !cancelTargets.has(this)) {
         this.addEventListener('cancel', onCancel);
@@ -129,7 +134,7 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
   function onClosed(event) { if (!event.target.open) stop(event.target); }
   function settle() {
     for (const [dialog, state] of running) if (!enabled(dialog)) finish(dialog, state);
-    if (!mobile.matches || reduced.matches || doc.hidden || doc.body?.dataset.reduceMotion === 'true') {
+    if (reduced.matches || doc.hidden || doc.body?.dataset.reduceMotion === 'true') {
       for (const animation of stepAnimations.values()) animation.cancel();
       stepAnimations.clear();
     }
@@ -158,7 +163,6 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
   doc.addEventListener('submit', onSubmit);
   doc.addEventListener('close', onClosed, true);
   doc.addEventListener('visibilitychange', settle);
-  mobile.addEventListener?.('change', settle);
   reduced.addEventListener?.('change', settle);
   const controller = { dismiss, destroy() {
     destroyed = true;
@@ -170,7 +174,6 @@ export function initDialogMotion({ window: scope = window, document: doc = docum
     doc.removeEventListener('submit', onSubmit);
     doc.removeEventListener('close', onClosed, true);
     doc.removeEventListener('visibilitychange', settle);
-    mobile.removeEventListener?.('change', settle);
     reduced.removeEventListener?.('change', settle);
     for (const restore of restorers.reverse()) restore();
     controllers.delete(doc);

@@ -2,6 +2,7 @@ import { getAchievements } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { ACHIEVEMENTS, formatAchievementRewards } from './achievement-catalog.js';
 import { sortAchievements } from './achievement-order.js';
+import { initPopoverMotion } from './popover-motion.js';
 
 export function initRewardsPopover({ router, account, openAchievement, openRegistration }) {
   const trigger = document.querySelector('#header-rewards');
@@ -172,4 +173,5 @@ export function initRewardsPopover({ router, account, openAchievement, openRegis
     else if (isOpen()) render();
     else updateCount();
   });
+  initPopoverMotion(panel, { trigger, document, window });
 }

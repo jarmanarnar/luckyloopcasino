@@ -12,8 +12,8 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
 const router = () => ({ prepareLayout() {}, restoreInitialScroll() {} });
 
 function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artwork = Promise.resolve(), imageFails = false,
-  hidden = false, load, initialize, geometry = () => 0 } = {}) {
-  const calls = [], logoCalls = [], timers = new Map(), frames = new Map();
+  hidden = false, load, initialize, geometry = () => 0, styles = [], fade } = {}) {
+  const calls = [], logoCalls = [], timers = new Map(), frames = new Map(), fades = [];
   let timerId = 0, frameId = 0, now = 0, revealedAt;
   const element = () => ({
     getClientRects: () => [{}],
@@ -21,8 +21,12 @@ function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artw
   });
   const nodes = {
     'app-loader': { hidden: false },
-    'app-load-status': { className: 'visually-hidden', textContent: 'Loading COP COIN…' },
-    'app-load-retry': { hidden: true, addEventListener(type, action) { this[type] = action; } },
+    'app-load-status': { className: 'app-loader__message', textContent: 'Loading COP COIN…' },
+    'app-load-retry': { hidden: true, click() { this.onclick(); } },
+  };
+  if (fade) nodes['app-loader'].animate = (frames, options) => {
+    fades.push({ frames, options });
+    return { finished: fade, cancel() {} };
   };
   const pageImage = { ...element(), loading: 'lazy', decode() {
     calls.push('decode-image');
@@ -33,7 +37,8 @@ function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artw
     body: { ...element(), dataset: { appState: 'loading', appStarting: 'true' } }, hidden,
     fonts: { ready: fonts, load: () => fontLoad }, images: [pageImage, closedDialogImage],
     querySelector: selector => nodes[selector.slice(1)],
-    querySelectorAll: () => [element()],
+    querySelectorAll: selector => selector === 'link[data-app-styles]' ? styles : [element()],
+    addEventListener() {}, removeEventListener() {},
   };
   const scope = {
     location: { reload() { calls.push('reload'); } },
@@ -71,7 +76,7 @@ function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artw
       });
     },
   });
-  return { doc, nodes, calls, logoCalls, timers, pageImage, ready,
+  return { doc, nodes, calls, logoCalls, timers, pageImage, ready, fades,
     fireTimeout(delay) {
       const timer = [...timers.entries()].find(([, item]) => item.delay === delay);
       assert.ok(timer, `Expected a ${delay}ms timer`);
@@ -101,11 +106,64 @@ test('startup gives fonts a short grace period while leaving images lazy and ind
 });
 
 test('ready fonts reveal the page without waiting for the full grace period', async () => {
-  const page = startup();
+  const fade = deferred(), page = startup({ fade: fade.promise });
+  await settle();
+  assert.equal(page.doc.body.dataset.appState, 'ready');
+  assert.equal(page.nodes['app-loader'].hidden, false, 'the loader fades over the already initialized page');
+  assert.equal(page.fades[0].options.duration, 160);
+  fade.resolve();
   assert.equal(await page.ready, true);
   assert.equal(page.nodes['app-loader'].hidden, true);
   assert.ok(page.revealedAt >= 200 && page.revealedAt < 600);
   assert.equal(page.timers.size, 0);
+});
+
+function stylesheet({ state, cached = false } = {}) {
+  const handlers = new Map();
+  return {
+    dataset: state ? { styleState: state } : {}, sheet: cached ? {} : null, media: 'print',
+    getAttribute: () => 'theme.css',
+    addEventListener(type, fn) { handlers.set(type, fn); },
+    removeEventListener(type) { handlers.delete(type); },
+    emit(type) { handlers.get(type)?.(); },
+    get listening() { return handlers.size; },
+  };
+}
+
+test('application styles gate initialization, including cached styles and slow downloads that eventually finish', async () => {
+  const cached = stylesheet({ cached: true }), pending = stylesheet();
+  const page = startup({ styles: [cached, pending], initialize() {
+    assert.equal(cached.media, 'all');
+    assert.equal(pending.media, 'all');
+  } });
+  await settle();
+  assert.deepEqual(page.calls, []);
+  assert.equal(cached.listening, 0, 'a cached stylesheet does not wait for another load event');
+  assert.equal(page.nodes['app-loader'].hidden, false);
+  page.fireTimeout(15_000);
+  assert.equal(page.nodes['app-load-retry'].hidden, false);
+  pending.emit('load');
+  assert.equal(await page.ready, true);
+  assert.equal(pending.listening, 0);
+  assert.deepEqual(page.calls, ['initialize', 'prepare-layout', 'restore-scroll']);
+  assert.equal(page.nodes['app-load-retry'].hidden, true);
+});
+
+test('stylesheet failures before or after bootstrap expose retry without initializing an unstyled page', async () => {
+  for (const early of [true, false]) {
+    const failed = stylesheet({ state: early ? 'error' : undefined }), pending = stylesheet();
+    const page = startup({ styles: [failed, pending] });
+    if (!early) failed.emit('error');
+    assert.equal(await page.ready, false);
+    assert.equal(page.doc.body.dataset.appState, 'error');
+    assert.equal(page.nodes['app-load-status'].className, 'app-loader__message');
+    assert.equal(page.nodes['app-loader'].hidden, false);
+    assert.equal(page.calls.includes('initialize'), false);
+    assert.equal(failed.dataset.styleState, 'error');
+    assert.equal(pending.listening, 0);
+    page.nodes['app-load-retry'].click();
+    assert.equal(page.calls.at(-1), 'reload');
+  }
 });
 
 test('pending or failed images cannot strand an initialized page behind the loader', async () => {

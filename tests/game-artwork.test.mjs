@@ -6,9 +6,10 @@ import { GAME_ARTWORK } from '../public/game-artwork.js';
 import { createGameArt } from '../public/game-artwork-view.js';
 import { waitForPageAssets } from '../public/app-readiness.js';
 
-function documentStub() {
+function documentStub(imageState = {}) {
   return { createElement(tag) { return { tag, dataset: {}, children: [], events: {}, hidden: false,
-    append(child) { this.children.push(child); },
+    ...(tag === 'img' ? { complete: false, naturalWidth: 0, ...imageState } : {}),
+    append(child) { child.parentNode = this; this.children.push(child); },
     setAttribute(name, value) { this[name] = value; },
     addEventListener(name, fn) { this.events[name] = fn; },
   }; } };
@@ -34,7 +35,8 @@ test('covered games retain a title fallback and failed artwork restores the name
   const art = createGameArt(game, { document: documentStub() });
   const [title, image] = art.children;
   assert.equal(title.textContent, game.title);
-  assert.equal(title.hidden, true);
+  assert.equal(title.hidden, false);
+  assert.equal(art.dataset.artwork, undefined, 'the provider placeholder remains visible while artwork loads');
   assert.equal(image.src, GAME_ARTWORK[game.id].src);
   assert.equal(image.alt, '');
   assert.equal(image.loading, 'lazy');
@@ -42,6 +44,58 @@ test('covered games retain a title fallback and failed artwork restores the name
   assert.equal(title.hidden, false);
   assert.equal(image.hidden, true);
   assert.equal(art.dataset.artwork, undefined);
+});
+
+test('slow covers retain the name and provider until the loaded image has decoded', async () => {
+  const game = GAMES.find(game => game.id === 'nunchucksr96f100');
+  let finishDecode;
+  const decoding = new Promise(resolve => { finishDecode = resolve; });
+  const art = createGameArt(game, { document: documentStub({ decode: () => decoding }) });
+  const [title, image] = art.children;
+  image.complete = true;
+  image.naturalWidth = GAME_ARTWORK[game.id].width;
+  const loading = image.events.load();
+  assert.equal(title.hidden, false);
+  assert.equal(art.dataset.artwork, undefined);
+  finishDecode();
+  await loading;
+  assert.equal(title.hidden, true);
+  assert.equal(art.dataset.artwork, 'true');
+  assert.equal(image.width, GAME_ARTWORK[game.id].width);
+  assert.equal(image.height, GAME_ARTWORK[game.id].height);
+});
+
+test('cached valid covers display even if explicit decode rejects, while broken cached images keep their fallback', async () => {
+  const game = GAMES.find(game => game.id === 'nunchucksr96f100');
+  const art = createGameArt(game, { document: documentStub({ complete: true, naturalWidth: 300,
+    decode: () => Promise.reject(new Error('Explicit decoding unavailable')) }) });
+  await Promise.resolve();
+  assert.equal(art.dataset.artwork, 'true');
+  assert.equal(art.children[0].hidden, true);
+  assert.equal(art.children[1].hidden, false);
+
+  const broken = createGameArt(game, { document: documentStub({ complete: true, naturalWidth: 0 }) });
+  assert.equal(broken.dataset.artwork, undefined);
+  assert.equal(broken.children[0].hidden, false);
+  assert.equal(broken.children[1].hidden, true);
+});
+
+test('late decoding cannot reveal failed, replaced, or removed artwork', async () => {
+  const game = GAMES.find(game => game.id === 'nunchucksr96f100');
+  for (const interrupt of [image => image.events.error(), image => { image.src = 'replacement.webp'; }, image => { image.parentNode = null; }]) {
+    let finishDecode;
+    const decoding = new Promise(resolve => { finishDecode = resolve; });
+    const art = createGameArt(game, { document: documentStub({ decode: () => decoding }) });
+    const [title, image] = art.children;
+    image.complete = true;
+    image.naturalWidth = 300;
+    const loading = image.events.load();
+    interrupt(image);
+    finishDecode();
+    await loading;
+    assert.equal(title.hidden, false);
+    assert.equal(art.dataset.artwork, undefined);
+  }
 });
 
 test('unsampled games keep the existing text card and do not request arbitrary artwork', () => {
