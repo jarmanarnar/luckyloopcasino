@@ -371,7 +371,7 @@ export function initCatalogView({ router, member } = {}) {
     }
     tracks.forEach(updateArrows);
     if (meta.focus !== false && !meta.pop && meta.source !== 'initial') {
-      (route.type === 'search' ? input : title).focus({ preventScroll: true });
+      title.focus({ preventScroll: true });
     }
   }
   const openHome = () => router.navigate({ type: 'home' });
@@ -382,16 +382,14 @@ export function initCatalogView({ router, member } = {}) {
   const openProviders = () => router.navigate({ type: 'providers' });
   const openProvider = id => router.navigate({ type: 'provider', providerId: id });
   const openStore = () => router.navigate({ type: 'store' });
-  const focusSearch = () => {
-    input.focus({ preventScroll: true });
-    input.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
-  };
   const openSearch = () => {
     window.clearTimeout(inputTimer);
     input.value = '';
     searchClear.hidden = true;
     router.navigate({ type: 'search', query: '' });
-    focusSearch();
+    // Opening the catalog is navigation, not a request to start typing.
+    // Also focus its heading when reopening the same route from the menu.
+    title.focus({ preventScroll: true });
   };
   const searchGames = query => router.navigate({ type: 'search', query: String(query).trim() });
   lobbySearchLink.addEventListener('click', openSearch);
