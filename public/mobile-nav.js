@@ -14,6 +14,7 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   initialized = true;
 
   const desktopMedia = window.matchMedia('(width > 1024px)');
+  let pendingDestination = null;
 
   // Restoring the Menu opener's focus must not look like a second selection
   // after touch dismissal. Keep the focus cue for actual keyboard navigation.
@@ -27,12 +28,12 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   }, { capture: true });
 
   function sync() {
-    const selected = dialogs.menu.open ? 'menu'
+    const selected = pendingDestination ?? (dialogs.menu.open && !dialogs.menu.inert ? 'menu'
       : dialogs.store.open ? 'store'
       : document.body.dataset.view === 'game' || document.body.dataset.page === 'game-details' ? null
         : categories.dataset.activeMenu === 'redeem' ? 'redeem'
         : document.body.dataset.page === 'store' || categories.dataset.activeMenu === 'store' ? 'store'
-        : document.body.dataset.page === 'home' ? 'lobby' : null;
+        : document.body.dataset.page === 'home' ? 'lobby' : null);
     for (const [action, button] of buttons) {
       const active = action === selected;
       button.dataset.active = String(active);
@@ -61,11 +62,19 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   }
 
   function activate(action, button) {
-    if (desktopMedia.matches || document.querySelector('dialog[open]:not(#site-menu)')) return;
+    if (desktopMedia.matches || pendingDestination || dialogs.menu.inert || document.querySelector('dialog[open]:not(#site-menu)')) return;
     if (dialogs.menu.open) {
       if (!closeMenu) return;
       if (action === 'menu') closeMenu();
-      else closeMenu(() => performAction(action, button));
+      else {
+        // Acknowledge the accepted destination now; opening the next surface
+        // still waits until the drawer has released its focus and inert state.
+        pendingDestination = action;
+        closeMenu(() => {
+          pendingDestination = null;
+          performAction(action, button);
+        });
+      }
       sync();
       return;
     }
@@ -78,9 +87,12 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
   observer.observe(categories, { attributes: true, attributeFilter: ['data-active-menu'] });
   observer.observe(document.body, { attributes: true, attributeFilter: ['data-view', 'data-page'] });
   for (const dialog of Object.values(dialogs)) {
-    observer.observe(dialog, { attributes: true, attributeFilter: ['open'] });
+    observer.observe(dialog, { attributes: true, attributeFilter: dialog === dialogs.menu ? ['open', 'inert'] : ['open'] });
   }
-  desktopMedia.addEventListener('change', sync);
+  const resetPendingDestination = () => { pendingDestination = null; sync(); };
+  // A native dismissal or breakpoint change can cancel the queued handoff.
+  dialogs.menu.addEventListener('close', resetPendingDestination);
+  desktopMedia.addEventListener('change', resetPendingDestination);
   nav.hidden = false;
   document.body.dataset.mobileNav = 'true';
   sync();

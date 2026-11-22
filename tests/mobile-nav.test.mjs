@@ -7,7 +7,7 @@ const source = (await readFile(new URL('../public/mobile-nav.js', import.meta.ur
   .replace('export function initMobileNav', 'function initMobileNav');
 const actions = ['lobby', 'store', 'redeem', 'menu'];
 
-function navPage({ desktop = false, missing = null, routeFromGame = false } = {}) {
+function navPage({ desktop = false, missing = null, routeFromGame = false, animatedMenu = false } = {}) {
   const calls = [], observations = [], observers = [], closeActions = [], lobbyActions = [];
   class Node {
     constructor() { this.dataset = {}; this.attributes = new Map(); this.listeners = new Map(); this.open = false; this.hidden = false; }
@@ -53,8 +53,14 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     openMenu(options) { calls.push({ action: 'menu', options }); nodes['site-menu'].open = true; },
     closeMenu(action) {
       calls.push({ action: 'menu:close' });
-      nodes['site-menu'].open = false;
-      if (action) closeActions.push(action);
+      if (animatedMenu) nodes['site-menu'].inert = true;
+      else nodes['site-menu'].open = false;
+      closeActions.push(() => {
+        nodes['site-menu'].open = false;
+        nodes['site-menu'].inert = false;
+        action?.();
+        nodes['site-menu'].emit('close');
+      });
     },
     openHome() { calls.push({ action: 'home' }); nodes['catalog-categories'].dataset.activeMenu = 'lobby'; body.dataset.page = 'home'; body.dataset.view = 'lobby'; },
     openStore() { calls.push({ action: 'store' }); nodes['store-dialog'].open = true; },
@@ -137,19 +143,49 @@ test('mobile actions reuse canonical destinations and preserve the originating d
 
 });
 
-test('menu destinations wait for the menu close handoff and update the active destination', () => {
+test('menu destinations select immediately while their surfaces wait for the animated close handoff', () => {
   const expected = { lobby: 'home', store: 'store', redeem: 'feature' };
   for (const action of Object.keys(expected)) {
-    const page = navPage();
+    const page = navPage({ animatedMenu: true });
+    page.body.dataset.page = 'search';
     page.button('menu').click();
     page.button(action).click();
-    assert.equal(page.nodes['site-menu'].open, false);
+    assert.equal(page.nodes['site-menu'].open, true, 'the drawer is still animating');
+    assert.deepEqual(active(page), [action], 'selection responds before the animation completes');
+    page.flush();
+    assert.deepEqual(active(page), [action], 'animation mutations cannot restore the Menu highlight');
+    for (const other of actions) page.button(other).click();
     assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close'], action);
     assert.equal(page.nodes['other-dialog'].open, false);
+    page.nodes['site-menu'].open = false;
+    page.flush();
+    for (const other of actions) page.button(other).click();
+    assert.deepEqual(active(page), [action], 'pending selection survives the native close-event gap');
+    assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close']);
     page.flushClose();
     assert.equal(page.calls.at(-1).action, expected[action]);
     assert.deepEqual(active(page), [action]);
     if (expected[action] === 'feature') assert.equal(page.calls.at(-1).pageId, action);
+  }
+
+  const dismissed = navPage({ animatedMenu: true });
+  dismissed.button('menu').click();
+  dismissed.button('menu').click();
+  assert.equal(dismissed.nodes['site-menu'].open, true);
+  assert.deepEqual(active(dismissed), ['lobby'], 'closing Menu immediately restores the underlying page');
+  dismissed.flushClose();
+  assert.deepEqual(active(dismissed), ['lobby']);
+
+  for (const cancellation of ['close', 'breakpoint']) {
+    const page = navPage({ animatedMenu: true });
+    page.body.dataset.page = 'search';
+    page.button('menu').click();
+    page.button('lobby').click();
+    page.nodes['site-menu'].open = false;
+    page.nodes['site-menu'].inert = false;
+    if (cancellation === 'close') page.nodes['site-menu'].emit('close');
+    else { page.media.matches = true; page.media.emit('change'); }
+    assert.deepEqual(active(page), [], 'cancelled handoffs never leave a stale destination selected');
   }
 });
 
@@ -333,7 +369,7 @@ test('Search, Menu dismissal and returning to Lobby never leave Menu selected al
 
   page.button('menu').click();
   page.button('lobby').click();
-  assert.deepEqual(active(page), [], 'closing the drawer clears Menu before the pending Lobby action');
+  assert.deepEqual(active(page), ['lobby'], 'Lobby responds immediately while the drawer closes');
   page.flushClose();
   assert.deepEqual(active(page), ['lobby']);
   assert.equal(page.button('lobby').getAttribute('aria-current'), 'page');
@@ -454,7 +490,8 @@ test('initialization is idempotent, requires a complete shell and watches only r
     assert.equal(observation.options.childList, undefined);
     assert.equal(observation.options.subtree, undefined);
     const expected = observation.target === page.body ? ['data-view', 'data-page']
-      : observation.target === page.nodes['catalog-categories'] ? ['data-active-menu'] : ['open'];
+      : observation.target === page.nodes['catalog-categories'] ? ['data-active-menu']
+        : observation.target === page.nodes['site-menu'] ? ['open', 'inert'] : ['open'];
     assert.deepEqual(Array.from(observation.options.attributeFilter), expected);
   }
   page.button('redeem').click();
