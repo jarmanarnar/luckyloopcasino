@@ -15,6 +15,17 @@ export function initMobileNav({ openMenu, closeMenu, openHome, openStore, openFe
 
   const desktopMedia = window.matchMedia('(width > 1024px)');
 
+  // Restoring the Menu opener's focus must not look like a second selection
+  // after touch dismissal. Keep the focus cue for actual keyboard navigation.
+  nav.dataset.input = 'pointer';
+  document.addEventListener('pointerdown', event => {
+    nav.dataset.input = event.pointerType === 'mouse' ? 'mouse' : 'touch';
+  }, { capture: true });
+  document.addEventListener('keydown', event => {
+    if (['Tab', 'Enter', ' ', 'Escape', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)
+      || event.key.startsWith('Arrow')) nav.dataset.input = 'keyboard';
+  }, { capture: true });
+
   function sync() {
     const selected = dialogs.menu.open ? 'menu'
       : dialogs.store.open ? 'store'

@@ -55,9 +55,9 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.mobile-nav__item:focus-visible { color: var(--text-primary); }
+.mobile-nav[data-input="keyboard"] .mobile-nav__item:focus-visible { color: var(--text-primary); }
 @media (hover: hover) and (pointer: fine) {
-  .mobile-nav__item:hover { color: var(--text-primary); }
+  .mobile-nav:not([data-input="touch"]) .mobile-nav__item:hover { color: var(--text-primary); }
 }
 .mobile-nav__icon { display: block; flex: none; width: 1.5rem; height: 1.5rem; margin-block: -.125rem; fill: currentColor; }
 .mobile-nav__label { font-size: .8125rem; font-weight: 400; line-height: 1.2; white-space: nowrap; }

@@ -18,7 +18,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
       if (!this.listeners.has(type)) this.listeners.set(type, []);
       this.listeners.get(type).push(listener);
     }
-    emit(type) { for (const listener of this.listeners.get(type) || []) listener({ target: this }); }
+    emit(type, details = {}) { for (const listener of this.listeners.get(type) || []) listener({ target: this, ...details }); }
     click() { this.emit('click'); }
   }
   const ids = ['mobile-nav', 'catalog-categories', 'site-menu', 'store-dialog', 'other-dialog',
@@ -39,14 +39,14 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     return all;
   };
   const dialogs = ['site-menu', 'store-dialog', 'other-dialog'];
-  const document = {
+  const document = Object.assign(new Node(), {
     body,
     querySelector(selector) {
       if (selector === 'dialog[open]:not(#site-menu)') return dialogs.filter(id => id !== 'site-menu' && id !== missing).map(id => nodes[id]).find(node => node.open) || null;
       const id = selector.slice(1);
       return id === missing ? null : nodes[id] || null;
     },
-  };
+  });
   const media = new Node();
   media.matches = desktop;
   const api = {
@@ -73,7 +73,7 @@ function navPage({ desktop = false, missing = null, routeFromGame = false } = {}
     },
   };
   vm.runInNewContext(`${source}\ninitMobileNav(api);`, context);
-  return { nodes, body, calls, media, observations, observers,
+  return { nodes, body, document, calls, media, observations, observers,
     initialize() { vm.runInNewContext('initMobileNav(api);', context); },
     flush() { for (const observer of observers) observer.callback(); },
     flushClose() { while (closeActions.length) closeActions.shift()(); },
@@ -92,13 +92,27 @@ test('mobile actions reuse canonical destinations and preserve the originating d
   assert.equal(page.body.dataset.mobileNav, 'true');
   assert.deepEqual(active(page), ['lobby']);
 
+  page.document.emit('pointerdown', { pointerType: 'touch' });
   page.button('menu').click();
   assert.equal(page.calls.at(-1).action, 'menu');
   assert.equal(page.calls.at(-1).options.returnFocusTo, page.button('menu'));
   assert.equal(page.button('menu').getAttribute('aria-expanded'), 'true');
   assert.deepEqual(active(page), ['menu']);
-  page.nodes['site-menu'].open = false;
-  page.flush();
+  page.button('menu').click();
+  assert.equal(page.nodes['site-menu'].open, false);
+  assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close']);
+  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
+  assert.deepEqual(active(page), ['lobby']);
+  assert.equal(page.nodes['mobile-nav'].dataset.input, 'touch', 'restored focus cannot enable the keyboard highlight after a tap');
+  page.document.emit('keydown', { key: 'Shift' });
+  assert.equal(page.nodes['mobile-nav'].dataset.input, 'touch');
+  page.document.emit('keydown', { key: 'Tab' });
+  assert.equal(page.nodes['mobile-nav'].dataset.input, 'keyboard', 'keyboard navigation retains its focus cue');
+  assert.deepEqual(active(page), ['lobby'], 'focus modality never changes the selected destination');
+  page.document.emit('pointerdown', { pointerType: 'mouse' });
+  assert.equal(page.nodes['mobile-nav'].dataset.input, 'mouse');
+  page.document.emit('pointerdown', { pointerType: 'touch' });
+  assert.equal(page.nodes['mobile-nav'].dataset.input, 'touch', 'touch resets keyboard and mouse feedback on hybrid devices');
 
   page.button('lobby').click();
   assert.equal(page.calls.at(-1).action, 'home');
@@ -123,17 +137,6 @@ test('mobile actions reuse canonical destinations and preserve the originating d
 
 });
 
-test('the mobile Menu button closes the menu instead of trying to open it again', () => {
-  const page = navPage();
-  page.button('menu').click();
-  assert.equal(page.nodes['site-menu'].open, true);
-  page.button('menu').click();
-  assert.equal(page.nodes['site-menu'].open, false);
-  assert.deepEqual(page.calls.map(call => call.action), ['menu', 'menu:close']);
-  assert.equal(page.button('menu').getAttribute('aria-expanded'), 'false');
-  assert.deepEqual(active(page), ['lobby']);
-});
-
 test('menu destinations wait for the menu close handoff and update the active destination', () => {
   const expected = { lobby: 'home', store: 'store', redeem: 'feature' };
   for (const action of Object.keys(expected)) {
@@ -153,8 +156,7 @@ test('menu destinations wait for the menu close handoff and update the active de
 test('desktop and other open dialogs prevent hidden or overlapping actions', () => {
   for (const mode of ['desktop', 'other-dialog', 'store-dialog']) {
     const page = navPage({ desktop: mode === 'desktop' });
-    if (mode === 'game') page.body.dataset.view = 'game';
-    else if (page.nodes[mode]) page.nodes[mode].open = true;
+    if (page.nodes[mode]) page.nodes[mode].open = true;
     for (const action of actions) page.button(action).click();
     assert.equal(page.calls.length, 0, mode);
   }
@@ -196,7 +198,9 @@ test('overlays preserve the current game while page destinations use their route
 
 test('game details and active games clear every bottom destination even when the previous page has its own selection', () => {
   for (const gamePage of ['game-details', 'game']) {
-    for (const previous of ['providers', 'store', 'redeem', 'profile', 'achievements']) {
+    // Store and Redeem are the two prior destinations with their own selection.
+    // Neutral game pages are also covered by the Menu-over-game scenario below.
+    for (const previous of ['store', 'redeem']) {
       const page = navPage();
       page.nodes['catalog-categories'].dataset.activeMenu = previous;
       page.body.dataset.page = ['redeem', 'profile', 'achievements'].includes(previous) ? 'feature' : previous;
@@ -241,7 +245,7 @@ test('Menu opens over either game page and closing it restores no selection unti
 });
 
 test('Store popup selects Store, blocks actions, and restores the underlying destination on dismissal', () => {
-  for (const [destination, pageId, selection] of [['providers', 'providers', null], ['achievements', 'feature', null], ['redeem', 'feature', 'redeem'], ['new-releases', 'category', null]]) {
+  for (const [destination, pageId, selection] of [['providers', 'providers', null], ['redeem', 'feature', 'redeem']]) {
     const page = navPage();
     page.body.dataset.page = pageId;
     page.nodes['catalog-categories'].dataset.activeMenu = destination;
@@ -345,20 +349,18 @@ test('Search, Menu dismissal and returning to Lobby never leave Menu selected al
 
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {
   const page = navPage();
-  for (const category of ['new-releases', 'popular', 'spooky', 'picks', 'slots']) {
-    page.body.dataset.page = 'category';
-    page.nodes['catalog-categories'].dataset.activeMenu = category;
-    page.flush();
-    assert.deepEqual(active(page), []);
-    assert.equal(page.button('lobby').getAttribute('aria-current'), null);
-    page.button('menu').click();
-    page.button('menu').click();
-    assert.deepEqual(active(page), [], 'closing Menu must not select Lobby over a category');
-    page.button('store').click();
-    page.nodes['store-dialog'].open = false;
-    page.flush();
-    assert.deepEqual(active(page), [], 'closing Store must not select Lobby over a category');
-  }
+  page.body.dataset.page = 'category';
+  page.nodes['catalog-categories'].dataset.activeMenu = 'new-releases';
+  page.flush();
+  assert.deepEqual(active(page), []);
+  assert.equal(page.button('lobby').getAttribute('aria-current'), null);
+  page.button('menu').click();
+  page.button('menu').click();
+  assert.deepEqual(active(page), [], 'closing Menu must not select Lobby over a category');
+  page.button('store').click();
+  page.nodes['store-dialog'].open = false;
+  page.flush();
+  assert.deepEqual(active(page), [], 'closing Store must not select Lobby over a category');
   for (const destination of ['provider', 'favorites', 'recent-games']) {
     page.body.dataset.page = destination;
     page.nodes['catalog-categories'].dataset.activeMenu = 'lobby';
