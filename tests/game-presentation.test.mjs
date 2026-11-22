@@ -1,8 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getFrameLayout, needsLandscapeViewport } from '../public/game-presentation.js';
+import { getFrameLayout, getLaunchUrl, needsLandscapeViewport } from '../public/game-presentation.js';
+import { BGAMING_GAMES } from '../public/bgaming-games.js';
 
 const nunchucks = { id: 'nunchucksr96f100', providerId: 'netent' };
+
+test('BGaming preserves its official FUN launch URL on desktop and mobile', () => {
+  for (const game of [...BGAMING_GAMES, { providerId: 'bgaming', providerGameId: 'Adventures',
+    url: 'https://bgaming-network.com/play/Adventures/FUN?server=demo' }]) {
+    for (const device of ['desktop', 'mobile']) assert.equal(getLaunchUrl(game, device), game.url);
+  }
+});
+
+test('BGaming rejects non-demo URLs and mismatched game identifiers', () => {
+  const game = { providerId: 'bgaming', providerGameId: 'BookOfCats' };
+  for (const url of [
+    'https://unrelated.test/play/BookOfCats/FUN?server=demo',
+    'https://bgaming-network.com.unrelated.test/play/BookOfCats/FUN?server=demo',
+    'https://demo.bgaming-network.com/play/BookOfCats/USD?server=demo',
+    'https://demo.bgaming-network.com/play/Plinko/FUN?server=demo',
+    'https://demo.bgaming-network.com/play/BookOfCats/FUN?server=real',
+    'https://user@demo.bgaming-network.com/play/BookOfCats/FUN?server=demo',
+  ]) assert.throws(() => getLaunchUrl({ ...game, url }, 'mobile'), /Invalid BGaming public demo URL/);
+});
 
 test('Nunchucks compatibility recognizes both iPad identities without changing phones or other games', () => {
   const ipad = { userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)' };

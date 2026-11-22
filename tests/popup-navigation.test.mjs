@@ -188,8 +188,8 @@ test('close then navigate waits for popup history to drain and preserves the pre
   const page = onAchievements(), dialog = new page.Dialog('auth');
   dialog.showModal(); page.navigation.pushStep(dialog, { id: 'recovery', onBack() {} }); page.settle();
   dialog.close(); page.scroll(0);
-  page.router.navigate({ type: 'category', categoryId: 'popular' }); page.settle();
-  assert.equal(page.scope.location.hash, '#/popular'); assert.equal(marker(page), undefined);
+  page.router.navigate({ type: 'category', categoryId: 'fruit' }); page.settle();
+  assert.equal(page.scope.location.hash, '#/fruit'); assert.equal(marker(page), undefined);
   assert.equal(page.scope.scrollY, 0);
   page.back(); assertAchievements(page); assert.equal(page.scope.scrollY, 420);
   page.back(); assert.deepEqual(page.router.getRoute(), { type: 'home' });
@@ -223,9 +223,9 @@ test('Forward does not resurrect a dismissed form or leave a phantom Back entry'
 test('manual hash navigation and Back across its stale popup restore the correct underlying route', () => {
   const page = onAchievements(), dialog = new page.Dialog('store');
   dialog.showModal(); page.settle();
-  page.manualHash('#/popular');
+  page.manualHash('#/fruit');
   assert.equal(dialog.open, false);
-  assert.deepEqual(page.router.getRoute(), { type: 'category', categoryId: 'popular' });
+  assert.deepEqual(page.router.getRoute(), { type: 'category', categoryId: 'fruit' });
   page.back();
   assertAchievements(page); assert.equal(marker(page), undefined); assert.equal(page.scope.scrollY, 420);
   page.back(); assert.deepEqual(page.router.getRoute(), { type: 'home' });

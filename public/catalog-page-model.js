@@ -1,12 +1,12 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, GAME_FAMILIES, LEGACY_CATEGORIES, LOBBY_SECTIONS, getGamesForCategory, getGameReleaseDate } from './collections.js';
+import { CATEGORIES, GAME_FAMILIES, GAME_FAMILY_DEFINITIONS, LEGACY_CATEGORIES, LOBBY_SECTIONS, getGamesForCategory, getGameReleaseDate } from './collections.js';
 import { createCatalogSearch } from './catalog-search.js';
 
 export const PAGE_SIZE = 35;
 // Lobby navigation and shelves share the same discovery and game-type sections.
 export const LOBBY_COLLECTIONS = LOBBY_SECTIONS;
 export const LOBBY_CATEGORIES = LOBBY_COLLECTIONS.map(category => category.id);
-const families = new Map(GAME_FAMILIES.map(family => [family.id, family]));
+const families = new Map(GAME_FAMILY_DEFINITIONS.map(family => [family.id, family]));
 const categories = new Map([...LEGACY_CATEGORIES.filter(category => !families.has(category.id)), ...CATEGORIES].map(category => [category.id, category]));
 const familyByGame = new Map(GAME_FAMILIES.flatMap(family => getGamesForCategory(family.id).map(game => [game.id, family.id])));
 const categoryMemberships = new Map([...categories].map(([id]) => [id, new Set(getGamesForCategory(id).map(game => game.id))]));
@@ -75,21 +75,14 @@ export function getCatalogPage(route, { favoriteIds = [], history = [] } = {}) {
     .map(({ id, name }) => ({ id, name, count: providerCounts.get(id) || 0 }));
   const games = orderedCollection.filter(game => matchingIds.has(game.id));
   const defaultSort = search.active ? 'relevance' : route.type === 'favorites' ? 'saved'
-    : route.type === 'recent-games' ? 'recent'
-    : category?.id === 'popular' ? 'featured'
-    : category?.id === 'new-releases' ? 'newest' : 'az';
-  const hasReleaseDates = category?.id === 'new-releases' ||
-    orderedCollection.some(game => (!route.providerId || game.providerId === route.providerId) && getGameReleaseDate(game));
-  const allowedSorts = [...(search.active ? ['relevance'] : []), ...(route.type === 'favorites' ? ['saved'] : route.type === 'recent-games' ? ['recent'] : []), 'az', 'za', ...(hasReleaseDates ? ['newest'] : []), ...(category?.id === 'popular' ? ['featured'] : [])];
+    : route.type === 'recent-games' ? 'recent' : 'az';
+  const hasReleaseDates = orderedCollection.some(game => (!route.providerId || game.providerId === route.providerId) && getGameReleaseDate(game));
+  const allowedSorts = [...(search.active ? ['relevance'] : []), ...(route.type === 'favorites' ? ['saved'] : route.type === 'recent-games' ? ['recent'] : []), 'az', 'za', ...(hasReleaseDates ? ['newest'] : [])];
   const sort = allowedSorts.includes(route.sort) ? route.sort : defaultSort;
   if (sort === 'relevance') games.sort((a, b) => scores.get(a.id) - scores.get(b.id));
   if (sort === 'az') games.sort(byName);
   if (sort === 'za') games.sort((a, b) => byName(b, a));
   if (sort === 'newest') games.sort((a, b) => getGameReleaseDate(b).localeCompare(getGameReleaseDate(a)) || byName(a, b));
-  if (sort === 'featured') {
-    const order = new Map(getGamesForCategory('popular').map((game, index) => [game.id, index]));
-    games.sort((a, b) => order.get(a.id) - order.get(b.id));
-  }
   return { type: route.type, title: route.type === 'favorites' ? 'Favorite Games'
     : route.type === 'recent-games' ? 'Recent Games'
     : route.type === 'provider' ? provider.name : category?.title || family?.title || provider?.name || 'Games',

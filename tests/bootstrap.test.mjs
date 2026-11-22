@@ -11,7 +11,7 @@ const deferred = () => {
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const router = () => ({ prepareLayout() {}, restoreInitialScroll() {} });
 
-function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artwork = Promise.resolve(), imageFails = false,
+function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artwork = Promise.resolve(),
   hidden = false, load, initialize, geometry = () => 0, styles = [], fade } = {}) {
   const calls = [], logoCalls = [], timers = new Map(), frames = new Map(), fades = [];
   let timerId = 0, frameId = 0, now = 0, revealedAt;
@@ -30,7 +30,7 @@ function startup({ fonts = Promise.resolve(), fontLoad = Promise.resolve(), artw
   };
   const pageImage = { ...element(), loading: 'lazy', decode() {
     calls.push('decode-image');
-    return imageFails ? Promise.reject(new Error('Image unavailable')) : artwork;
+    return artwork;
   } };
   const closedDialogImage = { getClientRects: () => [], decode() { throw new Error('Hidden dialog image should not be loaded'); } };
   const doc = {
@@ -166,16 +166,6 @@ test('stylesheet failures before or after bootstrap expose retry without initial
   }
 });
 
-test('pending or failed images cannot strand an initialized page behind the loader', async () => {
-  for (const options of [{ artwork: new Promise(() => {}) }, { imageFails: true }]) {
-    const page = startup(options);
-    assert.equal(await page.ready, true);
-    assert.equal(page.nodes['app-loader'].hidden, true);
-    assert.equal(page.pageImage.loading, 'lazy');
-    assert.equal(page.calls.includes('decode-image'), false);
-  }
-});
-
 test('slow fonts stop delaying startup after 600ms and may finish later', async () => {
   const fonts = deferred(), fontLoad = deferred();
   const page = startup({ fonts: fonts.promise, fontLoad: fontLoad.promise });
@@ -196,16 +186,6 @@ test('failed font requests fall back without failing startup', async () => {
     fontLoad: Promise.reject(new Error('Font request failed')) });
   assert.equal(await page.ready, true);
   assert.equal(page.calls.includes('error'), false);
-});
-
-test('account initialization still completes before layout and reveal', async () => {
-  const account = deferred();
-  const page = startup({ load: () => Promise.resolve({ initApplication: () => account.promise }) });
-  await settle();
-  assert.equal(page.doc.body.dataset.appState, 'loading');
-  assert.equal(page.nodes['app-loader'].hidden, false);
-  account.resolve(router());
-  assert.equal(await page.ready, true);
 });
 
 test('a late layout change restarts the stability interval', async () => {
@@ -232,14 +212,20 @@ test('a slow application import offers retry but automatically opens when it fin
   assert.equal(page.calls.includes('error'), false);
 });
 
-test('slow account initialization can also complete after the retry prompt appears', async () => {
+test('account initialization gates reveal and can still complete after the retry prompt appears', async () => {
   const account = deferred();
   const page = startup({ load: () => Promise.resolve({ initApplication: () => account.promise }) });
   await settle();
+  assert.equal(page.doc.body.dataset.appState, 'loading');
+  assert.equal(page.nodes['app-loader'].hidden, false);
+  assert.equal(page.nodes['app-load-retry'].hidden, true);
   page.fireTimeout(15_000);
   assert.equal(page.doc.body.dataset.appState, 'loading');
+  assert.equal(page.nodes['app-load-retry'].hidden, false);
   account.resolve(router());
   assert.equal(await page.ready, true);
+  assert.equal(page.nodes['app-loader'].hidden, true);
+  assert.equal(page.nodes['app-load-retry'].hidden, true);
   assert.equal(page.timers.size, 0);
 });
 

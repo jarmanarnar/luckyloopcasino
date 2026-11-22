@@ -110,14 +110,13 @@ export function initCatalogView({ router, member } = {}) {
   const more = document.querySelector('#catalog-more');
   const empty = document.querySelector('#catalog-empty');
   const header = document.querySelector('#catalog-page-header');
+  const back = document.querySelector('#catalog-page-back');
   const title = document.querySelector('#catalog-page-title');
   const controls = document.querySelector('#catalog-page-controls');
   const input = document.querySelector('#catalog-page-search-input');
   const lobbySearchLink = document.querySelector('#lobby-search-link');
   const browser = document.querySelector('#catalog-browser');
   const searchClear = document.querySelector('#catalog-search-clear');
-  const filterToggle = document.querySelector('#catalog-filters-toggle');
-  const filterCount = document.querySelector('#catalog-filters-count');
   const filterPanel = document.querySelector('#catalog-filter-panel');
   const providerSelect = document.querySelector('#catalog-page-provider');
   const gameTypeSelect = document.querySelector('#catalog-page-game-type');
@@ -126,23 +125,13 @@ export function initCatalogView({ router, member } = {}) {
   const details = document.querySelector('#catalog-provider-details');
   const hero = document.querySelector('#hero-carousel');
   const toolbar = document.querySelector('.catalog-toolbar');
-  if (!router || ![root, shelves, categories, more, empty, header, title, controls, input,
-    providerSelect, gameTypeSelect, sortSelect, pagination, details, browser, searchClear, filterToggle, lobbySearchLink,
-    filterCount, filterPanel, hero, toolbar].every(Boolean)) return;
+  if (!router || ![root, shelves, categories, more, empty, header, back, title, controls, input,
+    providerSelect, gameTypeSelect, sortSelect, pagination, details, browser, searchClear, lobbySearchLink,
+    filterPanel, hero, toolbar].every(Boolean)) return;
   const limits = new Map(), tracks = new Set(), scrollTargets = new WeakMap();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let compactFilters = false;
-  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', filtersOpen = false, composing = false;
-  function syncFilterPanel() {
-    compactFilters = getComputedStyle(controls).getPropertyValue('--catalog-filters-compact').trim() === '1';
-    const expanded = !compactFilters || filtersOpen;
-    if (!expanded && filterPanel.contains(document.activeElement)) filterToggle.focus({ preventScroll: true });
-    if (!compactFilters && document.activeElement === filterToggle) input.focus({ preventScroll: true });
-    filterPanel.dataset.expanded = String(expanded);
-    filterPanel.inert = !expanded;
-    filterPanel.setAttribute('aria-hidden', String(!expanded));
-    filterToggle.setAttribute('aria-expanded', String(expanded));
-    if (!expanded) filterMenus.forEach(menu => menu.close());
+  let renderedKey = '', renderedRoute, inputTimer = 0, detailsId = '', composing = false;
+  function updatePromotionsOffset() {
     // Keep floating promotions below the controls instead of narrowing the search row.
     const controlsBottom = controls.getBoundingClientRect().bottom + window.scrollY;
     document.body.style.setProperty('--catalog-promotions-top', `${Math.ceil(controlsBottom + 12)}px`);
@@ -162,16 +151,6 @@ export function initCatalogView({ router, member } = {}) {
     button.append(createShelfIcon(category.id));
     button.append(node('span', '', category.title));
     categories.append(button);
-  }
-  function updateFilterBadge(route, model) {
-    const { favorites: favoriteIds, history } = member?.getState() || {};
-    const defaults = getCatalogPage(resetCatalogFilters(route, { preserveQuery: true }), { favoriteIds, history });
-    const additionalCount = Number(Boolean(route.providerId && route.type !== 'provider'))
-      + Number(Boolean(model.gameTypeId))
-      + Number(Boolean(route.sort && route.sort === model.sort && model.sort !== defaults.sort));
-    filterCount.textContent = String(additionalCount);
-    filterCount.hidden = !additionalCount;
-    filterToggle.setAttribute('aria-label', additionalCount ? `Filters, ${additionalCount} active` : 'Filters');
   }
   function updateArrows(track) {
     const section = track.closest('.game-shelf');
@@ -306,9 +285,10 @@ export function initCatalogView({ router, member } = {}) {
     input.placeholder = getCatalogSearchPlaceholder(model);
     input.setAttribute('aria-label', input.placeholder);
     searchClear.hidden = !input.value;
-    filterPanel.hidden = filterToggle.hidden = home || directory;
+    filterPanel.hidden = home || directory;
     providerSelect.closest('.catalog-page-filter').hidden = directory || model.type === 'provider';
-    gameTypeSelect.closest('.catalog-page-filter').hidden = directory;
+    const fixedGameType = model.type === 'category' && model.gameTypeId && !model.categoryId;
+    gameTypeSelect.closest('.catalog-page-filter').hidden = directory || Boolean(fixedGameType);
     sortSelect.closest('.catalog-page-filter').hidden = directory;
     providerSelect.replaceChildren(option('', 'All providers'), ...(filterModel.providerFacets || []).map(provider => option(provider.id, provider.name)));
     providerSelect.disabled = !filterModel.providerFacets?.length;
@@ -319,8 +299,7 @@ export function initCatalogView({ router, member } = {}) {
     sortSelect.replaceChildren(...(filterModel.allowedSorts || []).map(id => option(id, sortLabels[id])));
     sortSelect.value = filterModel.sort || '';
     filterMenus.forEach(menu => menu.refresh());
-    syncFilterPanel();
-    updateFilterBadge(route, filterModel);
+    updatePromotionsOffset();
     providerDetails(model.type === 'provider' ? model.provider : null);
     renderedRoute = route;
     const key = viewKey(route);
@@ -393,6 +372,10 @@ export function initCatalogView({ router, member } = {}) {
   };
   const searchGames = query => router.navigate({ type: 'search', query: String(query).trim() });
   lobbySearchLink.addEventListener('click', openSearch);
+  back.addEventListener('click', () => {
+    window.clearTimeout(inputTimer);
+    router.back({ type: 'home' });
+  });
   categories.addEventListener('click', event => {
     const button = event.target.closest('[data-category]');
     if (!button) return;
@@ -486,15 +469,7 @@ export function initCatalogView({ router, member } = {}) {
     navigateFilters(next, { preserveScroll: true, focus: false });
   });
   sortSelect.addEventListener('change', () => updateFilters({ sort: sortSelect.value }));
-  filterToggle.addEventListener('click', () => { filtersOpen = !filtersOpen; syncFilterPanel(); });
-  new ResizeObserver(syncFilterPanel).observe(browser);
-  filterPanel.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !compactFilters || !filtersOpen || event.defaultPrevented) return;
-    event.preventDefault();
-    filtersOpen = false;
-    syncFilterPanel();
-    filterToggle.focus({ preventScroll: true });
-  });
+  new ResizeObserver(updatePromotionsOffset).observe(browser);
   new ResizeObserver(() => tracks.forEach(track => {
     scrollTargets.delete(track);
     updateArrows(track);

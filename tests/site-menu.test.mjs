@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { GAME_FAMILIES, getGamesForCategory } from '../public/collections.js';
 import { createMemberState } from '../public/member-state.js';
 import { getFavoriteGames } from '../public/catalog-page-model.js';
+import { initSiteSearch } from '../public/site-search.js';
 
 const source = (await readFile(new URL('../public/site-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initSiteMenu', 'function initSiteMenu');
@@ -264,7 +265,8 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       nodes['catalog-categories'].dataset.activeMenu = id;
       pageHeading.focus();
     },
-    openSearch() {
+    openSearch(options) {
+      assert.equal(options.returnFocusTo, nodes['menu-search'], 'the shared search adapter preserves its opener');
       assert.equal(nodes['site-menu'].open, false);
       nodes['catalog-categories'].dataset.activeMenu = 'search';
       document.body.dataset.view = 'lobby';
@@ -288,7 +290,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
     lobbyActions.push(() => { document.body.dataset.view = 'lobby'; action?.(); });
   };
   const context = {
-    document, Element: Node, GAME_FAMILIES, getGamesForCategory, getFavoriteGames, catalog,
+    document, Element: Node, GAME_FAMILIES, getGamesForCategory, getFavoriteGames, catalog, initSiteSearch,
     getComputedStyle: element => ({
       transform: element.computedTransform || 'matrix(1, 0, 0, 1, 0, 0)',
       getPropertyValue: property => property === '--sidebar-duration' ? sidebarDuration : '',
@@ -313,7 +315,7 @@ function menuPage({ desktop = false, routeFromGame = false, storage = new Map(),
       disconnect() { this.targets = []; }
     },
   };
-  const api = vm.runInNewContext(`${source}\ninitSiteMenu(catalog);`, context);
+  const api = vm.runInNewContext(`${source}\ninitSiteMenu({...catalog, ...initSiteSearch(catalog)});`, context);
   const flushClose = () => { while (closeEvents.length) closeEvents.shift()(); };
   const item = id => nodes['menu-content'].descendants().find(node => node.dataset.menuCategory === id);
   const feature = id => nodes['menu-content'].descendants().find(node => node.dataset.menuFeature === id);
@@ -357,6 +359,11 @@ test('blocked browser storage does not prevent sidebar initialization or togglin
 
 test('menu opens once, focuses BUY, and only lists available collections', () => {
   const page = menuPage();
+  assert.equal(page.nodes['site-sidebar'].hidden, true);
+  assert.equal(page.nodes['site-sidebar'].inert, true);
+  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
+  assert.equal(page.document.body.dataset.sidebar, 'hidden');
+  assert.equal(page.timers.size, 0);
   page.context.initSiteMenu();
   page.nodes['menu-toggle'].click();
   assert.equal(page.nodes['site-menu'].open, true);
@@ -367,8 +374,7 @@ test('menu opens once, focuses BUY, and only lists available collections', () =>
   assert.equal(page.item('search'), undefined, 'the Search shortcut replaces a separate Games destination');
   assert.equal(page.item('all'), undefined, 'All Games must not have a separate menu destination');
   for (const id of ['popular', 'new-releases']) {
-    assert.ok(page.item(id), 'discovery shelves have direct navigation shortcuts');
-    assert.equal(page.casinoItems.contains(page.item(id)), false, 'discovery shelves are not game types');
+    assert.equal(page.item(id), undefined, 'retired discovery collections have no menu shortcuts');
   }
   assert.equal(page.categoryButtons.has('all'), false);
   for (const category of GAME_FAMILIES) assert.equal(!!page.item(category.id), getGamesForCategory(category.id).length > 0);
@@ -407,44 +413,24 @@ test('sidebar highlights a game type and clears its selection when Search opens'
   assert.equal(page.item('lobby').getAttribute('aria-current'), null);
 });
 
-test('discovery shortcuts route and highlight consistently for guests and members on desktop and mobile', () => {
-  for (const guest of [true, false]) {
-    for (const desktop of [true, false]) {
-      const page = menuPage({ guest, desktop });
-      for (const id of ['popular', 'new-releases']) {
-        if (!desktop) page.api.openMenu();
-        assert.equal(page.item(id).getClientRects().length, 1);
-        page.item(id).click();
-        page.flushClose();
-        assert.equal(page.calls.at(-1), `category:${id}`);
-        assert.equal(page.document.body.dataset.page, 'category');
-        assert.equal(page.nodes['site-menu'].open, false, 'the drawer closes before navigating');
-        if (desktop) page.observers[0].callback();
-        else page.api.openMenu();
-        assert.equal(page.item(id).getAttribute('aria-current'), 'page');
-        assert.equal(page.item('lobby').getAttribute('aria-current'), null);
-        assert.equal(page.item(id === 'popular' ? 'new-releases' : 'popular').getAttribute('aria-current'), null);
-        if (!desktop) { page.api.closeMenu(); page.flushClose(); }
-      }
-    }
-  }
-});
-
 test('Search remains available without a separate Games destination for guests and members', () => {
   for (const guest of [true, false]) {
     for (const desktop of [true, false]) {
       const page = menuPage({ guest, desktop });
-      page.api.openMenu();
+      if (!desktop) page.api.openMenu();
       assert.equal(page.item('search'), undefined, 'Games must not duplicate the Search shortcut');
       const search = page.nodes['menu-search'];
       assert.equal(search.getClientRects().length, 1);
       search.click();
+      assert.equal(page.nodes['site-search'].open, false, 'Search opens a routed page, not a dialog');
       if (!desktop) assert.equal(page.calls.includes('search:open'), false, 'wait for drawer close before opening Search');
       page.flushClose();
       assert.equal(page.calls.at(-1), 'search:open');
       assert.equal(page.document.body.dataset.page, 'search');
+      assert.equal(page.nodes['catalog-categories'].dataset.activeMenu, 'search');
       assert.equal(page.document.activeElement, page.nodes['site-search-input']);
       assert.equal(page.calls.includes('category:search'), false);
+      if (desktop) assert.equal(page.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
       if (desktop) page.observers[0].callback();
       else page.api.openMenu();
       assert.equal(page.item('search'), undefined);
@@ -476,15 +462,6 @@ test('a caller can open the drawer and receive focus again when it is dismissed'
   assert.equal(page.document.activeElement, page.nodes['bottom-menu']);
 });
 
-test('a hidden drawer opener falls back to the visible header control', () => {
-  const page = menuPage();
-  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
-  page.nodes['bottom-menu'].visible = false;
-  page.api.closeMenu();
-  page.flushClose();
-  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
-});
-
 test('a hidden caller and header hamburger fall back to the visible bottom Menu button', () => {
   const page = menuPage();
   page.nodes['menu-toggle'].visible = false;
@@ -510,20 +487,6 @@ test('changing between desktop and bottom navigation transfers focus to the visi
   assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
 });
 
-test('resizing an open bottom-menu drawer to desktop keeps focus on the desktop trigger after native close', () => {
-  const page = menuPage();
-  page.nodes['menu-toggle'].visible = false;
-  page.nodes['mobile-nav-menu'].visible = true;
-  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
-  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
-  page.nodes['menu-toggle'].visible = true;
-  page.nodes['mobile-nav-menu'].visible = false;
-  page.resize(true);
-  page.flushClose();
-  assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
-});
-
 test('game navigation closes the menu and restores its visible shell opener', () => {
   const page = menuPage();
   page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
@@ -532,16 +495,6 @@ test('game navigation closes the menu and restores its visible shell opener', ()
   page.flushClose();
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.document.activeElement, page.nodes['bottom-menu']);
-});
-
-test('choosing a category from a caller-opened drawer keeps focus on that category', () => {
-  const page = menuPage();
-  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
-  page.socialCasino.click();
-  page.item('arcade').click();
-  page.flushClose();
-  assert.equal(page.calls.at(-1), 'category:arcade');
-  assert.equal(page.document.activeElement, page.pageHeading);
 });
 
 test('inside clicks leave the drawer open while backdrop clicks dismiss it', () => {
@@ -717,7 +670,7 @@ test('menu exit fallback closes and hands off only once if the animation never f
 
 test('category and Providers page navigation runs only after the drawer closes', () => {
   const page = menuPage();
-  page.nodes['menu-toggle'].click();
+  page.api.openMenu({ returnFocusTo: page.nodes['bottom-menu'] });
   page.socialCasino.click();
   assert.equal(page.nodes['site-menu'].open, true);
   page.item('slots').click();
@@ -740,36 +693,6 @@ test('category and Providers page navigation runs only after the drawer closes',
   page.nodes['menu-toggle'].click();
   assert.equal(page.item('providers').getAttribute('aria-current'), 'page');
   assert.equal(page.item('slots').getAttribute('aria-current'), null);
-});
-
-test('BUY opens the Store page only after the mobile menu closes and keeps destination focus', () => {
-  const page = menuPage();
-  page.nodes['menu-toggle'].click();
-  page.nodes['menu-buy'].click();
-  page.nodes['menu-toggle'].click();
-  assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.calls.includes('store:open'), false);
-  page.flushClose();
-  assert.equal(page.document.body.dataset.page, 'store');
-  assert.equal(page.document.activeElement, page.pageHeading);
-  assert.deepEqual(page.calls.slice(-2), ['menu:close', 'store:open']);
-});
-
-test('mobile search opens after the drawer closes while desktop search opens directly', () => {
-  const mobile = menuPage();
-  mobile.nodes['menu-toggle'].click();
-  mobile.nodes['menu-search'].click();
-  assert.equal(mobile.nodes['site-menu'].open, false);
-  assert.equal(mobile.nodes['site-search'].open, false);
-  mobile.flushClose();
-  assert.equal(mobile.nodes['catalog-categories'].dataset.activeMenu, 'search');
-  assert.equal(mobile.document.activeElement, mobile.nodes['site-search-input']);
-
-  const desktop = menuPage({ desktop: true });
-  desktop.nodes['menu-search'].click();
-  assert.equal(desktop.nodes['catalog-categories'].dataset.activeMenu, 'search');
-  assert.equal(desktop.document.activeElement, desktop.nodes['site-search-input']);
-  assert.equal(desktop.calls.some(call => call === 'menu:open' || call === 'menu:close'), false);
 });
 
 test('member destinations navigate after the mobile drawer closes', () => {
@@ -798,7 +721,7 @@ test('member destinations navigate after the mobile drawer closes', () => {
   assert.ok(page.item('lobby'));
 });
 
-test('Lobby and personal collections stay above Achievements while discovery shortcuts sit immediately above Game Types', () => {
+test('Lobby and personal collections stay above Achievements followed by Game Types', () => {
   for (const desktop of [true, false]) {
     const page = menuPage({ desktop });
     const group = page.item('lobby').parentElement;
@@ -807,7 +730,7 @@ test('Lobby and personal collections stay above Achievements while discovery sho
     assert.deepEqual(group.children.map(button => button.getAttribute('aria-label')),
       ['Lobby', 'Recent Games', 'Favorite Games']);
     assert.deepEqual(page.nodes['menu-navigation'].children,
-      [page.item('popular'), page.item('new-releases'), page.socialCasino, page.casinoItems]);
+      [page.socialCasino, page.casinoItems]);
     assert.equal(page.feature('achievements').parentElement.nextSibling, page.nodes['menu-navigation']);
     assert.equal(page.casinoItems.contains(page.item('favorites')), false);
     assert.equal(page.nodes['menu-content'].descendants().filter(node => node.dataset.menuCategory === 'favorites').length, 1);
@@ -977,10 +900,19 @@ test('desktop collection, Providers and BUY actions run immediately without a dr
 test('switching an open mobile drawer to desktop closes it while the bottom bar stays in its original parent', () => {
   const page = menuPage();
   assert.equal(page.nodes['site-sidebar'].hidden, true);
-  page.nodes['menu-toggle'].click();
+  page.nodes['menu-toggle'].visible = false;
+  page.nodes['mobile-nav-menu'].visible = true;
+  page.api.openMenu({ returnFocusTo: page.nodes['mobile-nav-menu'] });
   assert.equal(page.nodes['site-menu'].open, true);
+  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+  assert.equal(page.nodes['lobby-view'].inert, true);
   assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
+  page.nodes['menu-toggle'].visible = true;
+  page.nodes['mobile-nav-menu'].visible = false;
   page.resize(true);
+  assert.equal(page.nodes['lobby-view'].inert, false);
+  assert.equal(page.headerParent.inert, false);
+  assert.equal(page.nodes['site-sidebar'].inert, false);
   assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
   assert.equal(page.nodes['site-menu'].open, false);
   assert.equal(page.nodes['site-sidebar'].hidden, false);
@@ -989,29 +921,12 @@ test('switching an open mobile drawer to desktop closes it while the bottom bar 
   assert.equal(page.nodes['menu-content'].parentElement, page.nodes['sidebar-content']);
   assert.equal(page.document.body.dataset.sidebar, 'collapsed');
   page.flushClose();
+  assert.equal(page.document.activeElement, page.nodes['menu-toggle']);
+  assert.equal(page.keydown('Tab').defaultPrevented, false);
   assert.ok(page.observers[0].targets.length > 0, 'desktop observation survives a queued native close event');
   page.nodes['menu-toggle'].click();
   assert.equal(page.document.body.dataset.sidebar, 'expanded');
   assert.equal(page.nodes['site-menu'].open, false);
-});
-
-test('switching an expanded desktop sidebar to mobile restores the header and starts with a closed drawer', () => {
-  const page = menuPage({ desktop: true });
-  page.nodes['menu-toggle'].click();
-  page.resize(false);
-  page.flushClose();
-  assert.equal(page.nodes['site-sidebar'].hidden, true);
-  assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
-  assert.deepEqual(page.headerParent.children, [page.nodes['menu-toggle'], page.nodes['site-logo']]);
-  assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['menu-mobile-header']);
-  assert.deepEqual(page.nodes['menu-mobile-header'].children, [page.nodes['menu-shortcuts']]);
-  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
-  assert.equal(page.nodes['site-menu'].open, false);
-  assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
-  page.nodes['menu-toggle'].click();
-  assert.equal(page.nodes['site-menu'].open, true);
-  assert.equal(page.document.activeElement, page.nodes['menu-buy']);
-  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
 });
 
 test('desktop exit keeps the real controls in place until its own transform finishes', () => {
@@ -1041,6 +956,13 @@ test('desktop exit keeps the real controls in place until its own transform fini
     assert.equal(page.nodes['menu-shortcuts'].parentElement, page.nodes['menu-mobile-header']);
     assert.equal(page.nodes['menu-toggle'].parentElement, page.headerParent);
     assert.equal(page.timers.size, 0);
+    assert.deepEqual(page.headerParent.children, [page.nodes['menu-toggle'], page.nodes['site-logo']]);
+    assert.deepEqual(page.nodes['menu-mobile-header'].children, [page.nodes['menu-shortcuts']]);
+    assert.equal(page.nodes['menu-toggle'].getAttribute('aria-expanded'), 'false');
+    page.nodes['menu-toggle'].click();
+    assert.equal(page.nodes['site-menu'].open, true);
+    assert.equal(page.document.activeElement, page.nodes['menu-buy']);
+    assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
   }
 });
 
@@ -1099,15 +1021,6 @@ test('reduced motion from either preference completes the sidebar handoff immedi
     assert.equal(page.document.body.dataset.sidebar, 'hidden');
     assert.equal(page.timers.size, 0);
   }
-});
-
-test('initial mobile layout has no outgoing sidebar or exit timer', () => {
-  const page = menuPage();
-  assert.equal(page.nodes['site-sidebar'].hidden, true);
-  assert.equal(page.nodes['site-sidebar'].inert, true);
-  assert.equal(page.nodes['menu-content'].parentElement, page.nodes['site-menu']);
-  assert.equal(page.document.body.dataset.sidebar, 'hidden');
-  assert.equal(page.timers.size, 0);
 });
 
 test('focus leaves outgoing inert controls immediately and is not stolen at transition completion', () => {
@@ -1313,7 +1226,6 @@ test('menu dismissal uses the logo if every remembered or menu control is hidden
   assert.equal(page.document.activeElement, page.nodes['site-logo']);
 });
 
-
 test('mobile menu leaves one persistent bottom navigation in place through open, close and deferred actions', () => {
   const page = menuPage();
   const nav = page.nodes['mobile-nav'];
@@ -1466,20 +1378,6 @@ test('guest menu skips a disabled first control and restores prior inert states 
   page.flushClose();
   assert.equal(page.calls.at(-1), 'home:open');
   assert.equal(page.document.activeElement, page.pageHeading, 'routing keeps destination focus');
-});
-
-test('switching to desktop releases mobile background inert state without moving the fixed bar', () => {
-  const page = menuPage();
-  page.api.openMenu();
-  assert.equal(page.nodes['lobby-view'].inert, true);
-  page.resize(true);
-  assert.equal(page.nodes['lobby-view'].inert, false);
-  assert.equal(page.headerParent.inert, false);
-  assert.equal(page.nodes['mobile-nav'].parentElement, page.document.body);
-  assert.equal(page.nodes['site-sidebar'].inert, false);
-  assert.equal(page.nodes['site-menu'].open, false);
-  page.flushClose();
-  assert.equal(page.keydown('Tab').defaultPrevented, false);
 });
 
 test('Lobby loses its current-page highlight while viewing or playing a game', () => {

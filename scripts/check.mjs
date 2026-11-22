@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 async function sourceFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  const nested = await Promise.all(entries.filter(entry => !['.git', 'node_modules', 'dist'].includes(entry.name))
+  const nested = await Promise.all(entries.filter(entry => !['.git', 'node_modules', 'dist', 'artifacts', '.local'].includes(entry.name))
     .map(entry => entry.isDirectory() ? sourceFiles(path.join(directory, entry.name))
       : /\.(?:mjs|js)$/.test(entry.name) ? [path.join(directory, entry.name)] : []));
   return nested.flat();

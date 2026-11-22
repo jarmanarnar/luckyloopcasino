@@ -4,9 +4,11 @@ import { initPopoverMotion } from './popover-motion.js';
 import { getDiscoveredGameCount } from './rewards-pages.js';
 import { createShelfIcon } from './shelf-icons.js';
 import { prepareProfilePhoto, renderProfileAvatar } from './profile-photo.js';
+import { GAMES } from './catalog.js';
 
 const dateLabel = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 const number = new Intl.NumberFormat('en-US');
+const visibleGameIds = new Set(GAMES.map(game => game.id));
 
 export function initProfileMenu({ router, account, auth, popupNavigation, openNotifications, openRedeem, preparePhoto = prepareProfilePhoto }) {
   const trigger = document.querySelector('#header-profile');
@@ -207,7 +209,7 @@ export function initProfileMenu({ router, account, auth, popupNavigation, openNo
     fields.since.dateTime = registeredAt;
     fields.since.textContent = dateLabel.format(new Date(registeredAt));
     fields.games.textContent = number.format(getDiscoveredGameCount(member));
-    fields.favorites.textContent = number.format(member.favorites.length);
+    fields.favorites.textContent = number.format(member.favorites.filter(id => visibleGameIds.has(id)).length);
     fields.rewards.textContent = number.format(rewards.length);
     fields.coins.textContent = number.format(goldCredited);
   }

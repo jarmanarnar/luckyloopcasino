@@ -328,7 +328,7 @@ test('member feature pages select Menu only while its drawer is open', () => {
 
 test('equivalent filtered Search and category pages share bottom navigation state', () => {
   const page = navPage();
-  for (const destination of ['slots', 'popular', 'fruit']) {
+  for (const destination of ['slots', 'megaways', 'fruit']) {
     for (const routeType of ['category', 'search']) {
       page.body.dataset.page = routeType;
       page.nodes['catalog-categories'].dataset.activeMenu = destination;
@@ -386,7 +386,7 @@ test('Search, Menu dismissal and returning to Lobby never leave Menu selected al
 test('state follows navigation from other surfaces and distinguishes destinations from dialog actions', () => {
   const page = navPage();
   page.body.dataset.page = 'category';
-  page.nodes['catalog-categories'].dataset.activeMenu = 'new-releases';
+  page.nodes['catalog-categories'].dataset.activeMenu = 'megaways';
   page.flush();
   assert.deepEqual(active(page), []);
   assert.equal(page.button('lobby').getAttribute('aria-current'), null);

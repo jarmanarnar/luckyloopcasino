@@ -107,3 +107,25 @@ All 257 existing Hacksaw thumbnails were also reviewed. None meet the requested 
 Reviewed the remaining 560 catalog entries for NetEnt, Red Tiger and Nolimit City. Added 553 official provider posters; 7 did not pass the same full-title-and-provider portrait crop requirement. All accepted images preserve the source decoded RGBA pixels and use the existing lazy card renderer.
 
 [Complete source provenance and rejected candidates](review-2026-11-20-complete.md).
+
+## NetEnt portrait candidates — 2026-11-22
+
+The official Evolution 600 × 840 portrait versions below were tried locally and then removed from the display selection following user review. Although their titles fit the existing centered 8:11 card crop, the top provider logo, centered title and background-led artwork do not match the existing illustrated Playin covers with their title and provider signature near the bottom. The user subsequently requested removal of all three games from the catalog on 2026-11-22. All 233 remaining NetEnt games have selected artwork; the rejected delivery files were removed from public assets. Card dimensions, shared CSS, rendering and lazy loading are unchanged. Future replacements must match both the established visual style and the card crop.
+
+The reviewed delivery files were lossless WebP conversions at the original resolution; decoded RGBA pixels were verified identical to the downloaded PNGs. Original sources, hashes and encoding verification are recorded in `artifacts/netent-portrait-candidates-20261122/`.
+
+| Game | Reviewed filename (removed) | Official page | Original portrait |
+| --- | --- | --- | --- |
+| Aftermath | aftermathr96f100.webp | https://games.evolution.com/slots/aftermath/ | https://games.evolution.com/wp-content/uploads/2026/09/s-600x840_aftermath.png |
+| Judgemental | judgementalr96f1.webp | https://games.evolution.com/slots/judgemental/ | https://games.evolution.com/wp-content/uploads/2026/08/s-600x840_judgemental.png |
+| MONOPOLY Money Line | monopolymonr96f1.webp | https://games.evolution.com/slots/monopoly-money-line/ | https://games.evolution.com/wp-content/uploads/2026/01/s-600x840_monopoly_money_line.png |
+
+## BGaming reviewed import — 2026-11-22
+
+The complete audit covered 370 official source pages: all 368 games in the BGaming sitemap plus two retained source links. It adds 262 games to the 30 previously imported titles, for 292 BGaming games. The selected original portraits retain their lower white game titles and BGAMING footer; they are copied unchanged from official promo packs. Original dimensions and file hashes are recorded per game. Shared card sizing, centered crop and lazy loading remain unchanged.
+
+Game IDs, formats, release dates and public FUN demo URLs come from official game pages. Published URLs on both `demo.bgaming-network.com` and `bgaming-network.com` are retained exactly, including whether the optional `server=demo` query is present. These URLs were validated without launching every game. The visible catalog families remain Slots, Table Games, Scratchcards, Tap Games and Casual Games; the BGaming games are classified by their published type and documented mechanics.
+
+The audit excludes 49 source pages: 26 without a confirmed public demo, two without an accessible public artwork pack, 18 without a suitable reviewed cover, and three with future release dates. Another 59 source pages resolve to duplicate provider IDs or previously imported games. Existing game IDs, demo URLs and original artwork are preserved.
+
+[Complete per-game source provenance and artwork hashes](bgaming-full-review-2026-11-22.md). [Initial reviewed import](bgaming-review-2026-11-22.md).

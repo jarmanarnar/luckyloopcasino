@@ -8,7 +8,7 @@ test('search fields identify whether they search all games or a constrained coll
     [{ type: 'search' }, 'Search all games'],
     [{ type: 'search', query: 'fruit' }, 'Search all games'],
     [{ type: 'favorites', gameTypeId: 'slots' }, 'Search favorites'],
-    [{ type: 'recent-games', categoryId: 'popular' }, 'Search recent games'],
+    [{ type: 'recent-games', categoryId: 'fruit' }, 'Search recent games'],
     [{ type: 'providers' }, 'Search providers'],
     [{ type: 'provider', providerId: 'netent', categoryId: 'fruit' }, 'Search NetEnt games'],
     [{ type: 'search', providerId: 'netent' }, 'Search NetEnt games'],
@@ -18,7 +18,7 @@ test('search fields identify whether they search all games or a constrained coll
 test('empty scoped text searches offer a global search even before any personal games exist', () => {
   for (const route of [
     { type: 'favorites' }, { type: 'recent-games' },
-    { type: 'category', categoryId: 'popular' },
+    { type: 'category', categoryId: 'fruit' },
     { type: 'provider', providerId: 'taparoo' },
     { type: 'search', providerId: 'taparoo' },
   ]) {
@@ -43,8 +43,8 @@ test('empty ordinary searches and provider-directory searches do not offer a red
 test('the same type or category has the same search scope label regardless of entry path', () => {
   for (const [selection, expected] of [
     [{ gameTypeId: 'slots' }, 'Search in Slots'],
-    [{ gameTypeId: 'arcade' }, 'Search in Arcade & Crash'],
-    [{ categoryId: 'popular' }, 'Search in Top Picks'],
+    [{ gameTypeId: 'arcade' }, 'Search in Casual Games'],
+    [{ categoryId: 'fruit' }, 'Search in Fruit Games'],
     [{ categoryId: 'fruit', gameTypeId: 'tap' }, 'Search in Fruit Games'],
   ]) {
     for (const type of ['search', 'category']) {

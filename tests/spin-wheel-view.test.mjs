@@ -233,15 +233,6 @@ test('a spin completed after dismissal waits until the wheel is reopened to show
   assert.equal(page.account.getSnapshot().ledger.length, credits);
 });
 
-test('a failed spin leaves the wheel ready with its error and no celebration or cooldown badge', async () => {
-  const page = wheelPage({ failSpin: true }), q = page.query;
-  page.api.openSpinWheel(); await q('#spin-wheel-start').click();
-  assert.equal(q('#spin-win-dialog').open, false);
-  assert.equal(q('#spin-wheel-start').disabled, false);
-  assert.equal(q('.spin-launcher__badge').hidden, true);
-  assert.equal(q('.spin-wheel__message').textContent, 'Could not save your spin.');
-});
-
 test('the exhausted wheel counts down to midnight and becomes ready without reopening', async () => {
   const page = wheelPage({ now: +new Date(2026, 10, 16, 23, 59, 58) }), q = page.query;
   page.api.openSpinWheel();
@@ -285,6 +276,8 @@ test('a pending spin hides the next-spin countdown and a save failure restores t
   assert.equal(q('.spin-wheel__actions').dataset.state, 'ready');
   assert.equal(q('.spin-wheel__cooldown').hidden, true);
   assert.equal(q('#spin-wheel-start').disabled, false);
+  assert.equal(q('#spin-win-dialog').open, false);
+  assert.equal(q('.spin-launcher__badge').hidden, true);
   assert.equal(q('.spin-wheel__message').textContent, 'Could not save your spin.');
 });
 

@@ -29,4 +29,8 @@ export const PROVIDER_LOGOS = Object.freeze({
     src: './assets/providers/sneaky-slots.svg',
     source: 'https://playin.com/affiliates-info',
   },
+  bgaming: {
+    src: './assets/providers/bgaming.svg',
+    source: 'https://bgaming.com/brand-guidelines',
+  },
 });

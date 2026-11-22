@@ -25,11 +25,10 @@ test('all 257 additional games retain unique official IDs, available artwork and
     const games = HACKSAW_GAMES.filter(game => game.formatId === format);
     assert.equal(games.length, count);
     for (const item of games) {
-      assert.ok(getGamesForCategory(format).includes(item));
+      assert.equal(getGamesForCategory(format).includes(item), false, 'unreviewed covers stay hidden');
       assert.equal(item.id, `hacksaw-${item.providerGameId}`);
       assert.ok(HACKSAW_ARTWORK[item.id]);
       assert.equal(new URL(item.url).origin, 'https://www.hacksawgaming.com');
-      assert.equal(getGameReleaseDate(item), '', 'software activation and import dates never substitute for release dates');
     }
   }
 });
@@ -82,13 +81,11 @@ test('leaving before SDK resolution or provider load ignores stale callbacks', (
   assert.deepEqual(active.loaded, []);
 });
 
-test('unknown release dates sort after verified dates and do not enter New Releases', () => {
+test('hidden undated games do not appear in newest sorting or an empty provider page', () => {
   const page = getCatalogPage({ type: 'search', sort: 'newest' });
   const firstUnknown = page.games.findIndex(game => !getGameReleaseDate(game));
-  assert.equal(firstUnknown, 823);
-  assert.ok(page.games.slice(firstUnknown).every(game => game.providerId === 'hacksaw-gaming'));
-  assert.equal(getGamesForCategory('new-releases').some(game => game.providerId === 'hacksaw-gaming'), false);
+  assert.equal(firstUnknown, -1);
+  assert.equal(page.games.some(game => game.providerId === 'hacksaw-gaming'), false);
   const provider = getCatalogPage({ type: 'provider', providerId: 'hacksaw-gaming', sort: 'newest' });
-  assert.equal(provider.allowedSorts.includes('newest'), false);
-  assert.equal(provider.sort, 'az', 'a completely undated provider does not offer a false newest ranking');
+  assert.equal(provider.type, 'not-found');
 });

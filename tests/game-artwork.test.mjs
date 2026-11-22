@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { GAMES } from '../public/catalog.js';
+import { ALL_GAMES, GAMES } from '../public/catalog.js';
 import { GAME_ARTWORK } from '../public/game-artwork.js';
 import { createGameArt } from '../public/game-artwork-view.js';
 import { waitForPageAssets } from '../public/app-readiness.js';
@@ -17,15 +17,17 @@ function documentStub(imageState = {}) {
 
 test('the reviewed covers belong to available games and are valid local image files', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  assert.equal(Object.keys(GAME_ARTWORK).length, 816);
+  assert.equal(Object.keys(GAME_ARTWORK).length, 1108);
   for (const [id, artwork] of Object.entries(GAME_ARTWORK)) {
     assert.ok(active.has(id), `Artwork cannot reintroduce ${id}`);
     assert.ok(artwork.width > 0 && artwork.height > 0);
-    assert.match(artwork.src, /^assets\/games\/(?:hacksaw\/)?[A-Za-z0-9-]+\.(?:webp|jpg)$/);
+    assert.match(artwork.src, /^assets\/games\/(?:hacksaw\/)?[A-Za-z0-9-]+\.(?:webp|jpe?g|png)$/);
     const bytes = await readFile(new URL(`../public/${artwork.src}`, import.meta.url));
     if (artwork.src.endsWith('.webp')) {
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
       assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    } else if (artwork.src.endsWith('.png')) {
+      assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
     } else assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
   }
 });
@@ -98,19 +100,19 @@ test('late decoding cannot reveal failed, replaced, or removed artwork', async (
   }
 });
 
-test('unsampled games keep the existing text card and do not request arbitrary artwork', () => {
-  const art = createGameArt({ id: 'no-cover', title: 'Existing title' }, { document: documentStub() });
-  assert.equal(art.children.length, 1);
-  assert.equal(art.children[0].textContent, 'Existing title');
-  assert.equal(art.children[0].hidden, false);
-});
-
 test('games without reviewed covers use visible names without requesting images', () => {
-  for (const id of ['hacksaw-1294', 'hacksaw-2491', 'aftermathr96f100', 'judgementalr96f1']) {
-    const game = GAMES.find(game => game.id === id);
-    assert.ok(game, id);
+  const fixtures = [
+    { game: { id: 'no-cover', title: 'Existing title' } },
+    ...['hacksaw-1294', 'hacksaw-2491'].map(id => {
+      const game = ALL_GAMES.find(game => game.id === id);
+      assert.ok(game, id);
+      return { game, eager: true };
+    }),
+  ];
+  for (const { game, eager } of fixtures) {
+    const { id } = game;
     assert.equal(GAME_ARTWORK[id], undefined, id);
-    const art = createGameArt(game, { document: documentStub(), eager: true });
+    const art = createGameArt(game, { document: documentStub(), eager });
     assert.equal(art.children.length, 1, id);
     assert.equal(art.children[0].tag, 'span', id);
     assert.equal(art.children[0].textContent, game.title, id);

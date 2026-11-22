@@ -1,11 +1,13 @@
 // Reviewed public Playin catalog, including all 33 games restored by user request.
 // Existing local game IDs and provider demo URLs are preserved.
 import { HACKSAW_GAMES } from './hacksaw-games.js';
-export const PROVIDERS = [
+import { BGAMING_GAMES } from './bgaming-games.js';
+import { GAME_ARTWORK } from './game-artwork.js';
+const PROVIDER_DEFINITIONS = [
   {
     "id": "netent",
     "name": "NetEnt",
-    "count": 236
+    "count": 233
   },
   {
     "id": "red-tiger",
@@ -36,10 +38,15 @@ export const PROVIDERS = [
     "id": "hacksaw-gaming",
     "name": "Hacksaw Gaming",
     "count": HACKSAW_GAMES.length
+  },
+  {
+    "id": "bgaming",
+    "name": "BGaming",
+    "count": BGAMING_GAMES.length
   }
 ];
 
-export const GAMES = [
+export const ALL_GAMES = [
   {
     "id": "nunchucksr96f100",
     "title": "Nunchucks",
@@ -160,13 +167,6 @@ export const GAMES = [
     "providerName": "Sneaky Slots"
   },
   {
-    "id": "aftermathr96f100",
-    "title": "Aftermath",
-    "url": "https://playin.com/embed/v1/demo/aftermathr96f100",
-    "providerId": "netent",
-    "providerName": "NetEnt"
-  },
-  {
     "id": "cocksandrobbers0",
     "title": "Cocks and Robbers",
     "url": "https://playin.com/embed/v1/demo/cocksandrobbers0",
@@ -193,13 +193,6 @@ export const GAMES = [
     "url": "https://playin.com/embed/v1/demo/cashvolttaparoo0",
     "providerId": "taparoo",
     "providerName": "Taparoo"
-  },
-  {
-    "id": "judgementalr96f1",
-    "title": "Judgemental",
-    "url": "https://playin.com/embed/v1/demo/judgementalr96f1",
-    "providerId": "netent",
-    "providerName": "NetEnt"
   },
   {
     "id": "stormfire0000000",
@@ -459,13 +452,6 @@ export const GAMES = [
     "url": "https://playin.com/embed/v1/demo/castleoftrror2v1",
     "providerId": "big-time-gaming",
     "providerName": "Big Time Gaming"
-  },
-  {
-    "id": "monopolymonr96f1",
-    "title": "MONOPOLY Money Line",
-    "url": "https://playin.com/embed/v1/demo/monopolymonr96f1",
-    "providerId": "netent",
-    "providerName": "NetEnt"
   },
   {
     "id": "pandagoesboom000",
@@ -5801,10 +5787,28 @@ export const GAMES = [
     "providerId": "netent",
     "providerName": "NetEnt"
   }
-].concat(HACKSAW_GAMES);
+].concat(HACKSAW_GAMES, BGAMING_GAMES);
 
-for (const game of GAMES) {
+// Keep imported records for saved-account history and future cover review.
+// Every public browsing and player surface uses the same approved-cover catalog.
+export const GAMES = ALL_GAMES.filter(game => Object.hasOwn(GAME_ARTWORK, game.id));
+const providerCounts = new Map();
+for (const game of GAMES) providerCounts.set(game.providerId, (providerCounts.get(game.providerId) || 0) + 1);
+export const PROVIDERS = PROVIDER_DEFINITIONS
+  .map(({ id, name }) => ({ id, name, count: providerCounts.get(id) || 0 }))
+  .filter(provider => provider.count > 0);
+
+for (const game of ALL_GAMES) {
   const url = new URL(game.url);
+  if (game.providerId === 'bgaming') {
+    if (!['https://demo.bgaming-network.com', 'https://bgaming-network.com'].includes(url.origin) || url.username || url.password ||
+        !/^[A-Za-z0-9]+$/.test(game.providerGameId) ||
+        url.pathname !== `/play/${game.providerGameId}/FUN` ||
+        (url.searchParams.has('server') && url.searchParams.get('server') !== 'demo')) {
+      throw new Error('Unexpected official BGaming demo record: ' + game.id);
+    }
+    continue;
+  }
   if (game.providerId === 'hacksaw-gaming') {
     if (url.origin !== 'https://www.hacksawgaming.com' || url.username || url.password ||
         !/^\d+$/.test(game.providerGameId) || game.id !== `hacksaw-${game.providerGameId}`) {

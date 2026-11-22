@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { GAMES } from '../public/catalog.js';
+import { ALL_GAMES, GAMES } from '../public/catalog.js';
 import { createMemberState, dailyStatus, claimDailyReward, claimTaskReward, recordGameVisit, taskEligible, MEMBER_STORAGE_KEY } from '../public/member-state.js';
 import { getDiscoveredGameCount } from '../public/rewards-pages.js';
 import { IDBFactory } from 'fake-indexeddb';
@@ -132,29 +132,33 @@ test('discovered game count survives the activity history retention limit and re
   assert.equal(taskEligible('first-game', { ...state, history: [] }), true, 'discovery survives a truncated activity log');
 });
 
-test('demo account retains restored games and removes unknown IDs before recording a new visit', async () => {
+test('demo account retains hidden games and removes unknown IDs before recording a new visit', async () => {
+  const hidden = ALL_GAMES.find(game => !GAMES.includes(game));
+  assert.ok(hidden, 'an unillustrated game remains in the retained catalog');
   const stored = JSON.stringify(createMemberState({
-    favorites: ['gonzo', GAMES[0].id, 'not-in-catalog'],
-    discoveredGameIds: ['gonzo', GAMES[0].id, 'not-in-catalog'],
+    favorites: ['gonzo', hidden.id, GAMES[0].id, 'not-in-catalog'],
+    discoveredGameIds: ['gonzo', hidden.id, GAMES[0].id, 'not-in-catalog'],
     history: [
       { id: 'restored', type: 'game', gameId: 'gonzo', title: "Gonzo's Quest", at: localDay(20).toISOString() },
+      { id: 'hidden', type: 'game', gameId: hidden.id, title: hidden.title, at: localDay(20).toISOString() },
       { id: 'unknown', type: 'game', gameId: 'not-in-catalog', title: 'Unknown game', at: localDay(20).toISOString() },
       { id: 'allowed', type: 'game', gameId: GAMES[0].id, title: GAMES[0].title, at: localDay(20).toISOString() },
       { id: 'reward', type: 'reward', title: 'Daily bonus', at: localDay(20).toISOString() },
     ],
   }));
   const account = await openDemoAccount({ indexedDB: new IDBFactory(), scope: undefined,
-    storage: { getItem: key => key === MEMBER_STORAGE_KEY ? stored : null }, catalogIds: GAMES.map(game => game.id) });
+    storage: { getItem: key => key === MEMBER_STORAGE_KEY ? stored : null }, catalogIds: ALL_GAMES.map(game => game.id) });
   try {
     await account.register({ email: 'member-test@example.test', password: 'MemberDemo37!', accepted: true });
     await account.recordGameVisit(GAMES[1]);
     const saved = account.getSnapshot().member;
-    assert.deepEqual(saved.favorites, ['gonzo', GAMES[0].id]);
-    assert.deepEqual(saved.discoveredGameIds, ['gonzo', GAMES[0].id, GAMES[1].id]);
+    assert.deepEqual(saved.favorites, ['gonzo', hidden.id, GAMES[0].id]);
+    assert.deepEqual(saved.discoveredGameIds, ['gonzo', hidden.id, GAMES[0].id, GAMES[1].id]);
     assert.equal(saved.history.some(entry => entry.gameId === 'gonzo'), true);
+    assert.equal(saved.history.some(entry => entry.gameId === hidden.id), true);
     assert.equal(saved.history.some(entry => entry.gameId === 'not-in-catalog'), false);
     assert.equal(saved.history.some(entry => entry.type === 'reward'), true);
     assert.equal(saved.history.at(-1).gameId, GAMES[1].id);
-    assert.equal(getDiscoveredGameCount(saved), 3);
+    assert.equal(getDiscoveredGameCount(saved), 4);
   } finally { account.close(); }
 });

@@ -22,24 +22,23 @@ test('In progress requires finite positive partial progress and excludes every c
   ]) assert.equal(isAchievementInProgress(task('excluded', values)), false, JSON.stringify(values));
 });
 
-test('zero-progress guests discover easy actions mixed with short streaks, play and loyalty milestones', () => {
-  const sorted = sortAchievements(getAchievements(createMemberState()));
-  assert.deepEqual(ids(sorted.slice(0, 12)), [
-    'welcome-member', 'verify-email', 'verify-phone', 'login-streak-2',
-    'limit-breaker-1', 'welcome-streak-3', 'login-streak-3', 'loyalty-tier-1',
-    'login-streak-4', 'limit-breaker-2', 'login-streak-5', 'loyalty-tier-2',
-  ]);
-  assert.equal(sorted.some(isAchievementInProgress), false);
-});
-
 test('both guests and first-day members retain varied discovery pages instead of a block of future streaks', () => {
   for (const day of [0, 1]) {
     const sorted = sortAchievements(getAchievements(createMemberState({ attendance: { streak: day, bestStreak: day } })));
     const firstPage = sorted.slice(0, 12);
-    assert.deepEqual(ids(firstPage.slice(0, 3)), ['welcome-member', 'verify-email', 'verify-phone'],
-      `the three welcome rewards stay consecutive after ${day} day(s)`);
-    for (const id of ['verify-email', 'verify-phone', 'login-streak-2', 'limit-breaker-1', 'loyalty-tier-1']) {
-      assert.ok(firstPage.some(entry => entry.id === id), `${id} remains discoverable after ${day} day(s)`);
+    if (day === 0) {
+      assert.deepEqual(ids(firstPage), [
+        'welcome-member', 'verify-email', 'verify-phone', 'login-streak-2',
+        'limit-breaker-1', 'welcome-streak-3', 'login-streak-3', 'loyalty-tier-1',
+        'login-streak-4', 'limit-breaker-2', 'login-streak-5', 'loyalty-tier-2',
+      ]);
+      assert.equal(sorted.some(isAchievementInProgress), false);
+    } else {
+      assert.deepEqual(ids(firstPage.slice(0, 3)), ['welcome-member', 'verify-email', 'verify-phone'],
+        'the three welcome rewards stay consecutive after the first day');
+      for (const id of ['verify-email', 'verify-phone', 'login-streak-2', 'limit-breaker-1', 'loyalty-tier-1']) {
+        assert.ok(firstPage.some(entry => entry.id === id), `${id} remains discoverable after the first day`);
+      }
     }
     for (let start = 12; start < 48; start += 12) {
       const page = sorted.slice(start, start + 12);

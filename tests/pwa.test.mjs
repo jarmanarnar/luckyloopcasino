@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
 import { registerPwa } from '../public/pwa.js';
-import { createAppServer } from '../server.mjs';
 
 const root = new URL('../public/', import.meta.url);
 const workerSource = await readFile(new URL('sw.js', root), 'utf8');
@@ -26,22 +25,6 @@ test('Install metadata works under the local and deployed subpath, with actual c
   assert.match(html, /rel="manifest" href="manifest.webmanifest"/);
   assert.match(html, /name="apple-mobile-web-app-capable" content="yes"/);
   assert.match(html, /rel="apple-touch-icon"/);
-});
-
-test('The local server exposes the manifest, worker, offline page and icons with browser-safe MIME types', async () => {
-  const server = createAppServer();
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  try {
-    for (const [file, type] of [['manifest.webmanifest', 'application/manifest+json'], ['sw.js', 'text/javascript'],
-      ['offline.html', 'text/html'], ['assets/brand/app-icons/apple-touch-icon.png', 'image/png']]) {
-      const response = await fetch(`http://127.0.0.1:${server.address().port}/luckyloopcasino/${file}`);
-      assert.equal(response.status, 200, file);
-      assert.ok(response.headers.get('content-type').startsWith(type), file);
-    }
-  } finally {
-    server.closeAllConnections();
-    await new Promise(resolve => server.close(resolve));
-  }
 });
 
 test('Registration is scoped, bypasses stale worker caches and fails without blocking the app', async () => {

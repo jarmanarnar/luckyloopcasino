@@ -1,5 +1,5 @@
 import { GAMES, PROVIDERS } from './catalog.js';
-import { CATEGORIES, GAME_FAMILIES, getGameCategoryIds, getGameReleaseDate, getGamesForCategory } from './collections.js';
+import { CATEGORIES, GAME_FAMILIES, getGameCategoryIds, getGameReleaseDate } from './collections.js';
 import { GAME_TYPES, getGameTypeId } from './game-types.js';
 import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
@@ -177,40 +177,6 @@ export function initGameDetails({ router, member } = {}) {
     return card;
   }
 
-  function relatedGames(game) {
-    const related = getGamesForCategory('popular').filter(candidate => candidate.id !== game.id).slice(0, 24);
-    if (!related.length) return null;
-    const shelf = node('section', 'game-details-related game-shelf');
-    shelf.setAttribute('aria-labelledby', 'game-details-related-title');
-    const header = node('div', 'game-shelf__header');
-    const title = node('h2', 'game-shelf__title');
-    title.id = 'game-details-related-title';
-    const popularRoute = { type: 'category', categoryId: 'popular' };
-    const collectionTitle = categoryNames.get('popular') || 'Popular';
-    title.append(routeLink(collectionTitle, popularRoute, 'game-shelf__title-link'));
-    const all = routeLink('All', popularRoute, 'game-details-all shelf-see-all');
-    all.setAttribute('aria-label', `See all ${collectionTitle} games`);
-    header.append(title, all);
-    const list = node('ul', 'game-track');
-    list.setAttribute('aria-label', `${collectionTitle} games`);
-    list.dir = 'ltr';
-    list.tabIndex = 0;
-    for (const candidate of related) {
-      const card = node('li', 'game-card');
-      const button = node('button', 'game-launch');
-      button.type = 'button';
-      button.dataset.game = candidate.id;
-      button.setAttribute('aria-label', `View ${candidate.title} details`);
-      const art = createGameArt(candidate);
-      button.append(art, node('span', 'game-provider-badge', candidate.providerName));
-      button.addEventListener('click', () => openDetails(candidate.id));
-      card.append(button);
-      list.append(card);
-    }
-    shelf.append(header, list);
-    return shelf;
-  }
-
   function openDetails(gameId, { from } = {}) {
     if (!games.has(gameId)) return;
     const route = router.getRoute();
@@ -267,8 +233,6 @@ export function initGameDetails({ router, member } = {}) {
     hero.append(art, copy, launch);
     const player = document.querySelector('#game-view');
     root.replaceChildren(back, hero, ...(player ? [player] : []), detailsCard(game, formatName));
-    const related = relatedGames(game);
-    if (related) root.append(related);
     syncFavorite();
     if (meta.source === 'navigate' && meta.focus !== false) title.focus({ preventScroll: true });
   }

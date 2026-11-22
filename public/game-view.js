@@ -67,7 +67,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     delete view.dataset.previewReady;
     stopLoadingWatch();
     view.dataset.loadState = reason === 'manual' ? 'revealed'
-      : ['nlc-loader', 'hacksaw-loader'].includes(reason) ? 'provider' : 'ready';
+      : ['nlc-loader', 'hacksaw-loader', 'bgaming-loader'].includes(reason) ? 'provider' : 'ready';
     view.dataset.readySource = reason;
     host.removeAttribute('aria-busy');
     frame.inert = false;
@@ -206,6 +206,16 @@ export function initGameView({ router, account, verifyPhone } = {}) {
       // none of Playin's spinner/skeleton. NLC's 'ready' can wait until the
       // user presses Continue, so never keep its intro behind our mask.
       frame.addEventListener('load', () => gameReady(frame, 'nlc-loader'));
+    }
+    if (game.providerId === 'bgaming' &&
+        ['https://demo.bgaming-network.com', 'https://bgaming-network.com'].includes(new URL(launchUrl).origin)) {
+      // The reviewed FUN launcher owns its loading screen and detects the
+      // real device itself. Its game-loaded event stays inside its document.
+      // Hand off to that loader, without claiming the game assets are ready.
+      // The existing pre-play/SC gate still keeps this frame inert.
+      frame.addEventListener('load', () => {
+        if (view.dataset.loadState !== 'error') gameReady(frame, 'bgaming-loader');
+      });
     }
     const failed = () => {
       if (frame !== currentFrame || loading.hidden) return;

@@ -32,10 +32,15 @@ export function changeCatalogGameType(route, gameTypeId, { favoriteIds = [], his
 
 export function resetCatalogFilters(route, { preserveQuery = false } = {}) {
   const next = copyCollectionScope(route);
+  const familyId = gameTypeIds.has(route.gameTypeId) ? route.gameTypeId
+    : gameTypeIds.has(route.categoryId) ? route.categoryId : '';
+  // A dedicated game-type page keeps its scope when its removable filters clear.
+  const fixedFamily = route.type === 'category' && !next.categoryId ? familyId : '';
   if (!preserveQuery) delete next.query;
   delete next.gameTypeId;
+  if (fixedFamily) next.gameTypeId = fixedFamily;
   delete next.sort;
   if (next.type !== 'provider') delete next.providerId;
-  if (next.type === 'category' && !next.categoryId) next.type = 'search';
+  if (next.type === 'category' && !next.categoryId && !fixedFamily) next.type = 'search';
   return next;
 }

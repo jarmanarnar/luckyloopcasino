@@ -4,8 +4,6 @@ import { formatRoute } from './routes.js';
 import { createShelfIcon } from './shelf-icons.js';
 
 const platformNotices = [
-  { id: 'platform:new-releases', title: 'Explore New Releases', detail: 'See the latest additions to the demo catalog.',
-    action: 'Browse games', route: { type: 'category', categoryId: 'new-releases' } },
   { id: 'platform:providers', title: 'Browse Game Providers', detail: 'Find games from your favorite studios.',
     action: 'View providers', route: { type: 'providers' } },
 ];

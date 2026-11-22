@@ -91,6 +91,19 @@ const ossGame = { providerId: 'taparoo', url: 'https://playin.com/embed/v1/demo/
 const nlcGame = { providerId: 'nolimit-city', url: 'https://playin.com/embed/v1/demo/SanQuentin' };
 const ossReady = { event: 'EVO:APPLICATION_READY', tableId: 'bloodsuckerstapa', context: 'root' };
 
+test('BGaming does not use the OSS handshake or invent a cross-origin ready message', () => {
+  const h = harness();
+  const dispose = h.begin({ providerId: 'bgaming', url: 'https://demo.bgaming-network.com/play/BookOfCats/FUN?server=demo' });
+  assert.equal(h.channels.length, 0);
+  assert.equal(h.timers.size, 0);
+  for (const data of ['ready', 'game_loaded', { event: 'game_loaded' }]) {
+    h.emit({ origin: 'https://demo.bgaming-network.com', source: h.root, data });
+  }
+  assert.deepEqual(h.ready, []);
+  dispose();
+  assert.equal(h.listeners.size, 0);
+});
+
 test('NLC rejects spoofed origin/source/payload; genuine ready fires once and disposes', () => {
   const h = harness();
   const dispose = h.begin(nlcGame);

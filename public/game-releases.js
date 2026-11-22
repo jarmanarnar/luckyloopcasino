@@ -1,7 +1,8 @@
 // General release dates from the official, rendered game calendar.
 // Matched one-to-one by complete normalized title; ambiguous or missing matches fail the import.
+import { BGAMING_RELEASES } from './bgaming-games.js';
 export const RELEASES_VERIFIED_ON = "2026-11-01";
-export const GAME_RELEASES = Object.freeze(Object.fromEntries([
+export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...Object.fromEntries([
   ["nunchucksr96f100","2026-10-29","https://nolimitcity.com/games/nunchucks"],
   ["ouija00000000000","2026-10-27","https://nolimitcity.com/games/ouija"],
   ["SixFeetUnder","2026-10-20","https://nolimitcity.com/games/six-feet-under"],
@@ -19,12 +20,10 @@ export const GAME_RELEASES = Object.freeze(Object.fromEntries([
   ["monsterquestv496","2026-06-24","https://nolimitcity.com/games/monster-quest"],
   ["starbursttaparoo","2025-09-25","https://nolimitcity.com/games/starburst-tap-a-roo"],
   ["niptuck000000000","2025-09-24","https://nolimitcity.com/games/nip-tuck"],
-  ["aftermathr96f100","2026-09-03","https://nolimitcity.com/games/aftermath"],
   ["cocksandrobbers0","2026-10-07","https://nolimitcity.com/games/cocks-and-robbers"],
   ["DuckHunters2","2026-09-10","https://nolimitcity.com/games/duck-hunters-2"],
   ["fruitmergotsv496","2026-05-27","https://nolimitcity.com/games/fruit-merge-megapots"],
   ["cashvolttaparoo0","2025-09-25","https://nolimitcity.com/games/cash-volt-tap-a-roo"],
-  ["judgementalr96f1","2026-08-13","https://nolimitcity.com/games/judgemental"],
   ["stormfire0000000","2026-09-30","https://nolimitcity.com/games/stormfire"],
   ["Outsourced2","2026-08-18","https://nolimitcity.com/games/outsourced-2-balkan-engineering"],
   ["monopolymapotsv1","2026-04-09","https://nolimitcity.com/games/monopoly-megapots-1"],
@@ -62,7 +61,6 @@ export const GAME_RELEASES = Object.freeze(Object.fromEntries([
   ["hitthejungle0000","2026-07-09","https://nolimitcity.com/games/hit-the-jungle"],
   ["CatfishHunters","2026-03-17","https://nolimitcity.com/games/catfish-hunters"],
   ["castleoftrror2v1","2025-10-15","https://nolimitcity.com/games/castle-of-terror-2"],
-  ["monopolymonr96f1","2026-01-15","https://nolimitcity.com/games/monopoly-money-line"],
   ["pandagoesboom000","2026-06-25","https://nolimitcity.com/games/panda-goes-boom"],
   ["TheCrypt2","2026-03-03","https://nolimitcity.com/games/the-crypt-2"],
   ["starclusters2v10","2025-08-03","https://nolimitcity.com/games/star-clusters-2"],
@@ -826,4 +824,4 @@ export const GAME_RELEASES = Object.freeze(Object.fromEntries([
   ["bloodsuckersj0r2","2009-11-10","https://nolimitcity.com/games/blood-suckers"],
   ["deadoralive00000","2009-11-10","https://nolimitcity.com/games/dead-or-alive"],
 ].map(([id, date, page]) => [id, Object.freeze({ date, page,
-  source: "https://games.nolimitcity.com/", verifiedOn: RELEASES_VERIFIED_ON })])));
+  source: "https://games.nolimitcity.com/", verifiedOn: RELEASES_VERIFIED_ON })])) });

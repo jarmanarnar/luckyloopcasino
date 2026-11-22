@@ -91,12 +91,6 @@ export function initSiteMenu({ openHome, openRecentGames, openCategory, openFavo
   const casinoButton = menuButton('table', 'Game Types');
   const casinoList = createDisclosure('social-casino', casinoButton);
   navigation.replaceChildren();
-  for (const [id, title] of [['popular', 'Top Picks'], ['new-releases', 'New Releases']]) {
-    const button = menuButton(id, title);
-    button.dataset.menuCategory = id;
-    items.set(id, button);
-    navigation.append(button);
-  }
   navigation.append(casinoButton, casinoList);
   for (const category of GAME_FAMILIES) {
     if (getGamesForCategory(category.id).length === 0) continue;

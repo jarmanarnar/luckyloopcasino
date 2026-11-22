@@ -6,6 +6,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { createMemberState } from '../public/member-state.js';
 import { getDiscoveredGameCount } from '../public/rewards-pages.js';
+import { ALL_GAMES, GAMES } from '../public/catalog.js';
 
 const source = (await readFile(new URL('../public/profile-menu.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initProfileMenu', 'function initProfileMenu');
@@ -48,8 +49,8 @@ function profilePage({ preparePhoto = async () => 'test-photo', popupNavigation 
     },
   };
   const document = { querySelector: selector => selector === 'dialog[open]' ? nodes['#profile-summary'].open ? nodes['#profile-summary'] : null : nodes[selector] };
-  const router = { subscribe() {}, getRoute: () => ({ type: 'category', categoryId: 'popular' }), navigate: route => navigations.push(route) };
-  const context = { initPopoverMotion, requestDialogClose, document, window: { addEventListener() {} }, router, account, popupNavigation, getDiscoveredGameCount, createShelfIcon() {},
+  const router = { subscribe() {}, getRoute: () => ({ type: 'category', categoryId: 'fruit' }), navigate: route => navigations.push(route) };
+  const context = { GAMES, initPopoverMotion, requestDialogClose, document, window: { addEventListener() {} }, router, account, popupNavigation, getDiscoveredGameCount, createShelfIcon() {},
     prepareProfilePhoto: preparePhoto,
     renderProfileAvatar(element, profile) { element.textContent = profile.avatar; element.photo = profile.photo || null; } };
   const api = vm.runInNewContext(`${source}\ninitProfileMenu({router, account, popupNavigation});`, context);
@@ -58,7 +59,12 @@ function profilePage({ preparePhoto = async () => 'test-photo', popupNavigation 
 
 test('profile edit and cancel stay in the same popup without changing the account or route', async () => {
   const page = profilePage(), n = page.nodes;
+  const hiddenGame = ALL_GAMES.find(game => !GAMES.includes(game));
+  assert.ok(hiddenGame);
+  page.snapshot.member.favorites = [GAMES[0].id, hiddenGame.id];
   page.api.open();
+  assert.equal(n['#profile-summary-favorites'].textContent, '1', 'the summary counts only available favorites');
+  assert.deepEqual(page.snapshot.member.favorites, [GAMES[0].id, hiddenGame.id], 'hidden favorites stay saved');
   await n['.profile-summary__edit'].fire('click');
   assert.equal(n['#profile-summary'].open, true);
   assert.equal(n['#profile-editor'].hidden, false);

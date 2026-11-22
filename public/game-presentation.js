@@ -32,6 +32,20 @@ export function getDemoUrl(baseUrl, device) {
 }
 
 export function getLaunchUrl(game, device) {
+  if (game.providerId === 'bgaming') {
+    const url = new URL(game.url);
+    // Official pages publish both hosts (for example Adventures uses the root host).
+    if (!['https://demo.bgaming-network.com', 'https://bgaming-network.com'].includes(url.origin) || url.username || url.password ||
+        typeof game.providerGameId !== 'string' || !/^[A-Za-z][A-Za-z0-9]*$/.test(game.providerGameId) ||
+        url.pathname !== `/play/${game.providerGameId}/FUN` ||
+        (url.searchParams.has('server') && url.searchParams.get('server') !== 'demo')) {
+      throw new Error('Invalid BGaming public demo URL');
+    }
+    // Official /play links create a fresh FUN demo session. BGaming selects
+    // its mobile UI from the browser's UA/touch capabilities; Playin's device
+    // query is not part of this launcher. Preserve the reviewed public URL.
+    return game.url;
+  }
   if (game.providerId === 'hacksaw-gaming') {
     if (!/^\d+$/.test(game.providerGameId)) throw new Error('Invalid Hacksaw demo game ID');
     return `hacksaw-demo.html?${new URLSearchParams({ game: game.providerGameId, device })}`;

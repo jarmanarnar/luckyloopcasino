@@ -22,3 +22,7 @@ Each SVG was checked for active content and external references. The exported fi
 ## Hacksaw Gaming
 
 `hacksaw-gaming.svg` was extracted from the official https://www.hacksawgaming.com/games navigation logo on 2026-11-01. SVG path geometry, transforms and the 1000×250 view box are retained. The source dark-navigation rule (`.Navigation--dark #Logo path { fill: #fff; }` in `/dist/bundle.min.css`) is made explicit on its paths for standalone use. The SVG contains no scripts, external references or embedded raster image.
+
+## BGaming
+
+`bgaming.svg` was downloaded on 2026-11-22 from the official [BGaming brand guidelines](https://bgaming.com/brand-guidelines), which specify the special color version for black and very dark backgrounds. The [original SVG asset](https://bgaming.com/wp-content/uploads/2026/09/Logo-%E2%80%93-Main-black-1.svg) is retained byte-for-byte: 322×56 view box, white GAMING letters, yellow plate and dividers, and black B. No artwork was generated, redrawn or recolored. The SVG contains local paths only, with no scripts, event handlers, external references or embedded raster image.

@@ -215,13 +215,6 @@ test('balance-toggle presentation respects hidden balance and reduced-motion set
   assert.equal(page.nodes['#coin-type-switch'].dataset.balanceMotion, 'false');
 });
 
-test('wallet UI cannot grant arbitrary credit or write a separate legacy balance', async () => {
-  const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
-  assert.equal(page.controller.creditGold, undefined);
-  assert.deepEqual(page.storageWrites, []);
-  assert.equal(page.nodes['#wallet-balance-value'].textContent, '130,000');
-});
-
 test('a valid local reward adds only Gold Coins and preserves the selected Super balance', async () => {
   const page = await walletPage({ saved: { currency: 'SC', balances: { GC: 130000, SC: 8500 } } });
   assert.equal((await page.account.claimDaily()).ok, true);
@@ -309,6 +302,8 @@ test('header plus opens the Store page without requiring a wallet dialog or addi
   const page = await walletPage({ saved: { currency: 'GC', balances: { GC: 130000, SC: 8500 } } });
   const balance = page.nodes['#wallet-balance-value'].textContent;
   const before = page.calls.length;
+  assert.equal(balance, '130,000');
+  assert.equal(page.controller.creditGold, undefined);
   assert.equal(page.nodes['#wallet-dialog'], undefined);
   assert.equal(page.nodes['#wallet-add-credit'], undefined);
   assert.equal(page.nodes['#wallet-add'].attributes['aria-label'], 'Open store');

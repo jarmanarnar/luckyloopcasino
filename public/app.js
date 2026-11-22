@@ -20,7 +20,7 @@ import { openDemoAccount } from './demo-account.js';
 import { openServerAccount } from './server-account.js';
 import { SERVER_ACCOUNT } from './account-config.js';
 import { initIdentityVerification } from './identity-verification.js';
-import { GAMES } from './catalog.js';
+import { ALL_GAMES } from './catalog.js';
 import { initAuthView } from './auth-view.js';
 import { initSiteFooter } from './site-footer.js';
 import { initUiIcons } from './ui-icons.js';
@@ -36,7 +36,8 @@ export async function initApplication() {
   initUiIcons();
   const popupNavigation = initPopupNavigation();
   initMobileDialogs();
-  const account = SERVER_ACCOUNT ? await openServerAccount() : await openDemoAccount({ catalogIds: GAMES.map(game => game.id) });
+  // Hiding an unillustrated game must not erase its saved favorites or history.
+  const account = SERVER_ACCOUNT ? await openServerAccount() : await openDemoAccount({ catalogIds: ALL_GAMES.map(game => game.id) });
   initSiteMode({ account });
   const auth = initAuthView({ account, router: initRouter({ popupNavigation }), popupNavigation });
   const router = auth.router;

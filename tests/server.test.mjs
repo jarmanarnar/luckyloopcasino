@@ -42,14 +42,16 @@ test('legacy asset links point at the same current app', async () => {
   }
 });
 
-test('scripts, styles, fonts, provider marks and promotional artwork have correct types', async () => {
+test('application assets and PWA files have correct types and caching headers', async () => {
   for (const [file, type] of [['bootstrap.js', 'text/javascript'], ['app.js', 'text/javascript'], ['styles.css', 'text/css'],
     ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp'],
-    ['assets/fonts/poppins-700-latin.woff2', 'font/woff2']]) {
+    ['assets/fonts/poppins-700-latin.woff2', 'font/woff2'],
+    ['manifest.webmanifest', 'application/manifest+json'], ['sw.js', 'text/javascript'],
+    ['offline.html', 'text/html'], ['assets/brand/app-icons/apple-touch-icon.png', 'image/png']]) {
     const response = await fetch(`${origin}/luckyloopcasino/${file}`);
-    assert.equal(response.status, 200);
-    assert.ok(response.headers.get('content-type').startsWith(type));
-    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.status, 200, file);
+    assert.ok(response.headers.get('content-type').startsWith(type), file);
+    assert.equal(response.headers.get('cache-control'), 'no-store', file);
     if (type === 'font/woff2') {
       const bytes = Buffer.from(await response.arrayBuffer());
       assert.equal(bytes.subarray(0, 4).toString(), 'wOF2');

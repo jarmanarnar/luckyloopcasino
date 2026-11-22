@@ -1,11 +1,12 @@
 import { isFeaturePage } from './feature-pages.js';
-import { GAME_FAMILIES, CATEGORIES, LEGACY_CATEGORIES, SLOT_THEMES } from './collections.js';
+import { GAME_FAMILY_DEFINITIONS as GAME_FAMILIES, CATEGORIES, LEGACY_CATEGORIES, SLOT_THEMES } from './collections.js';
 
 // Hash routes work on both localhost and static GitHub Pages without rewrites.
 const gameTypeIds = new Set(GAME_FAMILIES.map(type => type.id));
 const categoryIds = new Set([...CATEGORIES, ...LEGACY_CATEGORIES]
   .map(category => category.id).filter(id => !gameTypeIds.has(id)));
 const legacyStudioIds = new Set(['nolimit-city', 'hacksaw-gaming']);
+const retiredCategoryIds = new Set(['popular', 'new-releases']);
 const slotThemeIds = new Set(SLOT_THEMES.map(theme => theme.id));
 const sortIds = new Set(['featured', 'az', 'za', 'newest', 'saved', 'recent', 'relevance']);
 const gameCatalogTypes = new Set(['home', 'category', 'search', 'provider', 'favorites', 'recent-games']);
@@ -79,6 +80,7 @@ export function parseRoute(hash = '') {
   }
   if (path === '/' || path === '') route = { type: 'home' };
   else if (segments.length === 1 && ['all-games', 'all'].includes(segments[0])) route = { type: 'search', query: '' };
+  else if (segments.length === 1 && retiredCategoryIds.has(segments[0])) route = { type: 'search', query: '' };
   else if (segments.length === 1 && segments[0] === 'recent-games') route = { type: 'recent-games' };
   else if (segments.length === 1 && segments[0] === 'favorites') route = { type: 'favorites' };
   else if (segments.length === 1 && legacyStudioIds.has(segments[0])) route = { type: 'provider', providerId: segments[0] };

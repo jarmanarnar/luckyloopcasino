@@ -16,15 +16,15 @@ test('a type filter narrows Megaways instead of leaving the collection', () => {
     new Set(getGamesForCategory('megaways').map(game => game.id)));
 });
 
-test('Top Picks keeps its collection and valid featured ordering when filtering Slots', () => {
-  const route = Object.freeze({ type: 'category', categoryId: 'popular', query: 'gold', sort: 'featured' });
+test('Fruit Games keeps its collection and selected ordering when filtering Slots', () => {
+  const route = Object.freeze({ type: 'category', categoryId: 'fruit', query: 'fruit', sort: 'za' });
   const next = changeCatalogGameType(route, 'slots');
   assert.deepEqual(next, { ...route, gameTypeId: 'slots' });
   const page = getCatalogPage(next);
   const slotIds = new Set(getGamesForCategory('slots').map(game => game.id));
   const expected = getCatalogPage(route).games.filter(game => slotIds.has(game.id));
-  assert.equal(page.sort, 'featured');
-  assert.equal(page.categoryId, 'popular');
+  assert.equal(page.sort, 'za');
+  assert.equal(page.categoryId, 'fruit');
   assert.ok(expected.length > 0);
   assert.deepEqual(page.games, expected);
 });
@@ -127,7 +127,7 @@ test('only sorting invalid for the resulting model is removed', () => {
   assert.deepEqual(next, { type: 'search', gameTypeId: 'slots', query: '' });
   assert.deepEqual(changeCatalogGameType({ type: 'search', sort: 'featured', providerId: 'netent' }, 'table'),
     { type: 'search', providerId: 'netent', gameTypeId: 'table' });
-  assert.equal(changeCatalogGameType({ type: 'category', categoryId: 'popular', sort: 'featured' }, 'table').sort, 'featured');
+  assert.equal(changeCatalogGameType({ type: 'category', categoryId: 'fruit', sort: 'za' }, 'table').sort, 'za');
 });
 
 test('unsupported type values leave the incoming route untouched', () => {
@@ -159,10 +159,10 @@ test('clearing filters preserves fixed providers and personal scope', () => {
   assert.ok(getCatalogPage(fixed).games.every(game => game.providerId === 'taparoo'));
 });
 
-test('clearing a family-only destination returns to Games while retaining legacy named themes', () => {
+test('clearing a family-only destination retains its game type and legacy named themes retain their collection', () => {
   for (const familyField of [{ gameTypeId: 'slots' }, { categoryId: 'slots' }]) {
     assert.deepEqual(resetCatalogFilters({ type: 'category', ...familyField, query: 'gold', providerId: 'netent', sort: 'za' }),
-      { type: 'search' });
+      { type: 'category', gameTypeId: 'slots' });
     assert.deepEqual(resetCatalogFilters({ type: 'category', ...familyField, themeId: 'fruit', query: 'gold' }),
       { type: 'category', categoryId: 'fruit', themeId: 'fruit' });
   }
@@ -174,7 +174,7 @@ test('clearing global and provider-directory filters keeps their destinations', 
   assert.deepEqual(resetCatalogFilters(Object.freeze({ type: 'providers', query: 'netent' })), { type: 'providers' });
 });
 
-test('panel reset keeps the query while clearing global filters and family-only destinations', () => {
+test('query-preserving reset clears global filters while keeping dedicated game-type scope', () => {
   for (const scope of [
     { type: 'search', gameTypeId: 'table' },
     { type: 'category', gameTypeId: 'table' },
@@ -182,8 +182,10 @@ test('panel reset keeps the query while clearing global filters and family-only 
   ]) {
     const route = Object.freeze({ ...scope, query: 'starburst', providerId: 'netent', sort: 'za' });
     const next = resetCatalogFilters(route, { preserveQuery: true });
-    assert.deepEqual(next, { type: 'search', query: 'starburst' });
-    assert.ok(getCatalogPage(next).games.length > 0);
+    const fixedType = scope.type === 'category';
+    assert.deepEqual(next, { type: scope.type, ...(fixedType ? { gameTypeId: 'table' } : {}), query: 'starburst' });
+    if (fixedType) assert.deepEqual(getCatalogPage(next).games, [], 'reset cannot widen Table Games to find a slot');
+    else assert.ok(getCatalogPage(next).games.length > 0);
     assert.equal(route.providerId, 'netent', 'the original route is not mutated');
     assert.equal(route.sort, 'za');
   }

@@ -10,7 +10,7 @@ import { formatRoute, parseRoute } from '../public/routes.js';
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
-function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true, navigatorInfo = { maxTouchPoints: 0 } } = {}) {
+function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true, bgamingOrigin = 'https://demo.bgaming-network.com', navigatorInfo = { maxTouchPoints: 0 } } = {}) {
   const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
@@ -115,9 +115,13 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
       { id: 'alpha', title: 'Alpha', providerId: 'red-tiger' },
       { id: 'beta', title: 'Beta', providerId: 'netent' },
       { id: 'nunchucksr96f100', title: 'Nunchucks', providerId: 'netent' },
+      { id: 'bgaming-book-of-cats', title: 'Book of Cats', providerId: 'bgaming' },
     ],
     getLaunchDevice(width) { return width <= 1024 ? 'mobile' : 'desktop'; },
-    getLaunchUrl(game, device) { return `https://demo.example/${game.id}?device=${device}`; },
+    getLaunchUrl(game, device) {
+      return game.providerId === 'bgaming' ? `${bgamingOrigin}/play/BookOfCats/FUN?server=demo`
+        : `https://demo.example/${game.id}?device=${device}`;
+    },
     getFrameLayout, needsLandscapeViewport,
     watchGameReady(frame, game, ready) {
       const watch = { frame, game, ready, stopped: false };
@@ -170,6 +174,56 @@ test('initial lobby and direct game links initialize one stable controller and o
   assert.equal(page.frames[0].title, 'Alpha demo');
   page.flushHash();
   assert.equal(page.frames.length, 1, 'the same hash never restarts a game');
+});
+
+test('BGaming hands off to its native loader without claiming complete game readiness', () => {
+  for (const bgamingOrigin of ['https://demo.bgaming-network.com', 'https://bgaming-network.com']) {
+    const page = gamePage({ hash: '#game=bgaming-book-of-cats', routerMode: true, bgamingOrigin });
+    const frame = page.frames[0], view = page.nodes['game-view'];
+    page.flushTimers();
+    assert.equal(view.dataset.loadState, 'loading', 'elapsed time does not hand off the loader');
+    assert.equal(frame.inert, true);
+    frame.emit('load'); page.flushPaint(); page.flushPaint();
+    assert.equal(view.dataset.loadState, 'provider');
+    assert.equal(view.dataset.readySource, 'bgaming-loader');
+    assert.equal(frame.inert, false);
+    assert.equal(page.nodes['game-loading'].hidden, true);
+    assert.equal(page.readiness[0].stopped, true);
+    assert.deepEqual(page.gameVisits, ['bgaming-book-of-cats']);
+  }
+});
+
+test('BGaming native loading retains the GC pre-play gate and read-only SC preview', () => {
+  for (const currency of ['GC', 'SC']) {
+    const page = gamePage({ hash: '#/games/bgaming-book-of-cats', routerMode: true, preplay: true, currency });
+    const frame = page.frames[0];
+    frame.emit('load'); page.flushPaint(); page.flushPaint();
+    assert.equal(frame.inert, true);
+    assert.equal(frame.getAttribute('aria-hidden'), 'true');
+    assert.equal(page.nodes['game-view'].dataset.previewReady, 'true');
+    assert.deepEqual(page.gameVisits, []);
+    page.nodes['game-play-confirm'].emit('click');
+    assert.equal(frame.inert, currency === 'SC');
+    if (currency === 'GC') assert.equal(page.nodes['game-view'].dataset.loadState, 'provider');
+    else assert.deepEqual(page.gameVisits, []);
+  }
+});
+
+test('BGaming load callbacks cannot revive replaced or failed frames', () => {
+  const page = gamePage({ hash: '#game=bgaming-book-of-cats', routerMode: true });
+  const oldFrame = page.frames[0];
+  page.navigate('#game=beta');
+  oldFrame.emit('load'); page.flushPaint(); page.flushPaint();
+  assert.equal(page.nodes['game-view'].dataset.loadState, 'loading');
+  assert.equal(page.frames[1].inert, true);
+  assert.deepEqual(page.gameVisits, []);
+
+  page.navigate('#game=bgaming-book-of-cats');
+  const failedFrame = page.frames[2];
+  failedFrame.emit('error'); failedFrame.emit('load'); page.flushPaint(); page.flushPaint();
+  assert.equal(page.nodes['game-view'].dataset.loadState, 'error');
+  assert.equal(failedFrame.inert, true);
+  assert.deepEqual(page.gameVisits, []);
 });
 
 test('shell destinations unmount the game before rendering and keep their results focus', () => {
@@ -345,11 +399,11 @@ test('returning from legacy play to same details keeps the existing iframe', () 
 });
 
 test('Escape from a refreshed game returns to the originating category route without resetting home', () => {
-  const page = gamePage({ hash: '#game=alpha&from=%23%2Fpopular%3Fprovider%3Dred-tiger', routerMode: true });
+  const page = gamePage({ hash: '#game=alpha&from=%23%2Ffruit%3Fprovider%3Dred-tiger', routerMode: true });
   assert.equal(page.frames.length, 1);
   page.escape();
   assert.equal(page.router.getRoute().type, 'category');
-  assert.equal(page.router.getRoute().categoryId, 'popular');
+  assert.equal(page.router.getRoute().categoryId, 'fruit');
   assert.equal(page.router.getRoute().providerId, 'red-tiger');
   assert.equal(page.nodes['game-frame-host'].children.length, 0);
 });

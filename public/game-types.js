@@ -55,6 +55,7 @@ const CARD_AND_TABLE_TYPES = new Map([
 // https://playin.com/games/casino-hold-em-poker
 // https://playin.com/games/jacks-or-better-double-up
 export function getGameTypeId(game) {
+  if (game.providerId === 'bgaming' && GAME_TYPES.some(type => type.id === game.formatId)) return game.formatId;
   if (game.providerId === 'hacksaw-gaming' && ['slots', 'instant-win', 'scratchcards', 'crash'].includes(game.formatId)) return game.formatId;
   if (TAP_IDS.has(game.id)) return 'tap';
   return CARD_AND_TABLE_TYPES.get(game.id) || 'slots';

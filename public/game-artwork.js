@@ -1,7 +1,9 @@
 // Reviewed game-card artwork: original covers plus visually checked additions.
 // Unselected downloads remain on disk and use text placeholders in the interface.
 // Provenance and review selection: public/assets/games/README.md.
+import { BGAMING_ARTWORK } from './bgaming-games.js';
 export const GAME_ARTWORK = Object.freeze({
+  ...BGAMING_ARTWORK,
   "nunchucksr96f100": {
     "src": "assets/games/nunchucksr96f100.webp",
     "width": 256,

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { test } from 'node:test';
-import { GAMES, PROVIDERS } from '../public/catalog.js';
-import { CATEGORIES, GAME_FAMILIES, DISCOVERY_CATEGORIES, SLOT_THEMES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
+import { ALL_GAMES, GAMES, PROVIDERS } from '../public/catalog.js';
+import { GAME_ARTWORK } from '../public/game-artwork.js';
+import { CATEGORIES, GAME_FAMILIES, SLOT_THEMES, GAME_RELEASES, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { PROVIDER_LOGOS } from '../public/provider-assets.js';
 import { getGameTypeId } from '../public/game-types.js';
 import { getCatalogPage } from '../public/catalog-page-model.js';
@@ -33,17 +34,19 @@ function vendorCode(game) {
   return new URL(game.url).pathname.split('/').filter(Boolean).at(-1).toLowerCase();
 }
 
-test('expanded catalog retains 1080 unique active games across seven providers', () => {
-  assert.equal(GAMES.length, 1080);
+test('public catalog contains only the 1108 approved covers across seven populated providers', () => {
+  assert.equal(ALL_GAMES.length, 1369, 'hiding titles preserves imported records');
+  assert.equal(GAMES.length, 1108);
+  assert.deepEqual(GAMES, ALL_GAMES.filter(game => Object.hasOwn(GAME_ARTWORK, game.id)));
   assert.equal(new Set(GAMES.map(game => game.id)).size, GAMES.length);
   const expectedCounts = {
-    netent: 236,
-    'red-tiger': 355,
+    netent: 233,
+    'red-tiger': 351,
     'nolimit-city': 141,
     'big-time-gaming': 80,
     taparoo: 8,
     'sneaky-slots': 3,
-    'hacksaw-gaming': 257,
+    bgaming: 292,
   };
   assert.equal(PROVIDERS.length, 7);
   assert.deepEqual(PROVIDERS.map(provider => provider.id).sort(), Object.keys(expectedCounts).sort());
@@ -73,11 +76,11 @@ test('all 33 previously excluded games are restored once with their original dem
   }
 });
 
-test('five primary game families cover the complete catalog exactly once without duplicating providers', () => {
+test('populated game families cover the visible catalog exactly once without duplicating providers', () => {
   assert.deepEqual(GAME_FAMILIES.map(category => category.id), [
     'slots', 'table', 'scratchcards', 'tap', 'arcade',
   ]);
-  const expectedCounts = { slots: 993, table: 10, scratchcards: 52, tap: 13, arcade: 12 };
+  const expectedCounts = { slots: 1020, table: 18, scratchcards: 12, tap: 13, arcade: 45 };
   const covered = new Set();
   for (const category of GAME_FAMILIES) {
     const games = getGamesForCategory(category.id);
@@ -97,35 +100,35 @@ test('five primary game families cover the complete catalog exactly once without
 
 test('theme collections use relevant settings and fruit titles without ambiguous keyword matches', () => {
   const cases = [
-    { categoryId: 'wild-west', count: 17,
-      included: ['TombstoneBegins', 'DeadwoodRip', 'hacksaw-1620'],
-      excluded: ['EastVsWest', 'hacksaw-1309', 'hacksaw-1197'] },
-    { categoryId: 'gold-rush', count: 18,
-      included: ['hacksaw-1020', 'gonzosgoldr30000'],
+    { categoryId: 'wild-west', count: 14,
+      included: ['TombstoneBegins', 'DeadwoodRip'],
+      excluded: ['EastVsWest', 'hacksaw-1620', 'hacksaw-1309', 'hacksaw-1197'] },
+    { categoryId: 'gold-rush', count: 15,
+      included: ['gonzosgoldr30000'],
       excluded: ['GoldenShower', 'rome000000000000'] },
-    { categoryId: 'egypt', count: 20,
-      included: ['TombOfAkhenaten', 'hacksaw-1612'],
+    { categoryId: 'egypt', count: 17,
+      included: ['TombOfAkhenaten'],
       excluded: ['BookOfShadows', 'extrachillliv396'] },
-    { categoryId: 'asian', count: 12,
-      included: ['hacksaw-1348', 'dragonslckstacks'],
+    { categoryId: 'asian', count: 9,
+      included: ['dragonslckstacks'],
       excluded: ['divinegoldr96f10', 'finndragontr96f1'] },
-    { categoryId: 'fruit', count: 30,
-      included: ['fruitshopgrr96f1', 'hacksaw-1693', 'hacksaw-1081', 'hacksaw-1031', 'happyapples00000'],
+    { categoryId: 'fruit', count: 26,
+      included: ['fruitshopgrr96f1', 'happyapples00000'],
       excluded: ['PearlHarbor', 'hacksaw-1938'] },
   ];
   for (const { categoryId, count, included, excluded } of cases) {
     const members = new Set(getGamesForCategory(categoryId).map(game => game.id));
     assert.equal(members.size, count, categoryId);
-    for (const id of [...included, ...excluded]) assert.ok(GAMES.some(game => game.id === id), id);
+    for (const id of [...included, ...excluded]) assert.ok(ALL_GAMES.some(game => game.id === id), id);
     for (const id of included) assert.equal(members.has(id), true, `${categoryId}: ${id}`);
     for (const id of excluded) assert.equal(members.has(id), false, `${categoryId}: ${id}`);
   }
   assert.equal(SLOT_THEMES.find(category => category.id === 'fruit').title, 'Fruit Games');
-  assert.equal(getGamesForCategory('megaways').length, 56);
+  assert.equal(getGamesForCategory('megaways').length, 60);
 });
 
 test('provider pages retain their complete catalogs separately from editorial choices', () => {
-  for (const [providerId, count] of [['nolimit-city', 141], ['hacksaw-gaming', 257]]) {
+  for (const [providerId, count] of [['nolimit-city', 141], ['red-tiger', 351], ['bgaming', 292]]) {
     assert.deepEqual(getGamesForCategory(providerId), []);
     const page = getCatalogPage({ type: 'provider', providerId });
     assert.equal(page.activeMenu, 'providers');
@@ -134,29 +137,13 @@ test('provider pages retain their complete catalogs separately from editorial ch
     assert.deepEqual(new Set(highlighted.map(game => game.id)),
       new Set(GAMES.filter(game => game.providerId === providerId).map(game => game.id)), providerId);
   }
-  assert.equal(DISCOVERY_CATEGORIES.find(category => category.id === 'popular').title, 'Top Picks');
-  assert.equal(getGamesForCategory('popular').length, 40);
-  assert.equal(new Set(getGamesForCategory('popular').map(game => game.id)).size, 40);
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
-});
-
-test('discovery collections stay outside primary formats and preserve their editorial opening', () => {
-  assert.deepEqual(DISCOVERY_CATEGORIES.map(category => category.id), ['popular', 'new-releases']);
-  assert.deepEqual(SLOT_THEMES.map(theme => theme.id), ['wild-west', 'gold-rush', 'egypt', 'asian', 'fruit']);
-  const primaryIds = new Set(GAME_FAMILIES.map(category => category.id));
-  for (const collection of [...DISCOVERY_CATEGORIES, ...SLOT_THEMES]) assert.equal(primaryIds.has(collection.id), false);
-  assert.deepEqual(getGamesForCategory('popular').slice(0, 8).map(game => game.id), [
-    'SanQuentin', 'niptuck000000000', 'gonzosqumegaways', 'bonanzatacardsv1',
-    'gopnik0000000000', 'TombstoneBegins', 'fruitshopgrr96f1', 'bloodsuckerstapa',
-  ]);
-  assert.deepEqual(getGamesForCategory('new-releases').slice(0, 3).map(game => game.id), [
-    'nunchucksr96f100', 'monopolymneyv196', 'ouija00000000000',
-  ]);
+  assert.equal(getCatalogPage({ type: 'provider', providerId: 'hacksaw-gaming' }).type, 'not-found');
 });
 
 test('the shared collection registry owns real multi-game memberships without duplicate families or studios', () => {
   assert.deepEqual(CATEGORIES.map(category => category.id), [
-    'popular', 'new-releases', 'megaways', 'wild-west', 'gold-rush', 'egypt', 'asian', 'fruit',
+    'megaways', 'wild-west', 'gold-rush', 'egypt', 'asian', 'fruit',
   ]);
   const excluded = new Set([...GAME_FAMILIES, ...PROVIDERS].map(item => item.id));
   for (const category of CATEGORIES) {
@@ -166,24 +153,7 @@ test('the shared collection registry owns real multi-game memberships without du
     assert.equal(new Set(category.games.map(game => game.id)).size, category.games.length);
     assert.ok(category.games.every(game => GAMES.includes(game)));
   }
-  for (const alias of [...DISCOVERY_CATEGORIES, ...SLOT_THEMES]) assert.ok(CATEGORIES.includes(alias));
-});
-
-test('new releases contain only active, dated games in descending release order', () => {
-  const releases = getGamesForCategory('new-releases');
-  assert.equal(releases.length, 100);
-  assert.equal(new Set(releases.map(game => game.id)).size, 100);
-  assert.equal(releases[0].id, 'nunchucksr96f100');
-  assert.equal(getGameReleaseDate(releases[0]), '2026-10-29');
-  assert.equal(getGameReleaseDate('unknown'), '');
-  for (const [index, game] of releases.entries()) {
-    assert.ok(GAMES.includes(game));
-    const release = GAME_RELEASES[game.id];
-    assert.match(release.date, /^\d{4}-\d{2}-\d{2}$/);
-    assert.ok(release.date <= '2026-10-31');
-    assert.equal(new URL(release.source).hostname, 'games.nolimitcity.com');
-    if (index > 0) assert.ok(getGameReleaseDate(releases[index - 1]) >= release.date);
-  }
+  for (const alias of SLOT_THEMES) assert.ok(CATEGORIES.includes(alias));
 });
 
 test('provider details describe the active catalog and real available game formats', () => {
@@ -197,21 +167,22 @@ test('provider details describe the active catalog and real available game forma
   assert.deepEqual(getProviderDetails('taparoo').formats, [{ id: 'tap', title: 'Tap Games', count: 8 }]);
 });
 
-test('all 823 original games retain verified release dates; unknown new-provider dates stay unknown', () => {
-  const original = GAMES.filter(game => game.providerId !== 'hacksaw-gaming');
-  assert.equal(Object.keys(GAME_RELEASES).length, original.length);
-  for (const game of original) {
+test('verified release dates retain their provider sources; unknown dates stay unknown', () => {
+  const datedGames = ALL_GAMES.filter(game => game.providerId !== 'hacksaw-gaming');
+  assert.equal(Object.keys(GAME_RELEASES).length, datedGames.length);
+  for (const game of datedGames) {
     const release = GAME_RELEASES[game.id];
     assert.match(release.date, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(new Date(`${release.date}T00:00:00Z`).toISOString().slice(0, 10), release.date);
-    assert.equal(release.verifiedOn, '2026-11-01');
-    assert.equal(new URL(release.source).origin, 'https://games.nolimitcity.com');
-    assert.equal(new URL(release.page).origin, 'https://nolimitcity.com');
+    const bgaming = game.providerId === 'bgaming';
+    assert.equal(release.verifiedOn, bgaming ? '2026-11-22' : '2026-11-01');
+    assert.equal(new URL(release.source).origin, bgaming ? 'https://bgaming.com' : 'https://games.nolimitcity.com');
+    assert.equal(new URL(release.page).origin, bgaming ? 'https://bgaming.com' : 'https://nolimitcity.com');
   }
   assert.equal(getGameReleaseDate('starburst'), '2012-01-23');
   assert.equal(getGameReleaseDate('bloodsuckersj0r2'), '2009-11-10');
   assert.equal(getGameReleaseDate('arabian000000000'), '2006-11-10');
-  for (const game of GAMES.filter(game => game.providerId === 'hacksaw-gaming')) assert.equal(getGameReleaseDate(game), '');
+  for (const game of ALL_GAMES.filter(game => game.providerId === 'hacksaw-gaming')) assert.equal(getGameReleaseDate(game), '');
 });
 
 test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => {
@@ -228,7 +199,7 @@ test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => 
   }
 });
 
-test('standalone page, module imports and all seven provider logos resolve within public', async () => {
+test('standalone page, module imports and all eight provider logos resolve within public', async () => {
   const indexUrl = new URL('index.html', publicRoot);
   const html = await readFile(indexUrl, 'utf8');
   for (const [, specifier] of html.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/g)) {
@@ -247,10 +218,17 @@ test('standalone page, module imports and all seven provider logos resolve withi
       await access(dependency);
     }
   }
-  assert.equal(Object.keys(PROVIDER_LOGOS).length, 7);
+  assert.equal(Object.keys(PROVIDER_LOGOS).length, 8);
   for (const provider of PROVIDERS) {
     const asset = new URL(PROVIDER_LOGOS[provider.id].src, publicRoot);
     assert.ok(asset.href.startsWith(publicRoot.href), provider.id);
     assert.match(await readFile(asset, 'utf8'), /<svg\b/, provider.id);
+  }
+});
+
+test('retired discovery collections are absent from metadata and memberships', () => {
+  for (const id of ['popular', 'new-releases']) {
+    assert.equal(CATEGORIES.some(category => category.id === id), false);
+    assert.deepEqual(getGamesForCategory(id), []);
   }
 });

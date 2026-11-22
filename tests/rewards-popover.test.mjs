@@ -192,6 +192,7 @@ test('claims from another surface update the open popup and logout clears privat
 test('guests see two public rewards and both Join & Unlock actions open registration without claims', () => {
   const view = page({ signedIn: false, member: { ...fullMember, taskClaims: ACHIEVEMENTS.map(task => task.id) }, details: true });
   const before = structuredClone(view.saved());
+  assert.equal(view.trigger.attributes['aria-label'], 'Rewards, 1 new notification');
   for (let index = 0; index < 2; index++) {
     view.open();
     assert.equal(view.panel.open, true);
@@ -260,7 +261,7 @@ test('without native popovers Rewards opens achievements for guests and members 
   }
 });
 
-test('the member claim count updates while closed; guests have one invitation indicator', () => {
+test('the member claim count and accessible label update while the popup stays closed', () => {
   const view = page({ member: { attendance: { bestStreak: 2, streak: 2 }, taskClaims: ['welcome-member'] } });
   const badge = view.trigger.querySelector('.rewards-count');
   assert.equal(badge.textContent, '1');
@@ -270,9 +271,4 @@ test('the member claim count updates while closed; guests have one invitation in
   assert.equal(badge.hidden, true);
   assert.equal(view.query('.rewards-count').hidden, true);
   assert.equal(view.trigger.attributes['aria-label'], 'Rewards');
-  const guest = page({ signedIn: false, member: fullMember });
-  assert.equal(guest.trigger.querySelector('.rewards-count').hidden, false);
-  assert.equal(guest.trigger.querySelector('.rewards-count').textContent, '1');
-  assert.equal(guest.trigger.attributes['aria-label'], 'Rewards, 1 new notification');
-  assert.equal(guest.query('.rewards-count').hidden, true);
 });

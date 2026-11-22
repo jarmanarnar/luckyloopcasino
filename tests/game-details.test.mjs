@@ -15,7 +15,7 @@ const games = [
   { id: 'gamma', title: 'Gamma', providerId: 'other', providerName: 'Other Studio' },
 ];
 
-function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', from: '#/popular' }, { playerSlots = false } = {}) {
+function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', from: '#/fruit' }, { playerSlots = false } = {}) {
   let route = initialRoute, favorites = [];
   const created = [], subscriptions = [], memberSubscriptions = new Set(), navigations = [], backs = [];
   const document = { activeElement: null, title: '' };
@@ -69,10 +69,9 @@ function detailsPage(initialRoute = { type: 'game-details', gameId: 'alpha', fro
     document, router, member, formatRoute, parseRoute, GAMES: games,
     GAME_ARTWORK, createGameArt: (game, options) => createGameArt(game, { ...options, document }),
     PROVIDERS: [{ id: 'studio', name: 'Studio' }, { id: 'other', name: 'Other Studio' }],
-    CATEGORIES: [{ id: 'all', title: 'All Games' }, { id: 'popular', title: 'Popular' }, { id: 'slots', title: 'Slots' }],
+    CATEGORIES: [{ id: 'all', title: 'All Games' }, { id: 'fruit', title: 'Fruit Games' }, { id: 'slots', title: 'Slots' }],
     LEGACY_CATEGORIES: [], GAME_FAMILIES: [{ id: 'slots', title: 'Slots' }], GAME_TYPES: [{ id: 'slots', title: 'Slots' }],
-    getGameTypeId: () => 'slots', getGameCategoryIds: () => ['all', 'popular', 'slots'],
-    getGamesForCategory: id => id === 'popular' ? [games[2], games[0], games[1]] : [],
+    getGameTypeId: () => 'slots', getGameCategoryIds: () => ['all', 'fruit', 'slots'],
     getGameReleaseDate: game => game.id === 'beta' ? '2026-01-15' : null,
     createShelfIcon: () => document.createElement('svg'),
     fetch() { throw Error('Pre-game details cannot load provider resources'); },
@@ -94,7 +93,7 @@ test('pre-game details show actual catalog fields without loading a game or inve
   assert.equal(page.byText('h1', 'Alpha').textContent, 'Alpha');
   assert.ok(page.byText('a', 'Studio'));
   assert.ok(page.byText('a', 'Slots'));
-  assert.ok(page.byText('a', 'Popular'));
+  assert.ok(page.byText('a', 'Fruit Games'));
   assert.equal(page.document.body.dataset.page, 'game-details');
   assert.equal(page.categories.dataset.activeMenu, '', 'a game details page must not falsely select All Games');
   assert.equal(page.navigations.length, 0);
@@ -119,7 +118,7 @@ test('Play explicitly launches the game and points Back to its pre-game page', (
 });
 
 test('the pre-game Back button always opens the lobby regardless of the originating page', () => {
-  for (const from of ['#/popular', '#/providers/studio', '#/profile', undefined]) {
+  for (const from of ['#/fruit', '#/providers/studio', '#/profile', undefined]) {
     const page = detailsPage({ type: 'game-details', gameId: 'alpha', ...(from ? { from } : {}) });
     const back = page.byText('button', 'Back');
     assert.equal(back.getAttribute('aria-label'), 'Back to lobby');
@@ -173,15 +172,8 @@ test('information and description use one keyboard-operable selected tab and mat
   assert.equal(information.getAttribute('aria-selected'), 'true');
 });
 
-test('related games retain the originating collection and removed game links cannot start a session', () => {
+test('removed game links cannot start a session', () => {
   const page = detailsPage();
-  const related = page.descendants().find(node => node.dataset.game === 'beta');
-  related.emit('click');
-  assert.equal(page.route.type, 'game-details');
-  assert.equal(page.route.gameId, 'beta');
-  assert.equal(page.route.from, '#/popular');
-  assert.ok(page.byText('h1', 'Beta'));
-  assert.equal(page.descendants().some(node => node.dataset.game === 'gamma'), true, 'Popular spans providers');
   page.router.navigate({ type: 'game-details', gameId: 'removed' });
   assert.equal(page.route.type, 'home');
   assert.equal(page.navigations.at(-1).options.replace, true);
@@ -189,7 +181,7 @@ test('related games retain the originating collection and removed game links can
   assert.equal(page.created.some(node => node.tagName === 'iframe'), false);
 });
 
-test('collapsed details identify the game and Popular retains editorial order, excludes current game and has a working All link', () => {
+test('collapsed details identify the game without a retired discovery shelf', () => {
   const page = detailsPage();
   const summary = page.descendants().find(node => node.tagName === 'summary');
   assert.equal(summary.textContent, 'AlphaBy Studio');
@@ -198,15 +190,8 @@ test('collapsed details identify the game and Popular retains editorial order, e
   assert.equal(providerLink.textContent, 'Studio');
   assert.ok(page.descendants(summary).some(node => node.className === 'game-details-disclosure'));
   assert.equal(page.descendants().find(node => node.tagName === 'details').open, undefined);
-  const cards = page.descendants().filter(node => node.dataset.game).map(node => node.dataset.game);
-  assert.deepEqual(cards, ['gamma', 'beta']);
-  const list = page.descendants().find(node => node.getAttribute('aria-label') === 'Popular games');
-  assert.equal(list.tabIndex, 0);
-  const all = page.byText('a', 'All');
-  assert.equal(all.href, '#/popular');
-  all.emit('click');
-  assert.equal(page.route.type, 'category');
-  assert.equal(page.route.categoryId, 'popular');
+  assert.equal(page.descendants().some(node => node.className === 'game-shelf'), false);
+  assert.equal(page.byText('a', 'All'), undefined);
 });
 
 test('collapsed game provider is independently navigable without opening the disclosure', () => {

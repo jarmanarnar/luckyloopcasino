@@ -4,6 +4,21 @@ import { formatRoute, initRouter, parseRoute } from '../public/routes.js';
 import { getCatalogPage } from '../public/catalog-page-model.js';
 import { CATEGORIES, GAME_FAMILIES } from '../public/collections.js';
 
+test('retired discovery links open Games while preserving usable search filters', () => {
+  for (const id of ['popular', 'new-releases']) {
+    const route = { type: 'search', query: 'gold', providerId: 'netent', gameTypeId: 'slots', sort: 'newest' };
+    for (const hash of [`#/${id}?q=gold&provider=netent&type=slots&sort=newest`,
+      `#/search?q=gold&provider=netent&type=slots&category=${id}&sort=newest`]) {
+      assert.deepEqual(parseRoute(hash), route);
+      assert.equal(formatRoute(parseRoute(hash)), '#/search?q=gold&provider=netent&type=slots&sort=newest');
+    }
+    const page = getCatalogPage(parseRoute(`#/${id}?sort=featured`));
+    assert.equal(page.title, 'Games');
+    assert.equal(page.categoryId, '');
+    assert.equal(page.sort, 'az');
+  }
+});
+
 function browser(hash = '', state = null, storage = new Map()) {
   const listeners = new Map(), frames = new Map();
   let frameId = 0, index = 0;
@@ -44,7 +59,7 @@ function browser(hash = '', state = null, storage = new Map()) {
 }
 
 test('reload restores the last page position after rendering without changing the route', () => {
-  const first = browser('#/popular');
+  const first = browser('#/fruit');
   initRouter({ window: first.scope });
   first.scroll(420);
   first.emit('pagehide');
@@ -53,7 +68,7 @@ test('reload restores the last page position after rendering without changing th
   assert.equal(refreshed.scope.scrollY, 0, 'restoration waits until the page has rendered');
   router.restoreInitialScroll();
   assert.equal(refreshed.scope.scrollY, 420);
-  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'popular' });
+  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'fruit' });
   assert.equal(refreshed.entries.length, 1, 'reload must not add a navigation');
   router.navigate({ type: 'home' }); refreshed.flush();
   assert.equal(refreshed.scope.scrollY, 0, 'normal page navigation still starts at the top');
@@ -67,20 +82,20 @@ test('initial game routes do not restore shell scrolling over the game viewport'
 
 test('reload uses the last active scroll even when history was snapshotted before pagehide', () => {
   const storage = new Map();
-  const first = browser('#/popular', null, storage);
+  const first = browser('#/fruit', null, storage);
   initRouter({ window: first.scope });
   first.scroll(420);
   const refreshed = browser(first.scope.location.hash, first.scope.history.state, storage);
   initRouter({ window: refreshed.scope }).restoreInitialScroll();
   assert.equal(refreshed.scope.scrollY, 420);
-  const otherEntry = browser('#/popular', { loopRoute: { id: 9, index: 1, scroll: { x: 0, y: 0 } } }, storage);
+  const otherEntry = browser('#/fruit', { loopRoute: { id: 9, index: 1, scroll: { x: 0, y: 0 } } }, storage);
   initRouter({ window: otherEntry.scope }).restoreInitialScroll();
   assert.equal(otherEntry.scope.scrollY, 0, 'tab cache must not leak to a different history entry at the same URL');
 });
 
 test('blocked session storage falls back to history without breaking scroll or navigation', () => {
   const storage = { get() { throw new Error('Blocked'); }, set() { throw new Error('Blocked'); } };
-  const page = browser('#/popular', { loopRoute: { id: 1, index: 0, scroll: { x: 0, y: 120 } } }, storage);
+  const page = browser('#/fruit', { loopRoute: { id: 1, index: 0, scroll: { x: 0, y: 120 } } }, storage);
   const router = initRouter({ window: page.scope });
   router.restoreInitialScroll();
   assert.equal(page.scope.scrollY, 120);
@@ -98,12 +113,12 @@ test('category, provider and search links retain their page and filters after re
     { type: 'favorites', query: 'Dragon', providerId: 'netent', gameTypeId: 'slots', categoryId: 'asian', sort: 'relevance' },
     { type: 'recent-games', gameTypeId: 'table', providerId: 'netent', sort: 'recent' },
     { type: 'store' },
-    { type: 'category', categoryId: 'popular', providerId: 'netent', query: 'Dragon & luck', sort: 'az' },
-    { type: 'category', categoryId: 'new-releases' },
+    { type: 'category', categoryId: 'fruit', providerId: 'netent', query: 'Dragon & luck', sort: 'az' },
+    { type: 'category', categoryId: 'megaways' },
     { type: 'providers', query: 'Tiger' },
     { type: 'provider', providerId: 'red-tiger', gameTypeId: 'slots', query: 'gold', sort: 'za' },
     { type: 'search', query: 'מזל & +', providerId: 'netent', gameTypeId: 'slots', sort: 'featured' },
-    { type: 'game', gameId: 'SanQuentin', from: '#/popular?provider=netent' },
+    { type: 'game', gameId: 'SanQuentin', from: '#/fruit?provider=netent' },
   ];
   for (const route of routes) {
     const link = formatRoute(route);
@@ -132,7 +147,7 @@ test('new browse groups and existing exact-format links remain refresh-safe dest
   }
   const filtered = { type: 'search', providerId: 'hacksaw-gaming', query: 'Moneyplane' };
   assert.deepEqual(parseRoute(formatRoute(filtered)), filtered);
-  assert.deepEqual(getCatalogPage(parseRoute(formatRoute(filtered))).games.map(game => game.id), ['hacksaw-2491']);
+  assert.deepEqual(getCatalogPage(parseRoute(formatRoute(filtered))).games, [], 'hidden provider links do not broaden to unrelated games');
 });
 
 test('removed All Games addresses resolve to Search and preserve their filters on refresh', () => {
@@ -153,7 +168,7 @@ test('removed All Games addresses resolve to Search and preserve their filters o
 });
 
 test('legacy All Games hash navigation canonicalizes in place and details return to Search', () => {
-  const page = browser('#/popular');
+  const page = browser('#/fruit');
   const router = initRouter({ window: page.scope });
   const seen = [];
   router.subscribe(route => seen.push(route));
@@ -165,13 +180,13 @@ test('legacy All Games hash navigation canonicalizes in place and details return
   page.emit('popstate'); page.emit('hashchange');
   assert.equal(seen.length, 1, 'normalization does not duplicate the native route events');
   page.move(-1); page.flush();
-  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'popular' });
+  assert.deepEqual(router.getRoute(), { type: 'category', categoryId: 'fruit' });
   const details = parseRoute(`#/games/niptuck000000000?${new URLSearchParams({ from: '#/all-games?q=nip' })}`);
   assert.equal(details.from, '#/search?q=nip');
 });
 
 test('game details have their own refresh-safe address and retain a valid shell origin', () => {
-  const origins = ['#/', '#/search?q=gold&provider=netent&type=slots&category=fruit&sort=relevance', '#/popular?provider=netent', '#/providers/netent?q=gold&sort=az',
+  const origins = ['#/', '#/search?q=gold&provider=netent&type=slots&category=fruit&sort=relevance', '#/fruit?provider=netent', '#/providers/netent?q=gold&sort=az',
     '#/search?q=nip+%26+tuck&type=slots', '#/favorites?q=gold&provider=netent&sort=az', '#/recent-games', '#/store', '#/history'];
   for (const from of origins) {
     const details = { type: 'game-details', gameId: 'niptuck000000000', from };
@@ -195,9 +210,9 @@ test('game details reject invalid IDs and discard recursive or unknown origins',
   }
   const details = { type: 'game-details', gameId: 'SanQuentin' };
   for (const from of ['#game=niptuck000000000', '#/games/niptuck000000000',
-    '#/%67ames/niptuck000000000?from=%23%2Fpopular', '#/not-a-page',
+    '#/%67ames/niptuck000000000?from=%23%2Ffruit', '#/not-a-page',
     '#/not-a-page?q=gold', '#/games/SanQuentin?from=%23%2F%3Fq%3Dgold',
-    '#/providers/%E0%A4%A', 'https://example.com/#/popular', '/popular', '#/popular/extra']) {
+    '#/providers/%E0%A4%A', 'https://example.com/#/fruit', '/fruit', '#/fruit/extra']) {
     assert.equal(formatRoute({ ...details, from }), '#/games/SanQuentin', from);
     assert.deepEqual(parseRoute(`#/games/SanQuentin?${new URLSearchParams({ from })}`), details, from);
   }
@@ -208,8 +223,8 @@ test('active game URLs remain compatible and may return to their pre-game detail
   const game = { type: 'game', gameId: details.gameId, from: formatRoute(details) };
   assert.deepEqual(parseRoute(formatRoute(game)), game);
   assert.deepEqual(parseRoute(parseRoute(formatRoute(game)).from), details);
-  assert.deepEqual(parseRoute('#game=SanQuentin&from=%23%2Fpopular'),
-    { type: 'game', gameId: 'SanQuentin', from: '#/popular' });
+  assert.deepEqual(parseRoute('#game=SanQuentin&from=%23%2Ffruit'),
+    { type: 'game', gameId: 'SanQuentin', from: '#/fruit' });
   assert.equal(formatRoute({ type: 'game', gameId: 'SanQuentin' }), '#game=SanQuentin');
   const page = browser(formatRoute(game));
   const router = initRouter({ window: page.scope });
@@ -218,7 +233,7 @@ test('active game URLs remain compatible and may return to their pre-game detail
 });
 
 test('provider Back restores the source entry and falls back to the lobby on direct entry', () => {
-  const details = { type: 'game-details', gameId: 'nunchucksr96f100', from: '#/popular' };
+  const details = { type: 'game-details', gameId: 'nunchucksr96f100', from: '#/fruit' };
   const provider = { type: 'provider', providerId: 'netent' };
   const home = { type: 'home' };
   for (const source of [details, { type: 'providers' }]) {
@@ -254,12 +269,12 @@ test('Store has an independent refresh-safe address and returns through browser 
 });
 
 test('routed navigation synchronously cleans the game before a destination renders and deduplicates native events', () => {
-  const page = browser('#/popular');
+  const page = browser('#/fruit');
   const router = initRouter({ window: page.scope });
   const calls = [];
   router.subscribe(route => calls.push(`render:${route.type}`));
   router.subscribe(route => calls.push(`cleanup:${route.type}`), { priority: -100 });
-  router.navigate({ type: 'game', gameId: 'niptuck000000000', from: '#/popular' });
+  router.navigate({ type: 'game', gameId: 'niptuck000000000', from: '#/fruit' });
   assert.deepEqual(calls, ['cleanup:game', 'render:game']);
   router.navigate({ type: 'providers' });
   assert.deepEqual(calls.slice(-2), ['cleanup:providers', 'render:providers']);
@@ -334,7 +349,9 @@ test('former studio categories redirect to provider pages without adding history
     assert.deepEqual(initRouter({ window: page.scope }).getRoute(), expected);
     assert.equal(page.scope.location.hash, formatRoute(expected));
     assert.equal(page.entries.length, 1);
-    assert.equal(getCatalogPage(expected).activeMenu, 'providers');
+    const model = getCatalogPage(expected);
+    if (providerId === 'hacksaw-gaming') assert.equal(model.type, 'not-found', 'an empty provider stays unavailable');
+    else assert.equal(model.activeMenu, 'providers');
   }
 });
 
@@ -346,7 +363,7 @@ test('old studio search filters migrate to provider filters and retain an explic
   const page = browser(oldHash);
   initRouter({ window: page.scope });
   assert.equal(page.scope.location.hash, formatRoute(expected));
-  assert.deepEqual(getCatalogPage(parseRoute(oldHash)).games.map(game => game.id), ['hacksaw-2491']);
+  assert.deepEqual(getCatalogPage(parseRoute(oldHash)).games, [], 'legacy links keep hidden games excluded');
   assert.deepEqual(parseRoute('#/search?category=hacksaw-gaming&provider=netent'), { type: 'search', query: '', providerId: 'netent' });
   assert.equal(formatRoute({ type: 'search', categoryId: 'hacksaw-gaming', providerId: 'netent' }), '#/search?provider=netent');
 });
@@ -472,7 +489,7 @@ test('temporary filtered lobby links migrate to Games and retain both dimensions
 });
 
 test('home stays an overview while every effective legacy home filter opens Games', () => {
-  for (const filters of [{ query: 'gold' }, { providerId: 'taparoo' }, { gameTypeId: 'slots', categoryId: 'fruit' }, { categoryId: 'popular' }, { sort: 'newest' }]) {
+  for (const filters of [{ query: 'gold' }, { providerId: 'taparoo' }, { gameTypeId: 'slots', categoryId: 'fruit' }, { categoryId: 'fruit' }, { sort: 'newest' }]) {
     const source = { type: 'home', ...filters };
     const expected = { type: 'search', query: '', ...filters };
     assert.deepEqual(parseRoute(formatRoute(source)), expected);

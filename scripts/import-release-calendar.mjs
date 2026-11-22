@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GAMES } from '../public/catalog.js';
+import { ALL_GAMES as GAMES } from '../public/catalog.js';
 
 const normalize = value => value.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -47,11 +47,12 @@ export function buildReleaseData(games, calendar) {
 export function releaseModule(rows, calendar) {
   return '// General release dates from the official, rendered game calendar.\n'
     + '// Matched one-to-one by complete normalized title; ambiguous or missing matches fail the import.\n'
+    + "import { BGAMING_RELEASES } from './bgaming-games.js';\n"
     + `export const RELEASES_VERIFIED_ON = ${JSON.stringify(calendar.observedOn)};\n`
-    + 'export const GAME_RELEASES = Object.freeze(Object.fromEntries([\n'
+    + 'export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...Object.fromEntries([\n'
     + rows.map(row => `  ${JSON.stringify(row)},`).join('\n')
     + '\n].map(([id, date, page]) => [id, Object.freeze({ date, page,\n'
-    + `  source: ${JSON.stringify(calendar.source)}, verifiedOn: RELEASES_VERIFIED_ON })])));\n`;
+    + `  source: ${JSON.stringify(calendar.source)}, verifiedOn: RELEASES_VERIFIED_ON })])) });\n`;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
