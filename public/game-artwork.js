@@ -1,11 +1,15 @@
 // Reviewed game-card artwork: original covers plus visually checked additions.
-// Unselected downloads remain on disk and use text placeholders in the interface.
+// Only games with reviewed covers are included in the visible catalog.
 // Provenance and review selection: public/assets/games/README.md.
 import { BGAMING_ARTWORK } from './bgaming-games.js';
 import { GAMZIX_ARTWORK } from './gamzix-games.js';
 import { AVATARUX_ARTWORK } from './avatarux-games.js';
 import { THREE_OAKS_ARTWORK } from './three-oaks-games.js';
+import { RELAX_ARTWORK } from './relax-games.js';
+import { HACKSAW_REVIEWED_ARTWORK } from './hacksaw-reviewed-artwork.js';
 export const GAME_ARTWORK = Object.freeze({
+  ...HACKSAW_REVIEWED_ARTWORK,
+  ...RELAX_ARTWORK,
   ...BGAMING_ARTWORK,
   ...GAMZIX_ARTWORK,
   ...AVATARUX_ARTWORK,

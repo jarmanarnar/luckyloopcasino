@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HACKSAW_GAMES, HACKSAW_ARTWORK } from '../public/hacksaw-games.js';
+import { HACKSAW_REVIEWED_ARTWORK } from '../public/hacksaw-reviewed-artwork.js';
+import { GAME_ARTWORK } from '../public/game-artwork.js';
 import { launchHacksawDemo } from '../public/hacksaw-demo.js';
 import { getLaunchUrl } from '../public/game-presentation.js';
 import { getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
@@ -25,7 +27,7 @@ test('all 257 additional games retain unique official IDs, available artwork and
     const games = HACKSAW_GAMES.filter(game => game.formatId === format);
     assert.equal(games.length, count);
     for (const item of games) {
-      assert.equal(getGamesForCategory(format).includes(item), false, 'unreviewed covers stay hidden');
+      assert.equal(getGamesForCategory(format).includes(item), Object.hasOwn(GAME_ARTWORK, item.id), 'only reviewed covers are visible');
       assert.equal(item.id, `hacksaw-${item.providerGameId}`);
       assert.ok(HACKSAW_ARTWORK[item.id]);
       assert.equal(new URL(item.url).origin, 'https://www.hacksawgaming.com');
@@ -81,11 +83,14 @@ test('leaving before SDK resolution or provider load ignores stale callbacks', (
   assert.deepEqual(active.loaded, []);
 });
 
-test('hidden undated games do not appear in newest sorting or an empty provider page', () => {
+test('reviewed undated games sort after dated games and populate their provider page', () => {
   const page = getCatalogPage({ type: 'search', sort: 'newest' });
   const firstUnknown = page.games.findIndex(game => !getGameReleaseDate(game));
-  assert.equal(firstUnknown, -1);
-  assert.equal(page.games.some(game => game.providerId === 'hacksaw-gaming'), false);
+  assert.ok(firstUnknown > 0);
+  assert.ok(page.games.slice(firstUnknown).every(game => !getGameReleaseDate(game)));
+  assert.deepEqual(new Set(page.games.filter(game => game.providerId === 'hacksaw-gaming').map(game => game.id)),
+    new Set(Object.keys(HACKSAW_REVIEWED_ARTWORK)));
   const provider = getCatalogPage({ type: 'provider', providerId: 'hacksaw-gaming', sort: 'newest' });
-  assert.equal(provider.type, 'not-found');
+  assert.equal(provider.activeMenu, 'providers');
+  assert.equal(provider.games.length, 94);
 });

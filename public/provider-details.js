@@ -20,7 +20,7 @@ export function getProviderDetails(id) {
     summary: `Explore ${provider.name} games in our demo catalog.`,
     description: [
       `This collection currently includes ${games.length} ${provider.name} games. Browse the available titles, search by name, or change the order to find your next game.`,
-      `Available game formats: ${formats.map(type => type.title).join(', ')}. Each card opens the selected game inside the site, with the wallet and navigation kept within reach.`,
+      `Available game formats: ${formats.map(type => type.title).join(', ')}. Select a card to see the game details and open its demo.`,
     ],
   };
 }

@@ -45,6 +45,7 @@ test('legacy asset links point at the same current app', async () => {
 test('application assets and PWA files have correct types and caching headers', async () => {
   for (const [file, type] of [['bootstrap.js', 'text/javascript'], ['app.js', 'text/javascript'], ['styles.css', 'text/css'],
     ['assets/providers/netent.svg', 'image/svg+xml'], ['assets/hero/picks-art.webp', 'image/webp'],
+    ['assets/games/hacksaw-reviewed/hacksaw-1434.avif', 'image/avif'],
     ['assets/fonts/poppins-700-latin.woff2', 'font/woff2'],
     ['manifest.webmanifest', 'application/manifest+json'], ['sw.js', 'text/javascript'],
     ['offline.html', 'text/html'], ['assets/brand/app-icons/apple-touch-icon.png', 'image/png']]) {

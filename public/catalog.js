@@ -5,9 +5,11 @@ import { BGAMING_GAMES } from './bgaming-games.js';
 import { GAMZIX_GAMES } from './gamzix-games.js';
 import { AVATARUX_GAMES } from './avatarux-games.js';
 import { THREE_OAKS_GAMES } from './three-oaks-games.js';
+import { RELAX_GAMES } from './relax-games.js';
 import { GAME_ARTWORK } from './game-artwork.js';
 import { getProviderDemoUrl } from './provider-demo-urls.js';
 const PROVIDER_DEFINITIONS = [
+  { id: 'relax', name: 'Relax Gaming' },
   {
     "id": "netent",
     "name": "NetEnt",
@@ -5806,7 +5808,7 @@ export const ALL_GAMES = [
     "providerId": "netent",
     "providerName": "NetEnt"
   }
-].concat(HACKSAW_GAMES, BGAMING_GAMES, GAMZIX_GAMES, AVATARUX_GAMES, THREE_OAKS_GAMES);
+].concat(HACKSAW_GAMES, BGAMING_GAMES, GAMZIX_GAMES, AVATARUX_GAMES, THREE_OAKS_GAMES, RELAX_GAMES);
 
 // Keep imported records for saved-account history and future cover review.
 // Every public browsing and player surface uses the same approved-cover catalog.

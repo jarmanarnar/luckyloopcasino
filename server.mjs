@@ -12,6 +12,7 @@ const types = new Map(Object.entries({
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',

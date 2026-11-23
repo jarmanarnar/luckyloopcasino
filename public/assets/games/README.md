@@ -129,3 +129,14 @@ Game IDs, formats, release dates and public FUN demo URLs come from official gam
 The audit excludes 49 source pages: 26 without a confirmed public demo, two without an accessible public artwork pack, 18 without a suitable reviewed cover, and three with future release dates. Another 59 source pages resolve to duplicate provider IDs or previously imported games. Existing game IDs, demo URLs and original artwork are preserved.
 
 [Complete per-game source provenance and artwork hashes](bgaming-full-review-2026-11-22.md). [Initial reviewed import](bgaming-review-2026-11-22.md).
+
+## Hacksaw reviewed non-slot portraits — 2026-11-23
+
+Two previously hidden catalog games are enabled with approved original portraits published by Stake Colombia. Both were visually inspected for the plain white game title and HACKSAW GAMING footer. These files preserve every downloaded byte: no generated art, added labels, resizing, cropping or re-encoding. The earlier 257 provider thumbnails in `hacksaw/` remain excluded; these separately sourced portraits use `hacksaw-reviewed/`.
+
+| Game | Existing catalog ID | Local file | Dimensions | Source page | Original image | SHA256 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Plinko | hacksaw-1294 | hacksaw-reviewed/plinko.jpg | 408 × 546 | https://stake.com.co/casino/juego/plinko | https://i2.stake.com.co/stake_uploads/97/casino_game/image/13622/Plinko.jpg.JPEG | 7d2108a76045930ce0784c8a843ae3a0346e5382f57872455e2816fe6651a9ed |
+| Mines | hacksaw-1126 | hacksaw-reviewed/mines.webp | 816 × 1092 | https://stake.com.co/casino/juego/mines | https://i2.stake.com.co/stake_uploads/97/casino_game/image/13621/image-68x91.webp | 0a003e73f7724e020d7bd284c61c6ead2e7a66f3e59ac056352aaace94c8f199 |
+
+The operator lists variant IDs 1296 and 1122; the [official public Hacksaw launcher](https://static-live.hacksawgaming.com/launcher/hacksaw-launcher.min.js) groups these with the existing demo IDs 1294 (Plinko) and 1126 (Mines), respectively. Covers carry no RTP or edition-specific label. Existing provider demo configuration is retained. Full research and identity evidence: `artifacts/non-slot-additions-20261123/existing-provider-audit/manifest.json`.

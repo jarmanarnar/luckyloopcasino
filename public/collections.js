@@ -26,7 +26,7 @@ export const LEGACY_CATEGORIES = [
   ...GAME_TYPES,
 ];
 
-// General release dates cover the entire active catalog, with per-game source provenance.
+// Known release dates retain per-game source provenance; unknown dates stay unknown.
 export function getGameReleaseDate(gameOrId) {
   return GAME_RELEASES[typeof gameOrId === 'string' ? gameOrId : gameOrId?.id]?.date || '';
 }

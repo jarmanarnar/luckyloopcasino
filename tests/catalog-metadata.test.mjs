@@ -19,6 +19,7 @@ test('release import preserves the original release day and stable game ID with 
   for (const [constant, filename] of [
     ['GAMZIX_RELEASES', 'gamzix-games'], ['AVATARUX_RELEASES', 'avatarux-games'],
     ['THREE_OAKS_RELEASES', 'three-oaks-games'],
+    ['RELAX_RELEASES', 'relax-games'],
   ]) {
     assert.ok(output.includes(`import { ${constant} } from './${filename}.js'`));
     assert.ok(output.includes(`...${constant}`));
@@ -78,17 +79,17 @@ test('Casual Games groups quick mechanics and keeps reel and table games in thei
   const instant = getGamesForCategory('instant-win');
   const crash = getGamesForCategory('crash');
   const combined = [...instant, ...crash];
-  assert.equal(instant.length, 41);
+  assert.equal(instant.length, 44);
   assert.deepEqual(crash.map(game => game.id), [
     'bgaming-space-xy', 'bgaming-gift-x', 'bgaming-lucky-birds', 'bgaming-top-eagle',
   ]);
-  assert.equal(combined.length, 45);
+  assert.equal(combined.length, 48);
   assert.ok(instant.every(game => getGameTypeId(game) === 'instant-win'));
   assert.ok(crash.every(game => getGameTypeId(game) === 'crash'));
   const speedCrash = ALL_GAMES.find(game => game.id === 'hacksaw-1632');
   assert.equal(getGameTypeId(speedCrash), 'instant-win', 'title wording must not override the provider format');
   const arcade = getGamesForCategory('arcade');
-  assert.equal(arcade.length, 45);
+  assert.equal(arcade.length, 48);
   assert.equal(GAME_FAMILIES.find(category => category.id === 'arcade').title, 'Casual Games');
   const reelGame = GAMES.find(game => game.id === 'bgaming-elements-of-power');
   assert.ok(getGamesForCategory('slots').includes(reelGame));
@@ -98,12 +99,13 @@ test('Casual Games groups quick mechanics and keeps reel and table games in thei
     new Set(combined.filter(game => !cardIds.has(game.id)).map(game => game.id)));
   assert.equal(arcade.includes(speedCrash), false, 'unreviewed artwork keeps the game out of visible collections');
   assert.ok(arcade.includes(crash[0]));
+  assert.deepEqual(new Set(combined.map(game => game.providerId)),
+    new Set(['bgaming', 'hacksaw-gaming', 'relax']));
   for (const game of combined) {
     const categories = getGameCategoryIds(game);
     assert.equal(categories.includes('arcade'), !cardIds.has(game.id), game.id);
     assert.equal(categories.includes('table'), cardIds.has(game.id), game.id);
-    assert.equal(categories.includes('hacksaw-gaming'), false, game.id);
-    assert.equal(game.providerId, 'bgaming');
+    assert.equal(categories.includes(game.providerId), false, 'provider pages are separate from game families');
     assert.ok(categories.includes(getGameTypeId(game)), game.id);
     assert.equal(categories.includes('slots'), false, game.id);
     assert.equal(categories.includes('scratchcards'), false, game.id);

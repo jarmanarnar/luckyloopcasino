@@ -34,3 +34,9 @@ Each SVG was checked for active content and external references. The exported fi
 ## AvatarUX
 
 `avatarux.svg` was downloaded on 2026-11-23 from the [official AvatarUX website](https://avatarux.com/), which uses [AUX-logo.svg](https://avatarux.com/wp-content/uploads/2021/06/AUX-logo.svg) in its header. The original white and cyan SVG is retained byte-for-byte, including its 141×32 view box. No artwork was generated, redrawn or recolored. The SVG contains local paths and styles only, with no scripts, event handlers, external references or embedded raster image. Source URL and SHA-256 are recorded in `artifacts/provider-expansion-20261123/avatarux-expansion/logo-provenance.json`.
+
+## Belatra and Relax Gaming — 2026-11-23
+
+Belatra was subsequently removed from the public catalog at the user's request because its demo required leaving the site. Its source module, original covers and logo are archived outside `public` under `artifacts/removed-belatra-20261123/`; the provenance below is historical. Relax Gaming remains active.
+
+`relax.svg` is the unchanged official https://www.relax-gaming.com/static/img/logo.svg. `belatra.svg` preserves all seven paths, fills and the 144x38 view box of the official static header Logo component served by https://belatra.games/_next/static/chunks/4333-697f7597ed866e74.js. Neither logo was redrawn. Both contain local SVG shapes only. Full source URLs and SHA-256 hashes are recorded in artifacts/non-slot-additions-20261123/provider-logos/metadata.json.

@@ -34,9 +34,9 @@ function vendorCode(game) {
   return new URL(game.url).pathname.split('/').filter(Boolean).at(-1).toLowerCase();
 }
 
-test('public catalog contains only the 1299 approved covers across ten populated providers', () => {
-  assert.equal(ALL_GAMES.length, 1560, 'hiding titles preserves imported records');
-  assert.equal(GAMES.length, 1299);
+test('public catalog contains only the 1519 approved covers across twelve populated providers', () => {
+  assert.equal(ALL_GAMES.length, 1686, 'hidden artwork records remain; removed providers do not');
+  assert.equal(GAMES.length, 1519);
   assert.deepEqual(GAMES, ALL_GAMES.filter(game => Object.hasOwn(GAME_ARTWORK, game.id)));
   assert.equal(new Set(GAMES.map(game => game.id)).size, GAMES.length);
   const expectedCounts = {
@@ -50,8 +50,10 @@ test('public catalog contains only the 1299 approved covers across ten populated
     gamzix: 54,
     avatarux: 31,
     '3-oaks': 106,
+    'hacksaw-gaming': 94,
+    relax: 126,
   };
-  assert.equal(PROVIDERS.length, 10);
+  assert.equal(PROVIDERS.length, 12);
   assert.deepEqual(PROVIDERS.map(provider => provider.id).sort(), Object.keys(expectedCounts).sort());
   for (const provider of PROVIDERS) {
     const games = GAMES.filter(game => game.providerId === provider.id);
@@ -83,7 +85,7 @@ test('populated game families cover the visible catalog exactly once without dup
   assert.deepEqual(GAME_FAMILIES.map(category => category.id), [
     'slots', 'table', 'scratchcards', 'tap', 'arcade',
   ]);
-  const expectedCounts = { slots: 1211, table: 18, scratchcards: 12, tap: 13, arcade: 45 };
+  const expectedCounts = { slots: 1428, table: 18, scratchcards: 12, tap: 13, arcade: 48 };
   const covered = new Set();
   for (const category of GAME_FAMILIES) {
     const games = getGamesForCategory(category.id);
@@ -103,16 +105,16 @@ test('populated game families cover the visible catalog exactly once without dup
 
 test('theme collections use relevant settings and fruit titles without ambiguous keyword matches', () => {
   const cases = [
-    { categoryId: 'wild-west', count: 14,
-      included: ['TombstoneBegins', 'DeadwoodRip'],
-      excluded: ['EastVsWest', 'hacksaw-1620', 'hacksaw-1309', 'hacksaw-1197'] },
+    { categoryId: 'wild-west', count: 17,
+      included: ['TombstoneBegins', 'DeadwoodRip', 'hacksaw-1620'],
+      excluded: ['EastVsWest', 'hacksaw-1309', 'hacksaw-1197'] },
     { categoryId: 'gold-rush', count: 15,
       included: ['gonzosgoldr30000'],
       excluded: ['GoldenShower', 'rome000000000000'] },
-    { categoryId: 'egypt', count: 17,
+    { categoryId: 'egypt', count: 20,
       included: ['TombOfAkhenaten'],
       excluded: ['BookOfShadows', 'extrachillliv396'] },
-    { categoryId: 'asian', count: 9,
+    { categoryId: 'asian', count: 10,
       included: ['dragonslckstacks'],
       excluded: ['divinegoldr96f10', 'finndragontr96f1'] },
     { categoryId: 'fruit', count: 26,
@@ -127,11 +129,11 @@ test('theme collections use relevant settings and fruit titles without ambiguous
     for (const id of excluded) assert.equal(members.has(id), false, `${categoryId}: ${id}`);
   }
   assert.equal(SLOT_THEMES.find(category => category.id === 'fruit').title, 'Fruit Games');
-  assert.equal(getGamesForCategory('megaways').length, 60);
+  assert.equal(getGamesForCategory('megaways').length, 61);
 });
 
 test('provider pages retain their complete catalogs separately from editorial choices', () => {
-  for (const [providerId, count] of [['nolimit-city', 141], ['red-tiger', 351], ['bgaming', 292], ['gamzix', 54], ['avatarux', 31], ['3-oaks', 106]]) {
+  for (const [providerId, count] of [['nolimit-city', 141], ['red-tiger', 351], ['bgaming', 292], ['gamzix', 54], ['avatarux', 31], ['3-oaks', 106], ['hacksaw-gaming', 94], ['relax', 126]]) {
     assert.deepEqual(getGamesForCategory(providerId), []);
     const page = getCatalogPage({ type: 'provider', providerId });
     assert.equal(page.activeMenu, 'providers');
@@ -141,7 +143,8 @@ test('provider pages retain their complete catalogs separately from editorial ch
       new Set(GAMES.filter(game => game.providerId === providerId).map(game => game.id)), providerId);
   }
   assert.equal(getGamesForCategory('picks')[0].id, 'niptuck000000000');
-  assert.equal(getCatalogPage({ type: 'provider', providerId: 'hacksaw-gaming' }).type, 'not-found');
+  assert.equal(getCatalogPage({ type: 'provider', providerId: 'unknown-provider' }).type, 'not-found');
+  assert.equal(getCatalogPage({ type: 'provider', providerId: 'belatra' }).type, 'not-found');
 });
 
 test('the shared collection registry owns real multi-game memberships without duplicate families or studios', () => {
@@ -171,7 +174,8 @@ test('provider details describe the active catalog and real available game forma
 });
 
 test('verified release dates retain their provider sources; unknown dates stay unknown', () => {
-  const datedGames = ALL_GAMES.filter(game => game.providerId !== 'hacksaw-gaming');
+  const unknownDateProviders = new Set(['hacksaw-gaming']);
+  const datedGames = ALL_GAMES.filter(game => !unknownDateProviders.has(game.providerId));
   assert.equal(Object.keys(GAME_RELEASES).length, datedGames.length);
   for (const game of datedGames) {
     const release = GAME_RELEASES[game.id];
@@ -182,6 +186,7 @@ test('verified release dates retain their provider sources; unknown dates stay u
       gamzix: ['2026-11-23', 'https://gamzix.com', 'https://gamzix.com'],
       avatarux: ['2026-11-23', 'https://avatarux.com', 'https://avatarux.com'],
       '3-oaks': ['2026-11-23', 'https://3oaks.com', 'https://3oaks.com'],
+      relax: ['2026-11-23', 'https://www.relax-gaming.com', 'https://www.relax-gaming.com'],
     }[game.providerId] || ['2026-11-01', 'https://games.nolimitcity.com', 'https://nolimitcity.com'];
     assert.equal(release.verifiedOn, expected[0], game.id);
     assert.equal(new URL(release.source).origin, expected[1], game.id);
@@ -190,7 +195,7 @@ test('verified release dates retain their provider sources; unknown dates stay u
   assert.equal(getGameReleaseDate('starburst'), '2012-01-23');
   assert.equal(getGameReleaseDate('bloodsuckersj0r2'), '2009-11-10');
   assert.equal(getGameReleaseDate('arabian000000000'), '2006-11-10');
-  for (const game of ALL_GAMES.filter(game => game.providerId === 'hacksaw-gaming')) assert.equal(getGameReleaseDate(game), '');
+  for (const game of ALL_GAMES.filter(game => unknownDateProviders.has(game.providerId))) assert.equal(getGameReleaseDate(game), '');
 });
 
 test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => {
@@ -207,7 +212,7 @@ test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => 
   }
 });
 
-test('standalone page, module imports and all eleven provider logos resolve within public', async () => {
+test('standalone page, module imports and all twelve provider logos resolve within public', async () => {
   const indexUrl = new URL('index.html', publicRoot);
   const html = await readFile(indexUrl, 'utf8');
   for (const [, specifier] of html.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/g)) {
@@ -226,7 +231,7 @@ test('standalone page, module imports and all eleven provider logos resolve with
       await access(dependency);
     }
   }
-  assert.equal(Object.keys(PROVIDER_LOGOS).length, 11);
+  assert.equal(Object.keys(PROVIDER_LOGOS).length, 12);
   for (const provider of PROVIDERS) {
     const asset = new URL(PROVIDER_LOGOS[provider.id].src, publicRoot);
     assert.ok(asset.href.startsWith(publicRoot.href), provider.id);

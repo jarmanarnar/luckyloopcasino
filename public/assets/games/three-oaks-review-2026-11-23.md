@@ -2,7 +2,24 @@
 
 Verified on 2026-11-23. All 106 released games in the official public catalog are included. All are slots, have exact published release dates, playable public demo metadata and matching original 580 x 816 portrait artwork: 104 WebP files, one JPEG and one PNG.
 
-The public launcher sends `Content-Security-Policy: frame-ancestors 'self'`. Coin Volcano was verified in a top-level browser tab; embedding the same URL was correctly refused by the browser. COP COIN therefore shows an explicit **Open demo in new tab** action for this provider, preserves the canonical URL, and never embeds or proxies the restricted page. This does not assert that every game has been individually played.
+The marketing site's public launcher sends `Content-Security-Policy: frame-ancestors 'self'`. Coin Volcano was initially verified in a top-level browser tab; embedding that wrapper was correctly refused by the browser. The initial integration therefore used a separate tab. The later native-launcher review below replaces that fallback without proxying or changing the restricted wrapper. This does not assert that every game has been individually played.
+
+## Native embedded launcher follow-up
+
+The provider-owned public demo endpoint is `https://betman-demo.head.3oaks.com/betman-demo/game/`, using the published parameters `game={providerGameId}&ts=123&token=test&wl=demo`. The literal `token=test` is a public demo value, not a captured game session. Exact examples were observed for:
+
+- [3 China Pots](https://fruityslots.com/wp-json/bum/v1/demos/258652/popup)
+- [Chili Coins XXXL](https://fruityslots.com/wp-json/bum/v1/demos/244063/popup)
+- [Lucky Apple x2500](https://fruityslots.com/wp-json/bum/v1/demos/247080/popup)
+- [4 Pots of Egypt: Bonus Wheel](https://pots-of-egypt.com/4-pots-of-egypt-bonus-wheel/legit/)
+
+The official Coin Volcano marketing launcher itself names the same `betman-demo.head.3oaks.com` host as its desktop and mobile game server. Its `available_games` list contains all 106 imported provider game IDs. The application preserves each canonical metadata URL, validates it and the known game ID, and launches the native public demo endpoint inside its existing player. No redirected session URLs, marketing-wrapper code, or stripped response headers are used.
+
+3 China Pots and 15 Dragon Pearls were verified rendering their correct introductions and actual reel screens inside the local application's iframe with the existing sandbox. When left at the provider's introduction without continuing, both showed a closed-session message after roughly one minute. Fresh sessions continued promptly to their reel screens remained open without errors for more than 100 seconds for 3 China Pots and approximately 170 seconds for 15 Dragon Pearls; no spin or bet was made. The provider's public runner sends user-mode sync requests only once the client reaches its available-actions state, which supports distinguishing an unattended introduction from an initialized game.
+
+COP COIN therefore uses its existing artwork preview for 3 Oaks on every viewport and creates the iframe only after the user presses Play with Gold Coins. Super Coins still opens the verification gate without starting a demo. At a 390 × 844 mobile viewport, browser verification confirmed zero iframes before Play, one embedded frame after Play, and native portrait reels after continuing through the provider's introduction. This prevents a session from aging behind the currency chooser; it does not remove the provider's own introduction or promise unlimited idle time. These browser checks are distinct from the complete catalog-ID match; all 106 games were not individually played. Research evidence is retained under `artifacts/embed-launch-review-20261123/3oaks/`.
+
+Final browser verification also reached 15 Dragon Pearls' reel screen and kept it open for roughly 170 seconds after continuing past the introduction. At a 390 x 844 viewport, the updated app had no game iframe before Play, then displayed the same game's native portrait interface inside the page. No spins, bets or purchases were performed. The focused presentation/player tests passed 46/46 and the static build passed. Screenshots: `artifacts/embed-launch-review-20261123/3oaks-local-desktop.jpg` and `3oaks-local-mobile.jpg`. This change is local only. Belatra and the external-tab fallback were subsequently removed at the user's request; the retained provider/player checks passed 44/44 after that removal.
 
 ## Official sources
 

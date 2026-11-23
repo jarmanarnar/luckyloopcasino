@@ -1,6 +1,7 @@
 // Authentic provider artwork exported from the official affiliate/fansite pages.
 // Provenance and the source dark-theme styling: assets/providers/README.md.
 export const PROVIDER_LOGOS = Object.freeze({
+  relax: { src: './assets/providers/relax.svg', source: 'https://www.relax-gaming.com/static/img/logo.svg' },
   'hacksaw-gaming': {
     src: './assets/providers/hacksaw-gaming.svg',
     source: 'https://www.hacksawgaming.com/games',

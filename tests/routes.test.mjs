@@ -350,8 +350,7 @@ test('former studio categories redirect to provider pages without adding history
     assert.equal(page.scope.location.hash, formatRoute(expected));
     assert.equal(page.entries.length, 1);
     const model = getCatalogPage(expected);
-    if (providerId === 'hacksaw-gaming') assert.equal(model.type, 'not-found', 'an empty provider stays unavailable');
-    else assert.equal(model.activeMenu, 'providers');
+    assert.equal(model.activeMenu, 'providers');
   }
 });
 

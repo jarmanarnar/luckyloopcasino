@@ -17,15 +17,18 @@ function documentStub(imageState = {}) {
 
 test('the reviewed covers belong to available games and are valid local image files', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  assert.equal(Object.keys(GAME_ARTWORK).length, 1299);
+  assert.equal(Object.keys(GAME_ARTWORK).length, 1519);
   for (const [id, artwork] of Object.entries(GAME_ARTWORK)) {
     assert.ok(active.has(id), `Artwork cannot reintroduce ${id}`);
     assert.ok(artwork.width > 0 && artwork.height > 0);
-    assert.match(artwork.src, /^assets\/games\/(?:hacksaw\/)?[A-Za-z0-9-]+\.(?:webp|jpe?g|png)$/);
+    assert.match(artwork.src, /^assets\/games\/(?:(?:hacksaw|hacksaw-reviewed|relax)\/)?[A-Za-z0-9-]+\.(?:webp|jpe?g|png|avif)$/);
     const bytes = await readFile(new URL(`../public/${artwork.src}`, import.meta.url));
     if (artwork.src.endsWith('.webp')) {
       assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
       assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    } else if (artwork.src.endsWith('.avif')) {
+      assert.equal(bytes.toString('ascii', 4, 8), 'ftyp');
+      assert.ok(bytes.subarray(8, bytes.readUInt32BE(0)).includes(Buffer.from('avif')));
     } else if (artwork.src.endsWith('.png')) {
       assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
     } else assert.deepEqual([...bytes.subarray(0, 3)], [255, 216, 255]);
@@ -103,7 +106,7 @@ test('late decoding cannot reveal failed, replaced, or removed artwork', async (
 test('games without reviewed covers use visible names without requesting images', () => {
   const fixtures = [
     { game: { id: 'no-cover', title: 'Existing title' } },
-    ...['hacksaw-1294', 'hacksaw-2491'].map(id => {
+    ...['hacksaw-1632', 'hacksaw-2491'].map(id => {
       const game = ALL_GAMES.find(game => game.id === id);
       assert.ok(game, id);
       return { game, eager: true };

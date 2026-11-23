@@ -51,8 +51,9 @@ export function releaseModule(rows, calendar) {
     + "import { GAMZIX_RELEASES } from './gamzix-games.js';\n"
     + "import { AVATARUX_RELEASES } from './avatarux-games.js';\n"
     + "import { THREE_OAKS_RELEASES } from './three-oaks-games.js';\n"
+    + "import { RELAX_RELEASES } from './relax-games.js';\n"
     + `export const RELEASES_VERIFIED_ON = ${JSON.stringify(calendar.observedOn)};\n`
-    + 'export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...GAMZIX_RELEASES, ...AVATARUX_RELEASES, ...THREE_OAKS_RELEASES, ...Object.fromEntries([\n'
+    + 'export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...GAMZIX_RELEASES, ...AVATARUX_RELEASES, ...THREE_OAKS_RELEASES, ...RELAX_RELEASES, ...Object.fromEntries([\n'
     + rows.map(row => `  ${JSON.stringify(row)},`).join('\n')
     + '\n].map(([id, date, page]) => [id, Object.freeze({ date, page,\n'
     + `  source: ${JSON.stringify(calendar.source)}, verifiedOn: RELEASES_VERIFIED_ON })])) });\n`;

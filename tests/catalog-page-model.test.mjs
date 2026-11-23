@@ -3,10 +3,13 @@ import { test } from 'node:test';
 import { GAMES } from '../public/catalog.js';
 import { CATEGORIES, GAME_FAMILIES, LOBBY_SECTIONS, getGameReleaseDate, getGamesForCategory } from '../public/collections.js';
 import { getProviderDetails } from '../public/provider-details.js';
+import { getGameTypeId } from '../public/game-types.js';
 import { getCatalogPage, LOBBY_CATEGORIES, PAGE_SIZE, pageSlice } from '../public/catalog-page-model.js';
 import { parseRoute } from '../public/routes.js';
 
 const ids = page => page.games.map(game => game.id);
+const slotGames = GAMES.filter(game => getGameTypeId(game) === 'slots');
+const quickGames = GAMES.filter(game => ['instant-win', 'crash'].includes(getGameTypeId(game)));
 
 test('Favorites uses only saved, available games with its own search, provider filter and ordering', () => {
   const favoriteIds = ['nunchucksr96f100', 'SanQuentin', 'ouija00000000000', 'removed-game', 'hacksaw-1446', 'SanQuentin'];
@@ -68,10 +71,11 @@ test('home shelves use only fixed game types with visible games, preserving scop
 });
 
 test('instant and crash games remain accessible through providers and search', () => {
-  const quickGames = [...getGamesForCategory('instant-win'), ...getGamesForCategory('crash')];
-  assert.equal(quickGames.length, 45);
+  assert.ok(quickGames.length > 0);
+  assert.deepEqual(new Set([...getGamesForCategory('instant-win'), ...getGamesForCategory('crash')].map(game => game.id)),
+    new Set(quickGames.map(game => game.id)));
   for (const type of ['provider', 'search']) {
-    for (const providerId of ['bgaming']) {
+    for (const providerId of new Set(quickGames.map(game => game.providerId))) {
       const visible = new Set(ids(getCatalogPage({ type, providerId })));
       for (const game of quickGames.filter(game => game.providerId === providerId)) {
         assert.ok(visible.has(game.id), `${game.title} remains accessible through ${type}`);
@@ -124,7 +128,7 @@ test('new browse groups intersect provider and text filters on category and sear
     { categoryId: 'fruit', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
     { categoryId: 'tap', providerId: 'taparoo', query: 'fruit', expected: ['mysteryfruittapa'] },
     { categoryId: 'megaways', providerId: 'red-tiger', query: 'gonzo', expected: ['gonzosqumegaways'] },
-    { categoryId: 'wild-west', providerId: 'hacksaw-gaming', query: 'duel', expected: [] },
+    { categoryId: 'wild-west', providerId: 'hacksaw-gaming', query: 'duel', expected: ['hacksaw-1620'] },
   ];
   for (const { expected, ...filters } of cases) {
     for (const type of ['category', 'search']) {
@@ -154,7 +158,8 @@ test('collections compose with a game family and preserve provider, search and s
   assert.ok(ascending.games.length > 1);
   assert.ok(ascending.games.every(game => game.providerId === 'netent' && /shop/i.test(game.title)));
   assert.deepEqual(ids(descending), ids(ascending).toReversed());
-  assert.equal(getCatalogPage({ type: 'category', categoryId: 'slots' }).games.length, 1211, 'clearing the theme restores all visible slots');
+  assert.deepEqual(new Set(ids(getCatalogPage({ type: 'category', categoryId: 'slots' }))),
+    new Set(slotGames.map(game => game.id)), 'clearing the theme restores all visible slots');
 });
 
 test('family and collection can be selected or cleared independently without an all-game fallback', () => {
@@ -165,7 +170,8 @@ test('family and collection can be selected or cleared independently without an 
   assert.equal(fruitSlots.games.length, 25);
   assert.deepEqual(ids(fruitTap), ['mysteryfruittapa']);
   assert.deepEqual(ids(getCatalogPage({ type: 'search', gameTypeId: 'table', categoryId: 'fruit' })), []);
-  assert.equal(getCatalogPage({ type: 'search', gameTypeId: 'slots' }).games.length, 1211);
+  assert.deepEqual(new Set(ids(getCatalogPage({ type: 'search', gameTypeId: 'slots' }))),
+    new Set(slotGames.map(game => game.id)));
   assert.equal(getCatalogPage({ type: 'search' }).games.length, GAMES.length);
   for (const filters of [{ gameTypeId: 'missing' }, { categoryId: 'missing' }]) {
     for (const type of ['search', 'favorites', 'recent-games']) assert.equal(getCatalogPage({ type, ...filters }).type, 'not-found');
@@ -401,9 +407,12 @@ test('visible game types remain available in restricted and empty browse scopes'
     assert.equal('categoryFacets' in page, false, 'category routes remain supported without a category dropdown');
   }
   const arcade = getCatalogPage({ type: 'search', gameTypeId: 'arcade' });
-  assert.deepEqual(arcade.providerFacets, [
-    { id: 'bgaming', name: 'BGaming', count: 45 },
-  ]);
+  const expectedProviders = new Map();
+  for (const game of quickGames) {
+    const previous = expectedProviders.get(game.providerId);
+    expectedProviders.set(game.providerId, { name: game.providerName, count: (previous?.count || 0) + 1 });
+  }
+  assert.deepEqual(new Map(arcade.providerFacets.map(({ id, name, count }) => [id, { name, count }])), expectedProviders);
 });
 
 test('provider alternatives ignore their own selection and search text but respect browse scope', () => {

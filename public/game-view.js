@@ -67,7 +67,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     delete view.dataset.previewReady;
     stopLoadingWatch();
     view.dataset.loadState = reason === 'manual' ? 'revealed'
-      : ['nlc-loader', 'hacksaw-loader', 'bgaming-loader', 'gamzix-loader', 'avatarux-loader'].includes(reason) ? 'provider' : 'ready';
+      : ['nlc-loader', 'hacksaw-loader', 'bgaming-loader', 'gamzix-loader', 'avatarux-loader', 'relax-loader', '3-oaks-loader'].includes(reason) ? 'provider' : 'ready';
     view.dataset.readySource = reason;
     host.removeAttribute('aria-busy');
     frame.inert = false;
@@ -117,8 +117,10 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   }
 
   function useCompactPreview() {
-    // This provider only permits its public demo as a top-level page.
-    if (games.get(currentGame)?.providerId === '3-oaks') return true;
+    const game = games.get(currentGame);
+    // 3 Oaks can expire while its intro waits behind our currency chooser.
+    // Start that session only after Play, using the existing artwork preview.
+    if (game?.providerId === '3-oaks') return true;
     if (view.dataset.mobile === 'true') return true;
     const detailsLane = router?.getRoute().type === 'game-details' && document.querySelector('#game-details-view');
     return (detailsLane || view).getBoundingClientRect().width < COMPACT_PREPLAY_WIDTH;
@@ -170,7 +172,7 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     renderPreplayMetadata(game);
     const compact = awaitingPlay && useCompactPreview();
     view.dataset.compactPreplay = String(compact);
-    if (compact || game.providerId === '3-oaks') {
+    if (compact) {
       host.removeAttribute('aria-busy');
       loading.hidden = true;
       reveal.hidden = true;
@@ -212,7 +214,9 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     if ((game.providerId === 'bgaming' &&
          ['https://demo.bgaming-network.com', 'https://bgaming-network.com'].includes(new URL(launchUrl).origin)) ||
         (game.providerId === 'gamzix' && new URL(launchUrl).origin === 'https://link.gamzix.com') ||
-        (game.providerId === 'avatarux' && ['https://cdn-demo-eu.avatarux.app', 'https://demo-eu.avatarux.app'].includes(new URL(launchUrl).origin))) {
+        (game.providerId === 'avatarux' && ['https://cdn-demo-eu.avatarux.app', 'https://demo-eu.avatarux.app'].includes(new URL(launchUrl).origin)) ||
+        (game.providerId === 'relax' && new URL(launchUrl).origin === 'https://d2drhksbtcqozo.cloudfront.net') ||
+        (game.providerId === '3-oaks' && new URL(launchUrl).origin === 'https://betman-demo.head.3oaks.com')) {
       // The reviewed public demo launcher owns its loading screen and detects the
       // real device itself. Its game-loaded event stays inside its document.
       // Hand off to that loader, without claiming the game assets are ready.
@@ -399,8 +403,6 @@ export function initGameView({ router, account, verifyPhone } = {}) {
   });
 
   chooser = initCoinChooser({ document,
-    getPlayLabel: currency => currency === 'GC' && games.get(currentGame)?.providerId === '3-oaks'
-      ? 'Open demo in new tab' : null,
     onSelect: async currency => {
     const result = await account?.selectCurrency(currency);
     if (result?.ok === false) throw new Error('Currency change failed');
@@ -414,13 +416,6 @@ export function initGameView({ router, account, verifyPhone } = {}) {
     const gameOnClick = currentGame;
     if (account?.getSnapshot().wallet.currency === 'SC') await account.selectCurrency('GC');
     if (account?.isSignedIn?.() === false || account?.getSnapshot().wallet.currency === 'SC' || !currentGame || currentGame !== gameOnClick) return;
-    const game = games.get(currentGame);
-    if (game.providerId === '3-oaks') {
-      // Respect the provider's frame-ancestors policy. Open the stable public
-      // demo only on this explicit click, leaving our details page available.
-      window.open(getLaunchUrl(game, 'desktop'), '_blank', 'noopener,noreferrer');
-      return;
-    }
     if (view.dataset.compactPreplay === 'true' || view.dataset.mobile === 'true') {
       // Compact preplay has no provider frame; mount it in the final layout.
       if (view.dataset.mobile === 'true') window.scrollTo({ left: 0, top: 0, behavior: 'instant' });

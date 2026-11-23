@@ -5,14 +5,63 @@ import { BGAMING_GAMES } from '../public/bgaming-games.js';
 import { GAMZIX_GAMES } from '../public/gamzix-games.js';
 import { AVATARUX_GAMES } from '../public/avatarux-games.js';
 import { THREE_OAKS_GAMES } from '../public/three-oaks-games.js';
+import { RELAX_GAMES } from '../public/relax-games.js';
 
 const nunchucks = { id: 'nunchucksr96f100', providerId: 'netent' };
 
 test('reviewed provider demos preserve their published launch URLs on desktop and mobile', () => {
-  for (const game of [...BGAMING_GAMES, ...GAMZIX_GAMES, ...AVATARUX_GAMES, ...THREE_OAKS_GAMES,
+  for (const game of [...BGAMING_GAMES, ...GAMZIX_GAMES, ...AVATARUX_GAMES,
     { providerId: 'bgaming', providerGameId: 'Adventures',
     url: 'https://bgaming-network.com/play/Adventures/FUN?server=demo' }]) {
     for (const device of ['desktop', 'mobile']) assert.equal(getLaunchUrl(game, device), game.url);
+  }
+});
+
+test('3 Oaks uses the provider-owned public demo launcher inside the app for reviewed games', () => {
+  for (const game of THREE_OAKS_GAMES) {
+    for (const device of ['desktop', 'mobile']) {
+      const url = new URL(getLaunchUrl(game, device));
+      assert.equal(url.origin, 'https://betman-demo.head.3oaks.com');
+      assert.equal(url.pathname, '/betman-demo/game/');
+      assert.deepEqual(Object.fromEntries(url.searchParams), {
+        game: game.providerGameId, ts: '123', token: 'test', wl: 'demo',
+      });
+      assert.equal(url.username + url.password + url.hash, '');
+    }
+  }
+  const game = THREE_OAKS_GAMES[0];
+  assert.throws(() => getLaunchUrl({ ...game, providerGameId: 'unreviewed_game',
+    url: 'https://3oaks.com/api/v1/games/unreviewed_game/play?lang=en' }, 'desktop'), /Invalid 3 Oaks public demo URL/);
+  for (const [key, value] of [['token', 'session-token'], ['wl', 'real'], ['ts', '123']]) {
+    const url = new URL(game.url); url.searchParams.set(key, value);
+    assert.throws(() => getLaunchUrl({ ...game, url: url.href }, 'desktop'), /Invalid 3 Oaks public demo URL/);
+  }
+});
+
+test('Relax uses the published FUN channel for the actual device', () => {
+  for (const game of RELAX_GAMES) {
+    assert.equal(getLaunchUrl(game, 'desktop'), game.url);
+    assert.equal(getLaunchUrl(game, 'mobile'), game.demoMobileUrl);
+  }
+});
+
+test('Relax rejects altered hosts, sessions, game identities and real-money modes', () => {
+  for (const game of RELAX_GAMES) {
+    const edits = [
+      url => { url.protocol = 'http:'; },
+      url => { url.hostname += '.unrelated.test'; },
+      url => { url.username = 'user'; },
+      url => { url.hash = 'session'; },
+      url => { url.pathname += '/extra'; },
+      url => { url.searchParams.set('sid', 'session'); },
+      url => { url.searchParams.append('gameid', 'other'); },
+      url => { url.searchParams.set('gameid', 'other'); },
+      url => { url.searchParams.set('moneymode', 'real'); },
+    ];
+    for (const edit of edits) for (const device of ['desktop', 'mobile']) {
+      const url = new URL(game.url); edit(url);
+      assert.throws(() => getLaunchUrl({ ...game, url: url.href }, device), /Invalid Relax public demo URL/);
+    }
   }
 });
 

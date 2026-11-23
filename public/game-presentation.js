@@ -33,7 +33,7 @@ export function getDemoUrl(baseUrl, device) {
 }
 
 export function getLaunchUrl(game, device) {
-  const providerDemoUrl = getProviderDemoUrl(game);
+  const providerDemoUrl = getProviderDemoUrl(game, device);
   if (providerDemoUrl) return providerDemoUrl;
   if (game.providerId === 'gamzix') {
     const url = new URL(game.url);
