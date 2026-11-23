@@ -2,8 +2,14 @@
 // Unselected downloads remain on disk and use text placeholders in the interface.
 // Provenance and review selection: public/assets/games/README.md.
 import { BGAMING_ARTWORK } from './bgaming-games.js';
+import { GAMZIX_ARTWORK } from './gamzix-games.js';
+import { AVATARUX_ARTWORK } from './avatarux-games.js';
+import { THREE_OAKS_ARTWORK } from './three-oaks-games.js';
 export const GAME_ARTWORK = Object.freeze({
   ...BGAMING_ARTWORK,
+  ...GAMZIX_ARTWORK,
+  ...AVATARUX_ARTWORK,
+  ...THREE_OAKS_ARTWORK,
   "nunchucksr96f100": {
     "src": "assets/games/nunchucksr96f100.webp",
     "width": 256,

@@ -33,4 +33,16 @@ export const PROVIDER_LOGOS = Object.freeze({
     src: './assets/providers/bgaming.svg',
     source: 'https://bgaming.com/brand-guidelines',
   },
+  gamzix: {
+    src: './assets/providers/gamzix.svg',
+    source: 'https://gamzix.com/',
+  },
+  avatarux: {
+    src: './assets/providers/avatarux.svg',
+    source: 'https://avatarux.com/',
+  },
+  '3-oaks': {
+    src: './assets/providers/3-oaks.svg',
+    source: 'https://3oaks.com/',
+  },
 });

@@ -1,6 +1,8 @@
 import { initCoinChooser } from '../public/coin-chooser.js';
 import { initPlayerDisplay } from '../public/player-display.js';
 import { getFrameLayout, needsLandscapeViewport } from '../public/game-presentation.js';
+import { AVATARUX_GAMES } from '../public/avatarux-games.js';
+import { THREE_OAKS_GAMES } from '../public/three-oaks-games.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -10,8 +12,14 @@ import { formatRoute, parseRoute } from '../public/routes.js';
 const source = (await readFile(new URL('../public/game-view.js', import.meta.url), 'utf8'))
   .replace(/^import .*;\r?\n/gm, '').replace('export function initGameView', 'function initGameView');
 
+const additionalNativeGames = [
+  AVATARUX_GAMES.find(game => new URL(game.url).hostname === 'cdn-demo-eu.avatarux.app'),
+  AVATARUX_GAMES.find(game => new URL(game.url).pathname === '/launch/fun'),
+  THREE_OAKS_GAMES[0],
+];
+
 function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC', preplay = false, viewportWidth = 1280, signedIn = true, bgamingOrigin = 'https://demo.bgaming-network.com', navigatorInfo = { maxTouchPoints: 0 } } = {}) {
-  const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [];
+  const frames = [], readiness = [], resizers = [], raf = new Map(), timers = new Map(), scrolls = [], externalOpens = [];
   let nextId = 1, currentHash = hash;
   const document = { activeElement: null };
   class Node {
@@ -90,6 +98,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     requestAnimationFrame(callback) { const id = nextId++; raf.set(id, callback); return id; },
     cancelAnimationFrame(id) { raf.delete(id); },
     scrollTo(options) { scrolls.push(options); window.scrollX = options.left; window.scrollY = options.top; },
+    open(...args) { externalOpens.push(args); return {}; },
   };
   let route = parseRoute(hash);
   const subscribers = [];
@@ -116,10 +125,14 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
       { id: 'beta', title: 'Beta', providerId: 'netent' },
       { id: 'nunchucksr96f100', title: 'Nunchucks', providerId: 'netent' },
       { id: 'bgaming-book-of-cats', title: 'Book of Cats', providerId: 'bgaming' },
+      { id: 'gamzix-solar-strike-hold-the-spin', title: 'Solar Strike: Hold the Spin', providerId: 'gamzix' },
+      ...additionalNativeGames,
     ],
     getLaunchDevice(width) { return width <= 1024 ? 'mobile' : 'desktop'; },
     getLaunchUrl(game, device) {
       return game.providerId === 'bgaming' ? `${bgamingOrigin}/play/BookOfCats/FUN?server=demo`
+        : game.providerId === 'gamzix' ? 'https://link.gamzix.com/Solar-Strike-Hold-The-Spin'
+        : ['avatarux', '3-oaks'].includes(game.providerId) ? game.url
         : `https://demo.example/${game.id}?device=${device}`;
     },
     getFrameLayout, needsLandscapeViewport,
@@ -141,7 +154,7 @@ function gamePage({ hash = '', scrollY = 0, routerMode = false, currency = 'GC',
     nodes['catalog-shelves'].append(button);
     return button;
   }
-  return { nodes, document, window, frames, gameVisits, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
+  return { nodes, document, window, frames, externalOpens, gameVisits, readiness, resizers, raf, timers, scrolls, api, router, routeChanges,
     verificationOpens: () => verificationOpens,
     logout() { signedIn = false; accountListeners.forEach(fn => fn()); },
     setCurrency(value) { currency = value; accountListeners.forEach(fn => fn()); },
@@ -176,26 +189,34 @@ test('initial lobby and direct game links initialize one stable controller and o
   assert.equal(page.frames.length, 1, 'the same hash never restarts a game');
 });
 
-test('BGaming hands off to its native loader without claiming complete game readiness', () => {
-  for (const bgamingOrigin of ['https://demo.bgaming-network.com', 'https://bgaming-network.com']) {
-    const page = gamePage({ hash: '#game=bgaming-book-of-cats', routerMode: true, bgamingOrigin });
+const nativeLoaders = [
+  { gameId: 'bgaming-book-of-cats', reason: 'bgaming-loader', bgamingOrigin: 'https://demo.bgaming-network.com' },
+  { gameId: 'bgaming-book-of-cats', reason: 'bgaming-loader', bgamingOrigin: 'https://bgaming-network.com' },
+  { gameId: 'gamzix-solar-strike-hold-the-spin', reason: 'gamzix-loader' },
+  ...additionalNativeGames.filter(game => game.providerId !== '3-oaks')
+    .map(game => ({ gameId: game.id, reason: `${game.providerId}-loader` })),
+];
+
+test('native provider loaders hand off without claiming complete game readiness', () => {
+  for (const { gameId, reason, bgamingOrigin } of nativeLoaders) {
+    const page = gamePage({ hash: `#game=${gameId}`, routerMode: true, bgamingOrigin });
     const frame = page.frames[0], view = page.nodes['game-view'];
     page.flushTimers();
     assert.equal(view.dataset.loadState, 'loading', 'elapsed time does not hand off the loader');
     assert.equal(frame.inert, true);
     frame.emit('load'); page.flushPaint(); page.flushPaint();
     assert.equal(view.dataset.loadState, 'provider');
-    assert.equal(view.dataset.readySource, 'bgaming-loader');
+    assert.equal(view.dataset.readySource, reason);
     assert.equal(frame.inert, false);
     assert.equal(page.nodes['game-loading'].hidden, true);
     assert.equal(page.readiness[0].stopped, true);
-    assert.deepEqual(page.gameVisits, ['bgaming-book-of-cats']);
+    assert.deepEqual(page.gameVisits, [gameId]);
   }
 });
 
-test('BGaming native loading retains the GC pre-play gate and read-only SC preview', () => {
-  for (const currency of ['GC', 'SC']) {
-    const page = gamePage({ hash: '#/games/bgaming-book-of-cats', routerMode: true, preplay: true, currency });
+test('native provider loading retains the GC pre-play gate and read-only SC preview', () => {
+  for (const { gameId, bgamingOrigin } of nativeLoaders) for (const currency of ['GC', 'SC']) {
+    const page = gamePage({ hash: `#/games/${gameId}`, routerMode: true, preplay: true, currency, bgamingOrigin });
     const frame = page.frames[0];
     frame.emit('load'); page.flushPaint(); page.flushPaint();
     assert.equal(frame.inert, true);
@@ -209,21 +230,64 @@ test('BGaming native loading retains the GC pre-play gate and read-only SC previ
   }
 });
 
-test('BGaming load callbacks cannot revive replaced or failed frames', () => {
-  const page = gamePage({ hash: '#game=bgaming-book-of-cats', routerMode: true });
-  const oldFrame = page.frames[0];
-  page.navigate('#game=beta');
-  oldFrame.emit('load'); page.flushPaint(); page.flushPaint();
-  assert.equal(page.nodes['game-view'].dataset.loadState, 'loading');
-  assert.equal(page.frames[1].inert, true);
-  assert.deepEqual(page.gameVisits, []);
+test('native provider load callbacks cannot revive replaced or failed frames', () => {
+  for (const { gameId, bgamingOrigin } of nativeLoaders) {
+    const page = gamePage({ hash: `#game=${gameId}`, routerMode: true, bgamingOrigin });
+    const oldFrame = page.frames[0];
+    page.navigate('#game=beta');
+    oldFrame.emit('load'); page.flushPaint(); page.flushPaint();
+    assert.equal(page.nodes['game-view'].dataset.loadState, 'loading');
+    assert.equal(page.frames[1].inert, true);
+    assert.deepEqual(page.gameVisits, []);
 
-  page.navigate('#game=bgaming-book-of-cats');
-  const failedFrame = page.frames[2];
-  failedFrame.emit('error'); failedFrame.emit('load'); page.flushPaint(); page.flushPaint();
-  assert.equal(page.nodes['game-view'].dataset.loadState, 'error');
-  assert.equal(failedFrame.inert, true);
-  assert.deepEqual(page.gameVisits, []);
+    page.navigate(`#game=${gameId}`);
+    const failedFrame = page.frames[2];
+    failedFrame.emit('error'); failedFrame.emit('load'); page.flushPaint(); page.flushPaint();
+    assert.equal(page.nodes['game-view'].dataset.loadState, 'error');
+    assert.equal(failedFrame.inert, true);
+    assert.deepEqual(page.gameVisits, []);
+  }
+});
+
+test('3 Oaks waits for explicit Gold Coins play, opens its public demo separately and resets the normal play label', () => {
+  const game = THREE_OAKS_GAMES[0];
+  for (const viewportWidth of [390, 1280]) for (const hash of [`#/games/${game.id}`, `#game=${game.id}`]) {
+    const page = gamePage({ hash, routerMode: true, preplay: true, viewportWidth });
+    const play = page.nodes['game-play-confirm'];
+    page.flushTimers(); page.flushPaint();
+    assert.equal(page.frames.length, 0, 'the public provider forbids embedding');
+    assert.equal(page.readiness.length, 0);
+    assert.deepEqual(page.externalOpens, [], 'visiting or waiting never opens a new tab');
+    assert.equal(play.textContent, 'Open demo in new tab');
+    assert.equal(page.nodes['game-preplay'].hidden, false);
+    assert.equal(page.nodes['game-loading'].hidden, true);
+    assert.notEqual(page.nodes['game-view'].dataset.loadState, 'provider');
+    play.emit('click');
+    assert.deepEqual(page.externalOpens, [[game.url, '_blank', 'noopener,noreferrer']]);
+    assert.equal(page.frames.length, 0);
+    assert.equal(page.verificationOpens(), 0);
+    page.navigate('#/games/alpha');
+    assert.equal(play.textContent, 'Play with Gold Coins');
+    assert.equal(page.externalOpens.length, 1);
+  }
+});
+
+test('3 Oaks Super Coins verifies the account without embedding or opening its external demo', async () => {
+  const game = THREE_OAKS_GAMES[0];
+  for (const viewportWidth of [390, 1280]) {
+    const page = gamePage({ hash: `#/games/${game.id}`, routerMode: true, preplay: true, currency: 'SC', viewportWidth });
+    page.flushTimers(); page.flushPaint();
+    assert.equal(page.frames.length, 0);
+    assert.deepEqual(page.externalOpens, []);
+    assert.equal(page.nodes['game-play-confirm'].textContent, 'Play with Super Coins');
+    page.nodes['game-play-confirm'].emit('click');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(page.verificationOpens(), 1);
+    assert.equal(page.frames.length, 0);
+    assert.deepEqual(page.externalOpens, []);
+    page.navigate('#/games/alpha');
+    assert.equal(page.nodes['game-play-confirm'].textContent, 'Play with Super Coins');
+  }
 });
 
 test('shell destinations unmount the game before rendering and keep their results focus', () => {

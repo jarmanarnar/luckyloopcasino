@@ -16,6 +16,13 @@ test('release import preserves the original release day and stable game ID with 
   assert.match(output, /RELEASES_VERIFIED_ON = "2026-11-01"/);
   assert.match(output, /source: "https:\/\/games.nolimitcity.com\/"/);
   assert.match(output, /Object.freeze/);
+  for (const [constant, filename] of [
+    ['GAMZIX_RELEASES', 'gamzix-games'], ['AVATARUX_RELEASES', 'avatarux-games'],
+    ['THREE_OAKS_RELEASES', 'three-oaks-games'],
+  ]) {
+    assert.ok(output.includes(`import { ${constant} } from './${filename}.js'`));
+    assert.ok(output.includes(`...${constant}`));
+  }
 });
 
 test('release import refuses missing or ambiguous matches instead of inventing a date', () => {

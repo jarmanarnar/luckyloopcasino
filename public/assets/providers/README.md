@@ -26,3 +26,11 @@ Each SVG was checked for active content and external references. The exported fi
 ## BGaming
 
 `bgaming.svg` was downloaded on 2026-11-22 from the official [BGaming brand guidelines](https://bgaming.com/brand-guidelines), which specify the special color version for black and very dark backgrounds. The [original SVG asset](https://bgaming.com/wp-content/uploads/2026/09/Logo-%E2%80%93-Main-black-1.svg) is retained byte-for-byte: 322×56 view box, white GAMING letters, yellow plate and dividers, and black B. No artwork was generated, redrawn or recolored. The SVG contains local paths only, with no scripts, event handlers, external references or embedded raster image.
+
+## Gamzix
+
+`gamzix.svg` was downloaded on 2026-11-23 from the [official Gamzix website](https://gamzix.com/), whose published header metadata identifies [Gamzix 2026 WT.svg](https://energized-gift-ecbe868b20.media.strapiapp.com/Gamzix_2026_WT_bd5d41c09b.svg) as its company logo. The original white logo is retained byte-for-byte, including its 2487×611 view box, for display on dark backgrounds. No artwork was generated, redrawn or recolored. The SVG contains local paths only, with no scripts, event handlers, external references or embedded raster image. Source URL, retrieval date and SHA-256 are recorded in `artifacts/provider-expansion-20261123/gamzix-avatarux/gamzix-logo-provenance.json`.
+
+## AvatarUX
+
+`avatarux.svg` was downloaded on 2026-11-23 from the [official AvatarUX website](https://avatarux.com/), which uses [AUX-logo.svg](https://avatarux.com/wp-content/uploads/2021/06/AUX-logo.svg) in its header. The original white and cyan SVG is retained byte-for-byte, including its 141×32 view box. No artwork was generated, redrawn or recolored. The SVG contains local paths and styles only, with no scripts, event handlers, external references or embedded raster image. Source URL and SHA-256 are recorded in `artifacts/provider-expansion-20261123/avatarux-expansion/logo-provenance.json`.

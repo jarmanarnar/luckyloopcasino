@@ -34,9 +34,9 @@ function vendorCode(game) {
   return new URL(game.url).pathname.split('/').filter(Boolean).at(-1).toLowerCase();
 }
 
-test('public catalog contains only the 1108 approved covers across seven populated providers', () => {
-  assert.equal(ALL_GAMES.length, 1369, 'hiding titles preserves imported records');
-  assert.equal(GAMES.length, 1108);
+test('public catalog contains only the 1299 approved covers across ten populated providers', () => {
+  assert.equal(ALL_GAMES.length, 1560, 'hiding titles preserves imported records');
+  assert.equal(GAMES.length, 1299);
   assert.deepEqual(GAMES, ALL_GAMES.filter(game => Object.hasOwn(GAME_ARTWORK, game.id)));
   assert.equal(new Set(GAMES.map(game => game.id)).size, GAMES.length);
   const expectedCounts = {
@@ -47,8 +47,11 @@ test('public catalog contains only the 1108 approved covers across seven populat
     taparoo: 8,
     'sneaky-slots': 3,
     bgaming: 292,
+    gamzix: 54,
+    avatarux: 31,
+    '3-oaks': 106,
   };
-  assert.equal(PROVIDERS.length, 7);
+  assert.equal(PROVIDERS.length, 10);
   assert.deepEqual(PROVIDERS.map(provider => provider.id).sort(), Object.keys(expectedCounts).sort());
   for (const provider of PROVIDERS) {
     const games = GAMES.filter(game => game.providerId === provider.id);
@@ -80,7 +83,7 @@ test('populated game families cover the visible catalog exactly once without dup
   assert.deepEqual(GAME_FAMILIES.map(category => category.id), [
     'slots', 'table', 'scratchcards', 'tap', 'arcade',
   ]);
-  const expectedCounts = { slots: 1020, table: 18, scratchcards: 12, tap: 13, arcade: 45 };
+  const expectedCounts = { slots: 1211, table: 18, scratchcards: 12, tap: 13, arcade: 45 };
   const covered = new Set();
   for (const category of GAME_FAMILIES) {
     const games = getGamesForCategory(category.id);
@@ -128,7 +131,7 @@ test('theme collections use relevant settings and fruit titles without ambiguous
 });
 
 test('provider pages retain their complete catalogs separately from editorial choices', () => {
-  for (const [providerId, count] of [['nolimit-city', 141], ['red-tiger', 351], ['bgaming', 292]]) {
+  for (const [providerId, count] of [['nolimit-city', 141], ['red-tiger', 351], ['bgaming', 292], ['gamzix', 54], ['avatarux', 31], ['3-oaks', 106]]) {
     assert.deepEqual(getGamesForCategory(providerId), []);
     const page = getCatalogPage({ type: 'provider', providerId });
     assert.equal(page.activeMenu, 'providers');
@@ -174,10 +177,15 @@ test('verified release dates retain their provider sources; unknown dates stay u
     const release = GAME_RELEASES[game.id];
     assert.match(release.date, /^\d{4}-\d{2}-\d{2}$/);
     assert.equal(new Date(`${release.date}T00:00:00Z`).toISOString().slice(0, 10), release.date);
-    const bgaming = game.providerId === 'bgaming';
-    assert.equal(release.verifiedOn, bgaming ? '2026-11-22' : '2026-11-01');
-    assert.equal(new URL(release.source).origin, bgaming ? 'https://bgaming.com' : 'https://games.nolimitcity.com');
-    assert.equal(new URL(release.page).origin, bgaming ? 'https://bgaming.com' : 'https://nolimitcity.com');
+    const expected = {
+      bgaming: ['2026-11-22', 'https://bgaming.com', 'https://bgaming.com'],
+      gamzix: ['2026-11-23', 'https://gamzix.com', 'https://gamzix.com'],
+      avatarux: ['2026-11-23', 'https://avatarux.com', 'https://avatarux.com'],
+      '3-oaks': ['2026-11-23', 'https://3oaks.com', 'https://3oaks.com'],
+    }[game.providerId] || ['2026-11-01', 'https://games.nolimitcity.com', 'https://nolimitcity.com'];
+    assert.equal(release.verifiedOn, expected[0], game.id);
+    assert.equal(new URL(release.source).origin, expected[1], game.id);
+    assert.equal(new URL(release.page).origin, expected[2], game.id);
   }
   assert.equal(getGameReleaseDate('starburst'), '2012-01-23');
   assert.equal(getGameReleaseDate('bloodsuckersj0r2'), '2009-11-10');
@@ -199,7 +207,7 @@ test('separate Tap-A-Roo, Megaways and sequel variants remain available', () => 
   }
 });
 
-test('standalone page, module imports and all eight provider logos resolve within public', async () => {
+test('standalone page, module imports and all eleven provider logos resolve within public', async () => {
   const indexUrl = new URL('index.html', publicRoot);
   const html = await readFile(indexUrl, 'utf8');
   for (const [, specifier] of html.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']/g)) {
@@ -218,7 +226,7 @@ test('standalone page, module imports and all eight provider logos resolve withi
       await access(dependency);
     }
   }
-  assert.equal(Object.keys(PROVIDER_LOGOS).length, 8);
+  assert.equal(Object.keys(PROVIDER_LOGOS).length, 11);
   for (const provider of PROVIDERS) {
     const asset = new URL(PROVIDER_LOGOS[provider.id].src, publicRoot);
     assert.ok(asset.href.startsWith(publicRoot.href), provider.id);

@@ -1,4 +1,5 @@
 import { GAMES } from './catalog.js';
+import { getProviderDemoUrl } from './provider-demo-urls.js';
 
 function getNolimitCatalogCode(baseUrl) {
   try {
@@ -32,6 +33,18 @@ export function getDemoUrl(baseUrl, device) {
 }
 
 export function getLaunchUrl(game, device) {
+  const providerDemoUrl = getProviderDemoUrl(game);
+  if (providerDemoUrl) return providerDemoUrl;
+  if (game.providerId === 'gamzix') {
+    const url = new URL(game.url);
+    if (url.origin !== 'https://link.gamzix.com' || url.username || url.password || url.search || url.hash ||
+        !/^\/[A-Za-z0-9-]+$/.test(url.pathname) || !/^\d+$/.test(game.providerGameId)) {
+      throw new Error('Invalid Gamzix public demo URL');
+    }
+    // The published shortlink selects a current demo build/session. Preserve
+    // it on both devices; temporary CDN redirects and Playin hints are not stable launch URLs.
+    return game.url;
+  }
   if (game.providerId === 'bgaming') {
     const url = new URL(game.url);
     // Official pages publish both hosts (for example Adventures uses the root host).

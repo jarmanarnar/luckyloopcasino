@@ -3,7 +3,7 @@ const coinInfo = {
  SC: { question: 'What are Super Coins?', answer: 'Super Coins have a separate balance. You can preview this mode here, but play is unavailable in this demo.' },
 };
 
-export function initCoinChooser({ document: doc = document, onPlay, onSelect = async () => {} }) {
+export function initCoinChooser({ document: doc = document, onPlay, onSelect = async () => {}, getPlayLabel = () => null }) {
  const gc=doc.querySelector('#game-play-gc'), sc=doc.querySelector('#game-play-sc'), play=doc.querySelector('#game-play-confirm');
  if (!gc || !sc || !play) return { reset() {} };
  const info = doc.querySelector('#game-coin-info');
@@ -76,7 +76,7 @@ export function initCoinChooser({ document: doc = document, onPlay, onSelect = a
   gc.disabled=busy; sc.disabled=busy; play.disabled=busy;
   gc.setAttribute('aria-pressed',String(selected==='GC'));
   sc.setAttribute('aria-pressed',String(selected==='SC'));
-  play.textContent=selected==='SC'?'Play with Super Coins':'Play with Gold Coins';
+  play.textContent=getPlayLabel(selected) || (selected==='SC'?'Play with Super Coins':'Play with Gold Coins');
   if (question) question.textContent = coinInfo[selected].question;
   if (answer) answer.textContent = coinInfo[selected].answer;
   trigger?.setAttribute('aria-label', selected === 'SC' ? 'About Super Coins' : 'About Gold Coins');

@@ -90,6 +90,16 @@ test('Search is the complete searchable catalog distinct from the Lobby overview
   assert.equal(pageSlice(page.games).hasMore, true);
   const filtered = getCatalogPage({ type: 'search', categoryId: 'all', providerId: 'taparoo', query: 'blood' });
   assert.deepEqual(ids(filtered), ['bloodsuckerstapa']);
+  const gamzix = getCatalogPage({ type: 'search', providerId: 'gamzix', query: 'solar strike' });
+  assert.deepEqual(ids(gamzix), ['gamzix-solar-strike-hold-the-spin']);
+  for (const [providerId, query, count] of [['avatarux', 'AvatarUX', 31], ['3-oaks', '3 Oaks', 106]]) {
+    const studioSearch = getCatalogPage({ type: 'search', query });
+    assert.equal(studioSearch.games.length, count, query);
+    assert.ok(studioSearch.games.every(game => game.providerId === providerId), query);
+    assert.deepEqual(new Set(ids(studioSearch)), new Set(ids(getCatalogPage({ type: 'provider', providerId }))));
+  }
+  const avatarux = getCatalogPage({ type: 'search', providerId: 'avatarux', query: 'volcanic loot' });
+  assert.deepEqual(ids(avatarux), ['avatarux-volcanic-loot']);
 });
 
 test('category provider and text filters intersect without spilling into the full catalog', () => {
@@ -144,7 +154,7 @@ test('collections compose with a game family and preserve provider, search and s
   assert.ok(ascending.games.length > 1);
   assert.ok(ascending.games.every(game => game.providerId === 'netent' && /shop/i.test(game.title)));
   assert.deepEqual(ids(descending), ids(ascending).toReversed());
-  assert.equal(getCatalogPage({ type: 'category', categoryId: 'slots' }).games.length, 1020, 'clearing the theme restores all visible slots');
+  assert.equal(getCatalogPage({ type: 'category', categoryId: 'slots' }).games.length, 1211, 'clearing the theme restores all visible slots');
 });
 
 test('family and collection can be selected or cleared independently without an all-game fallback', () => {
@@ -155,7 +165,7 @@ test('family and collection can be selected or cleared independently without an 
   assert.equal(fruitSlots.games.length, 25);
   assert.deepEqual(ids(fruitTap), ['mysteryfruittapa']);
   assert.deepEqual(ids(getCatalogPage({ type: 'search', gameTypeId: 'table', categoryId: 'fruit' })), []);
-  assert.equal(getCatalogPage({ type: 'search', gameTypeId: 'slots' }).games.length, 1020);
+  assert.equal(getCatalogPage({ type: 'search', gameTypeId: 'slots' }).games.length, 1211);
   assert.equal(getCatalogPage({ type: 'search' }).games.length, GAMES.length);
   for (const filters of [{ gameTypeId: 'missing' }, { categoryId: 'missing' }]) {
     for (const type of ['search', 'favorites', 'recent-games']) assert.equal(getCatalogPage({ type, ...filters }).type, 'not-found');

@@ -1,8 +1,11 @@
 // General release dates from the official, rendered game calendar.
 // Matched one-to-one by complete normalized title; ambiguous or missing matches fail the import.
 import { BGAMING_RELEASES } from './bgaming-games.js';
+import { GAMZIX_RELEASES } from './gamzix-games.js';
+import { AVATARUX_RELEASES } from './avatarux-games.js';
+import { THREE_OAKS_RELEASES } from './three-oaks-games.js';
 export const RELEASES_VERIFIED_ON = "2026-11-01";
-export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...Object.fromEntries([
+export const GAME_RELEASES = Object.freeze({ ...BGAMING_RELEASES, ...GAMZIX_RELEASES, ...AVATARUX_RELEASES, ...THREE_OAKS_RELEASES, ...Object.fromEntries([
   ["nunchucksr96f100","2026-10-29","https://nolimitcity.com/games/nunchucks"],
   ["ouija00000000000","2026-10-27","https://nolimitcity.com/games/ouija"],
   ["SixFeetUnder","2026-10-20","https://nolimitcity.com/games/six-feet-under"],

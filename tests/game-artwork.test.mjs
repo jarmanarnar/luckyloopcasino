@@ -17,7 +17,7 @@ function documentStub(imageState = {}) {
 
 test('the reviewed covers belong to available games and are valid local image files', async () => {
   const active = new Set(GAMES.map(game => game.id));
-  assert.equal(Object.keys(GAME_ARTWORK).length, 1108);
+  assert.equal(Object.keys(GAME_ARTWORK).length, 1299);
   for (const [id, artwork] of Object.entries(GAME_ARTWORK)) {
     assert.ok(active.has(id), `Artwork cannot reintroduce ${id}`);
     assert.ok(artwork.width > 0 && artwork.height > 0);

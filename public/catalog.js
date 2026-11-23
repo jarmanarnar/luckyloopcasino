@@ -2,7 +2,11 @@
 // Existing local game IDs and provider demo URLs are preserved.
 import { HACKSAW_GAMES } from './hacksaw-games.js';
 import { BGAMING_GAMES } from './bgaming-games.js';
+import { GAMZIX_GAMES } from './gamzix-games.js';
+import { AVATARUX_GAMES } from './avatarux-games.js';
+import { THREE_OAKS_GAMES } from './three-oaks-games.js';
 import { GAME_ARTWORK } from './game-artwork.js';
+import { getProviderDemoUrl } from './provider-demo-urls.js';
 const PROVIDER_DEFINITIONS = [
   {
     "id": "netent",
@@ -43,6 +47,21 @@ const PROVIDER_DEFINITIONS = [
     "id": "bgaming",
     "name": "BGaming",
     "count": BGAMING_GAMES.length
+  },
+  {
+    "id": "gamzix",
+    "name": "Gamzix",
+    "count": GAMZIX_GAMES.length
+  },
+  {
+    "id": "avatarux",
+    "name": "AvatarUX",
+    "count": AVATARUX_GAMES.length
+  },
+  {
+    "id": "3-oaks",
+    "name": "3 Oaks Gaming",
+    "count": THREE_OAKS_GAMES.length
   }
 ];
 
@@ -5787,7 +5806,7 @@ export const ALL_GAMES = [
     "providerId": "netent",
     "providerName": "NetEnt"
   }
-].concat(HACKSAW_GAMES, BGAMING_GAMES);
+].concat(HACKSAW_GAMES, BGAMING_GAMES, GAMZIX_GAMES, AVATARUX_GAMES, THREE_OAKS_GAMES);
 
 // Keep imported records for saved-account history and future cover review.
 // Every public browsing and player surface uses the same approved-cover catalog.
@@ -5799,7 +5818,15 @@ export const PROVIDERS = PROVIDER_DEFINITIONS
   .filter(provider => provider.count > 0);
 
 for (const game of ALL_GAMES) {
+  if (getProviderDemoUrl(game)) continue;
   const url = new URL(game.url);
+  if (game.providerId === 'gamzix') {
+    if (url.origin !== 'https://link.gamzix.com' || url.username || url.password || url.search || url.hash ||
+        !/^\/[A-Za-z0-9-]+$/.test(url.pathname) || !/^\d+$/.test(game.providerGameId)) {
+      throw new Error('Unexpected official Gamzix demo record: ' + game.id);
+    }
+    continue;
+  }
   if (game.providerId === 'bgaming') {
     if (!['https://demo.bgaming-network.com', 'https://bgaming-network.com'].includes(url.origin) || url.username || url.password ||
         !/^[A-Za-z0-9]+$/.test(game.providerGameId) ||
